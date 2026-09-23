@@ -59,9 +59,12 @@ const KV = 'sacs_visitor';
 let visitor = null;
 try { visitor = localStorage.getItem(KV); if (!visitor) { visitor = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem(KV, visitor); } } catch {}
 const t0 = Date.now();
-fetch('/api/reportes/vista', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+/* La COPIA que recibe quien mandó el correo trae ?copia=1: abrirla no cuenta
+   como apertura del cliente, o el «lo leyó» del CRM mentiría. */
+const INTERNO = new URLSearchParams(location.search).has('copia');
+if (!INTERNO) fetch('/api/reportes/vista', { method: 'POST', headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ reporte_id: REP, visitor_id: visitor }) }).catch(() => {});
-let cerrado = false;
+let cerrado = INTERNO;
 function cerrar() {
   if (cerrado) return; cerrado = true;
   const seg = Math.round((Date.now() - t0) / 1000);

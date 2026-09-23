@@ -54,6 +54,19 @@ export default function EnviarCorreo({ companyId, cliente, contactos = [], onCer
   // El reporte de recomendaciones preparado para este correo (se genera aparte).
   const [recom, setRecom] = useState<any>(null);
   const [prepRec, setPrepRec] = useState(false);
+  // Copia para quien lo manda (activada) y la lista de lo que ya salió.
+  const [yo, setYo] = useState('');
+  const [copia, setCopia] = useState(true);
+  const [vista, setVista] = useState<'nuevo' | 'enviados'>('nuevo');
+  const [enviados, setEnviados] = useState<any[] | null>(null);
+  const [abierto, setAbierto] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/crm/perfil').then(r => r.json()).then(j => setYo(j?.email || '')).catch(() => {});
+  }, []);
+  const cargarEnviados = () => fetch('/api/crm/correo-cuenta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'enviados', company_id: companyId }) })
+    .then(r => r.json()).then(j => setEnviados(j?.correos || [])).catch(() => setEnviados([]));
+  useEffect(() => { cargarEnviados(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [companyId]);
 
   useEffect(() => {
     fetch('/api/crm/documentos?activos=1').then(r => r.json()).then(j => setBiblio(j?.documentos || [])).catch(() => setBiblio([]));
@@ -64,7 +77,8 @@ export default function EnviarCorreo({ companyId, cliente, contactos = [], onCer
     reportes: reps.filter(r => r.on).map(r => ({ tipo: r.tipo, desde: r.desde, hasta: r.hasta })),
     documentos: docs,
     recomendacion_id: recom?.on ? recom.id : null,
-  }), [companyId, para, extra, asunto, mensaje, reps, docs, recom]);
+    copia,
+  }), [companyId, para, extra, asunto, mensaje, reps, docs, recom, copia]);
 
   /* La vista previa se pide al servidor con una pausa: si se pidiera en cada
      tecla, el reporte ejecutivo —que junta todo el periodo— se calcularía
@@ -107,7 +121,7 @@ export default function EnviarCorreo({ companyId, cliente, contactos = [], onCer
       .then(x => x.json()).catch(() => null);
     setBusy('');
     if (!r || r.error) { setError(r?.error || 'No se pudo enviar.'); return; }
-    setListo(r); onEnviado?.(r);
+    setListo(r); onEnviado?.(r); cargarEnviados();
   }
 
   const nDocs = reps.filter(r => r.on).length + docs.length + (recom?.on ? 1 : 0);
@@ -125,21 +139,75 @@ export default function EnviarCorreo({ companyId, cliente, contactos = [], onCer
           <div style={{ padding: '14px 18px 10px', borderBottom: '1px solid #f1eff7', flex: 'none', display: 'flex', alignItems: 'flex-start' }}>
             <div>
               <div style={{ fontSize: '1.05rem', fontWeight: 800 }}>Correo a {cliente}</div>
-              <div style={{ fontSize: '0.76rem', color: '#8a8590', marginTop: 2 }}>Sale desde el correo del CRM, con tu firma. Si te contestan, te llega a ti.</div>
+              <div style={{ fontSize: '0.76rem', color: '#8a8590', marginTop: 2 }}>Sale desde el correo del CRM. Si te contestan, te llega a ti.</div>
+              <div style={{ display: 'flex', gap: 4, marginTop: 10 }}>
+                {([['nuevo', 'Nuevo correo'], ['enviados', `Enviados${enviados?.length ? ` · ${enviados.length}` : ''}`]] as const).map(([k, l]) => (
+                  <button key={k} onClick={() => setVista(k as any)}
+                    style={{ border: 'none', borderRadius: 9, padding: '6px 12px', fontSize: '0.76rem', fontWeight: vista === k ? 800 : 600, cursor: 'pointer', fontFamily: 'inherit',
+                      background: vista === k ? '#EEECFE' : 'transparent', color: vista === k ? '#5B4BD6' : '#6b6776' }}>{l}</button>
+                ))}
+              </div>
             </div>
             <button onClick={onCerrar} aria-label="Cerrar" style={{ marginLeft: 'auto', border: '1px solid #ececf1', background: '#fff', borderRadius: 9, width: 32, height: 32, color: '#8a8590', cursor: 'pointer' }}>×</button>
           </div>
 
-          {listo ? (
+          {vista === 'enviados' ? (
+            <div style={{ padding: '12px 18px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
+              {enviados === null && <div style={{ fontSize: '0.8rem', color: '#a5a2af' }}>Cargando…</div>}
+              {enviados?.length === 0 && <div style={{ fontSize: '0.82rem', color: '#8a8596', lineHeight: 1.6 }}>Todavía no se le ha mandado ningún correo ejecutivo a {cliente}.</div>}
+              {(enviados || []).map((c: any) => {
+                const f = new Date(c.fecha);
+                const abiertos = [...c.reportes.filter((r: any) => r.abierto_at), ...c.documentos.filter((d: any) => d.abierto_at)].length;
+                const total = c.reportes.length + c.documentos.length;
+                const ver = abierto === c.id;
+                return (
+                  <div key={c.id} style={{ border: '1px solid #ecebf3', borderRadius: 12, padding: '11px 13px', marginBottom: 9 }}>
+                    <button onClick={() => setAbierto(ver ? null : c.id)} style={{ all: 'unset', cursor: 'pointer', display: 'block', width: '100%' }}>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
+                        <b style={{ fontSize: '0.86rem', flex: 1 }}>{c.asunto}</b>
+                        <span style={{ fontSize: '0.7rem', color: '#9c99a6', whiteSpace: 'nowrap' }}>{f.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })} · {f.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#8a8596', marginTop: 3 }}>
+                        A {c.para.join(', ') || '—'}{c.copia_a ? ` · copia a ${c.copia_a}` : ''}{c.por ? ` · lo mandó ${c.por}` : ''}
+                      </div>
+                      {total > 0 && (
+                        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 7 }}>
+                          {c.reportes.map((r: any) => (
+                            <span key={r.id} style={{ fontSize: '0.64rem', fontWeight: 800, borderRadius: 20, padding: '2px 9px', background: r.abierto_at ? '#EAF8F2' : '#f4f4f6', color: r.abierto_at ? '#1E8A63' : '#6B7280' }}>
+                              {r.folio} · {r.abierto_at ? `lo abrieron${r.vistas > 1 ? ` ${r.vistas} veces` : ''}` : 'sin abrir'}
+                            </span>
+                          ))}
+                          {c.documentos.map((d: any, i: number) => (
+                            <span key={i} style={{ fontSize: '0.64rem', fontWeight: 800, borderRadius: 20, padding: '2px 9px', background: d.abierto_at ? '#EAF8F2' : '#f4f4f6', color: d.abierto_at ? '#1E8A63' : '#6B7280' }}>
+                              {d.titulo} · {d.para} · {d.abierto_at ? 'abierto' : 'sin abrir'}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {total > 0 && <div style={{ fontSize: '0.68rem', color: '#9c99a6', marginTop: 5 }}>{abiertos} de {total} {total === 1 ? 'documento abierto' : 'documentos abiertos'}</div>}
+                    </button>
+                    {ver && c.mensaje && (
+                      <div style={{ marginTop: 9, paddingTop: 9, borderTop: '1px solid #f3f1f8', fontSize: '0.78rem', color: '#3F3A52', lineHeight: 1.6, whiteSpace: 'pre-line' }}>{c.mensaje}</div>
+                    )}
+                    {c.fallaron?.length > 0 && <div style={{ fontSize: '0.7rem', color: '#C0554E', marginTop: 6 }}>No salió a {c.fallaron.map((x: any) => x.para).join(', ')}.</div>}
+                  </div>
+                );
+              })}
+            </div>
+          ) : listo ? (
             <div style={{ padding: 24, flex: 1 }}>
               <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#1E8A63' }}>Enviado ✓</div>
               <div style={{ fontSize: '0.88rem', color: '#555', marginTop: 8, lineHeight: 1.6 }}>
                 Salió a <b>{listo.enviados.join(', ')}</b>.
                 {listo.reportes?.length > 0 && <> Reportes: {listo.reportes.map((r: any) => r.folio).join(', ')}.</>}
+                {listo.copia_a && <> Te llegó una copia a <b>{listo.copia_a}</b>.</>}
                 {listo.fallaron?.length > 0 && <div style={{ color: '#C0554E', marginTop: 6 }}>No salió a {listo.fallaron.map((f: any) => f.para).join(', ')}.</div>}
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#8a8596', marginTop: 10 }}>Quedó en la Actividad de la cuenta. Cuando abran los documentos, lo vas a ver ahí mismo.</div>
-              <button style={{ ...S.btnG, marginTop: 18 }} onClick={onCerrar}>Cerrar</button>
+              <div style={{ fontSize: '0.8rem', color: '#8a8596', marginTop: 10 }}>Queda en «Enviados»: ahí ves si abrieron cada reporte.</div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
+                <button style={S.btnG} onClick={() => { setListo(null); setVista('enviados'); }}>Ver enviados</button>
+                <button style={S.btnG} onClick={onCerrar}>Cerrar</button>
+              </div>
             </div>
           ) : (<>
             <div style={{ padding: '12px 18px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
@@ -228,7 +296,10 @@ export default function EnviarCorreo({ companyId, cliente, contactos = [], onCer
               {error && <div style={{ marginTop: 10, background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 8, padding: '9px 11px', fontSize: '0.78rem', color: '#C0554E' }}>{error}</div>}
             </div>
             <div style={{ padding: '12px 18px', borderTop: '1px solid #f1eff7', display: 'flex', gap: 8, alignItems: 'center', flex: 'none' }}>
-              <span style={{ fontSize: '0.72rem', color: '#8a8596' }}>Queda en la Actividad y ves cuándo lo abren.</span>
+              <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: '0.74rem', color: '#3d3752', cursor: 'pointer' }}>
+                <input type="checkbox" checked={copia} onChange={e => setCopia(e.target.checked)} style={{ accentColor: '#9B8CFA' }} />
+                Enviarme una copia{yo ? <span style={{ color: '#8a8596' }}>&nbsp;a {yo}</span> : ''}
+              </label>
               <span style={{ flex: 1 }} />
               <button style={S.btnG} onClick={onCerrar}>Cancelar</button>
               <button style={{ ...S.btnP, opacity: busy || !destinatarios ? .6 : 1 }} disabled={!!busy || !destinatarios} onClick={enviar}>
@@ -243,7 +314,7 @@ export default function EnviarCorreo({ companyId, cliente, contactos = [], onCer
         {/* ── Derecha: así le llega ── */}
         <div className="correo-vista" style={{ background: '#f7f6fb', padding: '14px 16px', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <div style={S.lb}>Así le llega</div>
-          <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#231d40', marginBottom: 8 }}>{asunto || <span style={{ color: '#b5b2bf' }}>(sin asunto)</span>}</div>
+          <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#231d40', marginBottom: 8 }}>{asunto || `${cliente} · lo que avanzamos y lo que sigue`}</div>
           {/* En la vista previa las ligas no se siguen: los reportes todavía no
               existen y al darle «Ver» el marco se iba a «Reporte no encontrado». */}
           <iframe title="Vista previa del correo" srcDoc={html.replace('</head>', '<style>a{pointer-events:none;cursor:default}</style></head>')} sandbox="" style={{ flex: 1, width: '100%', border: '1px solid #ecebf3', borderRadius: 12, background: '#fff' }} />

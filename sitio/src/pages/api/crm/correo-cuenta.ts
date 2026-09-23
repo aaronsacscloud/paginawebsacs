@@ -110,7 +110,7 @@ export const POST: APIRoute = async ({ request }) => {
   const user: any = await getCurrentUser(request);
   if (!user) return json({ error: 'No autenticado' }, 401);
   const b = await request.json().catch(() => ({} as any));
-  const accion = ['vista', 'enviar', 'redactar'].includes(b?.accion) ? b.accion : 'vista';
+  const accion = ['vista', 'enviar', 'redactar', 'enviados'].includes(b?.accion) ? b.accion : 'vista';
   const companyId = String(b?.company_id || '');
   if (!UUID.test(companyId)) return json({ error: 'Falta la cuenta.' }, 400);
 
@@ -118,6 +118,45 @@ export const POST: APIRoute = async ({ request }) => {
     .select('id, nombre, nombre_comercial, sacs_account').eq('id', companyId).maybeSingle();
   if (!co) return json({ error: 'Esa cuenta ya no existe.' }, 404);
   const cliente = co.nombre_comercial || co.nombre || co.sacs_account || 'la cuenta';
+
+  /* ── ENVIADOS: los correos ejecutivos que ya salieron a esta cuenta ──
+     Pedido del dueño (23-sep-2026): «quiero ver los correos que se han
+     mandado». Salen de la Actividad (tipo correo_ejecutivo) y a cada uno se le
+     cruza si abrieron sus reportes y sus documentos. */
+  if (accion === 'enviados') {
+    const { data: acts } = await supabase.from('activities')
+      .select('id, created_at, titulo, descripcion, metadata').eq('company_id', companyId).eq('tipo', 'correo_ejecutivo')
+      .order('created_at', { ascending: false }).limit(40);
+    const repIds = Array.from(new Set((acts || []).flatMap((a: any) => (a.metadata?.reportes || []).map((r: any) => r.id)).filter(Boolean)));
+    const { data: reps } = repIds.length
+      ? await supabase.from('reportes_trabajo').select('id, folio, tipo, vistas, primera_vista_at').in('id', repIds)
+      : { data: [] as any[] };
+    const porRep = new Map((reps || []).map((r: any) => [r.id, r]));
+    const envIds = Array.from(new Set((acts || []).flatMap((a: any) => (a.metadata?.envios || []).map((e: any) => e.id)).filter(Boolean)));
+    const { data: envs } = envIds.length
+      ? await supabase.from('crm_documento_envios').select('id, para, abierto_at, crm_documentos(titulo)').in('id', envIds)
+      : { data: [] as any[] };
+    const porEnv = new Map((envs || []).map((e: any) => [e.id, e]));
+    return json({
+      correos: (acts || []).map((a: any) => {
+        const m = a.metadata || {};
+        return {
+          id: a.id, fecha: a.created_at,
+          asunto: m.asunto || String(a.titulo || '').replace(/^Correo:\s*/, ''),
+          mensaje: m.mensaje ?? String(a.descripcion || '').split('\nReportes:')[0],
+          para: m.para || [], copia_a: m.copia_a || null, por: m.por || null, fallaron: m.fallaron || [],
+          reportes: (m.reportes || []).map((r: any) => {
+            const x: any = porRep.get(r.id) || {};
+            return { id: r.id, folio: r.folio || x.folio, tipo: r.tipo || x.tipo, vistas: Number(x.vistas || 0), abierto_at: x.primera_vista_at || null, existe: !!x.id };
+          }),
+          documentos: (m.envios || []).map((e: any) => {
+            const x: any = porEnv.get(e.id) || {};
+            return { titulo: x.crm_documentos?.titulo || e.titulo || 'Documento', para: x.para || e.para, abierto_at: x.abierto_at || null };
+          }),
+        };
+      }),
+    });
+  }
 
   /* ── REDACTAR: un borrador con lo que de verdad pasó en el mes ── */
   if (accion === 'redactar') {
@@ -212,7 +251,8 @@ Responde ÚNICAMENTE con JSON: { "asunto": "…", "mensaje": "…" }`,
 
   /* ── ENVIAR ── */
   if (!para.length) return json({ error: 'Elige al menos a una persona con correo.' }, 400);
-  if (!asunto) return json({ error: 'Ponle asunto al correo.' }, 400);
+  // Sin asunto se usa el que la pantalla sugiere, en vez de rebotar el envío.
+  const asuntoFinal = asunto || `${cliente} · lo que avanzamos y lo que sigue`;
   if (!mensaje && !reportes.length && !vivos.length && !rec) return json({ error: 'El correo va vacío: escribe algo o adjunta un documento.' }, 400);
 
   // 1) Los reportes se generan UNA vez; todos los destinatarios ven el mismo folio.
@@ -227,6 +267,7 @@ Responde ÚNICAMENTE con JSON: { "asunto": "…", "mensaje": "…" }`,
   const { data: contactos } = await supabase.from('contacts').select('id, nombre, email').eq('company_id', companyId);
   const porCorreo = new Map((contactos || []).filter((c: any) => c.email).map((c: any) => [String(c.email).toLowerCase(), c]));
   const resultados: { para: string; ok: boolean; error?: string }[] = [];
+  const envios: { id: string; titulo: string; para: string }[] = [];
   for (const dest of para) {
     const ct: any = porCorreo.get(dest) || null;
     const tarjetas: Bloque[] = generados.map(g => tarjetaReporte(g.tipo, g.hechos, g.desde, g.hasta, origen + '/reporte/' + g.id));
@@ -236,13 +277,14 @@ Responde ÚNICAMENTE con JSON: { "asunto": "…", "mensaje": "…" }`,
         documento_id: d.id, company_id: companyId, contact_id: ct?.id || null, para: dest,
         enviado_por: user?.email || user?.nombre || null,
       }).select('id').single();
+      if (env?.id) envios.push({ id: env.id, titulo: d.titulo, para: dest });
       tarjetas.push({ id: 'd-' + d.id, tipo: 'documento', variante: 'noche', etiqueta: TIPO_DOC[d.tipo] || 'Documento', titulo: d.titulo,
         texto: d.descripcion || '', href: env?.id ? origen + '/d/' + env.id : d.url, boton: 'Ver' });
     }
     const ctx = { nombre: String(ct?.nombre || '').split(' ')[0], empresa: cliente, email: dest } as any;
     const bloques = cuerpo(tarjetas);
     const r = await sendEmail({
-      to: dest, subject: asunto,
+      to: dest, subject: asuntoFinal,
       html: compilar(bloques, ctx, tenant, null, 'simple', { soloClaro: true, sinFirma: true }), text: compilarTexto(bloques, ctx, tenant, { sinFirma: true }),
       contact_id: ct?.id || null, categoria: 'relacion',
       // Es servicio a una cuenta que ya paga, a pedido de quien la atiende: una
@@ -254,6 +296,27 @@ Responde ÚNICAMENTE con JSON: { "asunto": "…", "mensaje": "…" }`,
   }
 
   const enviados = resultados.filter(r => r.ok).map(r => r.para);
+
+  /* 3) COPIA para quien lo manda (pedido del dueño, 23-sep-2026): el mismo
+     correo con un aviso arriba de a quién salió. Las ligas de los reportes
+     llevan ?copia=1 para que abrirlas no cuente como que el cliente lo leyó, y
+     los documentos van directos, sin la liga que marca apertura. */
+  const yoCorreo = String(user?.email || '').trim().toLowerCase();
+  let copiaA: string | null = null;
+  if (b?.copia !== false && enviados.length && CORREO.test(yoCorreo) && !para.includes(yoCorreo)) {
+    const tarjetas: Bloque[] = generados.map(g => tarjetaReporte(g.tipo, g.hechos, g.desde, g.hasta, origen + '/reporte/' + g.id + '?copia=1'));
+    const tr = tarjetaRec(); if (tr) tarjetas.push({ ...tr, href: String(tr.href) + '?copia=1' });
+    for (const d of vivos) tarjetas.push({ id: 'd-' + d.id, tipo: 'documento', variante: 'noche', etiqueta: TIPO_DOC[d.tipo] || 'Documento', titulo: d.titulo, texto: d.descripcion || '', href: d.url, boton: 'Ver' });
+    const aviso: Bloque = { id: 'copia', tipo: 'aviso', texto: `Copia para ti · este correo salió a ${enviados.join(', ')}.` };
+    const bloques = [aviso, ...cuerpo(tarjetas)];
+    const ctx = { nombre: '', empresa: cliente, email: yoCorreo } as any;
+    const rc = await sendEmail({
+      to: yoCorreo, subject: 'Copia · ' + asuntoFinal,
+      html: compilar(bloques, ctx, tenant, null, 'simple', { soloClaro: true, sinFirma: true }), text: compilarTexto(bloques, ctx, tenant, { sinFirma: true }),
+      categoria: 'relacion', transaccional: true,
+    });
+    if (rc.status !== 'failed') copiaA = yoCorreo;
+  }
   const idsEnviados = [...generados.map(g => g.id), ...(rec ? [rec.id] : [])];
   if (enviados.length && idsEnviados.length) {
     await supabase.from('reportes_trabajo').update({ estado: 'enviado', enviado_at: new Date().toISOString(), enviado_a: enviados.join(', ') })
@@ -261,11 +324,14 @@ Responde ÚNICAMENTE con JSON: { "asunto": "…", "mensaje": "…" }`,
   }
   await supabase.from('activities').insert({
     company_id: companyId, tipo: 'correo_ejecutivo', automatico: false,
-    titulo: 'Correo: ' + asunto,
+    titulo: 'Correo: ' + asuntoFinal,
     descripcion: [mensaje.slice(0, 400), [...generados.map(g => g.folio), ...(rec ? [rec.folio] : [])].length ? 'Reportes: ' + [...generados.map(g => g.folio), ...(rec ? [rec.folio] : [])].join(', ') : '', vivos.length ? 'Documentos: ' + vivos.map((d: any) => d.titulo).join(', ') : ''].filter(Boolean).join('\n'),
-    metadata: { para: enviados, fallaron: resultados.filter(r => !r.ok), reportes: generados.map(g => ({ id: g.id, folio: g.folio, tipo: g.tipo })), documentos: vivos.map((d: any) => d.id), por: user?.email || null },
+    // El correo completo, para poder leerlo después en «Enviados».
+    metadata: { asunto: asuntoFinal, mensaje, para: enviados, copia_a: copiaA, fallaron: resultados.filter(r => !r.ok),
+      reportes: [...generados.map(g => ({ id: g.id, folio: g.folio, tipo: g.tipo })), ...(rec ? [{ id: rec.id, folio: rec.folio, tipo: 'recomendaciones' }] : [])],
+      documentos: vivos.map((d: any) => d.id), envios, por: user?.email || null },
   }).then(() => {}, () => {});
 
   if (!enviados.length) return json({ error: 'No salió ningún correo: ' + (resultados[0]?.error || 'error del proveedor') }, 502);
-  return json({ ok: true, enviados, fallaron: resultados.filter(r => !r.ok), reportes: generados.map(g => ({ tipo: g.tipo, folio: g.folio })) });
+  return json({ ok: true, enviados, copia_a: copiaA, fallaron: resultados.filter(r => !r.ok), reportes: generados.map(g => ({ tipo: g.tipo, folio: g.folio })) });
 };
