@@ -376,6 +376,11 @@ const ESTILOS = `
   }
 `;
 
+/* La misma hoja sin el modo oscuro, para `soloClaro`. */
+const ESTILOS_CLARO = ESTILOS
+  .replace(/:root \{[^}]*\}/, ':root { color-scheme: light only; supported-color-schemes: light; }')
+  .replace(/@media \(prefers-color-scheme: dark\) \{[\s\S]*?\n  \}\n/, '');
+
 /**
  * El HTML completo del correo. El pie legal lo pone el pipeline en `MARCA_PIE`:
  * así queda DENTRO del fondo de la página y no colgando después del </html>.
@@ -390,17 +395,27 @@ export function conFirma(bloques: Bloque[]): Bloque[] {
   return lista.some(b => b?.tipo === 'firma') ? lista : [...lista, { id: 'firma-auto', tipo: 'firma' }];
 }
 
-export function compilar(bloques: Bloque[], ctx: Contexto, t: Tenant, preview?: string | null, layout?: Layout | string | null): string {
+/**
+ * `soloClaro`: el correo se ve SIEMPRE en claro, aunque el teléfono esté en
+ * modo oscuro. Nació con el correo ejecutivo a una cuenta (23-sep-2026): el
+ * dueño lo vio en negro en su bandeja y un documento para dirección se lee
+ * mejor en papel blanco. Se declara `light only` y no se mandan los estilos
+ * oscuros; los clientes que invierten por su cuenta lo respetan.
+ */
+export type OpcionesCompilar = { soloClaro?: boolean };
+
+export function compilar(bloques: Bloque[], ctx: Contexto, t: Tenant, preview?: string | null, layout?: Layout | string | null, opciones?: OpcionesCompilar): string {
+  const claro = opciones?.soloClaro === true;
   const cuerpo = conFirma(bloques).map(b => bloqueHtml(b, ctx, t)).join('\n');
   const lienzo = layoutDe(layout) === 'lienzo';
   const cabeza = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"><head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<meta name="color-scheme" content="light dark" />
-<meta name="supported-color-schemes" content="light dark" />
+<meta name="color-scheme" content="${claro ? 'light only' : 'light dark'}" />
+<meta name="supported-color-schemes" content="${claro ? 'light' : 'light dark'}" />
 <title>${escapar(t.nombre)}</title>
-<style type="text/css">${ESTILOS}</style>
+<style type="text/css">${claro ? ESTILOS_CLARO : ESTILOS}</style>
 </head>`;
   const tarjeta = `<table role="presentation" width="${ANCHO}" cellpadding="0" cellspacing="0" class="em-tarjeta" style="width:100%;max-width:${ANCHO}px;background:#fff;border-radius:14px;overflow:hidden;">
     ${cuerpo}

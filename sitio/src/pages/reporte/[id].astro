@@ -61,7 +61,10 @@ const cobradas = entregadas.filter((m: any) => !m.cortesia);
 const cobros = (h.pagado?.cobros || []).filter((c: any) => c.partidas?.length);
 const partidas = cobros.flatMap((c: any) => c.partidas.map((p: any) => ({ ...p, fecha: c.fecha, numero: c.numero })));
 const sop = h.soporte || { folios: 0, resueltos: 0, abiertos: 0, temas: [] };
-const opo = h.oportunidades;
+/* Las OPORTUNIDADES ya no se pintan en el ejecutivo (dueño, 23-sep-2026):
+   para eso está el reporte de recomendaciones, que las cuenta como flujos que
+   no se cierran. El dato sigue en la foto guardada por si se vuelve a pedir. */
+const opo: any = null;
 const maxTema = Math.max(1, ...(sop.temas || []).map((t: any) => t.n));
 const reuniones = h.reuniones?.lista || [];
 

@@ -56,6 +56,53 @@ function tarjetaReporte(tipo: TipoReporteCuenta, h: any, desde: string, hasta: s
 }
 
 const origenDe = (r: Request) => new URL(r.url).origin;
+
+/* ── El mensaje, en PÁRRAFOS ──
+   Visto el 23-sep-2026: el correo de Andrea a Artik llegó como un solo bloque
+   —saludo, cuerpo y despedida pegados— y con la firma escrita a mano además de
+   la automática. Aquí se ordena:
+     · si trae renglones en blanco o saltos, esos mandan;
+     · si viene de corrido, el saludo («…:») va solo, el cuerpo en párrafos de
+       dos o tres oraciones, y el cierre («Agradezco…», «Quedo atenta…») aparte;
+     · «Saludos, <nombre de quien firma> <puesto>» al final se reduce a
+       «Saludos,»: la firma ya la pone el sistema, con foto y puesto. */
+const CIERRES = /^(saludos( cordiales)?|atentamente|un (cordial )?saludo|un abrazo|quedo (atent[oa]|a (tus|sus) órdenes)|agradezco|gracias)\b/i;
+const DESPEDIDA = /\b(saludos( cordiales)?|atentamente|un (cordial )?saludo|un abrazo)\s*,\s*([\s\S]*)$/i;
+function parrafos(texto: string, firmante: string): string[] {
+  let t = String(texto || '').replace(/\r/g, '').trim();
+  if (!t) return [];
+  // La firma escrita a mano: se corta si trae el nombre de quien firma.
+  const pila = (firmante || '').toLowerCase().split(/\s+/).filter(x => x.length > 2);
+  const d = t.match(DESPEDIDA);
+  if (d && d.index != null) {
+    const resto = d[4].toLowerCase();
+    if (!resto.trim() || pila.some(x => resto.includes(x))) t = t.slice(0, d.index) + d[1].charAt(0).toUpperCase() + d[1].slice(1) + ',';
+  }
+  if (/\n\s*\n/.test(t)) return t.split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
+  if (/\n/.test(t)) return t.split(/\n/).map(x => x.trim()).filter(Boolean);
+
+  const oraciones = t.split(/(?<=[.!?:])\s+(?=[¿¡A-ZÁÉÍÓÚÑ"«])/).map(x => x.trim()).filter(Boolean);
+  const out: string[] = [];
+  let i = 0;
+  if (oraciones[0] && /:$/.test(oraciones[0]) && oraciones[0].length < 140) out.push(oraciones[i++]);
+  // Dónde empieza el cierre: la primera oración de despedida después del cuerpo.
+  let fin = oraciones.length;
+  for (let k = Math.max(i + 1, 1); k < oraciones.length; k++) if (CIERRES.test(oraciones[k])) { fin = k; break; }
+  let bloque: string[] = [];
+  for (; i < fin; i++) {
+    bloque.push(oraciones[i]);
+    const largo = bloque.join(' ').length;
+    if (bloque.length >= 3 || (bloque.length >= 2 && largo > 240)) { out.push(bloque.join(' ')); bloque = []; }
+  }
+  if (bloque.length) out.push(bloque.join(' '));
+  // El cierre: lo de agradecer / quedar a la orden junto, y «Saludos,» en su renglón.
+  const cierre = oraciones.slice(fin);
+  const saludo = cierre.length && /^(saludos|atentamente|un (cordial )?saludo|un abrazo)/i.test(cierre[cierre.length - 1]) ? cierre.pop()! : null;
+  if (cierre.length) out.push(cierre.join(' '));
+  if (saludo) out.push(saludo);
+  return out;
+}
+
 const TIPO_DOC: Record<string, string> = { presentacion: 'Presentación', pdf: 'PDF', liga: 'Documento' };
 
 export const POST: APIRoute = async ({ request }) => {
@@ -134,11 +181,12 @@ Responde ÚNICAMENTE con JSON: { "asunto": "…", "mensaje": "…" }`,
   const origen = new URL(request.url).origin;
   // Firma de QUIEN lo manda, con sus datos y nada del inquilino (ver el bloque
   // 'firma' en plantillas.ts). La foto es la de su perfil del CRM.
-  const { data: yo } = await supabase.from('team_members').select('nombre, foto_url').eq('email', user?.email || '').maybeSingle();
+  const { data: yo } = await supabase.from('team_members').select('nombre, foto_url, puesto').eq('email', user?.email || '').maybeSingle();
+  const firmante = yo?.nombre || user?.nombre || user?.email || 'Sacs';
   const firma: Bloque = { id: 'firma', tipo: 'firma', propia: true,
-    nombre: yo?.nombre || user?.nombre || user?.email || 'Sacs', foto_url: yo?.foto_url || user?.foto_url || null };
+    nombre: firmante, puesto: yo?.puesto || '', foto_url: yo?.foto_url || user?.foto_url || null };
   const cuerpo = (tarjetas: Bloque[]): Bloque[] => [
-    ...(mensaje ? [{ id: 'msg', tipo: 'texto', texto: mensaje } as Bloque] : []),
+    ...parrafos(mensaje, firmante).map((x, i) => ({ id: 'msg-' + i, tipo: 'texto', texto: x } as Bloque)),
     ...tarjetas,
     firma,
   ];
@@ -161,7 +209,7 @@ Responde ÚNICAMENTE con JSON: { "asunto": "…", "mensaje": "…" }`,
       tarjetas.push({ id: 'd-' + d.id, tipo: 'documento', variante: 'noche', etiqueta: TIPO_DOC[d.tipo] || 'Documento', titulo: d.titulo, texto: d.descripcion || '', href: d.url, boton: 'Ver' });
     }
     const ctx = { nombre: '', empresa: cliente } as any;
-    return json({ html: compilar(cuerpo(tarjetas), ctx, tenant, null, 'simple'), avisos });
+    return json({ html: compilar(cuerpo(tarjetas), ctx, tenant, null, 'simple', { soloClaro: true }), avisos });
   }
 
   /* ── ENVIAR ── */
@@ -197,7 +245,7 @@ Responde ÚNICAMENTE con JSON: { "asunto": "…", "mensaje": "…" }`,
     const bloques = cuerpo(tarjetas);
     const r = await sendEmail({
       to: dest, subject: asunto,
-      html: compilar(bloques, ctx, tenant, null, 'simple'), text: compilarTexto(bloques, ctx, tenant),
+      html: compilar(bloques, ctx, tenant, null, 'simple', { soloClaro: true }), text: compilarTexto(bloques, ctx, tenant),
       contact_id: ct?.id || null, categoria: 'relacion',
       // Es servicio a una cuenta que ya paga, a pedido de quien la atiende: una
       // baja de campañas no puede dejarla sin sus reportes.

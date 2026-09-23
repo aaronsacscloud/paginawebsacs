@@ -23,7 +23,7 @@ export const GET: APIRoute = async ({ request }) => {
 
   const { data } = await supabase
     .from('team_members')
-    .select('id, nombre, email, rol, foto_url, permisos, last_login_at, created_at')
+    .select('id, nombre, email, rol, foto_url, puesto, permisos, last_login_at, created_at')
     .eq('id', user.id)
     .maybeSingle();
 
@@ -56,11 +56,14 @@ export const PUT: APIRoute = async ({ request }) => {
   // de Mi marca). Cadena vacía = quitar la foto y volver a las iniciales.
   if (typeof body.foto_url === 'string') patch.foto_url = body.foto_url.trim() || null;
 
+  // El puesto sale bajo el nombre en la firma de los correos que manda.
+  if (typeof body.puesto === 'string') patch.puesto = body.puesto.trim().slice(0, 80) || null;
+
   if (!Object.keys(patch).length) return json({ error: 'Nada que guardar.' }, 400);
 
   const { data, error } = await supabase
     .from('team_members').update(patch).eq('id', user.id)
-    .select('id, nombre, email, rol, foto_url').maybeSingle();
+    .select('id, nombre, email, rol, foto_url, puesto').maybeSingle();
 
   if (error) return json({ error: error.message }, 500);
   return json({ ok: true, perfil: data });

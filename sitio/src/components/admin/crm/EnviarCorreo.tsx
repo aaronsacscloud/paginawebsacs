@@ -244,7 +244,9 @@ export default function EnviarCorreo({ companyId, cliente, contactos = [], onCer
         <div className="correo-vista" style={{ background: '#f7f6fb', padding: '14px 16px', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <div style={S.lb}>Así le llega</div>
           <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#231d40', marginBottom: 8 }}>{asunto || <span style={{ color: '#b5b2bf' }}>(sin asunto)</span>}</div>
-          <iframe title="Vista previa del correo" srcDoc={html} sandbox="" style={{ flex: 1, width: '100%', border: '1px solid #ecebf3', borderRadius: 12, background: '#fff' }} />
+          {/* En la vista previa las ligas no se siguen: los reportes todavía no
+              existen y al darle «Ver» el marco se iba a «Reporte no encontrado». */}
+          <iframe title="Vista previa del correo" srcDoc={html.replace('</head>', '<style>a{pointer-events:none;cursor:default}</style></head>')} sandbox="" style={{ flex: 1, width: '100%', border: '1px solid #ecebf3', borderRadius: 12, background: '#fff' }} />
         </div>
       </div>
     </div>
