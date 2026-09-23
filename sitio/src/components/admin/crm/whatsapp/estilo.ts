@@ -168,8 +168,10 @@ export const CSS_INBOX = `
      bajan al siguiente. Cortados a media palabra no dicen cuál es cuál. */
   /* Ventana de 24h cerrada: la franja ámbar + "Enviar plantilla" bastan; el campo muerto solo gasta pantalla */
   .wa-hilo-m textarea[disabled] { display: none !important; }
-  /* URLs largas dentro de burbuja: una línea con ellipsis (el href queda completo) */
-  .wa-hilo-m [style*="border-radius: 16px 16px 6px"] a { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+  /* URLs LARGAS dentro de burbuja: una línea con ellipsis (el href queda completo).
+     Sólo las largas (22-sep-2026): aplicado a todas, «www.sacscloud.com» salía
+     como «www.sacs…» porque la burbuja se encogía al ancho de la hora. */
+  .wa-hilo-m [style*="border-radius: 16px 16px 6px"] a.wa-liga-larga { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
   /* El menú ⋮ con presencia y área táctil de header */
   .wa-hilo-m [title="Más acciones"] { color: #111827 !important; padding: 10px !important; }
   .wa-hilo-m [title="Más acciones"] svg { width: 20px; height: 20px; }

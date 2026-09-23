@@ -48,13 +48,19 @@ function ConNegritas({ texto }: { texto: string }) {
   </>);
 }
 
+/* «www.sacscloud.com» sin https:// también es liga (22-sep-2026): no se
+   reconocía, no se partía y en el teléfono se salía de la burbuja. Y todo el
+   texto lleva `overflowWrap: anywhere`: una palabra larga sin espacios (un
+   folio, un correo) no puede empujar la burbuja fuera de la pantalla.
+   `break-word` y no `anywhere`: el segundo encoge la burbuja al mínimo y
+   corta la liga con puntos suspensivos. */
 export function Linkify({ texto, claro }: { texto: string; claro?: boolean }) {
-  const partes = texto.split(/(https?:\/\/[^\s]+)/g);
-  return (<>
-    {partes.map((p, i) => /^https?:\/\//.test(p)
-      ? <a key={i} href={p} target="_blank" rel="noreferrer" style={{ color: claro ? '#fff' : C.azulTinta, textDecoration: 'underline', wordBreak: 'break-all' }}>{p}</a>
+  const partes = texto.split(/(https?:\/\/[^\s]+|\bwww\.[^\s]+\.[a-z]{2,}[^\s]*)/gi);
+  return (<span style={{ overflowWrap: 'break-word' }}>
+    {partes.map((p, i) => /^(https?:\/\/|www\.)/i.test(p)
+      ? <a key={i} href={/^www\./i.test(p) ? `https://${p}` : p} target="_blank" rel="noreferrer" className={p.length > 40 ? 'wa-liga-larga' : undefined} style={{ color: claro ? '#fff' : C.azulTinta, textDecoration: 'underline', ...(p.length > 40 ? { wordBreak: 'break-all' as const } : p.length <= 24 ? { whiteSpace: 'nowrap' as const } : { wordBreak: 'break-all' as const }) }}>{p}</a>
       : <ConNegritas key={i} texto={p} />)}
-  </>);
+  </span>);
 }
 
 export function Resaltado({ texto, q, claro }: { texto: string; q: string; claro?: boolean }) {
@@ -413,7 +419,12 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
           {lineaMsj && <span title={`Salió por la línea ${lineaMsj}`} style={{ color: C.g300 }}>· {numeroCorto(lineaMsj)}</span>}
         </span>
       )}
-      <span style={{ display: 'flex', alignItems: 'center', gap: 4, flexDirection: saliente ? 'row-reverse' : 'row', maxWidth: '100%' }}>
+      {/* `width: 100%` (22-sep-2026): la burbuja mide como máximo el 70 %, y ese
+          porcentaje se resolvía contra ESTA fila, que medía lo mismo que la
+          burbuja — un círculo. En el teléfono la burbuja de «www.sacscloud.com»
+          quedaba en 118 px (70 % de 169) y la liga se salía de ella. Con la
+          fila a todo lo ancho, el 70 % es del hilo, como debía ser. */}
+      <span style={{ display: 'flex', alignItems: 'center', gap: 4, flexDirection: saliente ? 'row-reverse' : 'row', maxWidth: '100%', width: '100%' }}>
         <span style={{
           ...(saliente ? burbuja.salienteWa : burbuja.entrante),
           boxShadow: conRing ? `0 0 0 2px ${C.morado}, 0 0 0 4px #fff` : 'none', transition: 'box-shadow .3s',

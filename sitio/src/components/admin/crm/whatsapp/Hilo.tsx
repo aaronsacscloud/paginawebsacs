@@ -1586,9 +1586,17 @@ function PildoraAgente({ contactId, conversationId, mobile, onEstado }: { contac
      necesitas saber antes de escribirle a este lead. El header ahora envuelve,
      así que hay dónde ponerlo entero. */
   return (
-    <span style={{ position: 'relative', flex: '0 1 auto', minWidth: 118, maxWidth: 172 }}>
-      <button onClick={() => setAbierto(a => !a)} title={label} style={{ ...CTL, borderColor: col.bd, background: col.bg, color: col.fg, justifyContent: 'center', width: '100%' }}>
-        <span style={{ width: 7, height: 7, borderRadius: 99, background: col.fg, opacity: .9, flexShrink: 0 }} />{e.estado === 'activo' ? 'IA activa' : e.estado === 'observando' ? (e.modo_sugerencia ? 'IA sugiere' : 'IA observa') : 'IA apagada'}
+    /* En el TELÉFONO sí cede (22-sep-2026): con 118 px fijos, en 390 de
+       pantalla empujaba el ícono de la ficha fuera del borde (medido: terminaba
+       en 452). Ahí queda «● IA»: el estado lo dice el color del punto (morado
+       contesta sola, gris observa, rojo apagada) y el texto completo sigue en
+       el `title` y en el menú. Con «IA obs.» (78 px) todavía se salía 22 px. */
+    <span style={{ position: 'relative', flex: mobile ? '0 1 auto' : '0 1 auto', minWidth: mobile ? 52 : 118, maxWidth: mobile ? 60 : 172 }}>
+      <button onClick={() => setAbierto(a => !a)} title={label} style={{ ...CTL, borderColor: col.bd, background: col.bg, color: col.fg, justifyContent: 'center', width: '100%', ...(mobile ? { overflow: 'hidden', whiteSpace: 'nowrap', paddingLeft: 8, paddingRight: 8 } : null) }}>
+        <span style={{ width: 7, height: 7, borderRadius: 99, background: col.fg, opacity: .9, flexShrink: 0 }} />
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{mobile
+          ? 'IA'
+          : (e.estado === 'activo' ? 'IA activa' : e.estado === 'observando' ? (e.modo_sugerencia ? 'IA sugiere' : 'IA observa') : 'IA apagada')}</span>
       </button>
       {abierto && (
         <span style={{ position: 'absolute', top: '110%', right: 0, zIndex: 20, background: '#fff', border: '1px solid #e8e5f0', borderRadius: 12, boxShadow: '0 10px 30px rgba(16,24,40,.14)', padding: 8, minWidth: 250, display: 'grid', gap: 4 }}>
