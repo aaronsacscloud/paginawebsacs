@@ -59,24 +59,24 @@ const origenDe = (r: Request) => new URL(r.url).origin;
 
 /* ── El mensaje, en PÁRRAFOS ──
    Visto el 23-sep-2026: el correo de Andrea a Artik llegó como un solo bloque
-   —saludo, cuerpo y despedida pegados— y con la firma escrita a mano además de
-   la automática. Aquí se ordena:
+   —saludo, cuerpo, despedida y firma pegados—. Aquí se ordena:
      · si trae renglones en blanco o saltos, esos mandan;
      · si viene de corrido, el saludo («…:») va solo, el cuerpo en párrafos de
-       dos o tres oraciones, y el cierre («Agradezco…», «Quedo atenta…») aparte;
-     · «Saludos, <nombre de quien firma> <puesto>» al final se reduce a
-       «Saludos,»: la firma ya la pone el sistema, con foto y puesto. */
+       dos o tres oraciones, el cierre («Agradezco…», «Quedo atenta…») aparte,
+       y «Saludos,» con la firma que escribió debajo, en su propio renglón.
+   La firma es la que escribe quien manda el correo: el sistema no pone otra. */
 const CIERRES = /^(saludos( cordiales)?|atentamente|un (cordial )?saludo|un abrazo|quedo (atent[oa]|a (tus|sus) órdenes)|agradezco|gracias)\b/i;
 const DESPEDIDA = /\b(saludos( cordiales)?|atentamente|un (cordial )?saludo|un abrazo)\s*,\s*([\s\S]*)$/i;
-function parrafos(texto: string, firmante: string): string[] {
+function parrafos(texto: string): string[] {
   let t = String(texto || '').replace(/\r/g, '').trim();
   if (!t) return [];
-  // La firma escrita a mano: se corta si trae el nombre de quien firma.
-  const pila = (firmante || '').toLowerCase().split(/\s+/).filter(x => x.length > 2);
+  /* «Saludos, Andrea Gutiérrez…» de corrido: la despedida y la firma en
+     renglones distintos, como en una carta. */
+  let firmaEscrita = '';
   const d = t.match(DESPEDIDA);
-  if (d && d.index != null) {
-    const resto = d[4].toLowerCase();
-    if (!resto.trim() || pila.some(x => resto.includes(x))) t = t.slice(0, d.index) + d[1].charAt(0).toUpperCase() + d[1].slice(1) + ',';
+  if (d && d.index != null && !/\n/.test(t)) {
+    firmaEscrita = d[4].trim();
+    t = t.slice(0, d.index) + d[1].charAt(0).toUpperCase() + d[1].slice(1) + ',';
   }
   if (/\n\s*\n/.test(t)) return t.split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
   if (/\n/.test(t)) return t.split(/\n/).map(x => x.trim()).filter(Boolean);
@@ -99,7 +99,8 @@ function parrafos(texto: string, firmante: string): string[] {
   const cierre = oraciones.slice(fin);
   const saludo = cierre.length && /^(saludos|atentamente|un (cordial )?saludo|un abrazo)/i.test(cierre[cierre.length - 1]) ? cierre.pop()! : null;
   if (cierre.length) out.push(cierre.join(' '));
-  if (saludo) out.push(saludo);
+  if (saludo) out.push(firmaEscrita ? saludo + '\n' + firmaEscrita : saludo);
+  else if (firmaEscrita) out.push(firmaEscrita);
   return out;
 }
 
@@ -133,6 +134,7 @@ export const POST: APIRoute = async ({ request }) => {
       soporte_folios: h?.soporte?.folios || 0,
       reuniones: h?.reuniones?.asistidas || 0,
       para: Array.isArray(b?.nombres) ? b.nombres.slice(0, 4) : [],
+      firma: user?.nombre || '',
     };
     try {
       const out = await pedirJSON({
@@ -140,7 +142,7 @@ export const POST: APIRoute = async ({ request }) => {
 Español de México, cálido y directo, de tú a tú con el dueño; nada de emoji ni de lenguaje corporativo. Máximo 90 palabras.
 Usa SOLO los hechos que recibes: no inventes cifras, fechas ni compromisos. Si no hubo entregas, no digas que las hubo.
 El periodo es el que viene en «periodo»; si nombras el mes, usa «mes» tal cual.
-Empieza saludando por su nombre si viene. No firmes: la firma la pone el sistema.
+Empieza saludando por su nombre si viene. Cierra con «Saludos,» y en el renglón de abajo el nombre de quien firma (viene en «firma»): el sistema no agrega otra firma.
 Responde ÚNICAMENTE con JSON: { "asunto": "…", "mensaje": "…" }`,
         user: JSON.stringify(hechos),
       });
@@ -179,16 +181,12 @@ Responde ÚNICAMENTE con JSON: { "asunto": "…", "mensaje": "…" }`,
   const tenant = await resolverTenant().catch(() => null);
   if (!tenant) return json({ error: 'El correo del CRM no está configurado.' }, 500);
   const origen = new URL(request.url).origin;
-  // Firma de QUIEN lo manda, con sus datos y nada del inquilino (ver el bloque
-  // 'firma' en plantillas.ts). La foto es la de su perfil del CRM.
-  const { data: yo } = await supabase.from('team_members').select('nombre, foto_url, puesto').eq('email', user?.email || '').maybeSingle();
-  const firmante = yo?.nombre || user?.nombre || user?.email || 'Sacs';
-  const firma: Bloque = { id: 'firma', tipo: 'firma', propia: true,
-    nombre: firmante, puesto: yo?.puesto || '', foto_url: yo?.foto_url || user?.foto_url || null };
+  /* Sin firma automática (dueño, 23-sep-2026): quien escribe firma en su
+     mensaje, como lo haría en su correo. Arriba va la banda de destellos. */
   const cuerpo = (tarjetas: Bloque[]): Bloque[] => [
-    ...parrafos(mensaje, firmante).map((x, i) => ({ id: 'msg-' + i, tipo: 'texto', texto: x } as Bloque)),
+    { id: 'destellos', tipo: 'destellos' } as Bloque,
+    ...parrafos(mensaje).map((x, i) => ({ id: 'msg-' + i, tipo: 'texto', texto: x } as Bloque)),
     ...tarjetas,
-    firma,
   ];
 
   /* ── VISTA PREVIA: se calcula todo, no se guarda nada ── */
@@ -209,7 +207,7 @@ Responde ÚNICAMENTE con JSON: { "asunto": "…", "mensaje": "…" }`,
       tarjetas.push({ id: 'd-' + d.id, tipo: 'documento', variante: 'noche', etiqueta: TIPO_DOC[d.tipo] || 'Documento', titulo: d.titulo, texto: d.descripcion || '', href: d.url, boton: 'Ver' });
     }
     const ctx = { nombre: '', empresa: cliente } as any;
-    return json({ html: compilar(cuerpo(tarjetas), ctx, tenant, null, 'simple', { soloClaro: true }), avisos });
+    return json({ html: compilar(cuerpo(tarjetas), ctx, tenant, null, 'simple', { soloClaro: true, sinFirma: true }), avisos });
   }
 
   /* ── ENVIAR ── */
@@ -245,7 +243,7 @@ Responde ÚNICAMENTE con JSON: { "asunto": "…", "mensaje": "…" }`,
     const bloques = cuerpo(tarjetas);
     const r = await sendEmail({
       to: dest, subject: asunto,
-      html: compilar(bloques, ctx, tenant, null, 'simple', { soloClaro: true }), text: compilarTexto(bloques, ctx, tenant),
+      html: compilar(bloques, ctx, tenant, null, 'simple', { soloClaro: true, sinFirma: true }), text: compilarTexto(bloques, ctx, tenant, { sinFirma: true }),
       contact_id: ct?.id || null, categoria: 'relacion',
       // Es servicio a una cuenta que ya paga, a pedido de quien la atiende: una
       // baja de campañas no puede dejarla sin sus reportes.

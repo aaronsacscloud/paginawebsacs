@@ -20,7 +20,7 @@ import type { Tenant } from './tenant';
 export type TipoBloque =
   | 'hero' | 'encabezado' | 'texto' | 'imagen' | 'boton' | 'separador'
   | 'espaciador' | 'dos_columnas' | 'cita' | 'lista' | 'firma' | 'planes'
-  | 'cuenta' | 'aviso' | 'metricas' | 'portada' | 'documento';
+  | 'cuenta' | 'aviso' | 'metricas' | 'portada' | 'documento' | 'destellos';
 
 /**
  * El DISEÑO de página, que es distinto del contenido.
@@ -265,6 +265,15 @@ function bloqueHtml(b: Bloque, ctx: Contexto, t: Tenant): string {
         <table role="presentation" cellpadding="0" cellspacing="0">${renglones}</table>
       </td></tr></table>`);
     }
+    case 'destellos': {
+      /* La banda de DESTELLOS de la marca, arriba del correo: la cinta y las
+         chispas lila y rosa de los documentos del CRM. Va como imagen porque
+         Gmail y Outlook no pintan SVG; el fondo sólido detrás es por si el
+         cliente bloquea imágenes. (Correo ejecutivo, 23-sep-2026.) */
+      const src = 'https://www.sacscloud.com/email/destellos/banda.png';
+      return `<tr><td style="height:5px;line-height:5px;font-size:1px;${CINTA}">&nbsp;</td></tr>
+        <tr><td style="padding:0;line-height:0;font-size:0;background:#f7f5ff;"><img src="${src}" alt="" width="${ANCHO}" style="display:block;width:100%;max-width:${ANCHO}px;height:auto;border:0;"></td></tr>`;
+    }
     case 'documento': {
       /* Un DOCUMENTO adjunto como tarjeta: etiqueta de color, título, una línea
          de resumen y su botón. Nació con el correo ejecutivo a una cuenta
@@ -402,11 +411,15 @@ export function conFirma(bloques: Bloque[]): Bloque[] {
  * mejor en papel blanco. Se declara `light only` y no se mandan los estilos
  * oscuros; los clientes que invierten por su cuenta lo respetan.
  */
-export type OpcionesCompilar = { soloClaro?: boolean };
+export type OpcionesCompilar = {
+  soloClaro?: boolean;
+  /** Sin firma automática: el texto ya trae la de quien escribe (correo ejecutivo). */
+  sinFirma?: boolean;
+};
 
 export function compilar(bloques: Bloque[], ctx: Contexto, t: Tenant, preview?: string | null, layout?: Layout | string | null, opciones?: OpcionesCompilar): string {
   const claro = opciones?.soloClaro === true;
-  const cuerpo = conFirma(bloques).map(b => bloqueHtml(b, ctx, t)).join('\n');
+  const cuerpo = (opciones?.sinFirma ? (bloques || []) : conFirma(bloques)).map(b => bloqueHtml(b, ctx, t)).join('\n');
   const lienzo = layoutDe(layout) === 'lienzo';
   const cabeza = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"><head>
@@ -460,9 +473,9 @@ ${preheader(preview)}
 }
 
 /** Versión text/plain — obligatoria: sin ella el correo pesa más como spam. */
-export function compilarTexto(bloques: Bloque[], ctx: Contexto, t?: Tenant | null): string {
+export function compilarTexto(bloques: Bloque[], ctx: Contexto, t?: Tenant | null, opciones?: OpcionesCompilar): string {
   const p: string[] = [];
-  for (const b of conFirma(bloques)) {
+  for (const b of (opciones?.sinFirma ? (bloques || []) : conFirma(bloques))) {
     /* Los ** de las negritas se quitan: en texto plano son ruido.
        El segundo replace barre los pares que quedaron VACÍOS —`**{{x}}**` con la
        variable sin dato deja `****`, que el primero no puede casar— igual que en
@@ -489,6 +502,7 @@ export function compilarTexto(bloques: Bloque[], ctx: Contexto, t?: Tenant | nul
         }
         break;
       }
+      case 'destellos': break;
       case 'documento': p.push(`${b.etiqueta ? '[' + i(b.etiqueta) + '] ' : ''}${i(b.titulo || '')}${b.texto ? ' — ' + i(b.texto) : ''}: ${i(b.href || '')}`); break;
       case 'firma': p.push('', i(b.nombre || t?.firma_nombre || t?.from_nombre || ''), i(b.puesto || t?.firma_puesto || '')); break;
       case 'separador': p.push('—'); break;

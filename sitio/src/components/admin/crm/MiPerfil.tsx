@@ -22,7 +22,6 @@ export default function MiPerfil({ onGuardado }: { onGuardado?: (p: any) => void
   const [p, setP] = useState<any>(null);
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
-  const [puesto, setPuesto] = useState('');
   const [foto, setFoto] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
@@ -32,11 +31,11 @@ export default function MiPerfil({ onGuardado }: { onGuardado?: (p: any) => void
   useEffect(() => {
     fetch('/api/crm/perfil').then(r => r.json()).then(j => {
       if (j?.error) return;
-      setP(j); setNombre(j.nombre || ''); setEmail(j.email || ''); setFoto(j.foto_url || ''); setPuesto(j.puesto || '');
+      setP(j); setNombre(j.nombre || ''); setEmail(j.email || ''); setFoto(j.foto_url || '');
     }).catch(() => {});
   }, []);
 
-  const sucio = p && (nombre !== (p.nombre || '') || email !== (p.email || '') || foto !== (p.foto_url || '') || puesto !== (p.puesto || ''));
+  const sucio = p && (nombre !== (p.nombre || '') || email !== (p.email || '') || foto !== (p.foto_url || ''));
   const cambiaCorreo = p && email !== (p.email || '');
 
   async function subir(f: File) {
@@ -57,7 +56,7 @@ export default function MiPerfil({ onGuardado }: { onGuardado?: (p: any) => void
     setGuardando(true); setMsg(null);
     const r = await fetch('/api/crm/perfil', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, email, foto_url: foto, puesto }),
+      body: JSON.stringify({ nombre, email, foto_url: foto }),
     });
     const j = await r.json().catch(() => ({}));
     setGuardando(false);
@@ -112,10 +111,6 @@ export default function MiPerfil({ onGuardado }: { onGuardado?: (p: any) => void
           <label style={campo}>
             <span style={rotulo}>Correo</span>
             <input value={email} onChange={e => setEmail(e.target.value)} type="email" style={input} />
-          </label>
-          <label style={campo}>
-            <span style={rotulo}>Puesto · sale en tu firma</span>
-            <input value={puesto} onChange={e => setPuesto(e.target.value)} placeholder="Consultora en Retail · Director · …" style={input} />
           </label>
         </div>
 

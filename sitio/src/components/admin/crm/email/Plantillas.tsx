@@ -22,6 +22,7 @@ const TIPOS: Array<{ id: string; label: string; base: any }> = [
   { id: 'cita', label: 'Cita', base: { texto: 'Lo que dijo un cliente.', autor: 'Nombre' } },
   { id: 'dos_columnas', label: 'Dos columnas', base: { izquierda: { titulo: '', texto: '' }, derecha: { titulo: '', texto: '' } } },
   { id: 'planes', label: 'Planes', base: { planes: [{ nombre: 'Plan', precio: '$0', detalle: '' }] } },
+  { id: 'destellos', label: 'Banda de destellos', base: {} },
   { id: 'documento', label: 'Documento (tarjeta con liga)', base: { etiqueta: 'Reporte', titulo: 'Nombre del documento', texto: 'Una línea con lo que trae.', href: 'https://www.sacscloud.com', boton: 'Ver', tono: 'lila', variante: 'claro' } },
   { id: 'separador', label: 'Separador', base: {} },
   { id: 'espaciador', label: 'Espacio', base: { alto: 20 } },
