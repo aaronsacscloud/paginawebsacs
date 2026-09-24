@@ -31,9 +31,10 @@
  * vas a llamar antes de que suene el primer timbre es lo que evita descubrir a
  * media jornada que la lista no era la que creías.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { P } from '../../../lib/crm/paleta';
 import { useIsMobile } from '../../../lib/ui/mobile';
+import { telefonoLegible } from '../../../lib/telefono';
 
 type Cat = { giros_abm: { giro: string; n: number; con_wa: number }[]; giros_crm: { giro: string; n: number }[]; estados: { estado: string; n: number }[] };
 
@@ -114,28 +115,81 @@ const rot: any = { fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTr
 const sel: any = { width: '100%', border: '1px solid #e0dfe6', borderRadius: 10, padding: '9px 11px', fontSize: 13, fontFamily: 'inherit', background: '#fff', cursor: 'pointer' };
 const inp: any = { ...sel, cursor: 'text' };
 
-function Bloque({ titulo, children }: { titulo: string; children: any }) {
+/* ══ EN EL TELÉFONO SE ARMA CON EL PULGAR (23-sep-2026) ═══════════════════
+   Pedido del dueño: «desde que generas la lista debe ser un diseño móvil
+   primero… debe ser fácil apretar cualquier botón». Medido a 390: los chips
+   eran de 36 px con 6 px entre sí, las palomitas de 15 px y los textos de
+   ayuda de 11 px. En el teléfono todo lo que se toca mide 44 px o más, con 8
+   de aire, y los campos van a 16 px para que iOS no haga zoom al tocarlos.
+   El escritorio se queda exactamente como estaba. */
+const inpMovil: any = { ...inp, fontSize: 16, minHeight: 48, padding: '11px 13px' };
+/* Los rótulos y los conteos de los chips en #6b7280 (4.8:1 sobre blanco): el
+   #999 y el #a5a2af de escritorio se quedaban en 2.5–2.8:1 y en el teléfono,
+   a pleno sol, el número que decide qué giro elegir casi no se leía. */
+/* 23-sep, ronda 5: los rótulos de sección suben a 13 px en #4b5563 (7.6:1) y
+   se aprietan un poco: a 12 px, grises y tan espaciados, «1 · DE DÓNDE SALEN»
+   pesaba menos que los chips y los bloques no se distinguían de un vistazo. */
+const rotMovil: any = { ...rot, fontSize: 13, letterSpacing: '.05em', marginBottom: 10, color: '#4b5563' };
+/** Chip/opción: el mismo estilo en las cinco familias de botones de la pantalla. */
+function estiloChip(on: boolean, movil: boolean, redondo: boolean, compacto = false, rejilla = false): any {
+  return {
+    fontFamily: 'inherit', cursor: 'pointer', borderRadius: redondo ? 999 : 9,
+    padding: movil ? '0 14px' : compacto ? (redondo ? '4px 10px' : '6px 10px') : (redondo ? '5px 11px' : '7px 11px'),
+    fontSize: movil ? 14 : compacto ? (redondo ? 11.5 : 12) : (redondo ? 12 : 12.5),
+    minHeight: movil ? 44 : undefined, maxWidth: '100%', textAlign: movil ? 'left' : undefined, lineHeight: movil ? 1.25 : undefined,
+    fontWeight: on ? 800 : 600, border: `1px solid ${on ? P.violeta : '#e6e4ec'}`,
+    background: on ? '#EEECFE' : '#fff', color: on ? P.violetaTinta : '#4B5563',
+    ...(rejilla ? { width: '100%', textAlign: 'center', padding: '4px 6px' } : null),
+  };
+}
+
+/* En el teléfono las familias de opciones cortas van en rejilla a lo ancho
+   (2, 3 o 4 columnas iguales): cada bloque se lee de un vistazo, ningún botón
+   queda huérfano en su renglón y el formulario se acorta cientos de px. */
+function rejilla(cols: number): any {
+  return { display: 'grid', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: 8 };
+}
+
+/** Un giro largo, en corto: lo de antes de « y », «,» o « de » (y si aun así no
+    cabe, sus dos primeras palabras). «Uniformes escolares y empresariales…» →
+    «Uniformes escolares». */
+function giroCorto(g: string): string {
+  if (g.length <= 24) return g;
+  const a = g.split(/ y |, | de | para /)[0].trim();
+  return a.length <= 24 ? a : a.split(' ').slice(0, 2).join(' ');
+}
+
+/** Lo que dice cada filtro puesto, en palabras, para el resumen del pie. */
+function filtrosEnPalabras(f: Filtros, etapas: { id: string; label: string }[]): string {
+  const t = [tituloDeFiltros(f)];
+  if (f.etapas.length) t.push(f.etapas.length === 1 ? (etapas.find(e => e.id === f.etapas[0])?.label || f.etapas[0]) : `${f.etapas.length} etapas`);
+  if (f.estado_geo.length > 1) t.push(`${f.estado_geo.length} estados`);
+  if (f.ciudad.trim()) t.push(f.ciudad.trim());
+  if (f.rating_min) t.push(`${f.rating_min}★ o más`);
+  if (f.owner === 'mias') t.push('míos'); else if (f.owner === 'sin_asignar') t.push('sin dueño');
+  if (f.nunca_llamados) t.push('nunca tocados');
+  if (f.sin_tocar_dias) t.push(`sin contacto ${Number(f.sin_tocar_dias) >= 30 ? `${Math.round(Number(f.sin_tocar_dias) / 30)} ${Number(f.sin_tocar_dias) >= 60 ? 'meses' : 'mes'}` : `${f.sin_tocar_dias} días`}`);
+  return t.join(' · ');
+}
+
+function Bloque({ titulo, children, movil }: { titulo: string; children: any; movil?: boolean }) {
   return (
-    <div style={{ marginBottom: 20 }}>
-      <span style={rot}>{titulo}</span>
+    <div style={{ marginBottom: movil ? 26 : 20 }}>
+      <span style={movil ? rotMovil : rot}>{titulo}</span>
       {children}
     </div>
   );
 }
 
 /** Botones que se quedan marcados. Para elegir de una lista corta y conocida. */
-function Opciones({ valor, onCambio, opts }: { valor: string; onCambio: (v: any) => void; opts: { v: string; l: string; sub?: string }[] }) {
+function Opciones({ valor, onCambio, opts, movil = false, cols = 2 }: { valor: string; onCambio: (v: any) => void; opts: { v: string; l: string; sub?: string }[]; movil?: boolean; cols?: number }) {
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+    <div style={movil ? rejilla(cols) : { display: 'flex', flexWrap: 'wrap', gap: 6 }}>
       {opts.map(o => {
         const on = valor === o.v;
         return (
-          <button key={o.v} type="button" onClick={() => onCambio(o.v)} title={o.sub}
-            style={{
-              fontFamily: 'inherit', cursor: 'pointer', borderRadius: 9, padding: '7px 11px', fontSize: 12.5,
-              fontWeight: on ? 800 : 600, border: `1px solid ${on ? P.violeta : '#e6e4ec'}`,
-              background: on ? '#EEECFE' : '#fff', color: on ? P.violetaTinta : '#4B5563',
-            }}>{o.l}</button>
+          <button key={o.v} type="button" onClick={() => onCambio(o.v)} title={o.sub} aria-pressed={on}
+            style={estiloChip(on, movil, false, false, movil)}>{o.l}</button>
         );
       })}
     </div>
@@ -143,31 +197,27 @@ function Opciones({ valor, onCambio, opts }: { valor: string; onCambio: (v: any)
 }
 
 /** Varios a la vez, con su número al lado: «joyería (2,321)». */
-function Chips({ valores, onCambio, opts, vacio }: { valores: string[]; onCambio: (v: string[]) => void; opts: { v: string; l: string; n?: number }[]; vacio: string }) {
+function Chips({ valores, onCambio, opts, vacio, movil = false }: { valores: string[]; onCambio: (v: string[]) => void; opts: { v: string; l: string; n?: number }[]; vacio: string; movil?: boolean }) {
   const [ver, setVer] = useState(false);
   const mostrar = ver ? opts : opts.slice(0, 12);
-  if (!opts.length) return <p style={{ fontSize: 12, color: '#a5a2af', margin: 0 }}>{vacio}</p>;
+  if (!opts.length) return vacio ? <p style={{ fontSize: movil ? 14 : 12, color: '#a5a2af', margin: 0 }}>{vacio}</p> : null;
   return (
     <>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: movil ? 8 : 6 }}>
         {mostrar.map(o => {
           const on = valores.includes(o.v);
           return (
-            <button key={o.v} type="button"
-              onClick={() => onCambio(on ? valores.filter(x => x !== o.v) : [...valores, o.v])}
-              style={{
-                fontFamily: 'inherit', cursor: 'pointer', borderRadius: 999, padding: '5px 11px', fontSize: 12,
-                fontWeight: on ? 800 : 600, border: `1px solid ${on ? P.violeta : '#e6e4ec'}`,
-                background: on ? '#EEECFE' : '#fff', color: on ? P.violetaTinta : '#4B5563',
-              }}>
-              {o.l}{o.n != null && <span style={{ fontWeight: 600, color: on ? P.violeta : '#a5a2af' }}> {o.n.toLocaleString('es-MX')}</span>}
+            <button key={o.v} type="button" aria-pressed={on}
+              onClick={() => onCambio(on ? valores.filter(x => x !== o.v) : [...valores, o.v])} title={o.l !== o.v ? o.v : undefined}
+              style={estiloChip(on, movil, true)}>
+              {o.l}{o.n != null && <span style={{ fontWeight: 600, color: on ? P.violeta : movil ? '#6b7280' : '#a5a2af' }}> {o.n.toLocaleString('es-MX')}</span>}
             </button>
           );
         })}
       </div>
       {opts.length > 12 && (
         <button type="button" onClick={() => setVer(v => !v)}
-          style={{ marginTop: 7, border: 'none', background: 'none', color: P.violetaTinta, fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: 0 }}>
+          style={{ marginTop: movil ? 8 : 7, border: 'none', background: 'none', color: P.violetaTinta, fontFamily: 'inherit', fontSize: movil ? 14 : 12, fontWeight: 700, cursor: 'pointer', padding: movil ? '0 4px' : 0, minHeight: movil ? 44 : undefined, minWidth: movil ? 44 : undefined }}>
           {ver ? 'Ver menos' : `Ver los ${opts.length}`}
         </button>
       )}
@@ -175,13 +225,15 @@ function Chips({ valores, onCambio, opts, vacio }: { valores: string[]; onCambio
   );
 }
 
-function Palomita({ on, onCambio, texto, porque }: { on: boolean; onCambio: (v: boolean) => void; texto: string; porque?: string }) {
+function Palomita({ on, onCambio, texto, porque, movil = false }: { on: boolean; onCambio: (v: boolean) => void; texto: string; porque?: string; movil?: boolean }) {
+  /* En el teléfono el renglón ENTERO es el blanco (≥ 48 px de alto) y la
+     palomita crece a 22 px: nadie atina a un cuadrito de 15. */
   return (
-    <label style={{ display: 'flex', gap: 9, alignItems: 'flex-start', cursor: 'pointer', marginBottom: 9 }}>
-      <input type="checkbox" checked={on} onChange={e => onCambio(e.target.checked)} style={{ marginTop: 2, accentColor: P.violetaTinta, width: 15, height: 15, cursor: 'pointer' }} />
+    <label style={{ display: 'flex', gap: movil ? 12 : 9, alignItems: movil ? 'center' : 'flex-start', cursor: 'pointer', marginBottom: movil ? 8 : 9, minHeight: movil ? 48 : undefined, padding: movil ? '4px 0' : undefined }}>
+      <input type="checkbox" checked={on} onChange={e => onCambio(e.target.checked)} style={{ marginTop: movil ? 0 : 2, accentColor: P.violetaTinta, width: movil ? 22 : 15, height: movil ? 22 : 15, flexShrink: 0, cursor: 'pointer' }} />
       <span style={{ minWidth: 0 }}>
-        <span style={{ fontSize: 12.5, fontWeight: 600, color: '#3a3a44' }}>{texto}</span>
-        {porque && <span style={{ display: 'block', fontSize: 11, color: '#a5a2af', lineHeight: 1.45 }}>{porque}</span>}
+        <span style={{ fontSize: movil ? 15 : 12.5, fontWeight: 600, color: '#3a3a44' }}>{texto}</span>
+        {porque && <span style={{ display: 'block', fontSize: movil ? 14 : 11, color: movil ? '#6b7280' : '#a5a2af', lineHeight: 1.45, marginTop: movil ? 2 : 0 }}>{porque}</span>}
       </span>
     </label>
   );
@@ -198,6 +250,10 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
   const [previa, setPrevia] = useState<{ filas: any[]; total: number; descartados: any } | null>(null);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
+  /* «Reintentar» del error: sube el contador y vuelve a pedir el conteo con
+     los mismos filtros, sin tener que ir a «Ajustar filtros» a mover algo. */
+  const [intento, setIntento] = useState(0);
+  const previaRef = useRef<HTMLDivElement>(null);
 
   const set = <K extends keyof Filtros>(k: K, v: Filtros[K]) => setF(x => ({ ...x, [k]: v }));
   const qs = useMemo(() => qsDeFiltros(f), [f]);
@@ -225,109 +281,235 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
         .finally(() => { if (vivo) setCargando(false); });
     }, 380);   // el debounce evita una consulta por cada tecla del campo de ciudad
     return () => { vivo = false; clearTimeout(t); };
-  }, [qs]);
+  }, [qs, intento]);
 
   const n = previa?.total ?? 0;
   const girosOpts = conAbm
     ? (cat?.giros_abm || []).map(g => ({ v: g.giro, l: g.giro, n: f.canal === 'wa' || f.canal === 'wa_verificado' ? g.con_wa : g.n }))
-    : (cat?.giros_crm || []).map(g => ({ v: g.giro, l: g.giro.length > 26 ? g.giro.slice(0, 26) + '…' : g.giro, n: g.n }));
+    /* En el teléfono un giro larguísimo («Uniformes escolares y empresariales
+       de temporada») partía el chip en dos renglones a todo lo ancho. Se queda
+       con su primera parte —la que ya dice qué es— sin puntos suspensivos, y el
+       nombre completo va en el `title`. */
+    : (cat?.giros_crm || []).map(g => ({ v: g.giro, l: esMovil ? giroCorto(g.giro) : g.giro.length > 26 ? g.giro.slice(0, 26) + '…' : g.giro, n: g.n }));
+
+  const m = esMovil;
+  // Atajos de tamaño: en el teléfono la ayuda es texto de cuerpo (14 px) y las etiquetas no bajan de 13.
+  const tAyuda = m ? 14 : 11;
+  const tEtiq = m ? 13 : 11.5;
+  const tEtiqColor = m ? '#4b5563' : '#6b7280';
+  const tSub = m ? 15 : 12.5;
+  const inpX = m ? inpMovil : inp;
+  const resumen = useMemo(() => filtrosEnPalabras(f, etapas), [f, etapas]);
+  /* «Ver la lista» deja el bloque de los nombres PEGADO arriba de la columna
+     que scrollea (no a media pantalla, que es lo que hacía scrollIntoView con
+     el diálogo fijo alrededor), y una vez ahí el mismo botón se vuelve
+     «Ajustar filtros» para regresar arriba sin subir 2,000 px a mano. */
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [enLista, setEnLista] = useState(false);
+  const irALista = () => {
+    const c = scrollRef.current, pv = previaRef.current; if (!c || !pv) return;
+    c.scrollTo({ top: c.scrollTop + pv.getBoundingClientRect().top - c.getBoundingClientRect().top, behavior: 'smooth' });
+  };
+  /* ¿Ya estás viendo la lista? = el bloque de los nombres ocupa la mitad de
+     arriba de la columna. Se mide con la posición REAL del bloque y no sólo al
+     hacer scroll: cambiar la fuente o abrir/cerrar bloques (Etapa, Dónde están…)
+     cambia el alto de los filtros sin que haya scroll, y la cabecera se quedaba
+     diciendo «A quién vas a llamar» con el bloque 1 a la vista.
+     Ya no se acomoda sola al soltar: brincaba a media lectura el párrafo de
+     «Siempre se quitan solos…». Bajar a la lista es «Ver la lista». */
+  const medirLista = () => {
+    const c = scrollRef.current, pv = previaRef.current; if (!c || !pv) return;
+    const y = pv.getBoundingClientRect().top - c.getBoundingClientRect().top;
+    setEnLista(y < c.clientHeight * 0.5);
+  };
+  useEffect(() => { if (m) medirLista(); }, [m, f, previa, cat, cargando, error]);
+  useEffect(() => {
+    const c = scrollRef.current; if (!m || !c || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => medirLista());
+    ro.observe(c); for (const h of Array.from(c.children)) ro.observe(h);
+    return () => ro.disconnect();
+  }, [m]);
+  const irAFiltros = () => { scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }); };
+  /* ══ BAJANDO, LA LISTA SE ACOMODA ARRIBA (23-sep, ronda 5) ══════════════
+     Quien baja a mano hasta los nombres se quedaba con la lista a media
+     pantalla: la mitad de arriba eran los últimos filtros y sólo cabían tres
+     candidatos y medio. Ahora, si al soltar BAJANDO el bloque de los nombres
+     quedó en la mitad de arriba, se sube solo hasta el «82 para llamar».
+     Sólo bajando: subir para revisar un filtro nunca se pelea contigo. Y el
+     párrafo de «Siempre se quitan solos…», que era lo que brincaba a media
+     lectura cuando esto existía antes, ya vive al pie de la lista. */
+  const ultimoTop = useRef(0);
+  const bajando = useRef(false);
+  const dedo = useRef(false);
+  const tAcomodo = useRef<any>(null);
+  useEffect(() => () => { clearTimeout(tAcomodo.current); }, []);
+  const acomodar = () => {
+    const c = scrollRef.current, pv = previaRef.current; if (!c || !pv || dedo.current || !bajando.current) return;
+    const y = pv.getBoundingClientRect().top - c.getBoundingClientRect().top;
+    if (!(y > 2 && y < c.clientHeight * 0.5)) return;
+    /* Animación propia de 220 ms y no `behavior: 'smooth'`: la del navegador
+       tarda distinto en cada teléfono (hasta medio segundo) y se sentía como
+       si la pantalla siguiera sola. Si el dedo vuelve a tocar, se suelta. */
+    const desde = c.scrollTop, t0 = performance.now();
+    const paso = (t: number) => {
+      if (dedo.current) return;
+      const k = Math.min(1, (t - t0) / 220);
+      c.scrollTop = desde + y * (1 - Math.pow(1 - k, 3));
+      if (k < 1) requestAnimationFrame(paso);
+    };
+    requestAnimationFrame(paso);
+  };
+  const alScroll = () => {
+    const c = scrollRef.current; if (!c) return;
+    bajando.current = c.scrollTop > ultimoTop.current + 0.5 ? true : c.scrollTop < ultimoTop.current - 0.5 ? false : bajando.current;
+    ultimoTop.current = c.scrollTop;
+    medirLista();
+    clearTimeout(tAcomodo.current);
+    tAcomodo.current = setTimeout(acomodar, 120);   // «soltó»: 120 ms sin moverse
+  };
+
+  /* «Empezar de cero» en el teléfono queda junto al título y se toca sin
+     querer: borra todo, pero durante 5 s la barra del pulgar ofrece «Deshacer». */
+  const hayFiltros = useMemo(() => JSON.stringify(f) !== JSON.stringify(FILTROS_INICIALES), [f]);
+  const [antes, setAntes] = useState<Filtros | null>(null);
+  const tDeshacer = useRef<any>(null);
+  useEffect(() => () => { clearTimeout(tDeshacer.current); }, []);
+  const empezarDeCero = () => {
+    if (m && hayFiltros) {
+      setAntes(f); clearTimeout(tDeshacer.current);
+      tDeshacer.current = setTimeout(() => setAntes(null), 5000);
+    }
+    setF(FILTROS_INICIALES);
+  };
+  const deshacer = () => { if (antes) setF(antes); setAntes(null); clearTimeout(tDeshacer.current); };
 
   return (
     <>
       <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(12,11,18,.5)', zIndex: 960 }} />
       <div role="dialog" aria-label="Nueva llamada inteligente" style={{
         position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
-        width: esMovil ? '100%' : 'min(1060px, 95vw)', height: esMovil ? '100%' : undefined, maxHeight: esMovil ? '100%' : '92vh',
-        display: 'flex', flexDirection: 'column', background: '#fff', borderRadius: esMovil ? 0 : 20,
+        width: m ? '100%' : 'min(1060px, 95vw)', height: m ? '100%' : undefined, maxHeight: m ? '100%' : '92vh',
+        display: 'flex', flexDirection: 'column', background: '#fff', borderRadius: m ? 0 : 20,
         zIndex: 961, boxShadow: '0 24px 70px rgba(12,11,18,.34)', overflow: 'hidden',
       }}>
-        <div style={{ padding: esMovil ? '14px 16px' : '18px 24px', borderBottom: '1px solid #f0eff3', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <b style={{ fontSize: esMovil ? 16 : 18, letterSpacing: '-0.02em', flex: 1 }}>Nueva llamada inteligente</b>
-          <button onClick={() => setF(FILTROS_INICIALES)}
-            style={{ border: 'none', background: 'none', color: '#6b7280', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
-            Empezar de cero
-          </button>
+        {/* En el teléfono: cerrar a la izquierda (44×44, donde lo busca el
+            pulgar de la otra mano), título corto y «Empezar de cero» con blanco
+            completo. «Nueva llamada inteligente» no cabía junto a sus botones. */}
+        <div style={{ padding: m ? '4px 8px 8px 4px' : '18px 24px', paddingTop: m ? 'max(4px, env(safe-area-inset-top))' : undefined, borderBottom: '1px solid #f0eff3', display: 'flex', alignItems: 'center', gap: m ? 4 : 10, flexShrink: 0 }}>
+          {m && (
+            <button type="button" onClick={onCerrar} aria-label="Cerrar"
+              style={{ width: 44, height: 44, border: 'none', background: 'none', borderRadius: 10, fontSize: 26, lineHeight: 1, color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>×</button>
+          )}
+          {/* Ya en la lista, la cabecera dice que estás revisando a quién vas a
+              llamar, no que sigues armándola. El cuántos ya lo dice el número grande. */}
+          <b style={{ fontSize: m ? 17 : 18, letterSpacing: '-0.02em', flex: 1, minWidth: 0 }}>
+            {!m ? 'Nueva llamada inteligente' : enLista ? 'A quién vas a llamar' : 'Armar la lista'}
+          </b>
+          {/* En el teléfono sólo aparece cuando hay algo que borrar: deshabilitado
+              quedaba a 1.9:1 de contraste y parecía roto. */}
+          {(!m || (!enLista && hayFiltros)) && (
+            <button type="button" onClick={empezarDeCero}
+              style={{ border: 'none', background: 'none', color: '#6b7280', fontFamily: 'inherit', fontSize: m ? 14 : 12.5, fontWeight: 700, cursor: 'pointer', minHeight: m ? 44 : undefined, padding: m ? '0 10px' : undefined, flexShrink: 0 }}>
+              Empezar de cero
+            </button>
+          )}
         </div>
 
-        <div style={{ display: 'flex', flex: 1, minHeight: 0, flexDirection: esMovil ? 'column' : 'row' }}>
+        {/* En el teléfono es UNA sola columna que scrollea completa: filtros y
+            después a quién vas a llamar. Partida en dos, la vista previa se
+            quedaba en una rendija de 30 px abajo de los filtros. */}
+        {/* scroll-padding-bottom de 56: un chip o campo que se lleva a la vista
+            (scrollIntoView, foco) queda con aire arriba de la barra del pulgar
+            y nunca pegado a «Ver la lista». Con 120 lo empujaba hasta la
+            cabecera, pegado a «Cerrar». */}
+        <div ref={scrollRef} onScroll={m ? alScroll : undefined}
+          onTouchStart={m ? () => { dedo.current = true; clearTimeout(tAcomodo.current); } : undefined}
+          onTouchEnd={m ? () => { dedo.current = false; clearTimeout(tAcomodo.current); tAcomodo.current = setTimeout(acomodar, 120); } : undefined}
+          onTouchCancel={m ? () => { dedo.current = false; } : undefined} style={{ display: 'flex', flex: 1, minHeight: 0, flexDirection: m ? 'column' : 'row', overflowY: m ? 'auto' : undefined, WebkitOverflowScrolling: 'touch' as any, scrollPaddingTop: m ? 24 : undefined, scrollPaddingBottom: m ? 56 : undefined, overscrollBehavior: m ? 'contain' : undefined }}>
+          {/* Orilla de arriba: 24 px (eran 10) que se desvanecen y no se pueden tocar. Un
+              chip a medias bajo la cabecera ya no queda pegado a «Cerrar» o
+              «Empezar de cero»: el dedo que apunta a la barra cae aquí. */}
+          {m && <div aria-hidden style={{ position: 'sticky', top: 0, height: 24, marginBottom: -24, flexShrink: 0, zIndex: 2, background: enLista ? 'linear-gradient(#fafafb, rgba(250,250,251,0))' : 'linear-gradient(#fff, rgba(255,255,255,0))' }} />}
           {/* ── Los filtros ── */}
-          <div style={{ flex: esMovil ? '1 1 auto' : '0 0 420px', padding: esMovil ? 16 : 22, borderRight: esMovil ? 'none' : '1px solid #f0eff3', overflowY: 'auto' }}>
+          <div style={{ flex: m ? 'none' : '0 0 420px', padding: m ? '18px 16px 8px' : 22, borderRight: m ? 'none' : '1px solid #f0eff3', overflowY: m ? 'visible' : 'auto' }}>
 
-            <Bloque titulo="1 · De dónde salen">
-              <Opciones valor={f.fuente} onCambio={v => set('fuente', v)} opts={[
+            <Bloque movil={m} titulo="1 · De dónde salen">
+              <Opciones movil={m} cols={3} valor={f.fuente} onCambio={v => set('fuente', v)} opts={[
                 { v: 'crm', l: 'Mis leads', sub: 'Los contactos del CRM' },
                 { v: 'abm', l: 'Prospección en frío', sub: 'Las cuentas del ABM' },
                 { v: 'ambas', l: 'Las dos' },
               ]} />
             </Bloque>
 
-            <Bloque titulo="Por dónde se les puede hablar">
-              <Opciones valor={f.canal} onCambio={v => set('canal', v)} opts={[
+            <Bloque movil={m} titulo="Por dónde se les puede hablar">
+              <Opciones movil={m} valor={f.canal} onCambio={v => set('canal', v)} opts={[
                 { v: '', l: 'Como sea' },
                 { v: 'wa_verificado', l: 'WhatsApp verificado', sub: 'Ya comprobamos que ese número recibe WhatsApp' },
                 { v: 'wa', l: 'Tienen WhatsApp' },
                 { v: 'solo_tel', l: 'Teléfono sin WhatsApp' },
               ]} />
               {f.canal === 'wa_verificado' && (
-                <p style={{ fontSize: 11.5, color: '#6b7280', margin: '7px 0 0', lineHeight: 1.5 }}>
+                <p style={{ fontSize: m ? 14 : 11.5, color: '#6b7280', margin: '7px 0 0', lineHeight: 1.5 }}>
                   Si no contesta, el seguimiento le llega por WhatsApp al mismo número — no se pierde el intento.
                 </p>
               )}
             </Bloque>
 
-            <Bloque titulo={`2 · Giro${f.giros.length ? ` · ${f.giros.length} elegidos` : ''}`}>
-              <Chips valores={f.giros} onCambio={v => set('giros', v)} opts={girosOpts}
+            <Bloque movil={m} titulo={`2 · Giro${f.giros.length ? ` · ${f.giros.length} ${f.giros.length === 1 ? 'elegido' : 'elegidos'}` : ''}`}>
+              <Chips movil={m} valores={f.giros} onCambio={v => set('giros', v)} opts={girosOpts}
                 vacio={conAbm ? 'Cargando los giros…' : 'Tus contactos todavía no tienen giro capturado.'} />
             </Bloque>
 
-            <Bloque titulo="Tamaño del negocio">
-              <div style={{ display: 'flex', gap: 8 }}>
-                <label style={{ flex: 1 }}>
-                  <span style={{ fontSize: 11.5, color: '#6b7280', display: 'block', marginBottom: 4 }}>Desde</span>
-                  <input type="number" min={0} placeholder="tiendas" value={f.suc_min} onChange={e => set('suc_min', e.target.value)} style={inp} />
+            <Bloque movil={m} titulo="Tamaño del negocio">
+              <div style={{ display: 'flex', gap: m ? 10 : 8 }}>
+                <label style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ fontSize: tEtiq, color: tEtiqColor, display: 'block', marginBottom: 4 }}>Desde</span>
+                  <input type="number" inputMode="numeric" min={0} placeholder="tiendas" value={f.suc_min} onChange={e => set('suc_min', e.target.value)} style={inpX} />
                 </label>
-                <label style={{ flex: 1 }}>
-                  <span style={{ fontSize: 11.5, color: '#6b7280', display: 'block', marginBottom: 4 }}>Hasta</span>
-                  <input type="number" min={0} placeholder="sin tope" value={f.suc_max} onChange={e => set('suc_max', e.target.value)} style={inp} />
+                <label style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ fontSize: tEtiq, color: tEtiqColor, display: 'block', marginBottom: 4 }}>Hasta</span>
+                  <input type="number" inputMode="numeric" min={0} placeholder="sin tope" value={f.suc_max} onChange={e => set('suc_max', e.target.value)} style={inpX} />
                 </label>
               </div>
-              <div style={{ display: 'flex', gap: 6, marginTop: 7, flexWrap: 'wrap' }}>
-                {[['3', 'Más de 3'], ['5', 'Más de 5'], ['10', 'Más de 10']].map(([v, l]) => (
-                  <button key={v} type="button" onClick={() => set('suc_min', f.suc_min === v ? '' : v)}
-                    style={{ fontFamily: 'inherit', cursor: 'pointer', borderRadius: 999, padding: '4px 10px', fontSize: 11.5, fontWeight: f.suc_min === v ? 800 : 600, border: `1px solid ${f.suc_min === v ? P.violeta : '#e6e4ec'}`, background: f.suc_min === v ? '#EEECFE' : '#fff', color: f.suc_min === v ? P.violetaTinta : '#4B5563' }}>{l}</button>
+              {/* «Desde 3» y el atajo dicen lo mismo: 3 cuenta. Por eso «3 o más»
+                  y no «Más de 3», que prendía encendido con 3 escrito a mano. */}
+              <div style={m ? { ...rejilla(3), marginTop: 10 } : { display: 'flex', gap: 6, marginTop: 7, flexWrap: 'wrap' }}>
+                {[['3', '3 o más'], ['5', '5 o más'], ['10', '10 o más']].map(([v, l]) => (
+                  <button key={v} type="button" aria-pressed={f.suc_min === v} onClick={() => set('suc_min', f.suc_min === v ? '' : v)}
+                    style={estiloChip(f.suc_min === v, m, true, true, m)}>{l}</button>
                 ))}
               </div>
             </Bloque>
 
-            {conCrm && (
-              <Bloque titulo="Etapa del ciclo de vida">
-                <Chips valores={f.etapas} onCambio={v => set('etapas', v)}
+            {conCrm && etapas.length > 0 && (
+              <Bloque movil={m} titulo="Etapa del ciclo de vida">
+                <Chips movil={m} valores={f.etapas} onCambio={v => set('etapas', v)}
                   opts={etapas.map(e => ({ v: e.id, l: e.label }))} vacio="" />
               </Bloque>
             )}
 
             {conAbm && (
               <>
-                <Bloque titulo="Dónde están">
-                  <Chips valores={f.estado_geo} onCambio={v => set('estado_geo', v)}
+                <Bloque movil={m} titulo="Dónde están">
+                  <Chips movil={m} valores={f.estado_geo} onCambio={v => set('estado_geo', v)}
                     opts={(cat?.estados || []).map(e => ({ v: e.estado, l: e.estado, n: e.n }))} vacio="Cargando…" />
-                  <input placeholder="o escribe una ciudad" value={f.ciudad} onChange={e => set('ciudad', e.target.value)} style={{ ...inp, marginTop: 8 }} />
+                  <input placeholder="o escribe una ciudad" value={f.ciudad} onChange={e => set('ciudad', e.target.value)} style={{ ...inpX, marginTop: m ? 10 : 8 }} />
                 </Bloque>
 
-                <Bloque titulo="Qué tan bien se ven">
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <label style={{ flex: 1 }}>
-                      <span style={{ fontSize: 11.5, color: '#6b7280', display: 'block', marginBottom: 4 }}>Estrellas mín.</span>
-                      <input type="number" step="0.1" min={0} max={5} placeholder="4.0" value={f.rating_min} onChange={e => set('rating_min', e.target.value)} style={inp} />
+                <Bloque movil={m} titulo="Qué tan bien se ven">
+                  <div style={{ display: 'flex', gap: m ? 10 : 8 }}>
+                    <label style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: tEtiq, color: tEtiqColor, display: 'block', marginBottom: 4 }}>Estrellas mín.</span>
+                      <input type="number" inputMode="decimal" step="0.1" min={0} max={5} placeholder={m ? 'ej. 4.0' : '4.0'} value={f.rating_min} onChange={e => set('rating_min', e.target.value)} style={inpX} />
                     </label>
-                    <label style={{ flex: 1 }}>
-                      <span style={{ fontSize: 11.5, color: '#6b7280', display: 'block', marginBottom: 4 }}>Reseñas mín.</span>
-                      <input type="number" min={0} placeholder="20" value={f.resenas_min} onChange={e => set('resenas_min', e.target.value)} style={inp} />
+                    <label style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: tEtiq, color: tEtiqColor, display: 'block', marginBottom: 4 }}>Reseñas mín.</span>
+                      <input type="number" inputMode="numeric" min={0} placeholder={m ? 'ej. 20' : '20'} value={f.resenas_min} onChange={e => set('resenas_min', e.target.value)} style={inpX} />
                     </label>
                   </div>
                   {/* Una tienda de 5.0 con dos reseñas no es una buena tienda:
                       es una tienda sin reseñas. Por eso las dos juntas. */}
-                  <p style={{ fontSize: 11, color: '#a5a2af', margin: '6px 0 0', lineHeight: 1.45 }}>
+                  <p style={{ fontSize: tAyuda, color: m ? '#6b7280' : '#a5a2af', margin: '6px 0 0', lineHeight: 1.45 }}>
                     Un 5.0 con dos reseñas no dice nada. Las dos cosas juntas sí.
                   </p>
                 </Bloque>
@@ -335,108 +517,161 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
             )}
 
             {conCrm && (
-              <Bloque titulo="De quién son">
-                <Opciones valor={f.owner} onCambio={v => set('owner', v)} opts={[
+              <Bloque movil={m} titulo="De quién son">
+                <Opciones movil={m} cols={3} valor={f.owner} onCambio={v => set('owner', v)} opts={[
                   { v: '', l: 'De cualquiera' }, { v: 'mias', l: 'Míos' }, { v: 'sin_asignar', l: 'Sin dueño' },
                 ]} />
               </Bloque>
             )}
 
-            <Bloque titulo="3 · A quién NO llamar">
-              <label style={{ display: 'block', marginBottom: 11 }}>
-                <span style={{ fontSize: 12.5, fontWeight: 600, color: '#3a3a44' }}>Ya les marqué sin que contesten</span>
-                <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+            <Bloque movil={m} titulo="3 · A quién NO llamar">
+              <div style={{ marginBottom: m ? 14 : 11 }}>
+                <span style={{ fontSize: tSub, fontWeight: 600, color: '#3a3a44', display: 'block' }}>Ya les marqué sin que contesten</span>
+                <div style={m ? { ...rejilla(2), marginTop: 8 } : { display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
                   {[['', 'No los quites'], ['2', '2 veces o más'], ['3', '3 veces o más'], ['5', '5 veces o más']].map(([v, l]) => (
-                    <button key={v || 'no'} type="button" onClick={() => set('quemados', v)}
-                      style={{ fontFamily: 'inherit', cursor: 'pointer', borderRadius: 9, padding: '6px 10px', fontSize: 12, fontWeight: f.quemados === v ? 800 : 600, border: `1px solid ${f.quemados === v ? P.violeta : '#e6e4ec'}`, background: f.quemados === v ? '#EEECFE' : '#fff', color: f.quemados === v ? P.violetaTinta : '#4B5563' }}>{l}</button>
+                    <button key={v || 'no'} type="button" aria-pressed={f.quemados === v} onClick={() => set('quemados', v)}
+                      style={estiloChip(f.quemados === v, m, false, true, m)}>{l}</button>
                   ))}
                 </div>
                 {previa?.descartados?.quemados > 0 && f.quemados && (
-                  <span style={{ fontSize: 11, color: '#9a6a10', display: 'block', marginTop: 5 }}>
-                    Se quitan {previa.descartados.quemados} números por esta regla.
+                  <span style={{ fontSize: tAyuda, color: '#9a6a10', display: 'block', marginTop: 5 }}>
+                    Se quitan {previa?.descartados?.quemados} números por esta regla.
                   </span>
                 )}
-              </label>
-              <Palomita on={f.excluir_con_accion} onCambio={v => set('excluir_con_accion', v)}
+              </div>
+              <Palomita movil={m} on={f.excluir_con_accion} onCambio={v => set('excluir_con_accion', v)}
                 texto="Los que ya tuvieron una acción" porque="Reunión, seguimiento, oportunidad o descalificado: con ellos ya hay un proceso en marcha." />
               {previa?.descartados?.con_accion > 0 && f.excluir_con_accion && (
-                <span style={{ fontSize: 11, color: '#9a6a10', display: 'block', margin: '-4px 0 8px' }}>
+                <span style={{ fontSize: tAyuda, color: '#9a6a10', display: 'block', margin: m ? '-2px 0 10px 34px' : '-4px 0 8px' }}>
                   Se quitan {previa?.descartados?.con_accion} por esta regla.
                 </span>
               )}
-              <Palomita on={f.excluir_clientes} onCambio={v => set('excluir_clientes', v)}
+              <Palomita movil={m} on={f.excluir_clientes} onCambio={v => set('excluir_clientes', v)}
                 texto="Los que ya son clientes" porque="Venderle otra vez a quien ya compró se hace por otro camino." />
-              <Palomita on={f.excluir_con_reunion} onCambio={v => set('excluir_con_reunion', v)}
+              <Palomita movil={m} on={f.excluir_con_reunion} onCambio={v => set('excluir_con_reunion', v)}
                 texto="Los que ya tienen cita próxima" porque="Llamarle a quien vas a ver el martes gasta el contacto." />
               {conAbm && (
-                <Palomita on={f.excluir_en_cadencia} onCambio={v => set('excluir_en_cadencia', v)}
+                <Palomita movil={m} on={f.excluir_en_cadencia} onCambio={v => set('excluir_en_cadencia', v)}
                   texto="Los que están en cadencia del ABM" porque="Ya les está escribiendo el correo automático hoy." />
               )}
-              <Palomita on={f.nunca_llamados} onCambio={v => set('nunca_llamados', v)}
+              <Palomita movil={m} on={f.nunca_llamados} onCambio={v => set('nunca_llamados', v)}
                 texto="Solo los que nunca he tocado" porque="Para estrenar una lista sin repetir a nadie." />
-              <label style={{ display: 'block', marginTop: 4 }}>
-                <span style={{ fontSize: 12.5, fontWeight: 600, color: '#3a3a44' }}>Sin contacto desde hace</span>
-                <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+              <div style={{ marginTop: m ? 10 : 4 }}>
+                <span style={{ fontSize: tSub, fontWeight: 600, color: '#3a3a44', display: 'block' }}>Sin contacto desde hace</span>
+                <div style={m ? { ...rejilla(4), marginTop: 8 } : { display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
                   {[['', 'Da igual'], ['15', '15 días'], ['30', '1 mes'], ['90', '3 meses']].map(([v, l]) => (
-                    <button key={v || 'no'} type="button" onClick={() => set('sin_tocar_dias', v)}
-                      style={{ fontFamily: 'inherit', cursor: 'pointer', borderRadius: 9, padding: '6px 10px', fontSize: 12, fontWeight: f.sin_tocar_dias === v ? 800 : 600, border: `1px solid ${f.sin_tocar_dias === v ? P.violeta : '#e6e4ec'}`, background: f.sin_tocar_dias === v ? '#EEECFE' : '#fff', color: f.sin_tocar_dias === v ? P.violetaTinta : '#4B5563' }}>{l}</button>
+                    <button key={v || 'no'} type="button" aria-pressed={f.sin_tocar_dias === v} onClick={() => set('sin_tocar_dias', v)}
+                      style={estiloChip(f.sin_tocar_dias === v, m, false, true, m)}>{l}</button>
                   ))}
                 </div>
-              </label>
+              </div>
             </Bloque>
 
             {conAbm && (
-              <Bloque titulo="Por dónde empezar">
-                <Opciones valor={f.orden} onCambio={v => set('orden', v)} opts={[
+              <Bloque movil={m} titulo="Por dónde empezar">
+                {/* En el teléfono, una opción por renglón: con 3 en rejilla de
+                    2, «Los mejor calificados» quedaba sola en su renglón. */}
+                <Opciones movil={m} cols={1} valor={f.orden} onCambio={v => set('orden', v)} opts={[
                   { v: 'puntaje', l: 'Los que mejor encajan' },
                   { v: 'sucursales', l: 'Los más grandes' },
                   { v: 'rating', l: 'Los mejor calificados' },
                 ]} />
-                <p style={{ fontSize: 11, color: '#a5a2af', margin: '6px 0 0', lineHeight: 1.45 }}>
+                <p style={{ fontSize: tAyuda, color: m ? '#6b7280' : '#a5a2af', margin: '6px 0 0', lineHeight: 1.45 }}>
                   La jornada marca en este orden, así que si no da tiempo de terminarla, los primeros son los que más valían.
                 </p>
               </Bloque>
             )}
 
-            <p style={{ fontSize: 11.5, color: '#a5a2af', lineHeight: 1.55, margin: 0 }}>
-              Siempre se quitan solos, elijas lo que elijas: los que no tienen teléfono,
-              los marcados «no llamar», los que se descalificaron alguna vez y los que
-              están en la lista de bloqueo.
-            </p>
+            {/* En el teléfono esta nota vive al pie de la lista (ronda 5): aquí
+                salía justo antes del conteo y se leía dos veces en el recorrido. */}
+            {!m && (
+              <p style={{ fontSize: 11.5, color: '#a5a2af', lineHeight: 1.55, margin: 0 }}>
+                Siempre se quitan solos, elijas lo que elijas: los que no tienen teléfono,
+                los marcados «no llamar», los que se descalificaron alguna vez y los que
+                están en la lista de bloqueo.
+              </p>
+            )}
           </div>
 
           {/* ── A quién vas a llamar ── */}
-          <div style={{ flex: 1, minWidth: 0, padding: esMovil ? 16 : 22, overflowY: 'auto', background: '#fafafb' }}>
+          {/* En el teléfono mide al menos el alto de la columna: así «Ver la
+              lista» siempre puede dejarla arriba aunque vengan pocos nombres. */}
+          <div ref={previaRef} style={{ flex: m ? 'none' : 1, minWidth: 0, minHeight: m ? '100%' : undefined, padding: m ? '24px 16px 24px' : 22, overflowY: m ? 'visible' : 'auto', background: '#fafafb', borderTop: m ? '1px solid #f0eff3' : undefined, scrollMarginTop: 0 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, marginBottom: 4 }}>
               <b style={{ fontSize: 34, letterSpacing: '-0.03em', color: n ? P.violetaTinta : '#a5a2af', fontVariantNumeric: 'tabular-nums' }}>
-                {cargando ? '…' : n.toLocaleString('es-MX')}
+                {cargando ? '…' : m && error ? '—' : n.toLocaleString('es-MX')}
               </b>
-              <span style={{ fontSize: 13, color: '#6b7280' }}>{n === 1 ? 'para llamar' : 'para llamar'}</span>
+              <span style={{ fontSize: m ? 15 : 13, color: '#6b7280' }}>{n === 1 ? 'para llamar' : 'para llamar'}</span>
             </div>
-            {titulo && <div style={{ fontSize: 12.5, color: '#6b7280', marginBottom: 12 }}>{titulo}</div>}
+            {/* En el teléfono dice TODOS los filtros puestos, no sólo la fuente:
+                es el resumen de qué incluye la lista antes de marcar. */}
+            {/* Lo que tranquiliza antes de apretar «Llamar a estos N» va pegado
+                al número, no al fondo donde casi nadie llega. */}
+            {/* Si la vista previa es sólo una parte, se dice aquí arriba («ves 24
+                de 82») y no hasta el final, para que no parezca que se cortó. */}
+            {m && n > 0 && !cargando && (
+              <div style={{ fontSize: 14, color: '#3a3a44', lineHeight: 1.45, marginBottom: 2 }}>
+                {n > (previa?.filas || []).length && (previa?.filas || []).length > 0 && <>Aquí ves <b>{(previa?.filas || []).length} de {n.toLocaleString('es-MX')}</b>. </>}
+                Podrás quitar a quien quieras antes del primer timbre.
+              </div>
+            )}
+            {titulo && <div style={{ fontSize: m ? 14 : 12.5, color: '#6b7280', marginBottom: m ? 12 : 12, lineHeight: 1.45 }}>{m ? resumen : titulo}</div>}
 
             {error && (
-              <div style={{ background: '#FDF0EE', border: '1px solid #f0c4bd', color: '#C0554E', borderRadius: 9, padding: '9px 12px', fontSize: 12.5, marginBottom: 12 }}>{error}</div>
+              <div role="alert" style={{ background: '#FDF0EE', border: '1px solid #f0c4bd', color: '#C0554E', borderRadius: 9, padding: '9px 12px', fontSize: m ? 14 : 12.5, marginBottom: 12, display: 'flex', flexDirection: m ? 'column' : 'row', alignItems: m ? 'stretch' : 'center', gap: m ? 10 : 10 }}>
+                <span style={{ flex: 1, minWidth: 0, lineHeight: 1.45 }}>{error}</span>
+                {/* Vuelve a pedir el conteo con los mismos filtros. */}
+                <button type="button" onClick={() => setIntento(x => x + 1)} disabled={cargando}
+                  style={{ border: '1.5px solid #C0554E', background: '#fff', color: '#C0554E', borderRadius: m ? 12 : 9, minHeight: m ? 44 : undefined, padding: m ? '0 16px' : '5px 12px', fontSize: m ? 15 : 12.5, fontWeight: 800, fontFamily: 'inherit', cursor: cargando ? 'default' : 'pointer', flexShrink: 0 }}>
+                  {cargando ? 'Contando…' : 'Reintentar'}
+                </button>
+              </div>
             )}
             {!cargando && !n && !error && (
-              <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.6 }}>
-                Con esos filtros no queda nadie. Prueba quitando el giro o bajando las sucursales.
+              <div style={{ fontSize: m ? 14 : 13, color: '#6b7280', lineHeight: 1.6 }}>
+                Con esos filtros no queda nadie. Prueba quitando el giro o bajando el número de tiendas.
               </div>
             )}
             {n > 500 && (
               /* El tope real de una jornada. Decirlo aquí y no al crear la sesión
                  evita armar una lista de nueve mil y descubrir el corte después. */
-              <div style={{ background: '#FFF4E5', border: '1px solid #f3d9a4', color: '#9a6a10', borderRadius: 9, padding: '9px 12px', fontSize: 12, marginBottom: 12, lineHeight: 1.5 }}>
+              <div style={{ background: '#FFF4E5', border: '1px solid #f3d9a4', color: '#9a6a10', borderRadius: 9, padding: '9px 12px', fontSize: m ? 14 : 12, marginBottom: 12, lineHeight: 1.5 }}>
                 Una jornada marca hasta <b>500</b>. Se van a tomar los primeros 500 en el orden que elegiste; el resto queda para la siguiente.
               </div>
             )}
 
-            <div style={{ display: 'grid', gap: 4 }}>
-              {(previa?.filas || []).map((c: any) => (
-                <div key={c.id} style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 9, padding: '8px 11px', display: 'flex', gap: 9, alignItems: 'center' }}>
+            <div style={m
+              /* En el teléfono es una LISTA, no una pila de botones: renglones
+                 con línea divisoria dentro de una sola hoja. Con borde y fondo
+                 blanco cada uno se veía igual que los chips y se tocaba
+                 esperando algo que no pasa. */
+              ? { display: (previa?.filas || []).length ? 'block' : 'none', background: '#fff', border: '1px solid #f0eff3', borderRadius: 12, padding: '0 14px', minWidth: 0 }
+              : { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 4 }}>
+              {(previa?.filas || []).map((c: any, i: number) => m ? (
+                /* Tres renglones: el nombre completo (sin cortar), a qué número
+                   y a qué zona se va a marcar, y tiendas · giro · WhatsApp. */
+                <div key={c.id} style={{ padding: '11px 0', borderTop: i ? '1px solid #f0eff3' : 'none', minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#16181d', lineHeight: 1.3, overflowWrap: 'anywhere' }}>
+                    {c.contacto?.nombre || telefonoLegible(c.telefono)}
+                  </div>
+                  {(c.telefono || c.ciudad || c.estado_geo) && (
+                    <div style={{ marginTop: 3, fontSize: 14, color: '#3a3a44', lineHeight: 1.4, overflowWrap: 'anywhere' }}>
+                      {c.telefono && <span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{telefonoLegible(c.telefono)}</span>}
+                      {(c.ciudad || c.estado_geo) && <span style={{ color: '#6b7280' }}>{c.telefono ? ' · ' : ''}{[c.ciudad, c.estado_geo].filter(Boolean).join(', ')}</span>}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 8px', marginTop: 3, fontSize: 14, color: '#6b7280' }}>
+                    <span style={{ overflowWrap: 'anywhere' }}>
+                      {[c.sucursales ? `${c.sucursales} ${c.sucursales === 1 ? 'tienda' : 'tiendas'}` : '', c.giro || c.contacto?.lifecycle_stage || ''].filter(Boolean).join(' · ')}
+                    </span>
+                    {c.tiene_wa && <span style={{ fontSize: 12, fontWeight: 800, borderRadius: 999, padding: '2px 8px', background: '#EAF8F2', color: '#1E8A63' }}>WhatsApp</span>}
+                  </div>
+                </div>
+              ) : (
+                <div key={c.id} style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 9, padding: '8px 11px', display: 'flex', gap: 9, alignItems: 'center', minWidth: 0 }}>
                   <b style={{ fontSize: 12.5, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {c.contacto?.nombre || c.telefono}
-                    {c.sucursales ? <span style={{ fontWeight: 500, color: '#999' }}> · {c.sucursales} tiendas</span> : null}
+                    {c.sucursales ? <span style={{ fontWeight: 500, color: '#999' }}> · {c.sucursales} {c.sucursales === 1 ? 'tienda' : 'tiendas'}</span> : null}
                   </b>
                   {c.tiene_wa && <span style={{ fontSize: 9.5, fontWeight: 800, borderRadius: 999, padding: '2px 7px', background: '#EAF8F2', color: '#1E8A63' }}>WA</span>}
                   <span style={{ fontSize: 11, color: '#999', flexShrink: 0, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.giro || c.contacto?.lifecycle_stage || ''}</span>
@@ -444,21 +679,81 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
               ))}
             </div>
             {n > (previa?.filas || []).length && (
-              <div style={{ fontSize: 11.5, color: '#a5a2af', marginTop: 9 }}>
-                y {(n - (previa?.filas || []).length).toLocaleString('es-MX')} más. Vas a poder revisarlos todos antes de marcar.
+              <div style={{ fontSize: m ? 14 : 11.5, color: m ? '#6b7280' : '#a5a2af', marginTop: m ? 12 : 9, lineHeight: 1.5 }}>
+                {m
+                  ? <>Y <b style={{ color: '#3a3a44' }}>{(n - (previa?.filas || []).length).toLocaleString('es-MX')} más</b>: la lista completa sale en la siguiente pantalla.</>
+                  : <>y {(n - (previa?.filas || []).length).toLocaleString('es-MX')} más. Vas a poder revisarlos todos antes de marcar.</>}
               </div>
             )}
+            {/* Una sola nota corta, al pie, junto a «Y N más». */}
+            {m && (
+              <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.5, margin: '12px 0 0' }}>
+                Siempre se quitan solos: los que no tienen teléfono, los «no llamar», los descalificados y los bloqueados.
+              </p>
+            )}
           </div>
+          {/* Orilla de abajo: 24 px que se desvanecen y no se pueden tocar. Un
+              chip medio escondido bajo el borde ya no queda pegado a «Ver la
+              lista» ni a «Llamar a estos N»: el dedo que apunta abajo cae aquí. */}
+          {m && <div aria-hidden style={{ position: 'sticky', bottom: 0, height: 24, marginTop: -24, flexShrink: 0, zIndex: 2, background: enLista ? 'linear-gradient(rgba(250,250,251,0), #fafafb)' : 'linear-gradient(rgba(255,255,255,0), #fff)' }} />}
         </div>
 
-        <div style={{ padding: esMovil ? '12px 16px' : '14px 22px', borderTop: '1px solid #f0eff3', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#6b7280', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
-          <div style={{ flex: 1 }} />
+        {/* La barra del pulgar. En el teléfono: arriba un renglón con CUÁNTOS
+            quedan y con qué filtros —cambia (y parpadea) en cuanto tocas un
+            chip, sin tener que bajar 2,800 px a ver el número grande—; abajo
+            «Ver la lista» (o «Ajustar filtros» si ya estás en ella) y «Llamar a
+            estos N» a lo ancho, a 48 px. Cancelar ya vive en la × de arriba. */}
+        {/* Abajo, 16 px mínimo (eran 10): en los Android sin muesca los botones
+            quedaban casi en la orilla curva de la pantalla. Con muesca manda
+            el safe-area, como antes. */}
+        <div style={{ padding: m ? '8px 16px 16px' : '14px 22px', paddingBottom: m ? 'max(16px, calc(8px + env(safe-area-inset-bottom)))' : undefined, borderTop: '1px solid #f0eff3', display: 'flex', flexDirection: m ? 'column' : 'row', alignItems: m ? 'stretch' : 'center', gap: m ? 8 : 10, flexShrink: 0, background: '#fff', boxShadow: m ? '0 -6px 16px rgba(12,11,18,.05)' : undefined }}>
+          {/* Recién borrados los filtros: 5 s para deshacerlo, en el mismo
+              lugar donde el pulgar ya está. */}
+          {m && antes && (
+            <div role="status" style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, fontSize: 14, color: '#3a3a44' }}>
+              <span style={{ flex: 1, minWidth: 0 }}>Quitaste todos los filtros.</span>
+              <button type="button" onClick={deshacer}
+                style={{ border: 'none', background: '#EEECFE', color: P.violetaTinta, borderRadius: 10, minHeight: 44, padding: '0 16px', fontSize: 15, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0 }}>
+                Deshacer
+              </button>
+            </div>
+          )}
+          {/* Sin tope de renglones: el número va primero y nunca se corta, y los
+              filtros caben completos —el último que tocaste era justo el que se
+              iba al «…» en 360 y 390—; con muchos filtros, salta de renglón.
+              Ya en la lista no se repite: el número grande está a la vista. */}
+          {m && !antes && !enLista && (
+            <div aria-live="polite" style={{ minWidth: 0, fontSize: 14, color: '#6b7280', lineHeight: 1.4, overflowWrap: 'anywhere' }}>
+              <style>{'@keyframes armadorLatido{0%{transform:scale(1.18);color:#7C3AED}100%{transform:scale(1)}}'}</style>
+              <b key={cargando ? 'c' : n} style={{ fontSize: 17, fontWeight: 800, color: cargando || !n ? '#6b7280' : P.violetaTinta, fontVariantNumeric: 'tabular-nums', display: 'inline-block', transformOrigin: 'left center', animation: cargando ? undefined : 'armadorLatido .45s ease-out', flexShrink: 0 }}>
+                {cargando ? 'Contando…' : n.toLocaleString('es-MX')}
+              </b>
+              {!cargando && <span style={{ whiteSpace: 'nowrap' }}>&nbsp;para llamar</span>}
+              {/* Cada filtro corto es un pedazo que no se parte: «3+ tiendas»
+                  salta junto y nunca deja «tiendas» sola en el segundo renglón.
+                  Los largos (dos giros juntos) sí se parten, para no salirse. */}
+              {resumen.split(' · ').map((pz, i) => <span key={i}> · <span style={{ whiteSpace: pz.length <= 22 ? 'nowrap' : undefined }}>{pz}</span></span>)}
+            </div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: m ? undefined : 1 }}>
+          {m ? (
+            <button type="button" onClick={enLista ? irAFiltros : irALista} disabled={!enLista && !n}
+              style={{ border: `1.5px solid ${P.violeta}`, borderRadius: 12, minHeight: 48, padding: '0 14px', fontSize: 15, fontWeight: 700, fontFamily: 'inherit', background: '#fff', color: P.violetaTinta, cursor: enLista || n ? 'pointer' : 'default', opacity: enLista || n ? 1 : 0.5, flexShrink: 0 }}>
+              {enLista ? 'Ajustar filtros' : 'Ver la lista'}
+            </button>
+          ) : (
+            <>
+              <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#6b7280', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
+              <div style={{ flex: 1 }} />
+            </>
+          )}
+          {/* Mientras recalcula, el botón no presume el número viejo. */}
           <button onClick={() => onListo({ titulo: titulo || 'Lista a la medida', qs, total: n })} disabled={!n || cargando}
-            style={{ border: 'none', borderRadius: 11, padding: '11px 20px', fontSize: 14, fontWeight: 800, fontFamily: 'inherit',
-              cursor: n && !cargando ? 'pointer' : 'default', background: n && !cargando ? P.violetaTinta : '#e0dfe6', color: '#fff' }}>
-            {n ? `Llamar a estos ${Math.min(n, 500).toLocaleString('es-MX')}` : 'Llamar a estos'}
+            style={{ border: 'none', borderRadius: m ? 12 : 11, padding: m ? '0 16px' : '11px 20px', minHeight: m ? 48 : undefined, flex: m ? 1 : undefined, minWidth: 0, fontSize: m ? 16 : 14, fontWeight: 800, fontFamily: 'inherit',
+              cursor: n && !cargando ? 'pointer' : 'default', background: n && !cargando ? P.violetaTinta : '#e0dfe6', color: m && (cargando || !n) ? '#6b7280' : '#fff' }}>
+            {m && cargando ? 'Llamar a estos …' : n ? `Llamar a estos ${Math.min(n, 500).toLocaleString('es-MX')}` : 'Llamar a estos'}
           </button>
+          </div>
         </div>
       </div>
     </>

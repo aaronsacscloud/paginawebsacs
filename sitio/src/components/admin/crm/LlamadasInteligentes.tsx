@@ -178,21 +178,24 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
             <Chispas />
             <h1 style={{ fontSize: 21, fontWeight: 800, letterSpacing: '-0.02em', margin: 0, color: '#16181d' }}>Llamadas inteligentes <Sello>La voz que las enciende</Sello></h1>
           </div>
-          <p style={{ fontSize: 13, color: '#6b7280', margin: 0, maxWidth: 620, lineHeight: 1.55 }}>
+          <p style={{ fontSize: esMovil ? 14 : 13, color: '#6b7280', margin: 0, maxWidth: 620, lineHeight: 1.55 }}>
             Elige a quién le llamas hoy. La cabina marca uno tras otro, te pasa la
             llamada cuando contestan y al colgar deja la nota, la etapa y la cita.
           </p>
         </div>
         {/* EL BOTÓN, NO UNA TARJETA MÁS: uno por pantalla, en morado sólido, y
             arriba del todo. */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0, flexWrap: 'wrap', marginLeft: 'auto' }}>
+        {/* En el teléfono los dos botones ocupan el renglón completo a 48 px:
+            «Nueva llamada inteligente» es el verbo de la pantalla y va a lo
+            ancho, donde el pulgar lo alcanza sin apuntar (23-sep-2026). */}
+        <div style={{ display: 'flex', gap: esMovil ? 10 : 8, alignItems: 'center', flexShrink: 0, flexWrap: esMovil ? 'nowrap' : 'wrap', marginLeft: 'auto', width: esMovil ? '100%' : undefined }}>
           <button onClick={() => setVerGrabaciones(true)}
-            style={{ border: `1.5px solid ${P.violeta}`, borderRadius: 11, padding: '10px 16px', fontSize: 13.5, fontWeight: 700,
-              fontFamily: 'inherit', cursor: 'pointer', background: '#fff', color: P.violetaTinta }}>
+            style={{ border: `1.5px solid ${P.violeta}`, borderRadius: esMovil ? 12 : 11, padding: esMovil ? '0 14px' : '10px 16px', minHeight: esMovil ? 48 : undefined, fontSize: esMovil ? 15 : 13.5, fontWeight: 700,
+              fontFamily: 'inherit', cursor: 'pointer', background: '#fff', color: P.violetaTinta, flexShrink: 0 }}>
             Grabaciones
           </button>
           <button onClick={() => setArmando(true)}
-            style={{ border: 'none', borderRadius: 11, padding: '11px 20px', fontSize: 14, fontWeight: 800,
+            style={{ border: 'none', borderRadius: esMovil ? 12 : 11, padding: esMovil ? '0 14px' : '11px 20px', minHeight: esMovil ? 48 : undefined, flex: esMovil ? 1 : undefined, fontSize: esMovil ? 15.5 : 14, fontWeight: 800,
               fontFamily: 'inherit', cursor: 'pointer', background: P.violetaTinta, color: '#fff' }}>
             Nueva llamada inteligente
           </button>
@@ -204,8 +207,8 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
           onClick={e => { if (e.target === e.currentTarget) setVerGrabaciones(false); }}>
           <div style={{ background: '#F7F7F9', borderRadius: esMovil ? 0 : 16, width: esMovil ? '100%' : 'min(820px, 100%)', height: esMovil ? '100%' : 'min(88vh, 900px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#fff', borderBottom: '1px solid #ececec' }}>
-              <b style={{ fontSize: 14 }}>Grabaciones</b>
-              <button onClick={() => setVerGrabaciones(false)} style={{ border: 'none', background: 'none', fontSize: 20, cursor: 'pointer', color: '#6B7280', lineHeight: 1 }} aria-label="Cerrar">×</button>
+              <b style={{ fontSize: esMovil ? 16 : 14 }}>Grabaciones</b>
+              <button onClick={() => setVerGrabaciones(false)} style={{ border: 'none', background: 'none', fontSize: esMovil ? 26 : 20, cursor: 'pointer', color: '#6B7280', lineHeight: 1, ...(esMovil ? { width: 44, height: 44, margin: '-8px -10px -8px 0' } : {}) }} aria-label="Cerrar">×</button>
             </div>
             <Suspense fallback={<Cargando texto="Abriendo las grabaciones…" alto={200} />}>
               <Grabaciones movil={esMovil} />
@@ -215,7 +218,7 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
       )}
 
       {tel && !tel.ok && (
-        <div style={{ background: '#FFF4E5', border: '1px solid #f3d9a4', color: '#9a6a10', borderRadius: 9, padding: '9px 13px', fontSize: 12.5, marginBottom: 14 }}>
+        <div style={{ background: '#FFF4E5', border: '1px solid #f3d9a4', color: '#9a6a10', borderRadius: 9, padding: '9px 13px', fontSize: esMovil ? 14 : 12.5, lineHeight: 1.5, marginBottom: 14 }}>
           La telefonía no está configurada (faltan {tel.faltantes.length} datos). Puedes armar la lista y revisarla, pero no marcar.
         </div>
       )}
@@ -247,11 +250,11 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
                   borderRadius: 10, padding: '15px 17px', opacity: vacia ? 0.6 : 1,
                   display: 'flex', flexDirection: 'column', flex: '1 1 200px',
                 }}>
-                <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: '#999' }}>{l.titulo}</span>
+                <span style={{ fontSize: esMovil ? 12 : 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: '#999' }}>{l.titulo}</span>
                 <span style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', color: vacia ? '#a5a2af' : P.violetaTinta, margin: '2px 0 4px', fontVariantNumeric: 'tabular-nums' }}>{n}</span>
                 {/* marginTop:auto — así dos tarjetas del mismo renglón cierran a
                     la misma altura aunque un porqué ocupe una línea más. */}
-                <span style={{ fontSize: 11.5, color: '#888', lineHeight: 1.5, marginTop: 'auto' }}>
+                <span style={{ fontSize: esMovil ? 14 : 11.5, color: esMovil ? '#6b7280' : '#888', lineHeight: 1.5, marginTop: 'auto' }}>
                   {vacia ? 'Nadie en esta lista ahora mismo.' : l.porque}
                 </span>
               </button>
@@ -279,7 +282,7 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
         <TableroLlamadas onAbrirSesion={id => setVerSesion(id)} />
       </Suspense>
 
-      <p style={{ fontSize: 11.5, color: '#a5a2af', marginTop: 14, maxWidth: 620, lineHeight: 1.55 }}>
+      <p style={{ fontSize: esMovil ? 14 : 11.5, color: esMovil ? '#6b7280' : '#a5a2af', marginTop: 14, maxWidth: 620, lineHeight: 1.55 }}>
         De cualquier lista se quitan solos los que no tienen teléfono, los marcados
         «no llamar», los que se descalificaron alguna vez, los que ya tuvieron una
         acción (reunión, seguimiento, oportunidad) y los que ya se intentaron tres

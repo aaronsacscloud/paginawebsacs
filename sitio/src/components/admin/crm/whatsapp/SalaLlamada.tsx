@@ -55,6 +55,10 @@ type Props = {
   onSilenciar: () => void;
   mudo: boolean;
   onCerrar: () => void;
+  /** Los tonos del conmutador («marque 1 para ventas»): el Device es de
+      `Telefonia.tsx`, aquí sólo se pintan las teclas. */
+  onTono?: (d: string) => void;
+  tonos?: string;
   /** Ya se colgó: la sala se queda, pero como resumen. */
   fin?: boolean;
 };
@@ -77,7 +81,9 @@ const A_CIERRE: Record<string, string> = { interesado: 'contesto', agendado: 'co
 const DE_CIERRE: Record<string, string> = { contesto: 'Contestó', volver_llamar: 'Volver a llamar', dieron_datos: 'Dio datos', no_interesa: 'No le interesa', buzon: 'Era buzón' };
 const aCierre = (r: string) => A_CIERRE[r] || r || '';
 const notaCon = (r: string, nota: string) => r === 'no_era' ? `No era la persona que buscábamos.${nota ? `\n${nota}` : ''}` : nota;
-const ETAPA_L: Record<string, string> = { lead_calificado: 'Lead calificado', descalificado: 'Descalificado' };
+/* Las etiquetas de la etapa, las mismas de `ti/ContextoLead.tsx`: «lead» en
+   minúsculas es el valor crudo de la base, no algo que se lea en pantalla. */
+const ETAPA_L: Record<string, string> = { lead: 'Lead', lead_calificado: 'Lead calificado', oportunidad: 'Oportunidad', cliente: 'Cliente', descalificado: 'Descalificado', rezagado: 'Rezagado', churned: 'Churn', suscriptor: 'Suscriptor' };
 
 const reloj = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 /* «+52 56 1035 3669» NO es un nombre. Quien llama de fuera llega sin nombre y
@@ -86,8 +92,50 @@ const reloj = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2,
    reportó el dueño: «me aparecía el nombre de la empresa, no el de la persona». */
 const esNumero = (s?: string | null) => !String(s || '').trim() || /^[+\d\s()\-.]+$/.test(String(s));
 const dia = (f: any) => (f ? new Date(f).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }) : '');
+/* «2026-09-25 a las 16:00» es la base hablando, no el vendedor: se dice
+   «jueves 25 sep, 4:00 p.m.», que es como se le repite al cliente. La fecha
+   llega sin zona (día de calendario): se arma a mediodía para que ningún
+   huso la corra al día anterior. */
+const fechaHumana = (f?: string | null, h?: string | null) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(f || ''));
+  if (!m) return [f, h].filter(Boolean).join(' ');
+  const d = new Date(+m[1], +m[2] - 1, +m[3], 12);
+  const txt = d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'short' }).replace(/\./g, '').replace(',', '');
+  const hm = /^(\d{1,2}):(\d{2})/.exec(String(h || ''));
+  if (!hm) return txt;
+  const hh = +hm[1];
+  return `${txt}, ${hh % 12 || 12}:${hm[2]} ${hh < 12 ? 'a.m.' : 'p.m.'}`;
+};
 
-export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, setNota, onColgar, onSilenciar, mudo, onCerrar, fin }: Props) {
+/* Una sola forma de decir la hora en la hoja: «16:00» que escribe la IA se
+   lee «4:00 p.m.», igual que los compromisos de abajo. Sólo formato. */
+const horaHumana = (t: string) => String(t || '').replace(/\b([01]?\d|2[0-3]):([0-5]\d)\b/g, (_m, h, mm) => `${+h % 12 || 12}:${mm}\u00a0${+h < 12 ? 'a.m.' : 'p.m.'}`);
+
+/* El mismo auricular caído de la pantalla oscura (Telefonia.tsx): Colgar se
+   reconoce por su forma, no por dónde está. */
+const IcoColgar = ({ size = 20 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden style={{ transform: 'rotate(135deg)', flexShrink: 0 }}>
+    <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" fill="currentColor" />
+  </svg>
+);
+
+/* Micrófono y teclado: los mismos trazos de la botonera de la pantalla oscura
+   (Telefonia.tsx). Silenciar y Teclas tienen que verse igual al pasar de una
+   pantalla a la otra en la misma llamada. */
+const IcoMic = ({ apagado }: { apagado?: boolean }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden style={{ flexShrink: 0 }}>
+    <rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" strokeWidth="1.9" />
+    <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+    {apagado && <path d="M4 4l16 16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />}
+  </svg>
+);
+const IcoTeclas = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden style={{ flexShrink: 0 }}>
+    {[5, 12, 19].flatMap(y => [5, 12, 19].map(x => <circle key={`${x}-${y}`} cx={x} cy={y} r="2" />))}
+  </svg>
+);
+
+export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, setNota, onColgar, onSilenciar, mudo, onCerrar, onTono, tonos, fin }: Props) {
   /* En el teléfono esto NO es un modal: es la pantalla. Un recuadro centrado
      con el CRM asomando por los bordes, en 390 píxeles, se lee como algo que
      se va a cerrar solo — y aquí es donde se trabaja la llamada. */
@@ -106,6 +154,42 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
   const [itemId, setItemId] = useState<string | null>(null);
   const [cerrando, setCerrando] = useState(false);
   const [aplicado, setAplicado] = useState<string[] | null>(null);
+  const [teclas, setTeclas] = useState(false);
+  /* «Ver» de la barra del cierre: lleva al pendiente y lo marca un momento,
+     para que el ojo sepa qué era lo que faltaba. */
+  const [resaltar, setResaltar] = useState(false);
+  const irAPendientes = () => {
+    document.querySelector('[data-sala-acciones]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setResaltar(true);
+    setTimeout(() => setResaltar(false), 1600);
+  };
+  /* LA CABECERA SE ENCOGE AL BAJAR (sólo teléfono). Con reloj, marca y dos
+     renglones de nombre y teléfono medía ~112 px fijos: en 360×780, sumada a
+     la barra del pulgar, era un cuarto de la pantalla sin contenido. Al hacer
+     scroll se queda reloj + marca + Minimizar. Con histéresis (60/12) para
+     que el cambio de alto no la haga parpadear en el umbral. */
+  const [compacta, setCompacta] = useState(false);
+  /* Desde el primer scroll (23-sep-2026): la cabecera ya NO está dentro de lo
+     que scrollea, así que encogerla no mueve el contenido y el umbral puede
+     ser casi cero. En 360 cada píxel de cabecera es un renglón menos. */
+  const alBajar = (e: any) => {
+    const y = e.currentTarget.scrollTop;
+    setCompacta(c => (c ? y > 2 : y > 12));
+  };
+  /* CON EL TECLADO ABIERTO LA BARRA DEL PULGAR SE ESCONDE (sólo teléfono).
+     Teclado + barra fija de Colgar dejaban el apunte o «Dime qué había que
+     hacer» debajo de las dos. Mientras se escribe, Colgar sube a la cabecera
+     (en lugar de Minimizar) y la barra vuelve en cuanto se suelta el campo. */
+  const [escribiendo, setEscribiendo] = useState(false);
+  const esCampo = (el: any) => el?.tagName === 'TEXTAREA' || (el?.tagName === 'INPUT' && /^(text|search|tel|email|number|url|)$/.test(el.type || ''));
+  const alEnfocar = (e: any) => { if (esCampo(e.target)) setEscribiendo(true); };
+  const alSoltar = (e: any) => { if (esCampo(e.target) && !esCampo(e.relatedTarget)) setEscribiendo(false); };
+  const barra = esMovil && !escribiendo;
+  /* AL COLGAR, EL CUERPO VUELVE ARRIBA: el cierre se pinta primero, y si se
+     colgaba con el scroll a media sala (en el apunte, digamos) la pantalla se
+     quedaba ahí y lo que había que confirmar quedaba fuera de la vista. */
+  const cuerpo = useRef<HTMLDivElement | null>(null);
+  useEffect(() => { if (fin && cuerpo.current) cuerpo.current.scrollTop = 0; }, [fin]);
 
   useEffect(() => {
     fetch(`/api/crm/telefonia/contexto?telefono=${encodeURIComponent(telefono)}`)
@@ -260,10 +344,36 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
     else setMsg(j?.error || 'No se pudo aplicar el cierre');
   };
 
-  const CAJA: any = { background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 14, padding: '14px 16px' };
-  const ROT: any = { fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: '#999', marginBottom: 7 };
-  const BTN: any = { border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 9, padding: '8px 12px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' };
-  const CAMPO: any = { border: `1px solid ${C.g200}`, borderRadius: 8, padding: '7px 10px', fontSize: 12.5, fontFamily: 'inherit', boxSizing: 'border-box' };
+  /* EN EL TELÉFONO, TAMAÑOS DE PULGAR (23-sep-2026). Todo lo que se toca mide
+     44 px o más y el texto de cuerpo 14: en plena llamada se lee de reojo y se
+     pica con la mano que sostiene el aparato. El escritorio se queda igual. */
+  const M = esMovil;
+  const FS = M ? 14 : 12.5;             // texto de cuerpo
+  const CAJA: any = { background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 14, padding: M ? '14px 14px' : '14px 16px' };
+  const ROT: any = { fontSize: M ? 12 : 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: M ? '#8a8796' : '#999', marginBottom: 7 };
+  const BTN: any = { border: `1px solid ${C.g200}`, background: '#fff', borderRadius: M ? 12 : 9, padding: M ? '12px 14px' : '8px 12px', fontSize: M ? 15 : 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', ...(M ? { minHeight: 48 } : null) };
+  const CHIP: any = { fontSize: M ? 12.5 : 11, fontWeight: 800, borderRadius: 999, padding: M ? '4px 10px' : '3px 9px' };
+
+  /* AL COLGAR, EN EL TELÉFONO, lo que ya se leyó se pliega: la transcripción
+     entera y los WhatsApp repetidos empujaban el cierre (lo que hay que
+     confirmar) a tres pantallas de scroll. Siguen a un toque. */
+  const plegar = M && !!fin;
+  const plegable = (titulo: string, cuerpo: any) => (
+    <details style={{ ...CAJA, padding: '4px 14px' }}>
+      <summary style={{ fontSize: 14, fontWeight: 700, color: C.moradoTinta, cursor: 'pointer' }}>{titulo}</summary>
+      <div style={{ paddingBottom: 12 }}>{cuerpo}</div>
+    </details>
+  );
+
+  /* EL TECLADO DE TONOS: el mismo en la barra del teléfono y en la caja del
+     escritorio. Sirve para los conmutadores («marque 1 para ventas»). */
+  const teclado = (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+      {['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'].map(d => (
+        <button key={d} onClick={() => onTono?.(d)} style={{ border: `1px solid ${C.g200}`, background: '#fff', color: C.g900, borderRadius: M ? 12 : 9, minHeight: M ? 48 : 36, fontSize: M ? 19 : 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{d}</button>
+      ))}
+    </div>
+  );
 
   /* Quién es, en una sola decisión y no repartida por la pantalla. */
   const persona = ctx?.nombre || (esNumero(nombre) ? null : nombre);
@@ -278,20 +388,29 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
   /* ══ LO QUE SE ESTÁ OYENDO ═════════════════════════════════════════════
      No es un adorno: es la prueba de que la máquina oye lo mismo que tú.
      Cuando propone una acción rara, aquí se ve por qué. */
-  const bloqueOido = (oido.length > 0 || !fin) ? (
+  const bloqueOido = (oido.length > 0 || !fin) ? (plegar ? plegable(`Ver lo que se dijo (${oido.length})`, (
+                  <div style={{ display: 'grid', gap: 4 }}>
+                    {oido.map((o, i) => (
+                      <div key={i} style={{ fontSize: FS, lineHeight: 1.45 }}>
+                        <b style={{ color: o.quien === 'vendedor' ? C.moradoTinta : '#1E8A63' }}>{o.quien === 'vendedor' ? 'Tú' : 'Él'}</b>
+                        <span style={{ color: '#33313d' }}> · {o.texto}</span>
+                      </div>
+                    ))}
+                  </div>
+  )) :
               <div style={{ ...CAJA, background: fin ? '#fff' : '#FCFBFF' }}>
                 <div style={{ ...ROT, display: 'flex', alignItems: 'center', gap: 6 }}>
                   {fin ? 'Lo que se dijo' : 'Lo que se está oyendo'}
                   {!fin && <span style={{ width: 7, height: 7, borderRadius: 999, background: oido.length ? '#1E8A63' : '#d8d5e4', display: 'inline-block' }} />}
                 </div>
                 {!oido.length ? (
-                  <div style={{ fontSize: 12.5, color: C.g500 }}>
+                  <div style={{ fontSize: FS, color: C.g500 }}>
                     Todavía nada. La transcripción tarda unos segundos en arrancar; si no llega, la llamada igual se graba y la minuta cae al colgar.
                   </div>
                 ) : (
                   <div style={{ display: 'grid', gap: 4, maxHeight: fin ? 320 : 180, overflowY: 'auto' }}>
                     {oido.map((o, i) => (
-                      <div key={i} style={{ fontSize: 12.5, lineHeight: 1.45 }}>
+                      <div key={i} style={{ fontSize: FS, lineHeight: 1.45 }}>
                         <b style={{ color: o.quien === 'vendedor' ? C.moradoTinta : '#1E8A63' }}>{o.quien === 'vendedor' ? 'Tú' : 'Él'}</b>
                         <span style={{ color: '#33313d' }}> · {o.texto}</span>
                       </div>
@@ -306,11 +425,11 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
      que estar pegados al botón que los necesita, no al final de la columna. */
   const quePaso = (
     <>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: M ? 8 : 6, flexWrap: 'wrap' }}>
         {RESULTADOS.map(r => (
-          <button key={r.id} onClick={() => setResultado(r.id)}
-            style={{ border: `1px solid ${resultado === r.id ? r.tono : C.g200}`, background: '#fff',
-              color: resultado === r.id ? r.tono : C.g500, borderRadius: 999, padding: '6px 12px', fontSize: 12.5,
+          <button key={r.id} onClick={() => setResultado(r.id)} aria-pressed={resultado === r.id}
+            style={{ border: `${M && resultado === r.id ? 1.5 : 1}px solid ${resultado === r.id ? r.tono : C.g200}`, background: M && resultado === r.id ? '#FAF9FF' : '#fff',
+              color: resultado === r.id ? r.tono : (M ? C.g700 : C.g500), borderRadius: 999, padding: M ? '0 16px' : '6px 12px', fontSize: M ? 14 : 12.5, ...(M ? { minHeight: 44 } : null),
               fontWeight: resultado === r.id ? 800 : 600, cursor: 'pointer', fontFamily: 'inherit' }}>{r.l}</button>
         ))}
       </div>
@@ -321,18 +440,132 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
           <span style={{ ...ROT, marginBottom: 4 }}>¿Qué día le vuelves a marcar?</span>
           <input type="date" value={volverEl} min={new Date().toISOString().slice(0, 10)}
             onChange={e => setVolverEl(e.target.value)}
-            style={{ border: `1px solid ${C.g200}`, borderRadius: 9, padding: '8px 11px', fontSize: 13, fontFamily: 'inherit' }} />
+            style={{ border: `1px solid ${C.g200}`, borderRadius: 9, padding: '8px 11px', fontSize: M ? 16 : 13, fontFamily: 'inherit', ...(M ? { minHeight: 48, width: '100%', boxSizing: 'border-box' } : null) }} />
         </label>
       )}
+    </>
+  );
+
+  /* LOS AVISOS DE LA CABECERA (de dónde nos conoce, seguimiento, descalificado).
+     En el escritorio van bajo el nombre; en el TELÉFONO bajan al cuerpo, arriba
+     de todo: dentro de la cabecera fija se comían un tercio de la pantalla y
+     empujaban lo que el cliente está pidiendo fuera de la vista. */
+  const avisos = ctx && (ctx.origen?.detalle || ctx.seguimiento || ctx.descalificado) ? (
+    <>
+      {ctx?.origen?.detalle && (
+        <span style={{ display: 'block', marginTop: 6, fontSize: M ? 14 : 12.5, fontWeight: 700, background: '#F6F4FF', color: C.moradoTinta, borderRadius: 10, padding: '6px 11px', lineHeight: 1.45 }}>
+          ¿De dónde nos conoce? {ctx.origen.detalle}
+        </span>
+      )}
+      {ctx?.seguimiento && (
+        <span style={{ display: 'block', marginTop: 6, fontSize: M ? 14 : 12.5, fontWeight: 800, background: '#EEECFE', color: C.moradoTinta, borderRadius: 10, padding: '6px 11px' }}>
+          Llamada de seguimiento: le prometiste llamarle ({ctx.seguimiento.hora}). Al colgar queda cumplida.
+        </span>
+      )}
+      {ctx?.descalificado && (
+        <span style={{ display: 'block', marginTop: 6, fontSize: M ? 14 : 12.5, fontWeight: 800, background: '#FDEDEB', color: '#C0554E', borderRadius: 10, padding: '6px 11px' }}>
+          Ojo: este lead se descalificó el {ctx.descalificado}. Las listas automáticas ya no lo incluyen.
+        </span>
+      )}
+    </>
+  ) : null;
+
+  /* El renglón de quién y dónde, bajo el nombre grande. En el escritorio va
+     junto al reloj; en el TELÉFONO baja a todo lo ancho de la cabecera: al
+     lado del reloj y de «Minimizar» le quedaban 200 px y se partía en cuatro
+     renglones. */
+  const subtitulo = (
+    <>
+    <span style={{ display: 'block', fontSize: M ? 14 : 13, color: C.g500, marginTop: 3, lineHeight: 1.35 }}>
+      {/* Sin repetir el título: cuando no hay marca, el nombre YA está
+          arriba en grande y volver a ponerlo abajo se lee como un error. */}
+      {/* El teléfono no se parte: «+52 55 5010 / 0100» en dos renglones
+          es un número que ya no se puede dictar. Cada pieza en su span. */}
+      {/* En el TELÉFONO, dos renglones fijos: quién (nombre · puesto) y
+          dónde (teléfono · ciudad). Seguidos se partían en tres, con el
+          «·» colgando al final de cada uno, y la cabecera fija crecía. */}
+      {esMovil ? [[persona === titulo ? null : persona, ctx?.puesto], [telefonoLegible(telefono), ctx?.ciudad]].map((r, j) => {
+        const fila = r.filter(Boolean) as string[];
+        return fila.length ? (
+          <span key={j} style={{ display: 'block', overflowWrap: 'anywhere' }}>
+            {fila.map((t, i) => <span key={i} style={{ whiteSpace: j === 1 && !i ? 'nowrap' : undefined }}>{i ? ' · ' : ''}{t}</span>)}
+          </span>
+        ) : null;
+      }) : [persona === titulo ? null : persona, ctx?.puesto, telefonoLegible(telefono), ctx?.ciudad].filter(Boolean).map((t, i) => (
+        <span key={i} style={{ whiteSpace: t === telefonoLegible(telefono) ? 'nowrap' : undefined }}>{i ? ' · ' : ''}{t}</span>
+      ))}
+    </span>
+    {/* SU HORA, NO LA TUYA. Marcar a Tijuana a las 9 de CDMX es llamar
+        a las 7, y esa llamada no se recupera con una disculpa. Sólo se
+        enseña si difiere: repetir tu propia hora es ruido. */}
+    {ctx?.hora_local && (
+      <span style={{ display: 'inline-block', marginTop: 5, fontSize: M ? 12.5 : 11.5, fontWeight: 800, background: '#FFF4E5', color: '#9a6a10', borderRadius: 999, padding: '3px 10px' }}>
+        Allá son las {ctx.hora_local.hora}
+      </span>
+    )}
     </>
   );
 
   return (
     <>
       {!esMovil && <div style={{ position: 'fixed', inset: 0, background: 'rgba(12,11,18,.55)', zIndex: 980 }} />}
-      <div role="dialog" aria-label={fin ? 'Resumen de la llamada' : 'Llamada en curso'} style={esMovil ? {
-        position: 'fixed', inset: 0, zIndex: 1001, overflowY: 'auto', background: C.g50,
-        paddingBottom: 'env(safe-area-inset-bottom)', WebkitOverflowScrolling: 'touch',
+      {/* LO QUE PINTAN LOS HIJOS, A TAMAÑO DE PULGAR. `AccionesLlamada` y
+          `SelectorHorarios` se comparten con la cabina y traen sus propios
+          tamaños de escritorio (botones de 32 px, campos de 36, pegados a 6).
+          Aquí, sólo dentro de la sala del teléfono, se suben al mínimo de un
+          dedo: 44 px de alto, 8 de aire y 16 en los campos para que iOS no
+          haga zoom al tocarlos. El escritorio no ve esta regla. */}
+      {esMovil && <style>{`
+        [data-sala-m] button, [data-sala-m] input:not([type=checkbox]):not([type=radio]), [data-sala-m] select { min-height: 44px; }
+        [data-sala-m] input, [data-sala-m] select, [data-sala-m] textarea { font-size: 16px !important; }
+        [data-sala-m] input[type=date], [data-sala-m] input[type=time] { width: 100%; box-sizing: border-box; }
+        [data-sala-m] div:has(> button + button) { gap: 8px !important; }
+        [data-sala-m] summary { min-height: 44px; display: flex; align-items: center; }
+        [data-sala-m] textarea { min-height: 96px; }
+        /* Los atajos apagados de «Te pidió algo» (ya están arriba) quedaban a
+           1.3:1 de contraste y sin decir por qué. Legibles y con su razón. */
+        [data-sala-m] button[disabled][style*="opacity: 0.4"] { opacity: 1 !important; background: #F3F2F7 !important; color: #6E6B7B !important; border-style: dashed !important; }
+        [data-sala-m] button[disabled][style*="opacity: 0.4"]::after { content: ' · ya está arriba'; font-weight: 600; }
+        /* En el teléfono los atajos que ya están arriba sobran: cuatro renglones
+           de chips para decir «esto ya lo tienes» alargaban la sala una pantalla.
+           Los que quedan van en rejilla de dos, a lo ancho. */
+        [data-sala-m] [data-sala-acciones] button[disabled][style*="opacity: 0.4"] { display: none !important; }
+        [data-sala-m] [data-sala-acciones] div[style*="gap: 5px"] { display: grid !important; grid-template-columns: 1fr 1fr; }
+        [data-sala-m] [data-sala-acciones] div[style*="gap: 5px"] > button { width: 100%; padding: 8px 10px !important; line-height: 1.2; }
+        /* EL TEXTO DE «TE PIDIÓ ALGO», A TAMAÑO DE LECTURA. El panel es el de la
+           cabina (12 px, pensado para una columna de escritorio); aquí se lee
+           de reojo con el aparato en la mano: cuerpo a 14, título a 15, las
+           etiquetas a 12 y los botones a 15 como los de la barra. */
+        [data-sala-m] [data-sala-acciones] b { font-size: 15px !important; line-height: 1.3; }
+        [data-sala-m] [data-sala-acciones] div[style*="font-size: 11px"],
+        [data-sala-m] [data-sala-acciones] div[style*="font-size: 11.5px"],
+        [data-sala-m] [data-sala-acciones] div[style*="font-size: 12px"],
+        [data-sala-m] [data-sala-acciones] div[style*="font-size: 12.5px"] { font-size: 14px !important; line-height: 1.45; }
+        [data-sala-m] [data-sala-acciones] div[style*="font-size: 10px"],
+        [data-sala-m] [data-sala-acciones] span[style*="font-size: 10px"],
+        [data-sala-m] [data-sala-acciones] label[style*="font-size: 10.5px"] { font-size: 12px !important; }
+        [data-sala-m] [data-sala-acciones] button { font-size: 15px !important; }
+        [data-sala-m] [data-sala-acciones] div[style*="gap: 5px"] > button { font-size: 14px !important; }
+        /* Día y Hora: lado a lado, cada uno a la mitad de la tarjeta (el
+           minWidth de escritorio los dejaba a dos tercios y sueltos). */
+        [data-sala-m] [data-sala-acciones] label { flex: 1 1 130px; min-width: 0; }
+        [data-sala-m] [data-sala-acciones] div:has(> label) { gap: 8px !important; }
+        /* «Hazlo y apréndelo» / «Mandarlo y guardarlo»: a lo ancho, bajo su campo. */
+        [data-sala-m] [data-sala-acciones] textarea + button { width: 100%; margin-top: 8px !important; }
+        [data-sala-m] [data-sala-acciones] label input { width: 100% !important; min-width: 0 !important; box-sizing: border-box; }
+        [data-sala-m] [data-sala-acciones] div:has(> button:first-child + button:last-child) > button { flex: 1 1 0; }
+        /* Al colgar, el «Hacerlo» morado de una acción pendiente competía con
+           «Aplicar el cierre» de la barra: se vuelve secundario. */
+        [data-sala-fin] [data-sala-acciones] div:has(> button:first-child + button:last-child) > button:first-child:not(:disabled) { background: #fff !important; color: ${C.moradoTinta} !important; border: 1.5px solid ${C.morado} !important; }
+      `}</style>}
+      <div role="dialog" data-sala-m={esMovil ? '' : undefined} data-sala-fin={esMovil && fin ? '' : undefined} aria-label={fin ? 'Resumen de la llamada' : 'Llamada en curso'} onFocus={esMovil ? alEnfocar : undefined} onBlur={esMovil ? alSoltar : undefined} style={esMovil ? {
+        /* EN EL TELÉFONO, TRES PISOS QUE NO SE ENCIMAN (23-sep-2026): cabecera,
+           cuerpo que scrollea y barra del pulgar. Antes todo scrolleaba junto
+           y las barras eran `sticky`: el contenido pasaba POR DEBAJO de la barra
+           y un «Hacerlo» quedaba cortado y a 0 px de «Colgar». Ahora el scroll
+           termina donde empieza la barra. */
+        position: 'fixed', inset: 0, zIndex: 1001, background: C.g50,
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
       } : {
         position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
         width: 'min(1040px, 96vw)', maxHeight: '92vh', overflowY: 'auto', zIndex: 981,
@@ -342,53 +575,27 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
             Es lo que dice en voz alta quien contesta, y equivocarla en el
             saludo cuesta la llamada entera. */}
         <div style={{
-          padding: esMovil ? '14px 16px 12px' : '20px 24px 16px', background: '#fff',
+          padding: esMovil ? '12px 16px 10px' : '20px 24px 16px', background: '#fff',
           borderRadius: esMovil ? 0 : '20px 20px 0 0', borderBottom: `1px solid ${C.g200}`,
           display: 'flex', alignItems: 'center', gap: esMovil ? 10 : 16, flexWrap: 'wrap',
-          ...(esMovil ? { position: 'sticky', top: 0, zIndex: 2, paddingTop: 'max(14px, env(safe-area-inset-top))' } : {}),
+          ...(esMovil ? { flexShrink: 0, position: 'relative', zIndex: 2, paddingTop: compacta ? 'max(8px, env(safe-area-inset-top))' : 'max(12px, env(safe-area-inset-top))', paddingBottom: compacta ? 8 : 10 } : {}),
         }}>
-          <span style={{ width: 54, height: 54, borderRadius: 16, background: fin ? C.g100 : C.moradoAgua, color: fin ? C.g500 : C.moradoTinta, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, flexShrink: 0 }}>
+          <span style={{ width: M ? 52 : 54, height: M ? 44 : 54, borderRadius: M ? 12 : 16, background: fin ? C.g100 : C.moradoAgua, color: fin ? C.g500 : C.moradoTinta, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: M ? 17 : 22, fontWeight: 800, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
             {reloj(segundos)}
           </span>
-          <span style={{ flex: '1 1 260px', minWidth: 0 }}>
-            <b style={{ display: 'block', fontSize: 26, letterSpacing: '-0.03em', lineHeight: 1.1 }}>{titulo}</b>
+          <span style={{ flex: M ? '1 1 0' : '1 1 260px', minWidth: 0 }}>
+            <b style={{ display: 'block', fontSize: M ? (compacta ? 19 : 22) : 26, letterSpacing: '-0.03em', lineHeight: 1.1, overflowWrap: 'anywhere' }}>{titulo}</b>
             {/* EL NOMBRE SALE DEL CONTEXTO CUANDO NO VIENE EN LA LLAMADA.
                 En una ENTRANTE, Twilio sólo trae el número: `enganchar()` la
                 registra con `nombre = null`, así que la sala pintaba la marca
                 —que sí viene de la ficha— y a la persona no. Lo reportó el
                 dueño: «me aparecía el nombre de la empresa pero no el de la
                 persona». El contexto ya lo traía; sólo no se estaba mirando. */}
-            <span style={{ display: 'block', fontSize: 13, color: C.g500, marginTop: 3 }}>
-              {/* Sin repetir el título: cuando no hay marca, el nombre YA está
-                  arriba en grande y volver a ponerlo abajo se lee como un error. */}
-              {[persona === titulo ? null : persona, ctx?.puesto, telefonoLegible(telefono), ctx?.ciudad].filter(Boolean).join(' · ')}
-            </span>
-            {/* SU HORA, NO LA TUYA. Marcar a Tijuana a las 9 de CDMX es llamar
-                a las 7, y esa llamada no se recupera con una disculpa. Sólo se
-                enseña si difiere: repetir tu propia hora es ruido. */}
-            {ctx?.hora_local && (
-              <span style={{ display: 'inline-block', marginTop: 5, fontSize: 11.5, fontWeight: 800, background: '#FFF4E5', color: '#9a6a10', borderRadius: 999, padding: '3px 10px' }}>
-                Allá son las {ctx.hora_local.hora}
-              </span>
-            )}
+            {!esMovil && subtitulo}
             {/* Lo mismo que la cabina dice en grande (22-sep-2026): que esta
                 llamada cumple una promesa, o que el lead ya se había descartado. */}
             {/* Lo primero que pregunta casi todo el mundo: «¿de dónde?». */}
-            {ctx?.origen?.detalle && (
-              <span style={{ display: 'block', marginTop: 6, fontSize: 12.5, fontWeight: 700, background: '#F6F4FF', color: C.moradoTinta, borderRadius: 10, padding: '6px 11px', lineHeight: 1.45 }}>
-                ¿De dónde nos conoce? {ctx.origen.detalle}
-              </span>
-            )}
-            {ctx?.seguimiento && (
-              <span style={{ display: 'block', marginTop: 6, fontSize: 12.5, fontWeight: 800, background: '#EEECFE', color: C.moradoTinta, borderRadius: 10, padding: '6px 11px' }}>
-                Llamada de seguimiento: le prometiste llamarle ({ctx.seguimiento.hora}). Al colgar queda cumplida.
-              </span>
-            )}
-            {ctx?.descalificado && (
-              <span style={{ display: 'block', marginTop: 6, fontSize: 12.5, fontWeight: 800, background: '#FDEDEB', color: '#C0554E', borderRadius: 10, padding: '6px 11px' }}>
-                Ojo: este lead se descalificó el {ctx.descalificado}. Las listas automáticas ya no lo incluyen.
-              </span>
-            )}
+            {!esMovil && avisos}
           </span>
           <span style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
             {/* En el teléfono, Colgar y Silenciar NO viven aquí arriba: se van a
@@ -401,36 +608,67 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
                 <button onClick={onSilenciar} style={{ border: `1px solid ${C.g200}`, background: mudo ? '#FFF4E5' : '#fff', color: mudo ? '#9a6a10' : C.g700, borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                   {mudo ? 'Estás en mudo' : 'Silenciar'}
                 </button>
+                {onTono && (
+                  <button onClick={() => setTeclas(t => !t)} aria-pressed={teclas} style={{ border: `1px solid ${teclas ? C.morado : C.g200}`, background: teclas ? '#F6F4FF' : '#fff', color: teclas ? C.moradoTinta : C.g700, borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    Teclas
+                  </button>
+                )}
                 <button onClick={cerrarLlamada} disabled={cerrando} style={{ border: 'none', background: '#C0554E', color: '#fff', borderRadius: 10, padding: '9px 18px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
                   {cerrando ? 'Cerrando…' : 'Colgar'}
                 </button>
               </>
             )}
-            {fin && (
+            {/* VOLVER A LA PANTALLA DE LA LLAMADA, siempre a la vista. Antes era
+                un enlace al final de 1500 px de scroll. */}
+            {!fin && esMovil && !escribiendo && (
+              /* MINIMIZAR COMO ÍCONO DE 44×44 (23-sep-2026). La píldora con la
+                 palabra medía ~113 px y partía «Boutique Mariana» en dos
+                 renglones: la cabecera se comía un cuarto de la pantalla antes
+                 de cualquier contenido. Es el mismo chevron de la pantalla
+                 oscura, y el aria-label dice que la llamada sigue. */
+              <button onClick={onCerrar} aria-label="Minimizar la sala (la llamada sigue)" title="Minimizar la sala (la llamada sigue)"
+                style={{ width: 44, height: 44, borderRadius: 999, border: `1px solid ${C.g200}`, background: '#fff', color: C.g700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, fontFamily: 'inherit', flexShrink: 0 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </button>
+            )}
+            {/* Con el teclado abierto la barra de abajo se esconde: Colgar sube
+                aquí para que nunca quede sin salida en plena llamada. */}
+            {!fin && esMovil && escribiendo && (
+              <button onMouseDown={e => e.preventDefault()} onClick={cerrarLlamada} disabled={cerrando} aria-label="Colgar"
+                style={{ minHeight: 44, borderRadius: 999, border: 'none', background: C.rojo500, color: '#fff', display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', padding: '0 16px 0 12px', fontFamily: 'inherit', fontSize: 15, fontWeight: 800, whiteSpace: 'nowrap' }}>
+                <IcoColgar size={18} />{cerrando ? 'Cerrando…' : 'Colgar'}
+              </button>
+            )}
+            {/* En el teléfono «Listo» baja a la barra del pulgar, junto a
+                «Aplicar el cierre»: arriba quedaba a un estirón de la mano. */}
+            {fin && !esMovil && (
               <button onClick={onCerrar} style={{ border: 'none', background: C.morado, color: '#fff', borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Listo</button>
             )}
           </span>
+          {esMovil && !compacta && <span style={{ flexBasis: '100%', minWidth: 0, marginTop: -6 }}>{subtitulo}</span>}
         </div>
 
-        <div style={{ padding: 18, display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+        <div ref={cuerpo} data-sala-cuerpo={M ? '' : undefined} onScroll={M ? alBajar : undefined} style={{ padding: M ? '14px 16px 20px' : 18, display: 'flex', gap: M ? 12 : 14, flexWrap: 'wrap', alignItems: 'flex-start',
+          /* En el teléfono ESTE es el que scrollea, entre cabecera y barra. */
+          ...(M ? { flex: '1 1 auto', minHeight: 0, overflowY: 'auto', alignContent: 'flex-start', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', scrollPaddingTop: 12, scrollPaddingBottom: 16 } : null) }}>
           {/* ── Columna izquierda: quién es y qué ha pasado ── */}
           <div style={{ flex: '1 1 380px', display: 'grid', gap: 12, minWidth: 0 }}>
             {!esMovil && bloqueOido}
             <div style={CAJA}>
               <div style={ROT}>Quién es</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18 }}>
-                {[['Sucursales', ctx?.sucursales ?? '—'], ['Giro', ctx?.giro || '—'], ['Etapa', ctx?.etapa || '—']].map(([k, v]) => (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: M ? '10px 18px' : 18 }}>
+                {[['Sucursales', ctx?.sucursales ?? '—'], ['Giro', ctx?.giro || '—'], ['Etapa', ctx?.etapa ? (ETAPA_L[ctx.etapa] || ctx.etapa) : '—']].map(([k, v]) => (
                   <span key={String(k)}>
-                    <span style={{ display: 'block', fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#a5a2af' }}>{k}</span>
+                    <span style={{ display: 'block', fontSize: M ? 12 : 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: M ? '#8a8796' : '#a5a2af' }}>{k}</span>
                     <b style={{ fontSize: 17 }}>{String(v)}</b>
                   </span>
                 ))}
               </div>
-              {ctx?.proximoPaso && <div style={{ fontSize: 12.5, color: C.moradoTinta, marginTop: 9, fontWeight: 700 }}>Pendiente: {ctx.proximoPaso}</div>}
+              {ctx?.proximoPaso && <div style={{ fontSize: FS, color: C.moradoTinta, marginTop: 9, fontWeight: 700 }}>Pendiente: {ctx.proximoPaso}</div>}
               {/* QUIEN LLAMA SIN FICHA. Pasa seguido en las entrantes y es
                   justo cuando la pantalla parecía vacía: se dice qué es lo que
                   no hay, en vez de enseñar guiones. */}
-              {!ctx && <div style={{ fontSize: 12.5, color: C.g500 }}>Este número no está en el CRM. Al colgar queda la llamada con su grabación; si es alguien que vale, créalo desde el inbox.</div>}
+              {!ctx && <div style={{ fontSize: FS, color: C.g500 }}>Este número no está en el CRM. Al colgar queda la llamada con su grabación; si es alguien que vale, créalo desde el inbox.</div>}
             </div>
 
             {/* LLAMADAS ANTERIORES con su desenlace, no sólo el conteo: «la
@@ -438,13 +676,14 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
                 saludos distintos. */}
             <div style={CAJA}>
               <div style={ROT}>Lo que ya le llamamos</div>
-              {!(ctx?.previas || []).length ? <div style={{ fontSize: 13, color: C.g500 }}>Es la primera vez.</div> : (
+              {!(ctx?.previas || []).length ? <div style={{ fontSize: M ? 14 : 13, color: C.g500 }}>Es la primera vez.</div> : (
                 <div style={{ display: 'grid', gap: 5 }}>
                   {ctx.previas.map((l: any, i: number) => (
-                    <div key={i} style={{ fontSize: 12.5, display: 'flex', gap: 9, alignItems: 'baseline' }}>
-                      <span style={{ color: '#a5a2af', minWidth: 52 }}>{dia(l.started_at)}</span>
+                    <div key={i} style={{ fontSize: FS, display: 'flex', gap: 9, alignItems: 'baseline', flexWrap: M ? 'wrap' : undefined }}>
+                      <span style={{ color: M ? '#8a8796' : '#a5a2af', minWidth: 52 }}>{dia(l.started_at)}</span>
                       <b style={{ color: l.duracion_seg > 20 ? '#1E8A63' : C.g500 }}>{l.duracion_seg > 20 ? `habló ${reloj(l.duracion_seg)}` : l.estado}</b>
-                      <span style={{ color: C.g500, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.minuta || l.resultado || ''}</span>
+                      {/* En el teléfono la minuta se envuelve: cortada con «…» se perdía justo lo que dijo. */}
+                      <span style={{ color: C.g500, flex: 1, ...(M ? { minWidth: 0 } : { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }) }}>{l.minuta || l.resultado || ''}</span>
                     </div>
                   ))}
                 </div>
@@ -453,12 +692,23 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
 
             {/* LO ÚLTIMO QUE SE LE ESCRIBIÓ, textual. Llamar sin saberlo es cómo
                 uno se contradice a los diez segundos de empezar. */}
+            {plegar && (ctx?.mensajes || []).length ? plegable(`Ver lo último que se dijeron (${ctx.mensajes.length})`, (
+                <div style={{ display: 'grid', gap: 6 }}>
+                  {ctx.mensajes.map((m: any, i: number) => (
+                    <div key={i} style={{ fontSize: FS, lineHeight: 1.45 }}>
+                      <b style={{ color: m.direccion === 'entrante' ? '#1E8A63' : C.moradoTinta }}>{m.direccion === 'entrante' ? 'Él' : 'Tú'}</b>
+                      <span style={{ color: C.g500 }}> · {dia(m.created_at)} · </span>
+                      <span style={{ color: '#33313d' }}>{m.cuerpo || `(${m.tipo})`}</span>
+                    </div>
+                  ))}
+                </div>
+            )) :
             <div style={CAJA}>
               <div style={ROT}>Lo último que se dijeron</div>
-              {!(ctx?.mensajes || []).length ? <div style={{ fontSize: 13, color: C.g500 }}>Nada por WhatsApp todavía.</div> : (
+              {!(ctx?.mensajes || []).length ? <div style={{ fontSize: M ? 14 : 13, color: C.g500 }}>Nada por WhatsApp todavía.</div> : (
                 <div style={{ display: 'grid', gap: 6, maxHeight: 210, overflowY: 'auto' }}>
                   {ctx.mensajes.map((m: any, i: number) => (
-                    <div key={i} style={{ fontSize: 12.5, lineHeight: 1.45 }}>
+                    <div key={i} style={{ fontSize: FS, lineHeight: 1.45 }}>
                       <b style={{ color: m.direccion === 'entrante' ? '#1E8A63' : C.moradoTinta }}>{m.direccion === 'entrante' ? 'Él' : 'Tú'}</b>
                       <span style={{ color: '#a5a2af' }}> · {dia(m.created_at)} · </span>
                       <span style={{ color: '#33313d' }}>{m.cuerpo || `(${m.tipo})`}</span>
@@ -466,7 +716,7 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
                   ))}
                 </div>
               )}
-            </div>
+            </div>}
           </div>
 
           {/* ── Columna derecha: lo que haces DURANTE la llamada ──
@@ -474,18 +724,23 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
               que el cliente acaba de pedir no puede estar a tres pantallas de
               scroll de distancia. */}
           <div style={{ flex: '1 1 340px', display: 'grid', gap: 12, minWidth: 0, order: esMovil ? -1 : 0 }}>
+            {!esMovil && !fin && teclas && onTono && <div style={CAJA}><div style={ROT}>Teclas · {tonos || 'marca las opciones del menú'}</div>{teclado}</div>}
+            {esMovil && avisos && <div style={{ display: 'grid', marginTop: -6 }}>{avisos}</div>}
             {esMovil && bloqueOido}
             {/* ══ AL COLGAR: EL CIERRE ════════════════════════════════════
                 Lo que la IA leyó de la llamada, propuesto para confirmar. Si no
                 hay IA —sin saldo, o la transcripción no alcanzó— se dice con
                 todas sus letras en vez de fingir que no había nada que cerrar:
                 las acciones que sí se hicieron siguen arriba, hechas. */}
+            {/* En el teléfono, al colgar, el cierre va ANTES que todo (`order`):
+                es lo que se confirma con «Aplicar el cierre» de la barra, y
+                debajo de la transcripción quedaba a tres pantallas. */}
             {fin && (
-              <div style={{ ...CAJA, borderColor: C.morado }}>
+              <div style={{ ...CAJA, borderColor: C.morado, ...(plegar ? { order: -2 } : null) }}>
                 <div style={ROT}>Cerrar la llamada</div>
                 {/* La IA tarda unos diez segundos en leer la llamada entera.
                     Se dice cuánto, o el silencio se lee como que se colgó. */}
-                {cerrando && <div style={{ fontSize: 12.5, color: C.g500 }}>Leyendo la llamada… (unos diez segundos)</div>}
+                {cerrando && <div style={{ fontSize: FS, color: C.g500 }}>Leyendo la llamada… (unos diez segundos)</div>}
                 {/* COLGÓ ÉL Y NADIE CERRÓ. Es el caso NORMAL —el que cuelga
                     suele ser el cliente— y antes dejaba la llamada abierta sin
                     apunte ni compromiso. Se pide el desenlace de arriba y se
@@ -499,41 +754,42 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
                   </button>
                 )}
                 {!cerrando && aplicado && (
-                  <div style={{ fontSize: 12.5, color: '#1E8A63', fontWeight: 700, lineHeight: 1.7 }}>
+                  <div style={{ fontSize: FS, color: '#1E8A63', fontWeight: 700, lineHeight: 1.7 }}>
                     {aplicado.length ? aplicado.map((h, i) => <div key={i}>✓ {h}</div>) : <div>✓ Quedó cerrada.</div>}
                   </div>
                 )}
                 {!cerrando && !aplicado && cierre && p && (
                   <>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-                      <span style={{ fontSize: 11, fontWeight: 800, borderRadius: 999, padding: '3px 9px', background: '#EEECFE', color: C.moradoTinta }}>
-                        {resultado ? `Tú: ${RESULTADOS.find(r => r.id === resultado)?.l || resultado}` : `La IA dice: ${DE_CIERRE[p.resultado] || p.resultado}`}
+                      <span style={{ ...CHIP, whiteSpace: 'nowrap', background: '#EEECFE', color: C.moradoTinta }}>
+                        {resultado ? `Tú: ${RESULTADOS.find(r => r.id === resultado)?.l || resultado}` : `${M ? 'IA' : 'La IA dice'}: ${DE_CIERRE[p.resultado] || p.resultado}`}
                       </span>
-                      {p.etapa && <span style={{ fontSize: 11, fontWeight: 800, borderRadius: 999, padding: '3px 9px', background: p.etapa === 'descalificado' ? '#FDEDEB' : '#EAF8F2', color: p.etapa === 'descalificado' ? '#C0554E' : '#1E8A63' }}>Etapa → {ETAPA_L[p.etapa] || p.etapa}</span>}
-                      {p.no_llamar && <span style={{ fontSize: 11, fontWeight: 800, borderRadius: 999, padding: '3px 9px', background: '#FDEDEB', color: '#C0554E' }}>No volver a llamar</span>}
+                      {p.etapa && <span style={{ ...CHIP, whiteSpace: 'nowrap', background: p.etapa === 'descalificado' ? '#FDEDEB' : '#EAF8F2', color: p.etapa === 'descalificado' ? '#C0554E' : '#1E8A63' }}>Etapa → {ETAPA_L[p.etapa] || p.etapa}</span>}
+                      {p.no_llamar && <span style={{ ...CHIP, background: '#FDEDEB', color: '#C0554E' }}>No volver a llamar</span>}
                     </div>
-                    <div style={{ fontSize: 13, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{p.nota}</div>
-                    {p.siguiente_paso && <div style={{ fontSize: 12.5, color: C.moradoTinta, fontWeight: 700, marginTop: 6 }}>Sigue: {p.siguiente_paso}</div>}
+                    <div style={{ fontSize: M ? 14.5 : 13, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{p.nota}</div>
+                    {p.siguiente_paso && <div style={{ fontSize: FS, color: C.moradoTinta, fontWeight: 700, marginTop: 6 }}>Sigue: {horaHumana(p.siguiente_paso)}</div>}
                     {!!(p.compromisos || []).length && (
-                      <div style={{ fontSize: 12.5, marginTop: 6 }}>{p.compromisos.map((c: any, i: number) => (
-                        <div key={i}>📅 {c.tipo === 'reunion' ? 'Reunión' : 'Llamada'} el {c.fecha} a las {c.hora}</div>
+                      <div style={{ fontSize: FS, marginTop: 6 }}>{p.compromisos.map((c: any, i: number) => (
+                        <div key={i}>📅 {c.tipo === 'reunion' ? 'Reunión' : 'Llamada'} el {fechaHumana(c.fecha, c.hora)}</div>
                       ))}</div>
                     )}
                     {!!(p.envios || []).length && (
-                      <div style={{ fontSize: 12.5, marginTop: 6 }}>{p.envios.map((e: any, i: number) => (
+                      <div style={{ fontSize: FS, marginTop: 6 }}>{p.envios.map((e: any, i: number) => (
                         <div key={i}>📎 Mandarle {e.tema}{e.estado === 'falta' ? ' (no sabemos qué: te lo va a preguntar)' : ''}</div>
                       ))}</div>
                     )}
-                    {!!(p.datos || []).length && <div style={{ fontSize: 12.5, marginTop: 6 }}>✍️ Datos: {p.datos.map((d: any) => `${d.campo} = ${d.valor}`).join(' · ')}</div>}
+                    {!!(p.datos || []).length && <div style={{ fontSize: FS, marginTop: 6 }}>✍️ Datos: {p.datos.map((d: any) => `${d.campo} = ${d.valor}`).join(' · ')}</div>}
                     <details style={{ marginTop: 9 }}>
-                      <summary style={{ fontSize: 12, color: C.g500, cursor: 'pointer', fontWeight: 700 }}>¿La IA se equivocó en qué pasó? Corrígelo</summary>
+                      <summary style={{ fontSize: M ? 14 : 12, color: M ? C.moradoTinta : C.g500, cursor: 'pointer', fontWeight: 700 }}>¿La IA se equivocó en qué pasó? Corrígelo</summary>
                       <div style={{ marginTop: 8 }}>{quePaso}</div>
                     </details>
-                    <button onClick={aplicarCierre} style={{ ...BTN, marginTop: 9, background: C.morado, color: '#fff', border: 'none', width: '100%' }}>Aplicar el cierre</button>
+                    {/* En el teléfono este botón vive en la barra del pulgar (abajo). */}
+                    {!esMovil && <button onClick={aplicarCierre} style={{ ...BTN, marginTop: 9, background: C.morado, color: '#fff', border: 'none', width: '100%' }}>Aplicar el cierre</button>}
                   </>
                 )}
                 {!cerrando && !aplicado && cierre && !p && (
-                  <div style={{ fontSize: 12.5, color: C.g500, lineHeight: 1.6 }}>
+                  <div style={{ fontSize: FS, color: C.g500, lineHeight: 1.6 }}>
                     {/* El error de facturación de Anthropic llega en inglés y
                         con su JSON: aquí se dice en una frase lo que significa
                         y qué hay que hacer, que es cargarle saldo. */}
@@ -554,19 +810,26 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
                 colgar, y dos copias de algo que manda WhatsApps a clientes se
                 separan en un mes. */}
             {callId && (
+              /* CON ALGO PENDIENTE, «TE PIDIÓ ALGO» VA PRIMERO (23-sep-2026).
+                 Es lo único que «Aplicar el cierre» no resuelve: debajo del
+                 resumen de la IA quedaba bajo el pliegue en 360 y «Hacerlo»
+                 salía cortado por la barra. Sin pendientes, el cierre manda. */
+              <div data-sala-acciones="" style={{ display: 'grid', minWidth: 0, ...(plegar ? { order: abiertas.length ? -3 : -1 } : null),
+                ...(resaltar ? { borderRadius: 16, boxShadow: `0 0 0 3px ${C.morado}`, transition: 'box-shadow .2s' } : { transition: 'box-shadow .6s' }) }}>
               <AccionesLlamada
                 callId={callId}
                 acciones={acciones}
                 onAcciones={setAcciones}
                 fraseCliente={[...oido].reverse().find(o => o.quien !== 'vendedor')?.texto || null} />
+              </div>
             )}
 
             <div style={CAJA}>
               <div style={ROT}>{fin ? 'Tu apunte' : 'Apunta mientras hablas'}</div>
-              <textarea value={nota} onChange={e => setNota(e.target.value)} rows={fin ? 3 : 6}
+              <textarea value={nota} onChange={e => setNota(e.target.value)} rows={fin ? 3 : (M ? 4 : 6)}
                 placeholder="Lo que diga, tal cual. Se guarda solo."
-                style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 10, padding: '10px 12px', fontSize: 13.5, fontFamily: 'inherit', lineHeight: 1.5, resize: 'vertical', outline: 'none' }} />
-              <div style={{ fontSize: 11, color: guardado === 'ok' ? '#1E8A63' : '#a5a2af', marginTop: 5, fontWeight: 700 }}>
+                style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 10, padding: '10px 12px', fontSize: M ? 16 : 13.5, fontFamily: 'inherit', lineHeight: 1.5, resize: 'vertical', outline: 'none' }} />
+              <div style={{ fontSize: M ? 14 : 11, color: guardado === 'ok' ? '#1E8A63' : (M ? C.g500 : '#a5a2af'), marginTop: 5, fontWeight: 700 }}>
                 {guardado === 'ok' ? 'Guardado' : guardado === 'guardando' ? 'Guardando…' : 'Se guarda solo mientras escribes'}
               </div>
             </div>
@@ -579,26 +842,26 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
                 <div style={ROT}>Agendar</div>
                 {horarios === null ? (
                   <>
-                    <button onClick={() => verHorarios()} style={{ border: `1.5px solid ${C.morado}`, background: '#fff', color: C.moradoTinta, borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', width: '100%' }}>
+                    <button onClick={() => verHorarios()} style={{ border: `1.5px solid ${C.morado}`, background: '#fff', color: C.moradoTinta, borderRadius: M ? 12 : 10, padding: '9px 14px', fontSize: M ? 15 : 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', width: '100%', ...(M ? { minHeight: 48 } : null) }}>
                       Ver los horarios que tengo libres
                     </button>
                     <button onClick={mandarLiga} disabled={ligaEnviada}
-                      style={{ border: 'none', background: 'none', color: ligaEnviada ? '#1E8A63' : C.g500, fontSize: 12.5, fontWeight: 700, cursor: ligaEnviada ? 'default' : 'pointer', fontFamily: 'inherit', padding: '8px 0 0', width: '100%' }}>
+                      style={{ border: 'none', background: 'none', color: ligaEnviada ? '#1E8A63' : (M ? C.moradoTinta : C.g500), fontSize: M ? 14 : 12.5, fontWeight: 700, cursor: ligaEnviada ? 'default' : 'pointer', fontFamily: 'inherit', padding: M ? 0 : '8px 0 0', width: '100%', ...(M ? { minHeight: 44, marginTop: 8 } : null) }}>
                       {ligaEnviada ? 'Liga enviada por WhatsApp' : 'O mándale la liga por WhatsApp ahora'}
                     </button>
                   </>
                 ) : (
                   <>
                     <select value={tipo} onChange={e => { setTipo(e.target.value); try { localStorage.setItem('cabina.tipocita', JSON.stringify(e.target.value)); } catch { /* privado */ } verHorarios(e.target.value); }}
-                      style={{ border: `1px solid ${C.g200}`, borderRadius: 8, padding: '6px 9px', fontSize: 12.5, fontFamily: 'inherit', fontWeight: 700, color: C.moradoTinta, marginBottom: 9, maxWidth: '100%' }}>
+                      style={{ border: `1px solid ${C.g200}`, borderRadius: 8, padding: '6px 9px', fontSize: M ? 16 : 12.5, fontFamily: 'inherit', fontWeight: 700, color: C.moradoTinta, marginBottom: 9, maxWidth: '100%', ...(M ? { width: '100%', minHeight: 48, borderRadius: 10, background: '#fff' } : null) }}>
                       {(tipos.length ? tipos : [{ slug: 'demo', nombre: 'Demo personalizada', duracion_minutos: 30 }]).map((t: any) => (
                         <option key={t.slug} value={t.slug}>{t.nombre} · {t.duracion_minutos} min</option>
                       ))}
                     </select>
                     {!horarios.length
-                      ? <div style={{ fontSize: 12.5, color: C.g500 }}>No hay horarios libres de este tipo en las próximas dos semanas. Prueba otro tipo o queda como «volver a llamar».</div>
+                      ? <div style={{ fontSize: FS, color: C.g500 }}>No hay horarios libres de este tipo en las próximas dos semanas. Prueba otro tipo o queda como «volver a llamar».</div>
                       : <SelectorHorarios huecos={horarios} movil={esMovil} />}
-                    <div style={{ fontSize: 11, color: C.g500, marginTop: 7 }}>Léeselos tal cual: son los huecos reales. La cita la agenda el cierre con lo que acuerden.</div>
+                    <div style={{ fontSize: M ? 14 : 11, color: C.g500, marginTop: 7, lineHeight: 1.4 }}>Léeselos tal cual: son los huecos reales. La cita la agenda el cierre con lo que acuerden.</div>
                   </>
                 )}
               </div>
@@ -611,13 +874,16 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
                 del bloque de cierre. */}
             {!fin && (
               <div style={{ ...CAJA, borderColor: C.g200 }}>
-                <div style={ROT}>¿Qué pasó? · opcional: si no lo eliges, lo propone la IA al colgar</div>
+                <div style={{ ...ROT, marginBottom: 2 }}>¿Qué pasó?</div>
+                {/* La aclaración en minúsculas: una frase entera en versales se
+                    partía en dos renglones y costaba leerla. */}
+                <div style={{ fontSize: M ? 14 : 11.5, color: C.g500, marginBottom: M ? 10 : 7, lineHeight: 1.4 }}>Opcional: si no lo eliges, lo propone la IA al colgar.</div>
                 {quePaso}
               </div>
             )}
 
-            {!fin && (
-              <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: C.g500, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: 6 }}>
+            {!fin && !esMovil && (
+              <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: C.g500, fontSize: M ? 14 : 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: 6, ...(M ? { minHeight: 48 } : null) }}>
                 Esconder la sala (la llamada sigue)
               </button>
             )}
@@ -630,22 +896,96 @@ export default function SalaLlamada({ telefono, callId, nombre, segundos, nota, 
             que está a tres centímetros del pulgar se toca sin mirar, lo que
             está arriba pide recolocar la mano — y es el botón que más se pica
             del CRM. Colgar es el grande y el rojo; Silenciar cede sitio.
-            El aire de `paddingBottom` en el cuerpo evita que la barra tape la
-            última línea de la transcripción. */}
-        {esMovil && !fin && (
+            Va FUERA del cuerpo que scrollea, así que no tapa nada. Las teclas
+            se abren encima de la barra, dentro de ella. */}
+        {/* ORDEN Y ROJO DE LA PANTALLA OSCURA (23-sep-2026): Silenciar · Colgar ·
+            Teclas, con Colgar al centro y con el mismo ícono. Antes aquí Colgar
+            se iba a la derecha y cambiaba de forma: al entrar a la ficha en
+            plena llamada, el pulgar lo buscaba donde ya no estaba. */}
+        {barra && !fin && (
           <div style={{
-            position: 'sticky', bottom: 0, zIndex: 3, display: 'flex', gap: 8,
+            flexShrink: 0, position: 'relative', zIndex: 3,
             padding: '10px 14px calc(10px + env(safe-area-inset-bottom))',
-            background: 'rgba(255,255,255,.96)', backdropFilter: 'blur(10px)', borderTop: `1px solid ${C.g200}`,
+            /* Blanco opaco: con .97 y blur se leía el texto que pasa por debajo. */
+            background: '#fff', borderTop: `1px solid ${C.g200}`, boxShadow: '0 -6px 18px rgba(20,16,40,.08)',
           }}>
-            <button onClick={onSilenciar}
-              style={{ flexShrink: 0, border: `1px solid ${C.g200}`, background: mudo ? '#FFF4E5' : '#fff', color: mudo ? '#9a6a10' : C.g700, borderRadius: 12, padding: '13px 16px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
-              {mudo ? 'En mudo' : 'Silenciar'}
-            </button>
-            <button onClick={cerrarLlamada} disabled={cerrando}
-              style={{ flex: 1, border: 'none', background: '#C0554E', color: '#fff', borderRadius: 12, padding: '13px 18px', fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
-              {cerrando ? 'Cerrando…' : 'Colgar'}
-            </button>
+            {teclas && onTono && (
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 13, color: C.g500, fontWeight: 700, marginBottom: 8, minHeight: 18, fontVariantNumeric: 'tabular-nums', textAlign: 'center' }}>{tonos || 'Marca las opciones del menú'}</div>
+                {teclado}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8 }}>
+              {/* Ícono arriba y nombre abajo, como los círculos de la pantalla
+                  oscura. En mudo se rellena de ámbar y dice «Silenciado»: el
+                  estado se lee sin buscar la palabra. */}
+              <button onClick={onSilenciar} aria-pressed={mudo} aria-label={mudo ? 'Activar micrófono' : 'Silenciar'}
+                style={{ flexShrink: 0, width: 80, border: `1px solid ${mudo ? '#E0A43B' : C.g200}`, background: mudo ? '#FBD38D' : '#fff', color: mudo ? '#6b4a06' : C.g700, borderRadius: 14, padding: '4px 0', minHeight: 54, fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, lineHeight: 1.1 }}>
+                <IcoMic apagado={mudo} />{mudo ? 'Silenciado' : 'Silenciar'}
+              </button>
+              <button onClick={cerrarLlamada} disabled={cerrando}
+                style={{ flex: 1, border: 'none', background: C.rojo500, color: '#fff', borderRadius: 14, padding: '0 12px', minHeight: 54, fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <IcoColgar size={20} />{cerrando ? 'Cerrando…' : 'Colgar'}
+              </button>
+              {onTono && (
+                <button onClick={() => setTeclas(t => !t)} aria-pressed={teclas} aria-label="Teclado de tonos"
+                  style={{ flexShrink: 0, width: 80, border: `1px solid ${teclas ? C.morado : C.g200}`, background: teclas ? '#EEECFE' : '#fff', color: teclas ? C.moradoTinta : C.g700, borderRadius: 14, padding: '4px 0', minHeight: 54, fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, lineHeight: 1.1 }}>
+                  <IcoTeclas />Teclas
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ══ LA BARRA DEL PULGAR AL COLGAR (23-sep-2026) ════════════════════
+            Lo único que se hace aquí es confirmar lo que propuso la IA y salir.
+            Antes «Listo» vivía arriba a la derecha (33 px) y «Aplicar el cierre»
+            a media caja: ahora los dos van abajo, donde está el pulgar, con el
+            primario ancho y morado. Mientras la IA lee, el primario lo dice. */}
+        {barra && fin && (
+          <div style={{
+            flexShrink: 0, position: 'relative', zIndex: 3, display: 'flex', flexWrap: 'wrap', gap: 8,
+            padding: '10px 14px calc(10px + env(safe-area-inset-bottom))',
+            background: '#fff', borderTop: `1px solid ${C.g200}`, boxShadow: '0 -6px 18px rgba(20,16,40,.08)',
+          }}>
+            {/* Sin degradado encima: deslavaba «Hacerlo» y «No era eso» justo
+                arriba del aviso. La sombra de la barra ya marca el corte. */}
+            {/* APLICAR NO RESUELVE LO QUE PIDIÓ. El cierre escribe el apunte, la
+                etapa y los compromisos; lo que quedó en «Te pidió algo» sin
+                «Hacerlo» ni «No era eso» sigue pendiente. Se dice aquí, junto al
+                botón, con un toque para ir a resolverlo. */}
+            {!aplicado && cierre && p && abiertas.length > 0 && (
+              <button onClick={irAPendientes}
+                style={{ flex: '1 0 100%', border: 'none', background: 'none', color: '#9a6a10', borderRadius: 10, padding: '0 4px', minHeight: 44, fontSize: 14, fontWeight: 700, textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1.3 }}>
+                {/* Un renglón de la barra, sin tarjeta propia: con borde y fondo
+                    era un piso más y en 360 la barra se comía un quinto. */}
+                <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <span aria-hidden style={{ width: 8, height: 8, borderRadius: 999, background: '#E0A43B', flexShrink: 0 }} />
+                  <span style={{ flex: 1, minWidth: 0 }}>{abiertas.length === 1 ? '1 pendiente de lo que pidió' : `${abiertas.length} pendientes de lo que pidió`}</span>
+                  <b style={{ flexShrink: 0, textDecoration: 'underline' }}>Ver</b>
+                </span>
+              </button>
+            )}
+            {!aplicado && cierre && p ? (
+              <>
+                <button onClick={onCerrar} title="Salir: el cierre propuesto se aplica solo en unos minutos"
+                  style={{ flex: '0 1 auto', border: `1px solid ${C.g200}`, background: '#fff', color: C.g700, borderRadius: 14, padding: '0 14px', minHeight: 54, fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1.2 }}>
+                  {/* «Salir sin aplicar» sonaba a perder la minuta, y no se pierde:
+                      el cierre propuesto se queda y el latido lo aplica solo a los
+                      pocos minutos si nadie lo toca. */}
+                  Ahorita no
+                </button>
+                <button onClick={aplicarCierre} disabled={cerrando}
+                  style={{ flex: '1 0 auto', border: 'none', background: C.morado, color: '#fff', borderRadius: 14, padding: '0 14px', minHeight: 54, fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', opacity: cerrando ? .7 : 1 }}>
+                  {cerrando ? 'Aplicando…' : 'Aplicar el cierre'}
+                </button>
+              </>
+            ) : (
+              <button onClick={onCerrar}
+                style={{ flex: 1, border: 'none', background: cerrando ? C.g100 : C.morado, color: cerrando ? C.g700 : '#fff', borderRadius: 14, padding: '0 18px', minHeight: 54, fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+                {cerrando ? 'Leyendo la llamada… (puedes salir)' : 'Listo'}
+              </button>
+            )}
           </div>
         )}
       </div>

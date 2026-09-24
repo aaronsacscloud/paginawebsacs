@@ -48,6 +48,25 @@ type Resumen = {
 /* ── Errores de Twilio en español ──────────────────────────────────────────
    El SDK devuelve códigos. Un «31401» en pantalla no le sirve a nadie: cada
    uno tiene una causa concreta y una acción concreta. */
+/* Los íconos de la botonera del teléfono: trazo simple, del color del texto. */
+const IcoMic = ({ apagado }: { apagado?: boolean }) => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" strokeWidth="1.9" />
+    <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+    {apagado && <path d="M4 4l16 16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />}
+  </svg>
+);
+const IcoTeclas = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    {[5, 12, 19].flatMap(y => [5, 12, 19].map(x => <circle key={`${x}-${y}`} cx={x} cy={y} r="2" />))}
+  </svg>
+);
+const IcoColgar = ({ size = 24 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden style={{ transform: 'rotate(135deg)' }}>
+    <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" fill="currentColor" />
+  </svg>
+);
+
 function explicar(e: any): string {
   const cod = Number(e?.code || e?.causes?.[0]?.code || 0);
   const txt = String(e?.message || e || '');
@@ -133,6 +152,12 @@ export default function Telefonia() {
      aparece sola: ahí ya no hay llamada que estorbar. */
   const [salaMovil, setSalaMovil] = useState(false);
   useEffect(() => { if (!viva) setSalaMovil(false); }, [!!viva]);
+  /* LA LLAMADA MINIMIZADA EN EL TELÉFONO (23-sep-2026). La pantalla oscura lo
+     tapa todo, y a media llamada a veces hay que buscar un dato en el CRM sin
+     colgar. Minimizada queda como la píldora verde de iOS: arriba, con el
+     reloj, y a un toque de volver. Se olvida sola al terminar la llamada. */
+  const [minimizada, setMinimizada] = useState(false);
+  useEffect(() => { if (!viva) setMinimizada(false); }, [!!viva]);
   const [ctx, setCtx] = useState<any>(null);        // mejora 4 · con quién estás hablando
   const esMovil = useIsMobile();
   const esMovilRef = useRef(false); esMovilRef.current = esMovil;
@@ -727,7 +752,8 @@ export default function Telefonia() {
         width: '100%', boxSizing: 'border-box', marginTop: 8, resize: 'none',
         border: `1px solid ${oscuro ? 'rgba(255,255,255,.18)' : C.g200}`, borderRadius: 10,
         background: oscuro ? 'rgba(255,255,255,.08)' : '#fff', color: oscuro ? '#fff' : C.g900,
-        padding: '9px 11px', fontSize: 13, fontFamily: 'inherit', lineHeight: 1.5,
+        /* 16 en el teléfono: con menos, iOS hace zoom al tocar el campo en plena llamada. */
+        padding: '9px 11px', fontSize: esMovil ? 16 : 13, fontFamily: 'inherit', lineHeight: 1.5,
       }} />
   );
 
@@ -742,14 +768,14 @@ export default function Telefonia() {
         {error && (
           <div role="alert" style={{ background: '#fff', border: '1px solid #f0c4bd', color: '#C0554E', borderRadius: 10, padding: '8px 12px', fontSize: 12, maxWidth: 300, boxShadow: '0 8px 24px rgba(0,0,0,.10)', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
             <span style={{ flex: 1 }}>{error}</span>
-            <button onClick={() => setError('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#C0554E', fontFamily: 'inherit', fontWeight: 700 }}>x</button>
+            <button onClick={() => setError('')} aria-label="Cerrar el aviso" style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#C0554E', fontFamily: 'inherit', fontWeight: 700, ...(esMovil ? { width: 44, height: 44, margin: '-10px -8px -10px 0', fontSize: 16, flexShrink: 0 } : null) }}>✕</button>
           </div>
         )}
         <div style={{ background: '#1f1b33', color: '#fff', borderRadius: 12, padding: '9px 12px', boxShadow: '0 10px 30px rgba(0,0,0,.25)', display: 'flex', alignItems: 'center', gap: 10, minWidth: 250 }}>
           <span className={sala.enSala ? undefined : 'wa-pulso'} style={{ width: 9, height: 9, borderRadius: 999, background: sala.enSala ? (sala.mute ? '#9B8CFA' : '#4FBF95') : '#E8A838', flexShrink: 0 }} />
           <span style={{ minWidth: 0, flex: 1 }}>
-            <b style={{ display: 'block', fontSize: 12.5 }}>{sala.enSala ? (sala.mute ? 'En la sala · micrófono mudo' : 'En la sala · te oyen') : 'Entrando a la sala…'}</b>
-            <span style={{ fontSize: 11, color: '#c7c3e6' }}>{sala.enSala && !sala.mute ? 'Estás hablando con el cliente' : 'La central marca por ti; escuchas sin que te oigan'}</span>
+            <b style={{ display: 'block', fontSize: esMovil ? 14 : 12.5 }}>{sala.enSala ? (sala.mute ? 'En la sala · micrófono mudo' : 'En la sala · te oyen') : 'Entrando a la sala…'}</b>
+            <span style={{ fontSize: esMovil ? 12.5 : 11, color: '#c7c3e6' }}>{sala.enSala && !sala.mute ? 'Estás hablando con el cliente' : 'La central marca por ti; escuchas sin que te oigan'}</span>
           </span>
           {sala.enSala && !sala.mute && (
             <span aria-hidden style={{ width: 4, height: 22, borderRadius: 2, background: 'rgba(255,255,255,.18)', position: 'relative', overflow: 'hidden' }}>
@@ -757,7 +783,7 @@ export default function Telefonia() {
             </span>
           )}
           <button onClick={() => document.dispatchEvent(new CustomEvent('tel-colgar-sala'))} title="Salir de la sala"
-            style={{ border: 'none', borderRadius: 8, background: 'rgba(239,122,114,.22)', color: '#fca5a1', padding: '6px 10px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Salir</button>
+            style={{ border: 'none', borderRadius: 8, background: 'rgba(239,122,114,.22)', color: '#fca5a1', padding: '6px 10px', fontSize: esMovil ? 14 : 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', ...(esMovil ? { minHeight: 44, minWidth: 64, borderRadius: 10 } : null) }}>Salir</button>
         </div>
       </div>
     );
@@ -800,6 +826,7 @@ export default function Telefonia() {
         fin={!!finSala}
         nota={nota} setNota={setNota}
         mudo={mute} onSilenciar={toggleMute}
+        onTono={marcarTono} tonos={tonos}
         onColgar={colgar}
         onCerrar={() => {
           if (finSala) { setFinSala(null); setNota(''); setNotaAbierta(false); return; }
@@ -836,10 +863,10 @@ export default function Telefonia() {
           <span style={{ fontSize: 15, color: '#c9c5d8' }}>
             {resumen.desenlace}{resumen.seg > 0 ? ` · ${fmt(resumen.seg)}` : ''}
           </span>
-          {!resumen.verificado && <span style={{ fontSize: 12, color: '#8f8aa3' }}>confirmando con la central…</span>}
+          {!resumen.verificado && <span style={{ fontSize: 14, color: '#b6b2c6' }}>confirmando con la central…</span>}
 
           {/* La minuta, con su propio espacio: es lo que la gente espera. */}
-          <div style={{ marginTop: 16, width: '100%', maxWidth: 340, background: 'rgba(255,255,255,.07)', borderRadius: 14, padding: '14px 16px', fontSize: 13.5, lineHeight: 1.55 }}>
+          <div style={{ marginTop: 16, width: '100%', maxWidth: 340, background: 'rgba(255,255,255,.07)', borderRadius: 14, padding: '14px 16px', fontSize: 14.5, lineHeight: 1.55 }}>
             {resumen.minuta === 'esperando' && (
               <span style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center', color: '#d6d3e4' }}>
                 <span className="wa-pulso" style={{ width: 9, height: 9, borderRadius: 999, background: '#9B8CFA', flexShrink: 0 }} />
@@ -868,10 +895,32 @@ export default function Telefonia() {
             Llamar otra vez
           </button>
           <button onClick={() => setResumen(null)}
-            style={{ border: 'none', background: 'none', color: '#8f8aa3', borderRadius: 12, padding: '14px 0', fontSize: 14.5, fontWeight: 700, fontFamily: 'inherit', width: '100%' }}>
+            style={{ border: 'none', background: 'none', color: '#c9c5d8', borderRadius: 12, padding: '14px 0', minHeight: 48, fontSize: 15, fontWeight: 700, fontFamily: 'inherit', width: '100%' }}>
             Listo
           </button>
         </div>
+      </div>
+    );
+  }
+
+  if (esMovil && viva && !entrante && minimizada) {
+    const enLinea = viva.fase === 'en-linea';
+    return (
+      <div data-tel-panel style={{
+        position: 'fixed', top: 'calc(8px + env(safe-area-inset-top))', left: '50%', transform: 'translateX(-50%)', zIndex: 1000,
+        display: 'flex', alignItems: 'center', gap: 8, padding: 4, borderRadius: 999,
+        background: enLinea ? '#0f7a55' : '#5b4bb7', boxShadow: '0 10px 30px rgba(0,0,0,.28)', maxWidth: 'calc(100vw - 24px)',
+      }}>
+        <button onClick={() => setMinimizada(false)} aria-label="Volver a la llamada"
+          style={{ border: 'none', background: 'none', color: '#fff', minHeight: 44, padding: '0 8px 0 12px', display: 'inline-flex', alignItems: 'center', gap: 9, fontSize: 14, fontWeight: 800, fontFamily: 'inherit', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+          <span className={enLinea ? undefined : 'wa-pulso'} style={{ width: 9, height: 9, borderRadius: 999, background: '#fff', flexShrink: 0 }} />
+          {enLinea ? fmt(seg) : ETIQUETA[viva.fase]}
+          <span style={{ fontWeight: 600, opacity: .9 }}>· Volver</span>
+        </button>
+        <button onClick={colgar} aria-label="Colgar"
+          style={{ width: 44, height: 44, borderRadius: 999, border: 'none', background: C.rojo500, color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <IcoColgar size={20} />
+        </button>
       </div>
     );
   }
@@ -880,14 +929,39 @@ export default function Telefonia() {
     return (
       <div data-tel-panel role="dialog" aria-label="Llamada telefónica" style={{
         position: 'fixed', inset: 0, zIndex: 1000, background: 'linear-gradient(170deg, #241f3d 0%, #111827 62%)',
-        color: '#fff', display: 'flex', flexDirection: 'column', padding: '28px 22px calc(26px + env(safe-area-inset-bottom))',
+        /* Con el apunte y el teclado abiertos no cabe en 780 px: la pantalla
+           scrollea por dentro en vez de empujar la botonera fuera de la vista. */
+        overflowY: 'auto', WebkitOverflowScrolling: 'touch',
+        color: '#fff', display: 'flex', flexDirection: 'column', padding: 'max(12px, env(safe-area-inset-top)) 22px calc(26px + env(safe-area-inset-bottom))',
       }}>
-        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 10 }}>
-          <span className={viva?.fase === 'en-linea' ? undefined : 'wa-pulso'} style={{
-            width: 96, height: 96, borderRadius: 999, marginBottom: 6,
-            background: viva?.fase === 'en-linea' ? C.emerald500 : '#9B8CFA',
+        {/* MINIMIZAR, arriba a la izquierda como en iOS: la llamada sigue y se
+            vuelve desde la píldora. Sólo con llamada propia: una entrante se
+            contesta o se rechaza, no se esconde. */}
+        <div style={{ display: 'flex', alignItems: 'center', minHeight: 44, margin: '0 -10px' }}>
+          {viva && !entrante && (
+            <button onClick={() => setMinimizada(true)} aria-label="Minimizar la llamada"
+              style={{ border: 'none', background: 'rgba(255,255,255,.1)', color: '#fff', borderRadius: 999, minWidth: 44, height: 44, padding: '0 14px 0 10px', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 700, fontFamily: 'inherit' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              Minimizar
+            </button>
+          )}
+        </div>
+        {/* Quién es, arriba y no flotando a media pantalla (23-sep-2026): como
+            en el teléfono de iOS, el nombre y el estado se leen primero y el aire
+            queda entre ellos y la botonera, no partido en dos huecos. */}
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 'min(7vh, 56px)', textAlign: 'center', gap: 10 }}>
+          <span style={{
+            width: 96, height: 96, borderRadius: 999, marginBottom: 6, position: 'relative',
+            /* Timbrando: morado hondo con el auricular blanco. Antes el círculo
+               entero parpadeaba a 30 % de opacidad y el ☎ se leía gris sobre
+               morado oscuro; ahora late sólo el aro de afuera. \uFE0E lo
+               fuerza a glifo, no a emoji. */
+            background: viva?.fase === 'en-linea' ? C.emerald500 : '#5b4bb7', color: '#fff',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 34,
-          }}>☎</span>
+          }}>
+            {viva?.fase !== 'en-linea' && <span aria-hidden className="wa-pulso" style={{ position: 'absolute', inset: -8, borderRadius: 999, border: '3px solid #9B8CFA' }} />}
+            {'☎\uFE0E'}
+          </span>
 
           <b style={{ fontSize: 25, lineHeight: 1.2, maxWidth: '92%' }}>
             {viva ? (viva.nombre || telefonoLegible(viva.telefono)) : (ctx?.nombre || telefonoLegible(entrante?.parameters?.From || ''))}
@@ -897,9 +971,11 @@ export default function Telefonia() {
           </span>
 
           {/* MEJORA 4 en pantalla: con quién hablas, sin salir de la llamada. */}
-          {resumenCtx && <span style={{ fontSize: 12.5, color: '#9B8CFA', fontWeight: 600 }}>{resumenCtx}</span>}
-          {ctx?.proximoPaso && viva?.fase !== 'en-linea' && (
-            <span style={{ fontSize: 12, color: '#c9c5d8', background: 'rgba(255,255,255,.07)', borderRadius: 10, padding: '8px 12px', maxWidth: 320, lineHeight: 1.5 }}>
+          {resumenCtx && <span style={{ fontSize: 14, color: '#9B8CFA', fontWeight: 600 }}>{resumenCtx}</span>}
+          {/* También EN LÍNEA: «quedó pendiente» es justo lo que hay que decir
+              ya que contestó; antes se borraba al descolgar. */}
+          {ctx?.proximoPaso && (
+            <span style={{ fontSize: 14, color: '#d6d3e4', background: 'rgba(255,255,255,.07)', borderRadius: 10, padding: '8px 12px', maxWidth: 320, lineHeight: 1.5 }}>
               Quedó pendiente: {ctx.proximoPaso}
             </span>
           )}
@@ -909,69 +985,85 @@ export default function Telefonia() {
             {viva?.fase === 'en-linea' && <Medidor />}
           </span>
 
-          {aviso && <span style={{ fontSize: 12, color: C.ambar300, background: 'rgba(251,191,36,.13)', borderRadius: 10, padding: '8px 12px', maxWidth: 320, lineHeight: 1.45 }}>{aviso}</span>}
+          {aviso && <span style={{ fontSize: 14, color: C.ambar300, background: 'rgba(251,191,36,.13)', borderRadius: 10, padding: '8px 12px', maxWidth: 320, lineHeight: 1.45 }}>{aviso}</span>}
           {/* Un error DURANTE la llamada tiene que verse aquí: esta pantalla
               tapa todo, así que el aviso de abajo nunca se vería. */}
           {error && (
-            <span role="alert" onClick={() => setError('')} style={{ fontSize: 12.5, color: '#fff', background: 'rgba(239,68,68,.9)', borderRadius: 12, padding: '11px 14px', maxWidth: 330, lineHeight: 1.5, cursor: 'pointer' }}>
+            <span role="alert" onClick={() => setError('')} style={{ fontSize: 14, color: '#fff', background: 'rgba(239,68,68,.9)', borderRadius: 12, padding: '11px 14px', maxWidth: 330, lineHeight: 1.5, cursor: 'pointer', minHeight: 44, boxSizing: 'border-box' }}>
               {error}
-              <b style={{ display: 'block', marginTop: 5, fontSize: 11, opacity: .85 }}>Toca para cerrar</b>
+              <b style={{ display: 'block', marginTop: 5, fontSize: 12, opacity: .9 }}>Toca para cerrar</b>
             </span>
           )}
-          {espera && <span style={{ fontSize: 12, color: C.ambar300 }}>Otra llamada entrando: {telefonoLegible(espera.parameters?.From || '')}</span>}
+          {espera && <span style={{ fontSize: 14, color: C.ambar300 }}>Otra llamada entrando: {telefonoLegible(espera.parameters?.From || '')}</span>}
         </div>
 
         {/* LA FICHA Y LO QUE TE PIDIÓ, a un toque. Es la misma sala del
             escritorio: quién es, lo que se está oyendo, las acciones que pidió
             y el campo para dictarle lo que no reconoció. */}
         {viva?.fase === 'en-linea' && (
+          /* Secundario (contorno), no relleno: un morado ancho encima de la
+             botonera competía con Colgar y el pulgar caía ahí buscando Silenciar. */
           <button onClick={() => setSalaMovil(true)}
-            style={{ border: 'none', background: '#9B8CFA', color: '#fff', borderRadius: 999, padding: '12px 16px', fontSize: 13.5, fontWeight: 800, fontFamily: 'inherit', width: '100%', marginBottom: 10 }}>
+            style={{ border: '1.5px solid rgba(155,140,250,.7)', background: 'rgba(155,140,250,.14)', color: '#fff', borderRadius: 999, padding: '0 16px', minHeight: 52, fontSize: 15.5, fontWeight: 800, fontFamily: 'inherit', width: '100%', marginBottom: 10 }}>
             Ver la ficha y lo que te pidió
           </button>
         )}
 
         {/* MEJORA 3 en pantalla: el apunte, a un toque y sin salir. */}
         {viva?.fase === 'en-linea' && (
-          <div style={{ marginBottom: 14 }}>
+          <div style={{ marginBottom: 22 }}>
             <button onClick={() => setNotaAbierta(v => !v)}
-              style={{ border: 'none', background: 'rgba(255,255,255,.1)', color: '#fff', borderRadius: 999, padding: '9px 16px', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', width: '100%' }}>
+              style={{ border: 'none', background: 'rgba(255,255,255,.1)', color: '#fff', borderRadius: 999, padding: '0 16px', minHeight: 48, fontSize: 15, fontWeight: 700, fontFamily: 'inherit', width: '100%' }}>
               {notaAbierta ? 'Ocultar el apunte' : (nota.trim() ? '📝 Apunte guardado al colgar' : '📝 Apuntar algo')}
             </button>
             {notaAbierta && campoNota(true)}
             {notaAbierta && teclado === false && (
               <button onClick={() => setTeclado(true)}
-                style={{ marginTop: 8, border: 'none', background: 'rgba(255,255,255,.07)', color: '#c9c5d8', borderRadius: 10, padding: '8px 12px', fontSize: 12, fontFamily: 'inherit', width: '100%' }}>Abrir teclado de tonos</button>
+                style={{ marginTop: 8, border: 'none', background: 'rgba(255,255,255,.07)', color: '#c9c5d8', borderRadius: 12, padding: '0 12px', minHeight: 44, fontSize: 14, fontFamily: 'inherit', width: '100%' }}>Abrir teclado de tonos</button>
             )}
           </div>
         )}
 
         {teclado && viva?.fase === 'en-linea' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 22 }}>
             {['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'].map(d => (
-              <button key={d} onClick={() => marcarTono(d)} style={{ border: 'none', background: 'rgba(255,255,255,.12)', color: '#fff', borderRadius: 12, padding: '14px 0', fontSize: 19, fontWeight: 700, fontFamily: 'inherit' }}>{d}</button>
+              <button key={d} onClick={() => marcarTono(d)} style={{ border: 'none', background: 'rgba(255,255,255,.12)', color: '#fff', borderRadius: 12, padding: '14px 0', minHeight: 52, fontSize: 19, fontWeight: 700, fontFamily: 'inherit' }}>{d}</button>
             ))}
           </div>
         )}
 
         {/* Botonera de pulgar: 64 px, separada del borde. */}
-        <div style={{ display: 'flex', gap: 14, justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: 14, justifyContent: 'center', alignItems: 'flex-start' }}>
           {entrante ? (<>
             <button onClick={rechazar} aria-label="Rechazar" style={{ width: 68, height: 68, borderRadius: 999, border: 'none', background: C.rojo500, color: '#fff', fontSize: 24, fontFamily: 'inherit' }}>✕</button>
             <button onClick={contestar} aria-label="Contestar" style={{ width: 68, height: 68, borderRadius: 999, border: 'none', background: C.emerald500, color: '#fff', fontSize: 24, fontFamily: 'inherit' }}>☎</button>
           </>) : (<>
-            <button onClick={toggleMute} aria-label={mute ? 'Activar micrófono' : 'Silenciar'}
-              style={{ width: 64, height: 64, borderRadius: 999, border: 'none', background: mute ? C.ambar400 : 'rgba(255,255,255,.14)', color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'inherit' }}>
-              {mute ? 'Mic off' : 'Mic'}
-            </button>
-            <button onClick={colgar} aria-label="Colgar"
-              style={{ width: 76, height: 76, borderRadius: 999, border: 'none', background: C.rojo500, color: '#fff', fontSize: 26, fontFamily: 'inherit' }}>☎</button>
-            <button onClick={() => setTeclado(t => !t)} aria-label="Teclado" disabled={viva?.fase !== 'en-linea'}
-              style={{ width: 64, height: 64, borderRadius: 999, border: 'none', background: teclado ? '#9B8CFA' : 'rgba(255,255,255,.14)', color: '#fff', fontSize: 20, fontFamily: 'inherit', opacity: viva?.fase === 'en-linea' ? 1 : .4 }}>⌨</button>
+            {/* Cada botón con su nombre debajo, como en iOS: «Mic» y «⌨» solos
+                no se entendían de reojo. El tocable es la columna entera. */}
+            {([
+              /* Silenciar tampoco mientras timbra (23-sep-2026): nadie te oye
+                 todavía, y ofrecerlo junto a Colgar ponía a dudar al pulgar. Sale
+                 al contestar; entrante contestada ya está en línea. */
+              { l: mute ? 'Silenciado' : 'Silenciar', aria: mute ? 'Activar micrófono' : 'Silenciar', on: toggleMute, fondo: mute ? C.ambar400 : 'rgba(255,255,255,.14)', ico: <IcoMic apagado={mute} />, d: 64, off: viva?.fase !== 'en-linea' && !mute },
+              { l: 'Colgar', aria: 'Colgar', on: colgar, fondo: C.rojo500, ico: <IcoColgar size={28} />, d: 76, off: false },
+              { l: 'Teclas', aria: 'Teclado de tonos', on: () => setTeclado(t => !t), fondo: teclado ? '#9B8CFA' : 'rgba(255,255,255,.14)', ico: <IcoTeclas />, d: 64, off: viva?.fase !== 'en-linea' },
+            /* Mientras timbra no hay menú que marcar: Teclas apagado parecía un
+               botón roto en la fila del pulgar. Sale hasta que contestan; en su
+               lugar queda el hueco, para que Colgar no brinque al contestar. */
+            ]).map(b => b.off ? <span key={b.l} aria-hidden style={{ width: 80, flexShrink: 0 }} /> : (
+              <button key={b.l} onClick={b.on} aria-label={b.aria} disabled={b.off}
+                style={{ border: 'none', background: 'none', color: '#fff', padding: 0, width: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, fontFamily: 'inherit', opacity: b.off ? .45 : 1 }}>
+                {/* Los tres círculos centrados en la misma línea y las tres etiquetas a la misma altura. */}
+                <span style={{ height: 76, display: 'inline-flex', alignItems: 'center' }}>
+                  <span style={{ width: b.d, height: b.d, borderRadius: 999, background: b.fondo, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{b.ico}</span>
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#e4e1ef' }}>{b.l}</span>
+              </button>
+            ))}
           </>)}
         </div>
 
-        <div style={{ marginTop: 16, fontSize: 11.5, color: '#8f8aa3', textAlign: 'center', lineHeight: 1.5 }}>
+        <div style={{ marginTop: 16, fontSize: 14, color: '#b6b2c6', textAlign: 'center', lineHeight: 1.5 }}>
           Se está grabando · al colgar se escribe la minuta sola
         </div>
       </div>
@@ -990,6 +1082,11 @@ export default function Telefonia() {
      está hablando— con un aro de color latiendo alrededor: de un vistazo, desde
      el otro lado del escritorio, se sabe que hay una llamada en curso. */
   const enCurso = !!viva || !!entrante;
+  /* Con la sala abierta en el escritorio, la tarjeta centrada arriba le tapaba
+     el encabezado (teléfono, «¿de dónde nos conoce?»). La sala ya trae
+     Silenciar, Teclas y Colgar: la tarjeta se va a su esquina y sólo se pinta
+     si hay algo que la sala no dice (un aviso de red, otra llamada entrando). */
+  const salaEncima = !esMovil && !!viva && salaAbierta && viva.fase === 'en-linea';
   const colorLlamada = viva?.fase === 'en-linea' ? C.emerald500 : '#9B8CFA';
   const tarjeta: React.CSSProperties = {
     background: C.g900, color: '#fff', borderRadius: 18, padding: enCurso ? 18 : 14,
@@ -1014,7 +1111,7 @@ export default function Telefonia() {
   return (
     <div data-tel-panel style={{
       position: 'fixed', zIndex: 1000, display: 'flex', flexDirection: 'column', gap: 10,
-      ...(enCurso
+      ...(enCurso && !salaEncima
         ? { top: 74, left: '50%', transform: 'translateX(-50%)', alignItems: 'center' }
         : { right: 18, bottom: 90, alignItems: 'flex-end' }),
     }}>
@@ -1054,7 +1151,7 @@ export default function Telefonia() {
           cerrarlo»). Montado en `document.body` vuelve a centrarse. */}
       {((salaAbierta && viva?.fase === 'en-linea') || finSala) && typeof document !== 'undefined' && createPortal(laSala(), document.body)}
 
-      {viva && (
+      {viva && (!salaEncima || !!aviso || !!espera) && (
         <div style={tarjeta}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
             <span
