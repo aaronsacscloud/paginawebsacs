@@ -26,6 +26,7 @@ import { P } from '../../../lib/crm/paleta';
 import { LIFECYCLE } from '../../../lib/crm/lifecycle';
 import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
+import { IcoX } from './whatsapp/Iconos';
 import Chispas, { Sello, CSS_CHISPAS, CSS_SELLO } from './ui/Chispas';
 
 const Cabina = lazy(() => import('./whatsapp/Cabina'));
@@ -189,9 +190,11 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
             «Nueva llamada inteligente» es el verbo de la pantalla y va a lo
             ancho, donde el pulgar lo alcanza sin apuntar (23-sep-2026). */}
         <div style={{ display: 'flex', gap: esMovil ? 10 : 8, alignItems: 'center', flexShrink: 0, flexWrap: esMovil ? 'nowrap' : 'wrap', marginLeft: 'auto', width: esMovil ? '100%' : undefined }}>
+          {/* En el teléfono, el secundario común del flujo de llamadas (guía
+              de continuidad §3): blanco con línea gris, no contorno morado. */}
           <button onClick={() => setVerGrabaciones(true)}
-            style={{ border: `1.5px solid ${P.violeta}`, borderRadius: esMovil ? 12 : 11, padding: esMovil ? '0 14px' : '10px 16px', minHeight: esMovil ? 48 : undefined, fontSize: esMovil ? 15 : 13.5, fontWeight: 700,
-              fontFamily: 'inherit', cursor: 'pointer', background: '#fff', color: P.violetaTinta, flexShrink: 0 }}>
+            style={{ border: esMovil ? '1px solid #E5E7EB' : `1.5px solid ${P.violeta}`, borderRadius: esMovil ? 12 : 11, padding: esMovil ? '0 14px' : '10px 16px', minHeight: esMovil ? 48 : undefined, fontSize: esMovil ? 15 : 13.5, fontWeight: esMovil ? 800 : 700,
+              fontFamily: 'inherit', cursor: 'pointer', background: '#fff', color: esMovil ? '#374151' : P.violetaTinta, flexShrink: 0 }}>
             Grabaciones
           </button>
           <button onClick={() => setArmando(true)}
@@ -208,7 +211,7 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
           <div style={{ background: '#F7F7F9', borderRadius: esMovil ? 0 : 16, width: esMovil ? '100%' : 'min(820px, 100%)', height: esMovil ? '100%' : 'min(88vh, 900px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#fff', borderBottom: '1px solid #ececec' }}>
               <b style={{ fontSize: esMovil ? 16 : 14 }}>Grabaciones</b>
-              <button onClick={() => setVerGrabaciones(false)} style={{ border: 'none', background: 'none', fontSize: esMovil ? 26 : 20, cursor: 'pointer', color: '#6B7280', lineHeight: 1, ...(esMovil ? { width: 44, height: 44, margin: '-8px -10px -8px 0' } : {}) }} aria-label="Cerrar">×</button>
+              <button onClick={() => setVerGrabaciones(false)} style={{ border: 'none', background: 'none', fontSize: esMovil ? 26 : 20, cursor: 'pointer', color: '#6B7280', lineHeight: 1, ...(esMovil ? { width: 44, height: 44, margin: '-8px -10px -8px 0', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' } : {}) }} aria-label="Cerrar">{esMovil ? <IcoX size={20} /> : '×'}</button>
             </div>
             <Suspense fallback={<Cargando texto="Abriendo las grabaciones…" alto={200} />}>
               <Grabaciones movil={esMovil} />
@@ -250,7 +253,7 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
                   borderRadius: 10, padding: '15px 17px', opacity: vacia ? 0.6 : 1,
                   display: 'flex', flexDirection: 'column', flex: '1 1 200px',
                 }}>
-                <span style={{ fontSize: esMovil ? 12 : 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: '#999' }}>{l.titulo}</span>
+                <span style={{ fontSize: esMovil ? 12 : 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: esMovil ? '#6B7280' : '#999' }}>{l.titulo}</span>
                 <span style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', color: vacia ? '#a5a2af' : P.violetaTinta, margin: '2px 0 4px', fontVariantNumeric: 'tabular-nums' }}>{n}</span>
                 {/* marginTop:auto — así dos tarjetas del mismo renglón cierran a
                     la misma altura aunque un porqué ocupe una línea más. */}

@@ -488,7 +488,26 @@ async function medir(p, principal) {
       if (r.height < 44 - 0.5 || (icono && r.width < 44 - 0.5)) chicos.push({ t, w: Math.round(r.width), h: Math.round(r.height) });
     }
     // Pegados: dos tocables a menos de 8 px (se miden los que están en pantalla).
-    const enPantalla = tocables.filter(el => !cubierto(el)).map(el => ({ el, r: el.getBoundingClientRect() })).filter(x => x.r.bottom > 0 && x.r.top < H);
+    /* Se mide la parte que el dedo alcanza: el rectángulo recortado por sus contenedores con scroll
+       (un chip a medias bajo la cabecera no asoma por encima de ella) y por las orillas pegajosas
+       que no se tocan (aria-hidden, sticky) dentro del mismo scroll. */
+    const alcanzable = el => {
+      const b = el.getBoundingClientRect(); let r = { left: b.left, right: b.right, top: b.top, bottom: b.bottom };
+      for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+        const cs = getComputedStyle(a);
+        if (!/(auto|scroll|hidden)/.test(cs.overflowY + cs.overflowX)) continue;
+        const c = a.getBoundingClientRect();
+        r = { left: Math.max(r.left, c.left), right: Math.min(r.right, c.right), top: Math.max(r.top, c.top), bottom: Math.min(r.bottom, c.bottom) };
+        for (const o of a.querySelectorAll(':scope > [aria-hidden]')) {
+          if (getComputedStyle(o).position !== 'sticky' || o.contains(el)) continue;
+          const orr = o.getBoundingClientRect();
+          if (orr.left <= r.left && orr.right >= r.right && orr.top <= r.top && orr.bottom > r.top) r.top = orr.bottom;
+          else if (orr.left <= r.left && orr.right >= r.right && orr.bottom >= r.bottom && orr.top < r.bottom) r.bottom = orr.top;
+        }
+      }
+      return r;
+    };
+    const enPantalla = tocables.filter(el => !cubierto(el)).map(el => ({ el, r: alcanzable(el) })).filter(x => x.r.bottom > x.r.top + 1 && x.r.right > x.r.left + 1 && x.r.bottom > 0 && x.r.top < H);
     const pegados = [];
     for (let i = 0; i < enPantalla.length; i++) for (let j = i + 1; j < enPantalla.length; j++) {
       const a = enPantalla[i], c = enPantalla[j];
@@ -530,11 +549,18 @@ async function medir(p, principal) {
     // Barras fijas abajo (para saber qué tapa qué).
     const fijos = [...document.querySelectorAll('body *')].filter(el => { const s = getComputedStyle(el); if (s.position !== 'fixed') return false; const r = el.getBoundingClientRect(); return r.height > 30 && r.height < H * 0.5 && r.bottom >= H - 2 && r.top < H && r.width > W * 0.5; })
       .map(el => `${Math.round(el.getBoundingClientRect().height)}px «${texto(el).slice(0, 40)}»`).slice(0, 4);
+    /* La barra del pulgar de un diálogo a pantalla completa (armador, sala) no es
+       `fixed`: es el último hijo del diálogo (flexShrink:0). La de `fijos` ahí es
+       la navegación del CRM que queda DEBAJO. Esta es la que se compara con 75 px. */
+    const barrasDialogo = [...document.querySelectorAll('[role=dialog]')].flatMap(d => [...d.children]).filter(el => {
+      const r = el.getBoundingClientRect(); const cs = getComputedStyle(el);
+      return cs.position !== 'fixed' && cs.display !== 'none' && r.bottom >= H - 2 && r.bottom <= H + 2 && r.height > 30 && r.height < H * 0.4 && r.width > W * 0.9;
+    }).map(el => `${Math.round(el.getBoundingClientRect().height)}px «${texto(el).slice(0, 40)}»`).slice(0, 2);
     return {
       ancho: W, alto: H, scrollWidth: Math.max(doc.scrollWidth, document.body.scrollWidth), desborde: Math.max(doc.scrollWidth, document.body.scrollWidth) > W + 1,
       salidos, tocables: tocables.length, modal: modal ? (modal.getAttribute('aria-label') || 'dialog') : null, fueraDelModal, tapados, chicos, pegados: pegados.slice(0, 40), nPegados: pegados.length,
       textosChicos: [...chicosTxt.entries()].map(([k, n]) => (n > 1 ? `${k} ×${n}` : k)), de12a14,
-      inputsChicos: inputs, accion, fijos,
+      inputsChicos: inputs, accion, fijos, barrasDialogo,
     };
   }, { principal, esMovil: !ESCRITORIO });
 }
@@ -652,11 +678,11 @@ const RECORRIDOS = {
   async armador(p, foto) {
     await abrirArmador(p);
     await foto('', 'Llamar a estos');
-    // Con un giro y «Más de 3» puestos: los chips encendidos.
+    // Con un giro y «3 o más» puestos: los chips encendidos.
     await tocar(p.getByRole('dialog').getByRole('button', { name: 'Prospección en frío' }).first(), 'Prospección en frío');
     await p.waitForTimeout(700);
     await tocar(p.getByRole('dialog').getByRole('button', { name: /Ropa para dama/ }).first(), 'Ropa para dama');
-    await tocar(p.getByRole('dialog').getByRole('button', { name: 'Más de 3' }).first(), 'Más de 3');
+    await tocar(p.getByRole('dialog').getByRole('button', { name: '3 o más' }).first(), '3 o más');
     await p.waitForTimeout(900);
     await foto('filtros-abm', 'Llamar a estos');
   },
@@ -820,6 +846,7 @@ try {
       console.log(`     inputs <16px: ${f.inputsChicos.length}${f.inputsChicos.length ? '  ' + f.inputsChicos.join(' · ') : ''}`);
       if (f.accion) console.log(`     acción principal: ${f.accion.noEncontrada ? `NO ENCONTRADA (${f.accion.texto})` : `«${f.accion.texto}» ${f.accion.w}×${f.accion.h} y=${f.accion.top} · ${f.accion.tapadaPor ? `TAPADA por «${f.accion.tapadaPor}»` : f.accion.sinScroll ? 'visible sin scroll' : 'HAY QUE HACER SCROLL'} · ${f.accion.pulgar ? 'en zona del pulgar' : 'fuera de la zona del pulgar'}${f.accion.deshabilitado ? ' · deshabilitada' : ''}`}`);
       if (f.fijos.length) console.log(`     barras fijas abajo: ${f.fijos.join(' · ')}`);
+      if (f.barrasDialogo?.length) console.log(`     barra del diálogo: ${f.barrasDialogo.join(' · ')}`);
     }
     if (notasPantalla.length) console.log(`  recorrido: ${notasPantalla.join(' · ')}`);
     console.log(`  errores JS: ${propios.length}${propios.length ? '\n     ' + propios.slice(0, 5).join('\n     ') : ''}`);

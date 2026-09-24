@@ -5,6 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { C } from './estilo';
+import { IcoX } from './Iconos';
 import { telefonoLegible } from '../../../../lib/telefono';
 
 type Props = {
@@ -36,6 +37,10 @@ const CORTO: Record<string, string> = {
   invalido: 'número malo', fuera: 'fuera', cancelado: 'cancelada', saltado: 'saltada', no_interesa: 'no le interesa',
 };
 const COLOR: Record<string, string> = { accion: '#1E8A63', contesto: '#5B4BD6', descalificado: '#C0554E', buzon: '#9a6a10', contestadora: '#2C5FC4', nunca: '#7C3AED', sin_marcar: '#6B7280', fuera: '#9CA3AF' };
+/* En el teléfono la contestadora deja el azul (fuera de la paleta del flujo,
+   guía de continuidad §0) y se dice en ámbar, como la cabina en vivo. */
+const COLOR_M: Record<string, string> = { ...COLOR, contestadora: '#E8A838' };
+const NUM_M: Record<string, string> = { ...COLOR, contestadora: '#9a6a10' };
 const RELLAMABLES = ['nunca', 'buzon', 'contestadora', 'sin_marcar'];
 
 export default function ResumenLista({ sesionId, post, movil, onRondaCreada, confirmar, respaldo }: Props) {
@@ -121,21 +126,21 @@ export default function ResumenLista({ sesionId, post, movil, onRondaCreada, con
   const btnM: any = { ...btn, minHeight: 52, borderRadius: 12, fontSize: 16, fontWeight: 800, padding: '0 14px' };
   const btnPM: any = { ...btnM, border: 'none', background: C.moradoTinta, color: '#fff' };
   const barra = movil ? (
-    <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 390, background: '#fff', boxShadow: '0 -4px 14px rgba(12,11,18,.06)', borderTop: `1px solid ${C.g200}`, padding: '10px 16px calc(10px + env(safe-area-inset-bottom))', display: 'flex', gap: 8, alignItems: 'center' }}>
+    <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 390, background: '#fff', boxShadow: '0 -4px 14px rgba(12,11,18,.06)', borderTop: `1px solid ${C.g200}`, padding: '10px 16px max(12px, calc(10px + env(safe-area-inset-bottom)))', display: 'flex', gap: 8, alignItems: 'center' }}>
       {/* La franja de encima se come el toque: ninguna casilla queda pegada a la barra. */}
       <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, top: -45, height: 44, background: 'linear-gradient(to bottom, rgba(249,250,251,0), rgba(249,250,251,.92))' }} />
       {seleccion.length > 0 ? (<>
         {/* Con gente seleccionada la barra dice cuántos y qué se puede hacer
             con ellos: llamarles, o el resto de acciones (quitar, descalificar,
             plantilla) en una hoja. */}
-        <button onClick={() => setHoja(true)} disabled={!!ocupado} style={{ ...btnM, flexShrink: 0 }}>
+        <button onClick={() => setHoja(true)} disabled={!!ocupado} style={{ ...btnM, flexShrink: 0, fontSize: 15, color: '#374151' }}>
           Acciones ({seleccion.length})
         </button>
         <button onClick={() => ronda(seleccion.map(p => p.clave))} disabled={!!ocupado} style={{ ...btnPM, flex: 1, minWidth: 0 }}>
           {ocupado === 'ronda' ? 'Armando…' : `Llamar a ${seleccion.length} · ronda ${siguiente}`}
         </button>
       </>) : (
-        <button onClick={() => ronda()} disabled={!aLlamar || !!ocupado} style={{ ...btnPM, flex: 1, opacity: aLlamar && !ocupado ? 1 : .55 }}>
+        <button onClick={() => ronda()} disabled={!aLlamar || !!ocupado} style={{ ...btnPM, flex: 1, ...(aLlamar ? null : { background: '#E0DFE6', color: '#6B7280', cursor: 'default' }), opacity: ocupado ? .85 : 1 }}>
           {ocupado === 'ronda' ? 'Armando…' : aLlamar ? `Llamar a ${aLlamar} · ronda ${siguiente}` : `Marca a quién llamar en la ronda ${siguiente}`}
         </button>
       )}
@@ -149,7 +154,7 @@ export default function ResumenLista({ sesionId, post, movil, onRondaCreada, con
       <span aria-hidden style={{ width: 36, height: 4, borderRadius: 999, background: C.g200, justifySelf: 'center', marginTop: 4 }} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <b style={{ flex: 1, fontSize: 16, color: C.g900 }}>{seleccion.length} {seleccion.length === 1 ? 'seleccionado' : 'seleccionados'}</b>
-        <button onClick={() => setHoja(false)} aria-label="Cerrar" style={{ width: 44, height: 44, border: 'none', background: 'none', fontSize: 22, color: C.g500, cursor: 'pointer', fontFamily: 'inherit' }}>✕</button>
+        <button onClick={() => setHoja(false)} aria-label="Cerrar" style={{ width: 44, height: 44, flexShrink: 0, border: 'none', background: 'none', color: C.g500, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IcoX size={20} /></button>
       </div>
       <button onClick={() => masivo('descalificar')} disabled={!!ocupado} style={{ ...btnM, color: '#C0554E', border: '1px solid #f0c4bd' }}>{ocupado === 'descalificar' ? 'Descalificando…' : 'Descalificar'}</button>
       <button onClick={() => masivo('no_llamar')} disabled={!!ocupado} style={btnM}>No volver a llamar</button>
@@ -227,20 +232,24 @@ export default function ResumenLista({ sesionId, post, movil, onRondaCreada, con
           debajo: arriba se toca para ver a la gente, abajo se marca para la
           ronda. Mismo estado (`gruposRonda`) y mismo botón de la barra. */}
       {movil ? (
-      /* `alignItems: start` (ronda 6): estiradas a la altura de la vecina, las
-         tarjetas sin casilla quedaban con ~100 px en blanco. */
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8, alignItems: 'start' }}>
+      /* UNA COLUMNA (guía de continuidad §7, 24-sep-2026). En la rejilla de
+         dos, «Descalificados» sin casilla quedaba junto a «Buzón» con
+         casilla: alturas desiguales y un hueco. Ahora cada grupo es un
+         renglón —franja, número, nombre— y a la derecha la casilla de la
+         ronda SÓLO si se le puede volver a llamar. */
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 8 }}>
         {d.grupos.map((g: any) => {
           const activo = filtro === g.id; const rellamable = RELLAMABLES.includes(g.id);
+          const n = d.conteo[g.id] || 0;
           return (
-            <div key={g.id} style={{ display: 'grid', alignContent: 'start', gap: 8, background: activo ? '#F6F4FF' : '#fff', borderTop: `1.5px solid ${activo ? '#c9bcf7' : '#ececec'}`, borderRight: `1.5px solid ${activo ? '#c9bcf7' : '#ececec'}`, borderBottom: `1.5px solid ${activo ? '#c9bcf7' : '#ececec'}`, borderLeft: `4px solid ${COLOR[g.id]}`, borderRadius: 10, overflow: 'hidden' }}>
+            <div key={g.id} style={{ display: 'flex', alignItems: 'stretch', gap: 8, minHeight: 56, background: activo ? '#EEECFE' : '#fff', borderTop: `1px solid ${activo ? '#9B8CFA' : C.g200}`, borderRight: `1px solid ${activo ? '#9B8CFA' : C.g200}`, borderBottom: `1px solid ${activo ? '#9B8CFA' : C.g200}`, borderLeft: `3px solid ${COLOR_M[g.id]}`, borderRadius: 10, overflow: 'hidden' }}>
               <button onClick={() => { setFiltro(activo ? '' : g.id); setSel(new Set()); if (!activo) irAPersonas.current = true; }} title={g.que} aria-pressed={activo}
-                style={{ textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', background: 'none', border: 'none', padding: '8px 10px', minHeight: 56, display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                <span style={{ fontSize: 20, fontWeight: 800, color: d.conteo[g.id] ? COLOR[g.id] : C.g400, lineHeight: 1.1, minWidth: 22 }}>{d.conteo[g.id] || 0}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: d.conteo[g.id] ? C.g900 : C.g500, lineHeight: 1.25, minWidth: 0 }}>{g.label}</span>
+                style={{ flex: 1, minWidth: 0, minHeight: 56, textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', background: 'none', border: 'none', padding: '6px 10px 6px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 36, flexShrink: 0, fontSize: 22, fontWeight: 800, color: n ? NUM_M[g.id] : C.g500, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>{n}</span>
+                <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, color: n ? C.g900 : C.g500, lineHeight: 1.3 }}>{g.label}</span>
               </button>
               {rellamable && (
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 44, padding: '0 10px', borderTop: `1px solid ${C.g100}`, fontSize: 13, fontWeight: 700, color: gruposRonda.has(g.id) ? C.moradoTinta : C.g500, cursor: 'pointer' }}>
+                <label style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, minHeight: 44, minWidth: 44, padding: '0 12px 0 10px', borderLeft: `1px solid ${C.g100}`, fontSize: 13, fontWeight: 700, color: gruposRonda.has(g.id) ? C.moradoTinta : C.g500, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                   <input type="checkbox" checked={gruposRonda.has(g.id)} aria-label={`Llamar a «${g.label}» en la ronda ${siguiente}`}
                     onChange={e => setGruposRonda(v => { const n = new Set(v); e.target.checked ? n.add(g.id) : n.delete(g.id); return n; })} />
                   Ronda {siguiente}
@@ -323,11 +332,14 @@ export default function ResumenLista({ sesionId, post, movil, onRondaCreada, con
                 px: los círculos de 6 px con «R1» debajo no se leían y pedían
                 una leyenda de glifos. */}
             {movil ? (
-            <span style={{ flex: '1 1 100%', display: 'flex', gap: 6, flexWrap: 'wrap', paddingLeft: 34 }}>
-              {p.rondas.map((r: any, i: number) => { const m = MARCA[r.r] || { s: '?', c: C.g500, t: r.r }; return (
-                /* Los grises y el lila claro no llegan a 4.5:1 sobre #F9FAFB:
-                   en el teléfono se leen en gris oscuro y morado tinta. */
-                <span key={i} title={`Ronda ${r.ronda}: ${m.t}`} style={{ fontSize: 13, fontWeight: 500, color: m.c === '#9CA3AF' ? '#4B5563' : m.c === '#9B8CFA' ? C.moradoTinta : m.c, background: C.g50, border: `1px solid ${C.g100}`, borderRadius: 999, padding: '2px 9px', lineHeight: 1.4, whiteSpace: 'nowrap' }}>
+            <span style={{ flex: '1 1 100%', display: 'flex', gap: '2px 14px', flexWrap: 'wrap', paddingLeft: 34 }}>
+              {p.rondas.map((r: any, i: number) => { const m = MARCA[r.r] || { s: '?', c: C.g500, t: r.r }; const c = m.c === '#2C5FC4' ? '#9a6a10' : m.c; return (
+                /* Son estados, no botones (guía §6): punto de 8 px y texto de
+                   13 px, sin fondo ni borde — en pastilla gris parecían chips
+                   para tocar. Los grises y el lila claro no llegan a 4.5:1:
+                   el texto va en gris oscuro y morado tinta. */
+                <span key={i} title={`Ronda ${r.ronda}: ${m.t}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: c === '#9CA3AF' ? '#4B5563' : c === '#9B8CFA' ? C.moradoTinta : c, lineHeight: 1.4, whiteSpace: 'nowrap' }}>
+                  <span aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: c }} />
                   R{r.ronda} {CORTO[r.r] || m.t}
                 </span>); })}
             </span>

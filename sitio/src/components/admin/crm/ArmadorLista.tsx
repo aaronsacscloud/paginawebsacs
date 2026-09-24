@@ -35,6 +35,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { P } from '../../../lib/crm/paleta';
 import { useIsMobile } from '../../../lib/ui/mobile';
 import { telefonoLegible } from '../../../lib/telefono';
+import { IcoX } from './whatsapp/Iconos';
 
 type Cat = { giros_abm: { giro: string; n: number; con_wa: number }[]; giros_crm: { giro: string; n: number }[]; estados: { estado: string; n: number }[] };
 
@@ -129,7 +130,10 @@ const inpMovil: any = { ...inp, fontSize: 16, minHeight: 48, padding: '11px 13px
 /* 23-sep, ronda 5: los rótulos de sección suben a 13 px en #4b5563 (7.6:1) y
    se aprietan un poco: a 12 px, grises y tan espaciados, «1 · DE DÓNDE SALEN»
    pesaba menos que los chips y los bloques no se distinguían de un vistazo. */
-const rotMovil: any = { ...rot, fontSize: 13, letterSpacing: '.05em', marginBottom: 10, color: '#4b5563' };
+/* 24-sep, ronda 3 de continuidad: el rótulo de sección es el mismo gris
+   secundario (#6B7280, 4.8:1) que en la cabina, el cierre y la sala: un solo
+   gris para el mismo rol en todo el flujo. */
+const rotMovil: any = { ...rot, fontSize: 13, letterSpacing: '.05em', marginBottom: 10, color: '#6B7280' };
 /** Chip/opción: el mismo estilo en las cinco familias de botones de la pantalla. */
 function estiloChip(on: boolean, movil: boolean, redondo: boolean, compacto = false, rejilla = false): any {
   return {
@@ -138,7 +142,7 @@ function estiloChip(on: boolean, movil: boolean, redondo: boolean, compacto = fa
     fontSize: movil ? 14 : compacto ? (redondo ? 11.5 : 12) : (redondo ? 12 : 12.5),
     minHeight: movil ? 44 : undefined, maxWidth: '100%', textAlign: movil ? 'left' : undefined, lineHeight: movil ? 1.25 : undefined,
     fontWeight: on ? 800 : 600, border: `1px solid ${on ? P.violeta : '#e6e4ec'}`,
-    background: on ? '#EEECFE' : '#fff', color: on ? P.violetaTinta : '#4B5563',
+    background: on ? '#EEECFE' : '#fff', color: on ? P.violetaTinta : movil ? '#374151' : '#4B5563',
     ...(rejilla ? { width: '100%', textAlign: 'center', padding: '4px 6px' } : null),
   };
 }
@@ -175,7 +179,9 @@ function filtrosEnPalabras(f: Filtros, etapas: { id: string; label: string }[]):
 function Bloque({ titulo, children, movil }: { titulo: string; children: any; movil?: boolean }) {
   return (
     <div style={{ marginBottom: movil ? 26 : 20 }}>
-      <span style={movil ? rotMovil : rot}>{titulo}</span>
+      {/* En el teléfono sin número: sólo tres de los nueve bloques lo llevaban
+          y la cuenta salteada parecía que faltaban pasos. */}
+      <span style={movil ? rotMovil : rot}>{movil ? titulo.replace(/^\d+ · /, '') : titulo}</span>
       {children}
     </div>
   );
@@ -232,7 +238,7 @@ function Palomita({ on, onCambio, texto, porque, movil = false }: { on: boolean;
     <label style={{ display: 'flex', gap: movil ? 12 : 9, alignItems: movil ? 'center' : 'flex-start', cursor: 'pointer', marginBottom: movil ? 8 : 9, minHeight: movil ? 48 : undefined, padding: movil ? '4px 0' : undefined }}>
       <input type="checkbox" checked={on} onChange={e => onCambio(e.target.checked)} style={{ marginTop: movil ? 0 : 2, accentColor: P.violetaTinta, width: movil ? 22 : 15, height: movil ? 22 : 15, flexShrink: 0, cursor: 'pointer' }} />
       <span style={{ minWidth: 0 }}>
-        <span style={{ fontSize: movil ? 15 : 12.5, fontWeight: 600, color: '#3a3a44' }}>{texto}</span>
+        <span style={{ fontSize: movil ? 15 : 12.5, fontWeight: 600, color: movil ? '#374151' : '#3a3a44' }}>{texto}</span>
         {porque && <span style={{ display: 'block', fontSize: movil ? 14 : 11, color: movil ? '#6b7280' : '#a5a2af', lineHeight: 1.45, marginTop: movil ? 2 : 0 }}>{porque}</span>}
       </span>
     </label>
@@ -296,7 +302,7 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
   // Atajos de tamaño: en el teléfono la ayuda es texto de cuerpo (14 px) y las etiquetas no bajan de 13.
   const tAyuda = m ? 14 : 11;
   const tEtiq = m ? 13 : 11.5;
-  const tEtiqColor = m ? '#4b5563' : '#6b7280';
+  const tEtiqColor = m ? '#374151' : '#6b7280';
   const tSub = m ? 15 : 12.5;
   const inpX = m ? inpMovil : inp;
   const resumen = useMemo(() => filtrosEnPalabras(f, etapas), [f, etapas]);
@@ -392,25 +398,44 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
         display: 'flex', flexDirection: 'column', background: '#fff', borderRadius: m ? 0 : 20,
         zIndex: 961, boxShadow: '0 24px 70px rgba(12,11,18,.34)', overflow: 'hidden',
       }}>
-        {/* En el teléfono: cerrar a la izquierda (44×44, donde lo busca el
-            pulgar de la otra mano), título corto y «Empezar de cero» con blanco
-            completo. «Nueva llamada inteligente» no cabía junto a sus botones. */}
-        <div style={{ padding: m ? '4px 8px 8px 4px' : '18px 24px', paddingTop: m ? 'max(4px, env(safe-area-inset-top))' : undefined, borderBottom: '1px solid #f0eff3', display: 'flex', alignItems: 'center', gap: m ? 4 : 10, flexShrink: 0 }}>
+        {/* En el teléfono: el encabezado común del flujo de llamadas (guía de
+            continuidad, 24-sep-2026) — el mismo que la cabina y la sala. Fila
+            de 56 px, salir SIEMPRE a la izquierda (✕ de 20 px en 44×44), título
+            negro de 17 px que nunca se corta y, a la derecha, un solo botón de
+            texto morado: «Empezar de cero» en los filtros (si hay algo que
+            borrar) o «Cambiar lista» ya en la lista. */}
+        <div style={m
+          ? { padding: 'max(6px, env(safe-area-inset-top)) 12px 6px 4px', background: '#fff', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', gap: 4, minHeight: 56, boxSizing: 'border-box', flexShrink: 0 }
+          : { padding: '18px 24px', borderBottom: '1px solid #f0eff3', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           {m && (
             <button type="button" onClick={onCerrar} aria-label="Cerrar"
-              style={{ width: 44, height: 44, border: 'none', background: 'none', borderRadius: 10, fontSize: 26, lineHeight: 1, color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>×</button>
+              style={{ width: 44, height: 44, border: 'none', background: 'none', padding: 0, color: '#6B7280', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <IcoX size={20} />
+            </button>
           )}
           {/* Ya en la lista, la cabecera dice que estás revisando a quién vas a
               llamar, no que sigues armándola. El cuántos ya lo dice el número grande. */}
-          <b style={{ fontSize: m ? 17 : 18, letterSpacing: '-0.02em', flex: 1, minWidth: 0 }}>
+          <b style={m
+            ? { fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em', color: '#111827', flex: 1, minWidth: 0, lineHeight: 1.25, overflowWrap: 'anywhere', minHeight: 44, display: 'flex', alignItems: 'center' }
+            : { fontSize: 18, letterSpacing: '-0.02em', flex: 1, minWidth: 0 }}>
             {!m ? 'Nueva llamada inteligente' : enLista ? 'A quién vas a llamar' : 'Armar la lista'}
           </b>
           {/* En el teléfono sólo aparece cuando hay algo que borrar: deshabilitado
               quedaba a 1.9:1 de contraste y parecía roto. */}
           {(!m || (!enLista && hayFiltros)) && (
             <button type="button" onClick={empezarDeCero}
-              style={{ border: 'none', background: 'none', color: '#6b7280', fontFamily: 'inherit', fontSize: m ? 14 : 12.5, fontWeight: 700, cursor: 'pointer', minHeight: m ? 44 : undefined, padding: m ? '0 10px' : undefined, flexShrink: 0 }}>
+              style={m
+                ? { border: 'none', background: 'none', color: P.violetaTinta, fontFamily: 'inherit', fontSize: 14, fontWeight: 700, cursor: 'pointer', minHeight: 44, padding: '0 12px', flexShrink: 0 }
+                : { border: 'none', background: 'none', color: '#6b7280', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
               Empezar de cero
+            </button>
+          )}
+          {/* «Cambiar lista» vive aquí arriba en todo el flujo (armador, cabina):
+              la misma intención en un solo lugar, nunca en la barra del pulgar. */}
+          {m && enLista && (
+            <button type="button" onClick={irAFiltros}
+              style={{ border: 'none', background: 'none', color: P.violetaTinta, fontFamily: 'inherit', fontSize: 14, fontWeight: 700, cursor: 'pointer', minHeight: 44, padding: '0 12px', flexShrink: 0 }}>
+              Cambiar lista
             </button>
           )}
         </div>
@@ -526,7 +551,7 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
 
             <Bloque movil={m} titulo="3 · A quién NO llamar">
               <div style={{ marginBottom: m ? 14 : 11 }}>
-                <span style={{ fontSize: tSub, fontWeight: 600, color: '#3a3a44', display: 'block' }}>Ya les marqué sin que contesten</span>
+                <span style={{ fontSize: tSub, fontWeight: 600, color: m ? '#374151' : '#3a3a44', display: 'block' }}>Ya les marqué sin que contesten</span>
                 <div style={m ? { ...rejilla(2), marginTop: 8 } : { display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
                   {[['', 'No los quites'], ['2', '2 veces o más'], ['3', '3 veces o más'], ['5', '5 veces o más']].map(([v, l]) => (
                     <button key={v || 'no'} type="button" aria-pressed={f.quemados === v} onClick={() => set('quemados', v)}
@@ -557,7 +582,7 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
               <Palomita movil={m} on={f.nunca_llamados} onCambio={v => set('nunca_llamados', v)}
                 texto="Solo los que nunca he tocado" porque="Para estrenar una lista sin repetir a nadie." />
               <div style={{ marginTop: m ? 10 : 4 }}>
-                <span style={{ fontSize: tSub, fontWeight: 600, color: '#3a3a44', display: 'block' }}>Sin contacto desde hace</span>
+                <span style={{ fontSize: tSub, fontWeight: 600, color: m ? '#374151' : '#3a3a44', display: 'block' }}>Sin contacto desde hace</span>
                 <div style={m ? { ...rejilla(4), marginTop: 8 } : { display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
                   {[['', 'Da igual'], ['15', '15 días'], ['30', '1 mes'], ['90', '3 meses']].map(([v, l]) => (
                     <button key={v || 'no'} type="button" aria-pressed={f.sin_tocar_dias === v} onClick={() => set('sin_tocar_dias', v)}
@@ -609,10 +634,11 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
                 al número, no al fondo donde casi nadie llega. */}
             {/* Si la vista previa es sólo una parte, se dice aquí arriba («ves 24
                 de 82») y no hasta el final, para que no parezca que se cortó. */}
-            {m && n > 0 && !cargando && (
-              <div style={{ fontSize: 14, color: '#3a3a44', lineHeight: 1.45, marginBottom: 2 }}>
-                {n > (previa?.filas || []).length && (previa?.filas || []).length > 0 && <>Aquí ves <b>{(previa?.filas || []).length} de {n.toLocaleString('es-MX')}</b>. </>}
-                Podrás quitar a quien quieras antes del primer timbre.
+            {m && n > 0 && !cargando && (previa?.filas || []).length > 0 && (
+              <div style={{ fontSize: 14, color: '#374151', lineHeight: 1.45, marginBottom: 2 }}>
+                {n > (previa?.filas || []).length
+                  ? <><b>Los primeros {(previa?.filas || []).length} de {n.toLocaleString('es-MX')}</b>, en el orden en que se marcan.</>
+                  : <>En el orden en que se marcan.</>}
               </div>
             )}
             {titulo && <div style={{ fontSize: m ? 14 : 12.5, color: '#6b7280', marginBottom: m ? 12 : 12, lineHeight: 1.45 }}>{m ? resumen : titulo}</div>}
@@ -651,20 +677,25 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
                 /* Tres renglones: el nombre completo (sin cortar), a qué número
                    y a qué zona se va a marcar, y tiendas · giro · WhatsApp. */
                 <div key={c.id} style={{ padding: '11px 0', borderTop: i ? '1px solid #f0eff3' : 'none', minWidth: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#16181d', lineHeight: 1.3, overflowWrap: 'anywhere' }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#111827', lineHeight: 1.3, overflowWrap: 'anywhere' }}>
                     {c.contacto?.nombre || telefonoLegible(c.telefono)}
                   </div>
                   {(c.telefono || c.ciudad || c.estado_geo) && (
-                    <div style={{ marginTop: 3, fontSize: 14, color: '#3a3a44', lineHeight: 1.4, overflowWrap: 'anywhere' }}>
+                    <div style={{ marginTop: 3, fontSize: 14, color: '#374151', lineHeight: 1.4, overflowWrap: 'anywhere' }}>
                       {c.telefono && <span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{telefonoLegible(c.telefono)}</span>}
                       {(c.ciudad || c.estado_geo) && <span style={{ color: '#6b7280' }}>{c.telefono ? ' · ' : ''}{[c.ciudad, c.estado_geo].filter(Boolean).join(', ')}</span>}
                     </div>
                   )}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 8px', marginTop: 3, fontSize: 14, color: '#6b7280' }}>
-                    <span style={{ overflowWrap: 'anywhere' }}>
-                      {[c.sucursales ? `${c.sucursales} ${c.sucursales === 1 ? 'tienda' : 'tiendas'}` : '', c.giro || c.contacto?.lifecycle_stage || ''].filter(Boolean).join(' · ')}
-                    </span>
-                    {c.tiene_wa && <span style={{ fontSize: 12, fontWeight: 800, borderRadius: 999, padding: '2px 8px', background: '#EAF8F2', color: '#1E8A63' }}>WhatsApp</span>}
+                  {/* «WhatsApp» es un dato, no un botón: texto verde en el mismo
+                      renglón, separado con «·», sin pastilla (guía §6). */}
+                  <div style={{ marginTop: 3, fontSize: 14, color: '#6B7280', lineHeight: 1.4, overflowWrap: 'anywhere' }}>
+                    {(() => {
+                      const datos = [c.sucursales ? `${c.sucursales} ${c.sucursales === 1 ? 'tienda' : 'tiendas'}` : '', c.giro || c.contacto?.lifecycle_stage || ''].filter(Boolean).join(' · ');
+                      return <>
+                        {datos}
+                        {c.tiene_wa && <>{datos ? ' · ' : ''}<span style={{ fontSize: 13, fontWeight: 700, color: '#1E8A63', whiteSpace: 'nowrap' }}>WhatsApp</span></>}
+                      </>;
+                    })()}
                   </div>
                 </div>
               ) : (
@@ -677,12 +708,18 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
                   <span style={{ fontSize: 11, color: '#999', flexShrink: 0, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.giro || c.contacto?.lifecycle_stage || ''}</span>
                 </div>
               ))}
+              {/* El último renglón de la misma hoja, que no es botón: cuántos
+                  faltan y dónde se ven todos. Quitar a alguien vive en la
+                  cabina, que es la que tiene la lista completa. */}
+              {m && n > (previa?.filas || []).length && (
+                <div style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.5, padding: '14px 0', borderTop: '1px solid #f0eff3' }}>
+                  <b style={{ color: '#374151' }}>+ {(n - (previa?.filas || []).length).toLocaleString('es-MX')} más.</b> En la siguiente pantalla ves a los {n.toLocaleString('es-MX')} y quitas a quien no quieras antes del primer timbre.
+                </div>
+              )}
             </div>
-            {n > (previa?.filas || []).length && (
-              <div style={{ fontSize: m ? 14 : 11.5, color: m ? '#6b7280' : '#a5a2af', marginTop: m ? 12 : 9, lineHeight: 1.5 }}>
-                {m
-                  ? <>Y <b style={{ color: '#3a3a44' }}>{(n - (previa?.filas || []).length).toLocaleString('es-MX')} más</b>: la lista completa sale en la siguiente pantalla.</>
-                  : <>y {(n - (previa?.filas || []).length).toLocaleString('es-MX')} más. Vas a poder revisarlos todos antes de marcar.</>}
+            {!m && n > (previa?.filas || []).length && (
+              <div style={{ fontSize: 11.5, color: '#a5a2af', marginTop: 9, lineHeight: 1.5 }}>
+                y {(n - (previa?.filas || []).length).toLocaleString('es-MX')} más. Vas a poder revisarlos todos antes de marcar.
               </div>
             )}
             {/* Una sola nota corta, al pie, junto a «Y N más». */}
@@ -706,14 +743,18 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
         {/* Abajo, 16 px mínimo (eran 10): en los Android sin muesca los botones
             quedaban casi en la orilla curva de la pantalla. Con muesca manda
             el safe-area, como antes. */}
-        <div style={{ padding: m ? '8px 16px 16px' : '14px 22px', paddingBottom: m ? 'max(16px, calc(8px + env(safe-area-inset-bottom)))' : undefined, borderTop: '1px solid #f0eff3', display: 'flex', flexDirection: m ? 'column' : 'row', alignItems: m ? 'stretch' : 'center', gap: m ? 8 : 10, flexShrink: 0, background: '#fff', boxShadow: m ? '0 -6px 16px rgba(12,11,18,.05)' : undefined }}>
+        {/* 24-sep: la barra común del flujo (guía §2): 52 px, radio 12, 75 px
+            de alto sin muesca, igual que la de la cabina y la de la sala. */}
+        <div style={m
+          ? { padding: '10px 16px max(12px, calc(10px + env(safe-area-inset-bottom)))', borderTop: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 8, flexShrink: 0, background: '#fff', boxShadow: '0 -4px 14px rgba(12,11,18,.06)' }
+          : { padding: '14px 22px', borderTop: '1px solid #f0eff3', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 0, background: '#fff' }}>
           {/* Recién borrados los filtros: 5 s para deshacerlo, en el mismo
               lugar donde el pulgar ya está. */}
           {m && antes && (
-            <div role="status" style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, fontSize: 14, color: '#3a3a44' }}>
+            <div role="status" style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, fontSize: 14, color: '#6B7280' }}>
               <span style={{ flex: 1, minWidth: 0 }}>Quitaste todos los filtros.</span>
               <button type="button" onClick={deshacer}
-                style={{ border: 'none', background: '#EEECFE', color: P.violetaTinta, borderRadius: 10, minHeight: 44, padding: '0 16px', fontSize: 15, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0 }}>
+                style={{ border: 'none', background: 'none', color: P.violetaTinta, minHeight: 44, padding: '0 12px', fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0 }}>
                 Deshacer
               </button>
             </div>
@@ -725,7 +766,7 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
           {m && !antes && !enLista && (
             <div aria-live="polite" style={{ minWidth: 0, fontSize: 14, color: '#6b7280', lineHeight: 1.4, overflowWrap: 'anywhere' }}>
               <style>{'@keyframes armadorLatido{0%{transform:scale(1.18);color:#7C3AED}100%{transform:scale(1)}}'}</style>
-              <b key={cargando ? 'c' : n} style={{ fontSize: 17, fontWeight: 800, color: cargando || !n ? '#6b7280' : P.violetaTinta, fontVariantNumeric: 'tabular-nums', display: 'inline-block', transformOrigin: 'left center', animation: cargando ? undefined : 'armadorLatido .45s ease-out', flexShrink: 0 }}>
+              <b key={cargando ? 'c' : n} style={{ fontSize: 17, fontWeight: 800, color: cargando || !n ? '#6b7280' : '#111827', fontVariantNumeric: 'tabular-nums', display: 'inline-block', transformOrigin: 'left center', animation: cargando ? undefined : 'armadorLatido .45s ease-out', flexShrink: 0 }}>
                 {cargando ? 'Contando…' : n.toLocaleString('es-MX')}
               </b>
               {!cargando && <span style={{ whiteSpace: 'nowrap' }}>&nbsp;para llamar</span>}
@@ -735,13 +776,16 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
               {resumen.split(' · ').map((pz, i) => <span key={i}> · <span style={{ whiteSpace: pz.length <= 22 ? 'nowrap' : undefined }}>{pz}</span></span>)}
             </div>
           )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: m ? undefined : 1 }}>
-          {m ? (
-            <button type="button" onClick={enLista ? irAFiltros : irALista} disabled={!enLista && !n}
-              style={{ border: `1.5px solid ${P.violeta}`, borderRadius: 12, minHeight: 48, padding: '0 14px', fontSize: 15, fontWeight: 700, fontFamily: 'inherit', background: '#fff', color: P.violetaTinta, cursor: enLista || n ? 'pointer' : 'default', opacity: enLista || n ? 1 : 0.5, flexShrink: 0 }}>
-              {enLista ? 'Ajustar filtros' : 'Ver la lista'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: m ? 8 : 10, flex: m ? undefined : 1 }}>
+          {/* Ya en la lista no hay secundario: «Cambiar lista» se fue arriba a
+              la derecha y el principal va a lo ancho. En los filtros, «Ver la
+              lista» es el secundario común: blanco con línea gris. */}
+          {m ? (!enLista && (
+            <button type="button" onClick={irALista} disabled={!n}
+              style={{ border: '1px solid #E5E7EB', borderRadius: 12, height: 52, padding: '0 14px', fontSize: 15, fontWeight: 800, fontFamily: 'inherit', background: '#fff', color: n ? '#374151' : '#6B7280', cursor: n ? 'pointer' : 'default', flexShrink: 0 }}>
+              Ver la lista
             </button>
-          ) : (
+          )) : (
             <>
               <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#6b7280', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
               <div style={{ flex: 1 }} />
@@ -749,7 +793,7 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
           )}
           {/* Mientras recalcula, el botón no presume el número viejo. */}
           <button onClick={() => onListo({ titulo: titulo || 'Lista a la medida', qs, total: n })} disabled={!n || cargando}
-            style={{ border: 'none', borderRadius: m ? 12 : 11, padding: m ? '0 16px' : '11px 20px', minHeight: m ? 48 : undefined, flex: m ? 1 : undefined, minWidth: 0, fontSize: m ? 16 : 14, fontWeight: 800, fontFamily: 'inherit',
+            style={{ border: 'none', borderRadius: m ? 12 : 11, padding: m ? '0 16px' : '11px 20px', height: m ? 52 : undefined, flex: m ? 1 : undefined, minWidth: 0, fontSize: m ? 16 : 14, fontWeight: 800, fontFamily: 'inherit',
               cursor: n && !cargando ? 'pointer' : 'default', background: n && !cargando ? P.violetaTinta : '#e0dfe6', color: m && (cargando || !n) ? '#6b7280' : '#fff' }}>
             {m && cargando ? 'Llamar a estos …' : n ? `Llamar a estos ${Math.min(n, 500).toLocaleString('es-MX')}` : 'Llamar a estos'}
           </button>
