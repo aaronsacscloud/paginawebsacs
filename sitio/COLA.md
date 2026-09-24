@@ -1122,7 +1122,7 @@ Propuestas: https://code.sacscloud.com/shots/6f19997c19ffaaa1.png — A «Una co
 Pendiente de decidir: cuenta demo con datos ficticios (recomendado) vs difuminar; voz femenina vs Jesús Hernández.
 > 23-sep: «me gustaría que sea algo que no sature la pantalla, que sea sutil» → versión sutil https://code.sacscloud.com/shots/825153da72e6976f.png (un teléfono al centro, una frase por escena, fondo blanco lila→rosa, piano, ≈45 s).
 
-## 23-sep-2026 · centro de llamadas mobile-first (EN COLA — tras el análisis de PDFs)
+## 23-sep-2026 · centro de llamadas mobile-first (HECHO 24-sep — 7 pantallas 10/10, llamada manual 9.5; commits 55e59caa, 5852a14c y el de cierre)
 > «Al terminar eso, haz un análisis completo del sistema telefónico en cuestión de la visualización de móvil. Cuando generas una lista y aparece y ya estás en el proceso de marcación, desde que generas la lista debe de ser un diseño móvil primero. Al momento de crear los filtros también, al momento de estar en el centro de llamadas, también deben de verse bien la información y debe ser fácil apretar cualquier tipo de botón en ese proceso. Ejecuta un arnés completo de agentes de interfaz y experiencia de usuario que visualicen, optimicen y utilicen un referí, y considerando un 10 de 10 únicamente para pasar de pantalla a pantalla hasta que quede optimizado para que se vea mobile first.»
 > 23-sep: «solo música y texto». Borrador sutil de 55 s: https://code.sacscloud.com/guias/crm-nadie-crece-solo-borrador.mp4 · fuentes en /opt/sacs/videos/crm-nadie-crece-solo/ (LEEME.md). Datos ficticios solo en pantalla. Música pendiente: ElevenLabs 402 payment_issue.
 

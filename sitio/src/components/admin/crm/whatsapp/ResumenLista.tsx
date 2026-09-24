@@ -40,7 +40,10 @@ const COLOR: Record<string, string> = { accion: '#1E8A63', contesto: '#5B4BD6', 
 /* En el teléfono la contestadora deja el azul (fuera de la paleta del flujo,
    guía de continuidad §0) y se dice en ámbar, como la cabina en vivo. */
 const COLOR_M: Record<string, string> = { ...COLOR, contestadora: '#E8A838' };
-const NUM_M: Record<string, string> = { ...COLOR, contestadora: '#9a6a10' };
+/* El color como TEXTO en el teléfono (ronda 3): el gris #9CA3AF de «Fuera de
+   la lista» daba 2.54:1 y el verde #1E8A63 4.31:1; van al gris y al verde de
+   texto que sí pasan. Las franjas y los puntos siguen con COLOR / COLOR_M. */
+const NUM_M: Record<string, string> = { ...COLOR, accion: '#17775A', contestadora: '#9a6a10', fuera: '#6B7280' };
 const RELLAMABLES = ['nunca', 'buzon', 'contestadora', 'sin_marcar'];
 
 export default function ResumenLista({ sesionId, post, movil, onRondaCreada, confirmar, respaldo }: Props) {
@@ -54,6 +57,9 @@ export default function ResumenLista({ sesionId, post, movil, onRondaCreada, con
   const [plantilla, setPlantilla] = useState('');
   // En el teléfono las acciones sobre lo seleccionado viven en una hoja de abajo.
   const [hoja, setHoja] = useState(false);
+  // El error de una acción hecha desde la hoja: se dice dentro de ella.
+  const [errHoja, setErrHoja] = useState('');
+  useEffect(() => { if (!hoja) setErrHoja(''); }, [hoja]);
   /* Al tocar un grupo en el teléfono, «Personas del grupo» sale ~700 px más
      abajo, después de la rejilla (ronda 6): se trae a la vista sola, para
      que el toque se vea hacer algo. Sólo tras un toque, no al cargar. */
@@ -97,12 +103,12 @@ export default function ResumenLista({ sesionId, post, movil, onRondaCreada, con
       : que === 'no_llamar' ? `¿Marcar a ${seleccion.length} como «no volver a llamar»?`
       : `¿Mandarle la plantilla «${plantilla}» por WhatsApp a ${seleccion.length}?`;
     if (!(await confirmar(txt))) return;
-    setOcupado(que); setAviso('');
+    setOcupado(que); setAviso(''); setErrHoja('');
     const r = await post({ accion: 'lista_masivo', id: sesionId, que, plantilla: plantilla || undefined,
       motivo: `descalificado desde la lista «${d?.raiz?.nombre || ''}» (${d?.rondas?.length || 1} rondas)`,
       personas: seleccion.map(p => ({ contact_id: p.contact_id, telefono: p.telefono, nombre: p.nombre })) });
     setOcupado('');
-    if (r?.error) { setAviso(r.error); return; }
+    if (r?.error) { setAviso(r.error); setErrHoja(r.error); return; }
     setAviso(`${r.hechos} listos${r.fallas?.length ? ` · ${r.fallas.length} no: ${r.fallas.slice(0, 3).join(' · ')}${r.fallas.length > 3 ? '…' : ''}` : ''}.`);
     setSel(new Set()); setHoja(false);
     cargar();
@@ -156,6 +162,9 @@ export default function ResumenLista({ sesionId, post, movil, onRondaCreada, con
         <b style={{ flex: 1, fontSize: 16, color: C.g900 }}>{seleccion.length} {seleccion.length === 1 ? 'seleccionado' : 'seleccionados'}</b>
         <button onClick={() => setHoja(false)} aria-label="Cerrar" style={{ width: 44, height: 44, flexShrink: 0, border: 'none', background: 'none', color: C.g500, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IcoX size={20} /></button>
       </div>
+      {/* Si la acción falla la hoja sigue abierta: el error se dice AQUÍ,
+          no debajo del velo donde no se ve. */}
+      {errHoja && <div role="alert" style={{ fontSize: 14, color: '#C0554E', background: '#FDF0EE', border: '1px solid #f0c4bd', borderRadius: 10, padding: '9px 12px', lineHeight: 1.45 }}>No se pudo: {errHoja}</div>}
       <button onClick={() => masivo('descalificar')} disabled={!!ocupado} style={{ ...btnM, color: '#C0554E', border: '1px solid #f0c4bd' }}>{ocupado === 'descalificar' ? 'Descalificando…' : 'Descalificar'}</button>
       <button onClick={() => masivo('no_llamar')} disabled={!!ocupado} style={btnM}>No volver a llamar</button>
       <select value={plantilla} onChange={e => setPlantilla(e.target.value)} style={{ ...btn, minHeight: 50, borderRadius: 12, fontSize: 16, fontWeight: 600, width: '100%' }}>
@@ -244,8 +253,11 @@ export default function ResumenLista({ sesionId, post, movil, onRondaCreada, con
           return (
             <div key={g.id} style={{ display: 'flex', alignItems: 'stretch', gap: 8, minHeight: 56, background: activo ? '#EEECFE' : '#fff', borderTop: `1px solid ${activo ? '#9B8CFA' : C.g200}`, borderRight: `1px solid ${activo ? '#9B8CFA' : C.g200}`, borderBottom: `1px solid ${activo ? '#9B8CFA' : C.g200}`, borderLeft: `3px solid ${COLOR_M[g.id]}`, borderRadius: 10, overflow: 'hidden' }}>
               <button onClick={() => { setFiltro(activo ? '' : g.id); setSel(new Set()); if (!activo) irAPersonas.current = true; }} title={g.que} aria-pressed={activo}
-                style={{ flex: 1, minWidth: 0, minHeight: 56, textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', background: 'none', border: 'none', padding: '6px 10px 6px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ width: 36, flexShrink: 0, fontSize: 22, fontWeight: 800, color: n ? NUM_M[g.id] : C.g500, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>{n}</span>
+                style={{ flex: 1, minWidth: 0, minHeight: 56, textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', background: 'none', border: 'none', padding: '6px 10px 6px 6px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                {/* Columna de 36 px con el número centrado (ronda 1 cabina):
+                    alineado a la izquierda, un «4» dejaba ~30 px de aire antes
+                    del rótulo y el renglón se veía cojo. */}
+                <span style={{ width: 36, flexShrink: 0, textAlign: 'center', fontSize: 22, fontWeight: 800, color: n ? NUM_M[g.id] : C.g500, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>{n}</span>
                 <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, color: n ? C.g900 : C.g500, lineHeight: 1.3 }}>{g.label}</span>
               </button>
               {rellamable && (
@@ -278,7 +290,8 @@ export default function ResumenLista({ sesionId, post, movil, onRondaCreada, con
 
       {!movil && rondaEl}
 
-      {aviso && <div style={{ fontSize: movil ? 14 : 12, color: C.g700, background: C.g50, borderRadius: 8, padding: '7px 10px' }}>{aviso}</div>}
+      {/* En el teléfono la ronda se lanza desde la barra de abajo: su aviso se trae a la vista para que un error no quede escondido a media tarjeta. */}
+      {aviso && <div ref={el => { if (el && movil) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }} role={movil ? 'status' : undefined} style={{ fontSize: movil ? 14 : 12, color: C.g700, background: C.g50, borderRadius: 8, padding: '7px 10px', scrollMarginBottom: movil ? 96 : undefined }}>{aviso}</div>}
 
       {/* Acciones masivas sobre los seleccionados. En el teléfono se dice
           para qué son estas casillas: convivían con las de la ronda sin
@@ -354,7 +367,7 @@ export default function ResumenLista({ sesionId, post, movil, onRondaCreada, con
             {/* En el teléfono no se repite el grupo que ya está filtrado arriba:
                 cada fila bajaba a ~80 px y caben siete por pantalla, no cinco. */}
             {!(movil && !p.accion && p.grupo === filtro) && (
-            <span style={{ flex: movil ? '1 1 100%' : '0 0 190px', fontSize: movil ? 13 : 11.5, paddingLeft: movil ? 34 : 0, color: COLOR[p.grupo], fontWeight: 700, textAlign: movil ? 'left' : 'right' }}>
+            <span style={{ flex: movil ? '1 1 100%' : '0 0 190px', fontSize: movil ? 13 : 11.5, paddingLeft: movil ? 34 : 0, color: movil ? NUM_M[p.grupo] : COLOR[p.grupo], fontWeight: 700, textAlign: movil ? 'left' : 'right' }}>
               {p.accion || d.grupos.find((g: any) => g.id === p.grupo)?.label}
             </span>
             )}

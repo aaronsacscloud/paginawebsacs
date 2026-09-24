@@ -31,7 +31,7 @@
  * vas a llamar antes de que suene el primer timbre es lo que evita descubrir a
  * media jornada que la lista no era la que creías.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { P } from '../../../lib/crm/paleta';
 import { useIsMobile } from '../../../lib/ui/mobile';
 import { telefonoLegible } from '../../../lib/telefono';
@@ -135,7 +135,18 @@ const inpMovil: any = { ...inp, fontSize: 16, minHeight: 48, padding: '11px 13px
    gris para el mismo rol en todo el flujo. */
 const rotMovil: any = { ...rot, fontSize: 13, letterSpacing: '.05em', marginBottom: 10, color: '#6B7280' };
 /** Chip/opción: el mismo estilo en las cinco familias de botones de la pantalla. */
+/* 24-sep, continuidad ronda 1: en el teléfono hay UNA sola forma de chip de
+   opción en todo el flujo de llamadas, la «opción de contenido» de la guía
+   (§3.3) que ya usan «Cómo quedó» y «Mándale mientras hablan» en la cabina:
+   rectángulo de radio 12, contorno 1.5 px #9B8CFA, texto #5B4BD6 de 14/700 y
+   fondo #EEECFE al elegirla. Giro y Dónde están dejan la píldora redonda. */
 function estiloChip(on: boolean, movil: boolean, redondo: boolean, compacto = false, rejilla = false): any {
+  if (movil) return {
+    fontFamily: 'inherit', cursor: 'pointer', borderRadius: 12, padding: '0 14px', fontSize: 14, fontWeight: 700,
+    minHeight: 44, maxWidth: '100%', textAlign: 'left', lineHeight: 1.25,
+    border: '1.5px solid #9B8CFA', background: on ? '#EEECFE' : '#fff', color: '#5B4BD6',
+    ...(rejilla ? { width: '100%', textAlign: 'center', padding: '4px 6px' } : null),
+  };
   return {
     fontFamily: 'inherit', cursor: 'pointer', borderRadius: redondo ? 999 : 9,
     padding: movil ? '0 14px' : compacto ? (redondo ? '4px 10px' : '6px 10px') : (redondo ? '5px 11px' : '7px 11px'),
@@ -216,7 +227,7 @@ function Chips({ valores, onCambio, opts, vacio, movil = false }: { valores: str
             <button key={o.v} type="button" aria-pressed={on}
               onClick={() => onCambio(on ? valores.filter(x => x !== o.v) : [...valores, o.v])} title={o.l !== o.v ? o.v : undefined}
               style={estiloChip(on, movil, true)}>
-              {o.l}{o.n != null && <span style={{ fontWeight: 600, color: on ? P.violeta : movil ? '#6b7280' : '#a5a2af' }}> {o.n.toLocaleString('es-MX')}</span>}
+              {o.l}{o.n != null && <span style={{ fontWeight: 600, color: movil ? (on ? '#5B4BD6' : '#6B7280') : on ? P.violeta : '#a5a2af' }}> {o.n.toLocaleString('es-MX')}</span>}
             </button>
           );
         })}
@@ -387,6 +398,23 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
     }
     setF(FILTROS_INICIALES);
   };
+  /* Cuál versión del renglón de estado cabe en un renglón (0 = completa). */
+  const estadoRef = useRef<HTMLDivElement>(null);
+  const [nivel, setNivel] = useState(0);
+  const medirEstado = () => {
+    const c = estadoRef.current; if (!c) return;
+    const ancho = c.clientWidth;
+    const ms = Array.from(c.querySelectorAll<HTMLElement>('[data-medida]'));
+    const i = ms.findIndex(el => el.scrollWidth <= ancho + 0.5);
+    setNivel(i < 0 ? ms.length - 1 : i);
+  };
+  useLayoutEffect(() => { if (m) medirEstado(); }, [m, resumen, n, cargando, antes, enLista]);
+  useEffect(() => {
+    const c = estadoRef.current; if (!m || !c || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => medirEstado());
+    ro.observe(c);
+    return () => ro.disconnect();
+  }, [m, antes, enLista]);
   const deshacer = () => { if (antes) setF(antes); setAntes(null); clearTimeout(tDeshacer.current); };
 
   return (
@@ -403,9 +431,11 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
             de 56 px, salir SIEMPRE a la izquierda (✕ de 20 px en 44×44), título
             negro de 17 px que nunca se corta y, a la derecha, un solo botón de
             texto morado: «Empezar de cero» en los filtros (si hay algo que
-            borrar) o «Cambiar lista» ya en la lista. */}
+            borrar) o «Cambiar lista» ya en la lista. La fila lleva 4 px por
+            lado y los botones 12 de padding: la ✕ y el texto de la derecha
+            caen los dos en el canal de 16 px. */}
         <div style={m
-          ? { padding: 'max(6px, env(safe-area-inset-top)) 12px 6px 4px', background: '#fff', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', gap: 4, minHeight: 56, boxSizing: 'border-box', flexShrink: 0 }
+          ? { padding: 'max(6px, env(safe-area-inset-top)) 4px 6px 4px', background: '#fff', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', gap: 4, minHeight: 56, boxSizing: 'border-box', flexShrink: 0 }
           : { padding: '18px 24px', borderBottom: '1px solid #f0eff3', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           {m && (
             <button type="button" onClick={onCerrar} aria-label="Cerrar"
@@ -687,13 +717,15 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
                     </div>
                   )}
                   {/* «WhatsApp» es un dato, no un botón: texto verde en el mismo
-                      renglón, separado con «·», sin pastilla (guía §6). */}
+                      renglón, separado con «·», sin pastilla (guía §6). El verde
+                      de texto es #17775A (5.4:1 sobre blanco); #1E8A63 queda
+                      sólo para los puntos, porque como texto da 4.31:1. */}
                   <div style={{ marginTop: 3, fontSize: 14, color: '#6B7280', lineHeight: 1.4, overflowWrap: 'anywhere' }}>
                     {(() => {
                       const datos = [c.sucursales ? `${c.sucursales} ${c.sucursales === 1 ? 'tienda' : 'tiendas'}` : '', c.giro || c.contacto?.lifecycle_stage || ''].filter(Boolean).join(' · ');
                       return <>
                         {datos}
-                        {c.tiene_wa && <>{datos ? ' · ' : ''}<span style={{ fontSize: 13, fontWeight: 700, color: '#1E8A63', whiteSpace: 'nowrap' }}>WhatsApp</span></>}
+                        {c.tiene_wa && <>{datos ? ' · ' : ''}<span style={{ fontSize: 13, fontWeight: 700, color: '#17775A', whiteSpace: 'nowrap' }}>WhatsApp</span></>}
                       </>;
                     })()}
                   </div>
@@ -751,7 +783,7 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
           {/* Recién borrados los filtros: 5 s para deshacerlo, en el mismo
               lugar donde el pulgar ya está. */}
           {m && antes && (
-            <div role="status" style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, fontSize: 14, color: '#6B7280' }}>
+            <div role="status" style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, minHeight: 44, margin: '-8px 0 0', fontSize: 14, color: '#6B7280' }}>
               <span style={{ flex: 1, minWidth: 0 }}>Quitaste todos los filtros.</span>
               <button type="button" onClick={deshacer}
                 style={{ border: 'none', background: 'none', color: P.violetaTinta, minHeight: 44, padding: '0 12px', fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0 }}>
@@ -763,19 +795,43 @@ export default function ArmadorLista({ etapas, onListo, onCerrar }: {
               filtros caben completos —el último que tocaste era justo el que se
               iba al «…» en 360 y 390—; con muchos filtros, salta de renglón.
               Ya en la lista no se repite: el número grande está a la vista. */}
-          {m && !antes && !enLista && (
-            <div aria-live="polite" style={{ minWidth: 0, fontSize: 14, color: '#6b7280', lineHeight: 1.4, overflowWrap: 'anywhere' }}>
-              <style>{'@keyframes armadorLatido{0%{transform:scale(1.18);color:#7C3AED}100%{transform:scale(1)}}'}</style>
-              <b key={cargando ? 'c' : n} style={{ fontSize: 17, fontWeight: 800, color: cargando || !n ? '#6b7280' : '#111827', fontVariantNumeric: 'tabular-nums', display: 'inline-block', transformOrigin: 'left center', animation: cargando ? undefined : 'armadorLatido .45s ease-out', flexShrink: 0 }}>
-                {cargando ? 'Contando…' : n.toLocaleString('es-MX')}
-              </b>
-              {!cargando && <span style={{ whiteSpace: 'nowrap' }}>&nbsp;para llamar</span>}
-              {/* Cada filtro corto es un pedazo que no se parte: «3+ tiendas»
-                  salta junto y nunca deja «tiendas» sola en el segundo renglón.
-                  Los largos (dos giros juntos) sí se parten, para no salirse. */}
-              {resumen.split(' · ').map((pz, i) => <span key={i}> · <span style={{ whiteSpace: pz.length <= 22 ? 'nowrap' : undefined }}>{pz}</span></span>)}
-            </div>
-          )}
+          {/* 24-sep, continuidad: el renglón de estado es UNO solo, en todos los
+              anchos y con cualquier filtro, para que la barra no cambie de alto
+              (107 px con «Mis leads», 126 px a 360 con tres filtros). Nada se
+              corta con «…»: si el resumen completo no cabe, pasa a «Prospección
+              y 3 filtros más» y, si tampoco, a «4 filtros». El resumen entero
+              sigue arriba de la lista. El número va primero y nunca se corta. */}
+          {m && !antes && !enLista && (() => {
+            const piezas = resumen.split(' · ');
+            const extra = piezas.length - 1;
+            const opciones = [
+              piezas,
+              extra > 0 ? [piezas[0], `${extra === 1 ? '1 filtro más' : `${extra} filtros más`}`] : piezas,
+              [piezas.length === 1 ? '1 filtro' : `${piezas.length} filtros`],
+            ];
+            const renglon = (pz: string[], medir = false) => (
+              <>
+                <b key={medir ? undefined : (cargando ? 'c' : n)} style={{ fontSize: 17, fontWeight: 800, color: cargando || !n ? '#6b7280' : '#111827', fontVariantNumeric: 'tabular-nums', display: 'inline-block', transformOrigin: 'left center', animation: cargando || medir ? undefined : 'armadorLatido .45s ease-out' }}>
+                  {cargando ? 'Contando…' : n.toLocaleString('es-MX')}
+                </b>
+                {!cargando && <>&nbsp;para llamar</>}
+                {pz.map((x, i) => <span key={i}> · {x}</span>)}
+              </>
+            );
+            return (
+              /* 44 px con el texto centrado y -8 arriba: el mismo renglón que el
+                 «1 pendiente de lo que pidió» del cierre de la sala, así las
+                 dos barras miden lo mismo. */
+              <div ref={estadoRef} aria-live="polite" style={{ position: 'relative', minWidth: 0, height: 44, margin: '-8px 0 0', fontSize: 14, color: '#6b7280', lineHeight: '44px', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                <style>{'@keyframes armadorLatido{0%{transform:scale(1.18);color:#7C3AED}100%{transform:scale(1)}}'}</style>
+                {renglon(opciones[nivel] || opciones[2])}
+                {/* Las tres versiones, invisibles, para medir cuál cabe. */}
+                {opciones.map((o, i) => (
+                  <span key={i} data-medida={i} aria-hidden style={{ position: 'absolute', left: 0, top: 0, visibility: 'hidden', pointerEvents: 'none', whiteSpace: 'nowrap' }}>{renglon(o, true)}</span>
+                ))}
+              </div>
+            );
+          })()}
           <div style={{ display: 'flex', alignItems: 'center', gap: m ? 8 : 10, flex: m ? undefined : 1 }}>
           {/* Ya en la lista no hay secundario: «Cambiar lista» se fue arriba a
               la derecha y el principal va a lo ancho. En los filtros, «Ver la

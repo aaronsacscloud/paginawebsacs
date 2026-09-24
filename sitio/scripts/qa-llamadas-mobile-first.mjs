@@ -742,7 +742,7 @@ const RECORRIDOS = {
     const mas = p.getByRole('button', { name: /Mandarle también/ });
     if (await mas.count()) {
       await mas.first().scrollIntoViewIfNeeded(); await tocar(mas.first(), 'Mandarle también'); await p.waitForTimeout(900);
-      await foto('mandarle-tambien', 'Confirmar y seguir|Ya decidí');
+      await foto('mandarle-tambien', '^\\s*Listo\\s*$');   // con la hoja abierta, su principal es «Listo»; «Confirmar y seguir» queda detrás
     }
   },
   async cabina_fin(p, foto) {

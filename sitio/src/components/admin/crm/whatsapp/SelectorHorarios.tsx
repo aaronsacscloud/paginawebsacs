@@ -31,7 +31,12 @@ export default function SelectorHorarios({ huecos, onElegir, movil, deshabilitad
   const horas = huecos.filter(h => h.fecha === elegido);
   /* En el teléfono cada hueco es un blanco de pulgar (44 px, 8 entre uno y
      otro): se pica con el cliente hablando, sin tiempo de apuntar. */
-  const tira = (activo: boolean): React.CSSProperties => ({ border: `1.5px solid ${activo ? '#c9bcf7' : C.g200}`, background: activo ? C.moradoAgua : '#fff', color: activo ? C.moradoTinta : C.g900, borderRadius: 999, padding: movil ? '0 15px' : '5px 11px', ...(movil ? { minHeight: 44 } : null), fontSize: movil ? 14 : 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 });
+  /* En el teléfono, la opción de contenido de la cabina (guía §3.3, ronda 1):
+     contorno lila, texto morado, radio 12, agua al elegirla. Era otra píldora
+     gris distinta de «Cómo quedó». */
+  const tira = (activo: boolean): React.CSSProperties => movil
+    ? { border: '1.5px solid #9B8CFA', background: activo ? C.moradoAgua : '#fff', color: C.moradoTinta, borderRadius: 12, padding: '0 15px', minHeight: 44, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }
+    : ({ border: `1.5px solid ${activo ? '#c9bcf7' : C.g200}`, background: activo ? C.moradoAgua : '#fff', color: activo ? C.moradoTinta : C.g900, borderRadius: 999, padding: movil ? '0 15px' : '5px 11px', ...(movil ? { minHeight: 44 } : null), fontSize: movil ? 14 : 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 });
   /* En el teléfono, REJILLAS y no tiras que se deslizan (23-sep-2026): de
      lado, el tercer día salía cortado en «s…» y nada decía que había más, y la
      última hora tocaba el borde. Los 7 días caben en dos renglones de cuatro

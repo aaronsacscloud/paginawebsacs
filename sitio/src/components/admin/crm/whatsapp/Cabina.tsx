@@ -213,8 +213,33 @@ const ctaMovil: React.CSSProperties = { ...S.btnP, flex: 1, minHeight: 52, fontS
 const ctaMovilOff: React.CSSProperties = { background: '#E0DFE6', color: '#6B7280', cursor: 'default' };
 /* Secundario de la barra (guía §3.2): blanco, línea gris, 15/800. */
 const secMovil: React.CSSProperties = { flexShrink: 0, minHeight: 52, border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 12, padding: '0 14px', fontSize: 15, fontWeight: 800, color: '#374151', fontFamily: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 };
+/* El mismo secundario dentro del contenido: 44 px en vez de 52 (guía §3.2). */
+const secContenido: React.CSSProperties = { ...secMovil, minHeight: 44 };
+/* «Quitar» es UNA sola pieza en todo el flujo (ronda 3): destructivo de
+   contorno (guía §3.5), en la fila de la lista, en la hoja de la jornada, en
+   las acciones del cierre y en «Mandarle también». Antes era gris en la
+   lista y rojo en el cierre: la misma palabra con dos pesos. */
+const quitarMovil: React.CSSProperties = { ...secContenido, border: '1px solid #f0c4bd', color: '#C0554E' };
+/* «Cancelar» de la línea que timbra (ronda 3): la misma pieza en la tarjeta de
+   la cabina y en la hoja de la lista — antes radio 10/800 en una y 9/600 en la
+   otra. Es el destructivo de contorno de «Quitar», con su ✕ delante. */
+const cancelarMovil: React.CSSProperties = { ...quitarMovil, padding: '0 12px', gap: 5, fontSize: 14 };
+/* En la hoja de la lista, «Cancelar» (timbrando) y «Quitar» (en espera) son
+   la MISMA pieza: destructivo de contorno, mismo ancho mínimo y sin ícono. */
+const destructivoFila: React.CSSProperties = { ...quitarMovil, minWidth: 104, padding: '0 12px', fontSize: 14 };
+/* Verde para TEXTO (ronda 3): #1E8A63 da 4.31:1 sobre blanco y no llega al
+   4.5:1 del texto normal; se queda para los puntos y las franjas. */
+const verdeTexto = '#17775A';
+/* Lo mismo con el ámbar: #9a6a10 sobre su agua #FFF4E5 da 4.35:1. Sobre ese
+   fondo, en el teléfono, el texto va un tono más oscuro (5.3:1). */
+const ambarTextoAgua = '#8a5d0c';
 /* Los huecos de 80 px de la botonera de la llamada (guía §4): ícono de 20
    arriba y la palabra en 13/800 abajo. La misma forma que en la sala. */
+/* Opción de contenido en el teléfono (guía §3.3), UNA sola forma en toda la
+   cabina (ronda 1): contorno lila de 1.5, texto morado, radio 12 como
+   «Cómo quedó»; la elegida se rellena de agua. Las píldoras (radio 999) y los
+   rellenos morado o ámbar eran otras tantas familias para el mismo control. */
+const opcionMovil = (elegida: boolean): React.CSSProperties => ({ border: '1.5px solid #9B8CFA', background: elegida ? '#EEECFE' : '#fff', color: '#5B4BD6', borderRadius: 12, padding: '0 14px', minHeight: 44, fontSize: 14, fontWeight: elegida ? 800 : 700, cursor: 'pointer', fontFamily: 'inherit' });
 const huecoLlamada: React.CSSProperties = { flexShrink: 0, width: 80, minHeight: 52, border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 12, padding: '4px 2px', fontFamily: 'inherit', cursor: 'pointer', color: '#374151', display: 'inline-flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, lineHeight: 1.1 };
 /* El auricular caído y el micrófono de la sala (SalaLlamada.tsx): Colgar y
    Silenciar se reconocen por su forma al pasar de una pantalla a la otra. */
@@ -393,7 +418,7 @@ function ExtrasCierre({ propuesta, item, opc, cargar, abierto, setAbierto, param
      destructivo de contorno, el mismo de los «Cancelar» de la jornada. Las
      píldoras grises no eran de ningún nivel. */
   const chipOpc: any = movil ? { ...chip, border: '1.5px solid #9B8CFA', borderRadius: 12, color: '#5B4BD6', background: '#fff' } : chip;
-  const chipQuitar: any = movil ? { ...chip, border: '1px solid #f0c4bd', borderRadius: 12, color: '#C0554E', background: '#fff' } : { ...chip, color: '#C0554E' };
+  const chipQuitar: any = movil ? quitarMovil : { ...chip, color: '#C0554E' };
 
   /* En el teléfono esta caja deja de ser tarjeta dentro de la tarjeta lavanda:
      sin borde y con 10 px de aire, las burbujas ganan el ancho que les faltaba. */
@@ -413,7 +438,10 @@ function ExtrasCierre({ propuesta, item, opc, cargar, abierto, setAbierto, param
         ) : (
           <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: C.g500, flex: 1 }}>Así le van a llegar los mensajes</span>
         )}
-        <button onClick={() => setAbierto(!abierto)} disabled={ocupado} style={movil ? { ...chipOpc, width: '100%', background: abierto ? '#EEECFE' : '#fff' } : { ...chip, background: abierto ? C.moradoAgua : '#fff', color: C.moradoTinta, borderColor: '#ddd6fb' }}>{abierto && !movil ? 'Listo' : '＋ Mandarle también'}</button>
+        {/* En el teléfono es secundario de contenido (guía §3.2), no opción:
+            abre una hoja, no elige nada. Con el contorno lila se leía como el
+            cierre de la pantalla, pegado a la barra (ronda 1 cabina). */}
+        <button onClick={() => setAbierto(!abierto)} disabled={ocupado} style={movil ? { width: '100%', minHeight: 44, border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 12, padding: '0 14px', fontSize: 15, fontWeight: 800, color: '#374151', fontFamily: 'inherit', cursor: 'pointer' } : { ...chip, background: abierto ? C.moradoAgua : '#fff', color: C.moradoTinta, borderColor: '#ddd6fb' }}>{abierto && !movil ? 'Listo' : '＋ Mandarle también'}</button>
       </div>
       {!opc && <div style={{ fontSize: movil ? 14 : 11.5, color: movil ? C.g500 : C.g400 }}>Revisando la ventana de WhatsApp…</div>}
       {opc && !pasos.length && (
@@ -433,6 +461,13 @@ function ExtrasCierre({ propuesta, item, opc, cargar, abierto, setAbierto, param
         </div>
       ))}
       {hayLlamada && pasos.length > 0 && (!movil || verPasos) && <div style={{ fontSize: movil ? 14 : 11, color: movil ? C.g500 : C.g400 }}>La llamada de vuelta no le manda mensaje: queda en tu agenda y en la lista de ese día.</div>}
+      {/* En el teléfono, con «Así le llegan…» plegado, cada extra agregado
+          conserva su «Quitar» a la vista (desplegado, va junto a su mensaje). */}
+      {extras.length > 0 && movil && !verPasos && (
+        <div style={{ display: 'grid', gap: 8 }}>
+          {extras.map(x => <button key={x.nombre} onClick={() => ponerExtras(extras.filter(y => y.nombre !== x.nombre))} disabled={ocupado} aria-label={`Quitar la plantilla ${np(x.nombre)}`} style={{ ...chipQuitar, width: '100%', justifyContent: 'flex-start', textAlign: 'left', whiteSpace: 'normal', overflowWrap: 'anywhere', lineHeight: 1.3, padding: '6px 14px' }}>Quitar «{np(x.nombre)}»</button>)}
+        </div>
+      )}
       {extras.length > 0 && !movil && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {extras.map(x => <button key={x.nombre} onClick={() => ponerExtras(extras.filter(y => y.nombre !== x.nombre))} disabled={ocupado} style={{ ...chip, color: '#C0554E' }}>Quitar {movil ? `«${np(x.nombre)}»` : x.nombre}</button>)}
@@ -442,20 +477,22 @@ function ExtrasCierre({ propuesta, item, opc, cargar, abierto, setAbierto, param
         <div style={movil ? { display: 'grid', gap: 14 } : { display: 'grid', gap: 8, borderTop: `1px solid ${C.g100}`, paddingTop: 8 }}>
           {(opc.conocimientos || []).length > 0 && (
             <div>
-              <div style={{ fontSize: movil ? 13 : 11, fontWeight: 800, color: C.g500, marginBottom: 5 }}>Contenido con PDF</div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              <div style={movil ? { ...etiqueta, fontSize: 12, marginBottom: 8 } : { fontSize: 11, fontWeight: 800, color: C.g500, marginBottom: 5 }}>Contenido con PDF</div>
+              {/* En el teléfono, la misma rejilla de dos columnas iguales que el
+                  resto de opciones del flujo. */}
+              <div style={movil ? { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 } : { display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {opc.conocimientos.map((k: any) => {
                   const ya = envios.some((e: any) => e.conocimiento_id === k.id);
                   /* En el teléfono lo ya agregado se pinta como elegido (morado
                      tinta sobre lavanda), no a media opacidad: a 2.7:1 parecía
                      deshabilitado y no se leía. */
-                  return <button key={k.id} disabled={ya || ocupado} onClick={() => editar({ agregar_envio: k.id })} style={movil ? { ...chipOpc, ...(ya ? { background: '#EEECFE', cursor: 'default' } : null) } : { ...chip, opacity: ya ? .5 : 1 }}>{ya ? '✓ ' : '＋ '}{k.tema}</button>;
+                  return <button key={k.id} disabled={ya || ocupado} onClick={() => editar({ agregar_envio: k.id })} style={movil ? { ...chipOpc, minWidth: 0, minHeight: 44, width: '100%', justifyContent: 'center', textAlign: 'center', whiteSpace: 'normal', overflowWrap: 'anywhere', lineHeight: 1.25, padding: '6px 8px', ...(ya ? { background: '#EEECFE', cursor: 'default' } : null) } : { ...chip, opacity: ya ? .5 : 1 }}>{ya ? '✓ ' : '＋ '}{k.tema}</button>;
                 })}
               </div>
             </div>
           )}
           <div>
-            <div style={{ fontSize: movil ? 13 : 11, fontWeight: 800, color: C.g500, marginBottom: 5 }}>Plantillas del caso (máximo 3)</div>
+            <div style={movil ? { ...etiqueta, fontSize: 12, marginBottom: 8 } : { fontSize: 11, fontWeight: 800, color: C.g500, marginBottom: 5 }}>Plantillas del caso (máximo 3)</div>
             {/* En el teléfono sin scroll propio: un scroll dentro del scroll de
                 la cabina atrapa el pulgar. */}
             <div style={{ display: 'grid', gap: movil ? 10 : 6, ...(movil ? null : { maxHeight: 320, overflowY: 'auto' as const }) }}>
@@ -473,7 +510,7 @@ function ExtrasCierre({ propuesta, item, opc, cargar, abierto, setAbierto, param
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <b style={{ display: 'block', fontSize: 15, color: C.g900, lineHeight: 1.3, overflowWrap: 'anywhere' }}>{np(t.nombre)}</b>
-                          <span style={{ fontSize: 13, color: C.g500 }}>{t.categoria === 'UTILITY' ? 'utilidad' : 'marketing'}{t.con_documento ? ' · con archivo' : ''}{ya ? ' · agregada' : ''}</span>
+                          <span style={{ fontSize: 13, color: ya ? '#4B5563' : C.g500 }}>{t.categoria === 'UTILITY' ? 'utilidad' : 'marketing'}{t.con_documento ? ' · con archivo' : ''}{ya ? ' · agregada' : ''}</span>
                         </div>
                         <button disabled={ocupado || (!ya && extras.length >= 3)}
                           onClick={() => { if (ya) ponerExtras(extras.filter(x => x.nombre !== t.nombre)); else if (nv > 0 && abriendo !== t.nombre) setAbriendo(t.nombre); else { agregarPlantilla(t.nombre); setAbriendo(null); } }}
@@ -484,7 +521,7 @@ function ExtrasCierre({ propuesta, item, opc, cargar, abierto, setAbierto, param
                     ) : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                       <b className="cab-pl-nombre" style={{ fontSize: 12, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{np(t.nombre)}</b>
-                      <span style={{ fontSize: 10, color: C.g400 }}>{t.categoria === 'UTILITY' ? 'utilidad' : 'marketing'}{t.con_documento ? ' · con archivo' : ''}</span>
+                      <span style={{ fontSize: 10, color: movil ? C.g500 : C.g400 }}>{t.categoria === 'UTILITY' ? 'utilidad' : 'marketing'}{t.con_documento ? ' · con archivo' : ''}</span>
                       <button disabled={ocupado || (!ya && extras.length >= 3)} onClick={() => ya ? ponerExtras(extras.filter(x => x.nombre !== t.nombre)) : agregarPlantilla(t.nombre)} style={{ ...chip, padding: '3px 9px', color: ya ? '#C0554E' : C.moradoTinta }}>{ya ? 'Quitar' : 'Agregar'}</button>
                     </div>
                     )}
@@ -515,7 +552,7 @@ function ExtrasCierre({ propuesta, item, opc, cargar, abierto, setAbierto, param
       return (
         <div onClick={e => { if (e.target === e.currentTarget) setAbierto(false); }} style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'rgba(12,11,18,.45)' }}>
           <div role="dialog" aria-modal="true" aria-label="Mandarle también" style={{ position: 'fixed', left: 0, right: 0, bottom: 0, maxHeight: '88vh', display: 'flex', flexDirection: 'column', background: '#fff', borderTopLeftRadius: 16, borderTopRightRadius: 16, boxShadow: '0 -10px 40px rgba(12,11,18,.22)' }}>
-            <div style={{ flexShrink: 0, padding: '6px 12px 8px 16px', borderBottom: `1px solid ${C.g200}` }}>
+            <div style={{ flexShrink: 0, padding: '6px 16px 8px', borderBottom: `1px solid ${C.g200}` }}>
               <span aria-hidden style={{ display: 'block', width: 36, height: 4, borderRadius: 999, background: C.g200, margin: '2px auto 4px' }} />
               {/* La ✕ alineada con el título, no a media altura de los dos
                   renglones (ronda 6). */}
@@ -1166,7 +1203,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                 <div style={{ flex: 1, minWidth: 0 }}>
                   {/* A quién le está sonando, sin abrir la lista. */}
                   {v.nombre && v.telefono && <div style={{ fontSize: 14, color: C.g700, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{telefonoLegible(v.telefono)}</div>}
-                  <div style={{ fontSize: 13, color: v.estado === 'en_linea' ? '#1E8A63' : C.moradoTinta, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ fontSize: 13, color: v.estado === 'en_linea' ? (movil ? verdeTexto : '#1E8A63') : C.moradoTinta, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span className={['marcando', 'timbrando'].includes(v.estado) ? 'wa-pulso' : undefined} style={{ width: 8, height: 8, borderRadius: 999, flexShrink: 0, background: v.estado === 'en_linea' ? '#1E8A63' : v.veredicto === 'buzon' ? '#9a6a10' : '#9B8CFA' }} />
                     {v.veredicto === 'buzon' ? 'Buzón' : ETIQUETA_ITEM[v.estado] || v.estado}
                     {['marcando', 'timbrando'].includes(v.estado) && v.segundos > 0 ? ` · ${v.segundos}s` : ''}
@@ -1180,7 +1217,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                   title="Cancelar esta llamada y quitarla de la lista" aria-label={`Cancelar la llamada a ${v.nombre || 'este contacto'}`}
                   /* En el teléfono con palabra: en plena marcación una ✕ roja sola
                      no dice si cuelga, quita o cierra algo. */
-                  style={{ flexShrink: 0, ...(movil ? { minHeight: 44, padding: '0 12px', gap: 5, fontSize: 14, fontWeight: 800, fontFamily: 'inherit' } : { width: 30, height: 30 }), borderRadius: movil ? 10 : 8, border: `1px solid ${movil ? '#f0c4bd' : C.g200}`, background: '#fff', color: '#C0554E', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', opacity: cancelando === v.id ? 0.5 : 1 }}>
+                  style={movil ? { ...cancelarMovil, opacity: cancelando === v.id ? 0.5 : 1 } : { flexShrink: 0, width: 30, height: 30, borderRadius: 8, border: `1px solid ${C.g200}`, background: '#fff', color: '#C0554E', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', opacity: cancelando === v.id ? 0.5 : 1 }}>
                   <IcoX size={movil ? 15 : 14} />{movil && 'Cancelar'}
                 </button>
               )}
@@ -1362,7 +1399,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
         {/* «Cambiar lista» vive SÓLO aquí (guía §5). Antes de armar la lista
             vuelve a los filtros; con una lista abierta, a elegir otra. */}
         {conCambiar && (
-          <button onClick={sesionId ? salirDeSesion : onCerrar} style={{ flexShrink: 0, minHeight: 44, padding: '0 12px', border: 'none', background: 'none', fontFamily: 'inherit', fontSize: 14, fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', whiteSpace: 'nowrap' }}>Cambiar lista</button>
+          <button onClick={sesionId ? salirDeSesion : onCerrar} style={{ flexShrink: 0, minHeight: 44, padding: '0 4px 0 12px', border: 'none', background: 'none', fontFamily: 'inherit', fontSize: 14, fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', whiteSpace: 'nowrap' }}>Cambiar lista</button>
         )}
       </div>
       {partirCab && (
@@ -1371,9 +1408,11 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
       {fase === 'viva' && sesion && (
         /* Un solo renglón a la altura de la ✕ + 12: los metadatos a la
            izquierda y el estado a la derecha. */
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2px 12px', flexWrap: 'wrap', padding: '0 0 4px 48px', minHeight: 24 }}>
+        /* 4 px a la derecha (ronda 1 cabina): con los 12 del encabezado, el
+           estado termina en el mismo canal de 16 px que el contenido. */
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px 12px', flexWrap: 'wrap', padding: '0 4px 4px 48px', minHeight: 24 }}>
           <span title={`${fmt(sesion.segundos_hablados || 0)} al teléfono`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: C.g500, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-            <span><b style={{ color: '#1E8A63', fontSize: 14 }}>{conversaciones}</b> {conversaciones === 1 ? 'habló' : 'hablaron'}</span>
+            <span><b style={{ color: verdeTexto, fontSize: 14 }}>{conversaciones}</b> {conversaciones === 1 ? 'habló' : 'hablaron'}</span>
             <span aria-hidden>·</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><IcoReloj size={13} />{Math.round(Number(sesion.segundos_hablados || 0) / 60)} min</span>
           </span>
@@ -1383,10 +1422,11 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
           )}
           {/* Si te oyen o no, a la vista SIN scroll (guía §6): punto de 8 px
               y texto, sin fondo ni borde — con pastilla parecía un botón de
-              quitar el mudo. En plena llamada se va: «Silenciar» de la barra
-              ya lo dice, y dos sitios diciendo lo mismo es buscar cuál manda. */}
-          {!sola && !(enSala && actual?.estado === 'en_linea' && (!fernanda || actual?.voz?.handoff)) && (
-            <span role="status" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: enSala ? (micAbierto ? '#1E8A63' : C.g500) : '#9a6a10', whiteSpace: 'nowrap' }}>
+              quitar el mudo. Se queda también en plena llamada (ronda 3): es
+              justo cuando más importa saber si te oyen, y el encabezado dice
+              lo mismo en marcando, en la llamada y en el cierre. */}
+          {!sola && (
+            <span role="status" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: enSala ? (micAbierto ? verdeTexto : C.g500) : '#9a6a10', whiteSpace: 'nowrap' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: enSala ? (micAbierto ? '#1E8A63' : '#9CA3AF') : '#E8A838', ...(enSala && micAbierto ? { animation: 'cab-late 1.25s ease-in-out infinite' } : null) }} />
               {enSala ? (micAbierto ? 'Te oyen' : 'En mudo') : 'Fuera de la sala'}
             </span>
@@ -1454,9 +1494,15 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
      métricas se partían en cuatro líneas dentro de 170 px. */
   const previasVivas = previas.filter(p => ['activa', 'pausada'].includes(p.estado));
   const previasResto = previas.filter(p => !['activa', 'pausada'].includes(p.estado));
+  const estadoMovil = (punto: string, fg: string, texto: React.ReactNode, pulso?: boolean) => (
+    <span role="status" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: fg === '#1E8A63' ? verdeTexto : fg, whiteSpace: 'nowrap', lineHeight: 1.4 }}>
+      <span aria-hidden className={pulso ? 'wa-pulso' : undefined} style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: punto }} />{texto}
+    </span>
+  );
   const tarjetaPrevia = (p: any) => {
     const viva = ['activa', 'pausada'].includes(p.estado);
-    const pastilla = <span style={{ fontSize: movil ? 12.5 : 11, fontWeight: 700, borderRadius: 999, padding: movil ? '4px 10px' : '2px 8px', background: viva ? '#EAF8F2' : C.g100, color: viva ? '#1E8A63' : '#4B5563' }}>{p.estado}</span>;
+    /* En el teléfono, estado con punto y sin fondo (guía §6). */
+    const pastilla = movil ? estadoMovil(viva ? '#1E8A63' : '#9CA3AF', viva ? '#1E8A63' : C.g500, p.estado) : <span style={{ fontSize: movil ? 12.5 : 11, fontWeight: 700, borderRadius: 999, padding: movil ? '4px 10px' : '2px 8px', background: viva ? '#EAF8F2' : C.g100, color: viva ? '#1E8A63' : '#4B5563' }}>{p.estado}</span>;
     const botones = (<>
       <button onClick={() => { setSesionId(p.id); setTab(p.estado === 'terminada' ? 'hechas' : 'lista'); }} style={movil ? { ...btnT, fontSize: 14, padding: '0 18px', justifyContent: 'center' } : btnS}>{['terminada', 'cancelada'].includes(p.estado) ? 'Ver' : 'Abrir'}</button>
       {['terminada', 'cancelada'].includes(p.estado) && (p.sin_contestar + p.buzon + p.porteros) > 0 && (
@@ -1510,7 +1556,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
           <label style={etiqueta}>Quién habla</label>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {([['manual', 'Yo', 'Marco y hablo yo; la IA solo escucha y cierra.'], ['ia', 'Fernanda', 'La voz de la IA hace toda la llamada y agenda sola. No hace falta que estés en la sala.'], ['asistido', 'Fernanda y yo', 'Fernanda abre y conversa; yo escucho y puedo tomar la llamada cuando quiera.']] as const).map(([v, t, d]) => (
-              <button key={v} type="button" onClick={() => setPres((p: any) => ({ ...p, modo: v }))} title={d} disabled={!!sesionId && !['borrador', 'lista', 'pausada'].includes(sesion?.estado)} style={{
+              <button key={v} type="button" onClick={() => setPres((p: any) => ({ ...p, modo: v }))} title={d} disabled={!!sesionId && !['borrador', 'lista', 'pausada'].includes(sesion?.estado)} aria-pressed={movil ? pres.modo === v : undefined} style={movil ? opcionMovil(pres.modo === v) : {
                 /* En el teléfono el elegido va en el morado tinta del botón
                    principal: blanco sobre #9B8CFA daba 2.8:1 y no se leía. */
                 border: `1.5px solid ${pres.modo === v ? (movil ? C.moradoTinta : '#9B8CFA') : C.g200}`, background: pres.modo === v ? (movil ? C.moradoTinta : '#9B8CFA') : '#fff', color: pres.modo === v ? '#fff' : C.g700,
@@ -1537,7 +1583,8 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
             {([[1, 'Una'], [2, 'Dos'], [3, 'Tres']] as const).map(([v, t]) => (
               <button key={v} type="button" onClick={() => setPres((p: any) => ({ ...p, lineas: v }))}
                 disabled={!!sesionId && !['borrador', 'lista', 'pausada'].includes(sesion?.estado)}
-                style={{
+                aria-pressed={movil ? Number(pres.lineas || 1) === v : undefined}
+                style={movil ? opcionMovil(Number(pres.lineas || 1) === v) : {
                   border: `1.5px solid ${Number(pres.lineas || 1) === v ? (movil ? C.moradoTinta : '#9B8CFA') : C.g200}`, background: Number(pres.lineas || 1) === v ? (movil ? C.moradoTinta : '#9B8CFA') : '#fff',
                   color: Number(pres.lineas || 1) === v ? '#fff' : C.g700, borderRadius: 999, padding: movil ? '0 18px' : '5px 14px', fontSize: movil ? 14 : 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
                 }}>{t}</button>
@@ -1589,7 +1636,8 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                     setPres((x: any) => { const n = { ...x, reintentos: v }; guardarLocal('cabina.presentacion', n); return n; });
                     if (sesionId) accion('presentacion', { config: { reintentos_buzon: v } });
                   }}
-                    style={{ border: `1px solid ${elegido ? '#E8A838' : C.g200}`,
+                    aria-pressed={movil ? elegido : undefined}
+                    style={movil ? opcionMovil(elegido) : { border: `1px solid ${elegido ? '#E8A838' : C.g200}`,
                       background: elegido ? '#FFF8EC' : '#fff',
                       color: elegido ? '#9a6a10' : C.g500,
                       borderRadius: 999, padding: movil ? '0 14px' : '5px 13px', fontSize: movil ? 14 : 12.5,
@@ -1608,22 +1656,26 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
   const resumenConfig = `${pres.modo === 'ia' ? 'habla Fernanda' : pres.modo === 'asistido' ? 'Fernanda y tú' : 'hablas tú'} · ${Number(pres.lineas || 1) === 1 ? 'una a la vez' : `${pres.lineas} a la vez`} · ${Number(pres.reintentos || 0) ? `reintentar ${pres.reintentos} ${Number(pres.reintentos) === 1 ? 'vez' : 'veces'}` : 'no reintentar'}`;
 
   // ── 1 · ARMAR ─────────────────────────────────────────────────────────
-  /* Cada fase monta su propia raíz (`key={fase}`): si React reusara los
-     nodos de la anterior, una tarjeta con franja pasaba a ser la fila de
-     KPIs y avisaba de estilos en conflicto (border + borderLeft). */
+  /* Cada fase monta su propio CUERPO (`key={fase}` en el contenedor con
+     scroll, no en la raíz): si React reusara los nodos de la anterior, una
+     tarjeta con franja pasaba a ser la fila de KPIs y avisaba de estilos en
+     conflicto (border + borderLeft), y el scroll de la fase anterior se
+     heredaba. La raíz y el encabezado ya no se remontan al cambiar de fase. */
   if (fase === 'armar') {
     return (
-      <div key={fase} className={movil ? 'cab-m' : undefined} style={raizEstilo}>
+      <div className={movil ? 'cab-m' : undefined} style={raizEstilo}>
         {estiloMovil}{cab}
-        <div className="wa-scroll" style={{ flex: 1, overflowY: 'auto', padding: movil ? `12px 16px ${PIE_MOVIL}` : 22 }}>
+        <div key={fase} className="wa-scroll" style={{ flex: 1, overflowY: 'auto', padding: movil ? `12px 16px ${PIE_MOVIL}` : 22 }}>
           <div style={{ maxWidth: 680, margin: '0 auto', display: 'grid', gap: 14 }}>
             {errorBox}
             {telefonia && !telefonia.ok && (
-              <div style={{ background: '#FFF4E5', border: '1px solid #f3d9a4', color: '#9a6a10', borderRadius: 9, padding: '8px 12px', fontSize: 12.5 }}>
+              <div style={{ background: '#FFF4E5', border: '1px solid #f3d9a4', color: movil ? ambarTextoAgua : '#9a6a10', borderRadius: 9, padding: '8px 12px', fontSize: 12.5 }}>
                 La telefonía no está configurada (faltan {telefonia.faltantes.length} datos). Puedes armar la lista, pero no marcar.
               </div>
             )}
-            <div style={tarjeta('#9B8CFA')}>
+            {/* En el teléfono, tarjeta lisa (ronda 1 cabina): la franja morada era
+                un acento que ninguna otra tarjeta equivalente del flujo repite. */}
+            <div style={movil ? { background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 12, padding: '13px 16px' } : tarjeta('#9B8CFA')}>
               <span style={etiqueta}>La lista</span>
               <div style={{ fontSize: 15, fontWeight: 700, color: C.g900 }}>{descripcion}</div>
               {/* En el teléfono, una línea y el detalle plegado: seis renglones
@@ -1660,12 +1712,13 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                 justo debajo de la lista nueva —que es a lo que se entró— en
                 renglones compactos: nombre, cómo va y «Abrir». */}
             {movil && previasVivas.length > 0 && (
-              <div style={{ background: '#fff', border: '1px solid #9fdcc2', borderLeft: '3px solid #4FBF95', borderRadius: 10, overflow: 'hidden' }}>
-                <div style={{ padding: '10px 14px 4px', fontSize: 13, fontWeight: 800, color: '#1E8A63' }}>
+              <div style={{ background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 12, overflow: 'hidden' }}>
+                {/* Rótulo como «La lista» de arriba: mismo peso, sin acento verde. */}
+                <div style={{ ...etiqueta, padding: '12px 16px 4px', marginBottom: 0 }}>
                   {previasVivas.length === 1 ? 'Tienes una jornada a medias' : `Tienes ${previasVivas.length} jornadas a medias`}
                 </div>
                 {previasVivas.map(p => (
-                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px 8px 14px', borderTop: `1px solid ${C.g100}` }}>
+                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', borderTop: `1px solid ${C.g100}` }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 15, fontWeight: 700, color: C.g900, lineHeight: 1.3, overflowWrap: 'anywhere' }}>{p.nombre || 'Sesión'}</div>
                       <div style={{ fontSize: 13, color: C.g500 }}>{p.estado} · {p.contestadas} contestaron de {p.total}</div>
@@ -1717,7 +1770,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                 <button onClick={armar} disabled={!!ocupado || total === 0} style={{ ...S.btnP, opacity: !!ocupado || total === 0 ? 0.6 : 1 }}>
                   {ocupado === 'armar' ? 'Armando…' : 'Armar la lista con los filtros actuales'}
                 </button>
-                <span style={{ fontSize: 11.5, color: C.g400 }}>Después la revisas antes de marcar.</span>
+                <span style={{ fontSize: 11.5, color: movil ? C.g500 : C.g400 }}>Después la revisas antes de marcar.</span>
               </div>
             )}
 
@@ -1771,7 +1824,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
       {(i.hecho || []).length > 0 && (
         <div style={{ marginTop: 3, display: 'grid', gap: 1 }}>
           {i.hecho.map((h: string, n: number) => (
-            <div key={n} style={{ fontSize: movil ? 13 : 11, lineHeight: 1.45, color: /no se pudo|no salió|no se le pudo|sin fecha|tarea:/i.test(h) ? '#9a6a10' : '#1E8A63' }}>
+            <div key={n} style={{ fontSize: movil ? 13 : 11, lineHeight: 1.45, color: /no se pudo|no salió|no se le pudo|sin fecha|tarea:/i.test(h) ? '#9a6a10' : movil ? verdeTexto : '#1E8A63' }}>
               {/no se pudo|no salió|no se le pudo/i.test(h) ? '⚠️' : '✓'} {h}
             </div>
           ))}
@@ -1791,7 +1844,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
               hay, y ofrecerlo sería prometer algo que no va a pasar. */}
           {i.cierre_estado === 'sin_datos' && i.cierre_fallo && i.cierre_fallo !== 'sin_transcripcion' && (
             <button onClick={() => releer(i.id)} disabled={!!ocupado}
-              style={{ border: '1px solid #E8A838', background: '#fff', color: '#9a6a10', borderRadius: 999, padding: movil ? '0 14px' : '2px 9px', fontSize: movil ? 14 : 10.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ border: '1px solid #E8A838', background: '#fff', color: '#9a6a10', borderRadius: movil ? 12 : 999, padding: movil ? '0 14px' : '2px 9px', fontSize: movil ? 14 : 10.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
               {ocupado === `releer-${i.id}` ? 'Leyendo…' : 'Volver a leer'}
             </button>
           )}
@@ -1809,11 +1862,6 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
     escuchando: { punto: '#1E8A63', fg: '#1E8A63' }, portero: { punto: '#E8A838', fg: '#9a6a10' }, en_linea: { punto: '#1E8A63', fg: '#1E8A63' },
     cierre: { punto: '#5B4BD6', fg: C.moradoTinta }, excluido: { punto: '#9CA3AF', fg: '#4B5563' },
   };
-  const estadoMovil = (punto: string, fg: string, texto: React.ReactNode, pulso?: boolean) => (
-    <span role="status" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: fg, whiteSpace: 'nowrap', lineHeight: 1.4 }}>
-      <span aria-hidden className={pulso ? 'wa-pulso' : undefined} style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: punto }} />{texto}
-    </span>
-  );
   const estadoItem = (i: any) => movil && !(i.estado === 'hecho' || i.estado === 'saltado') ? (() => {
     const t = i.estado === 'pendiente' && i.volver_at ? { punto: '#9B8CFA', fg: C.moradoTinta } : TONO_ITEM[i.estado] || { punto: '#9CA3AF', fg: C.g500 };
     return estadoMovil(t.punto, t.fg, <>{i.estado === 'pendiente' && fase === 'fin' ? 'Sin marcar' : i.estado === 'pendiente' && i.volver_at ? `A las ${new Date(i.volver_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' })}` : (ETIQUETA_ITEM[i.estado] || i.estado)}</>, ['marcando', 'timbrando'].includes(i.estado));
@@ -1835,24 +1883,33 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
     if (!compacto && i.telefono) acciones.push(
       <button key="ll" onClick={() => document.dispatchEvent(new CustomEvent('tel-llamar', { detail: { telefono: i.telefono, nombre: i.nombre || null } }))}
         title={`Llamar a ${i.nombre || telefonoLegible(i.telefono)} ahora`}
-        style={{ ...btnT, justifyContent: 'center', gridColumn: i.conversation_id && onAbrirConversacion ? '1' : '1 / 3' }}>
+        style={{ ...secContenido, gridColumn: '1' }}>
         <IcoTelefono size={14} /> Llamar
       </button>);
-    if (!compacto && i.conversation_id && onAbrirConversacion) acciones.push(
-      <button key="ch" onClick={() => onAbrirConversacion(i.conversation_id)} title="Ver la conversación" style={{ ...btnT, justifyContent: 'center', gridColumn: '2' }}>Chat</button>);
+    /* «Chat» sale de la botonera (ronda 3 cabina): en la rejilla de tres, las
+       filas sin WhatsApp dejaban el hueco del medio vacío y los botones
+       cambiaban de sitio de una fila a otra. Ahora es botón de texto (guía
+       §3.6) arriba a la derecha, junto al nombre, y la botonera es siempre
+       Llamar | Quitar, en las mismas dos columnas. */
+    const chat = !compacto && i.conversation_id && onAbrirConversacion ? (
+      <button key="ch" onClick={() => onAbrirConversacion(i.conversation_id)} title="Ver la conversación"
+        style={{ border: 'none', background: 'none', color: '#5B4BD6', fontSize: 14, fontWeight: 700, minHeight: 44, padding: '0 4px 0 12px', margin: '-11px -4px 0 0', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center' }}>Ver chat ›</button>
+    ) : null;
     if (conAcciones && i.estado === 'pendiente') acciones.push(
       <button key="q" onClick={() => accion('excluir', { item: i.id })} title="Quitar de la lista" aria-label={`Quitar a ${i.nombre || telefonoLegible(i.telefono)} de la lista`}
-        style={{ ...btnT, color: C.g500, justifyContent: 'center', gridColumn: compacto ? undefined : '3' }}><IcoX size={13} /> Quitar</button>);
+        /* Sin la ✕ (ronda 1 cabina): con ella se leía como el «Cancelar» de
+           la línea que timbra. Quitar es sacar de la lista, no colgar. */
+        style={compacto ? destructivoFila : { ...quitarMovil, gridColumn: '2' }}>Quitar</button>);
     /* En la hoja, los que están timbrando llevan la MISMA ✕ de la vista
        principal: si no, parecía que desde la lista no se podían cancelar. */
     if (['marcando', 'timbrando', 'escuchando', 'portero'].includes(i.estado) && fase === 'viva') acciones.push(
       <button key="cx" onClick={() => cancelarLinea(i.id)} disabled={cancelando === i.id}
         aria-label={`Cancelar la llamada a ${i.nombre || 'este contacto'}`}
-        style={{ ...btnT, color: '#C0554E', border: '1px solid #f0c4bd', opacity: cancelando === i.id ? 0.5 : 1 }}><IcoX size={13} /> Cancelar</button>);
+        style={compacto ? { ...destructivoFila, opacity: cancelando === i.id ? 0.5 : 1 } : { ...cancelarMovil, opacity: cancelando === i.id ? 0.5 : 1 }}>{!compacto && <IcoX size={15} />}Cancelar</button>);
     if (conAcciones && !compacto && i.estado === 'excluido') acciones.push(
-      <button key="vm" onClick={() => accion('incluir', { item: i.id })} style={btnT}>Volver a meter</button>);
+      <button key="vm" onClick={() => accion('incluir', { item: i.id })} style={secContenido}>Volver a meter</button>);
     return (
-      <div key={i.id} style={{ padding: '11px 14px', borderBottom: `1px solid ${C.g100}`, background: i.id === actual?.id ? C.moradoSuave : i.estado === 'excluido' ? C.g50 : '#fff', display: 'grid', gap: 8 }}>
+      <div key={i.id} style={{ padding: '11px 16px', borderBottom: `1px solid ${C.g100}`, background: i.id === actual?.id ? C.moradoSuave : i.estado === 'excluido' ? C.g50 : '#fff', display: 'grid', gap: 8 }}>
         {/* Al que quedó fuera lo distinguen el fondo gris y su pastilla, no la
             opacidad: con toda la fila al 60 % el texto bajaba a 2.9:1 y
             «Volver a meter» parecía deshabilitado aunque funcionaba. */}
@@ -1860,7 +1917,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
           {/* El número de orden va en línea con el nombre: en su propia columna
               se comía 40 px que a 360 le faltaban al nombre y a los botones. */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: C.g900, lineHeight: 1.3, overflowWrap: 'anywhere' }}><span style={{ fontSize: 13, fontWeight: 600, color: C.g400, fontVariantNumeric: 'tabular-nums' }}>{i.orden + 1}.</span> {i.nombre || telefonoLegible(i.telefono)}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: C.g900, lineHeight: 1.3, overflowWrap: 'anywhere' }}><span style={{ fontSize: 13, fontWeight: 600, color: C.g500, fontVariantNumeric: 'tabular-nums' }}>{i.orden + 1}.</span> {i.nombre || telefonoLegible(i.telefono)}</div>
             {i.empresa && <div style={{ fontSize: 13, color: C.g500, overflowWrap: 'anywhere' }}>{i.empresa}</div>}
             <div style={{ fontSize: 13, color: C.g700, fontVariantNumeric: 'tabular-nums' }}>{telefonoLegible(i.telefono)}{i.intentos ? ` · ${i.intentos} ${i.intentos === 1 ? 'intento' : 'intentos'}` : ''}{i.duracion_seg ? ` · ${fmt(i.duracion_seg)}` : ''}</div>
             {i.motivo_exclusion && <div style={{ fontSize: 13, color: C.g500 }}>{i.motivo_exclusion}</div>}
@@ -1870,18 +1927,18 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
               (ronda 5): se quita y el nombre gana el ancho. En la hoja de la
               jornada, el único botón de la fila (Quitar o Cancelar) va debajo
               del estado, en la misma columna: la fila baja de ~136 a ~100 px. */}
-          {(!(fase === 'lista' && i.estado === 'pendiente' && !i.volver_at) || (compacto && acciones.length === 1)) && (
+          {(!(fase === 'lista' && i.estado === 'pendiente' && !i.volver_at) || (compacto && acciones.length === 1) || chat) && (
             <span style={{ flexShrink: 0, paddingTop: 2, display: 'grid', justifyItems: 'end', gap: 8 }}>
+              {chat}
               {!(fase === 'lista' && i.estado === 'pendiente' && !i.volver_at) && estadoItem(i)}
               {compacto && acciones.length === 1 && acciones}
             </span>
           )}
         </div>
-        {/* Rejilla fija (ronda 5): Llamar a lo ancho, Chat y Quitar del mismo
-            ancho y siempre en la misma columna, haya chat o no. Así las filas
-            se leen parejas y el pulgar encuentra Quitar siempre a la derecha. */}
+        {/* Rejilla fija de dos huecos iguales: Llamar y Quitar siempre en la
+            misma columna y del mismo ancho en todas las filas. */}
         {acciones.length > 0 && !(compacto && acciones.length === 1) && (
-          <div style={!compacto && i.estado === 'pendiente' && i.telefono ? { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 84px 104px', gap: 8 } : { display: 'flex', gap: 8, flexWrap: 'wrap' }}>{acciones}</div>
+          <div style={!compacto && i.estado === 'pendiente' && i.telefono ? { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 } : { display: 'flex', gap: 8, flexWrap: 'wrap' }}>{acciones}</div>
         )}
       </div>
     );
@@ -1919,9 +1976,9 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
   // ── 2 · LA LISTA, ANTES DE MARCAR ─────────────────────────────────────
   if (fase === 'lista') {
     return (
-      <div key={fase} className={movil ? 'cab-m' : undefined} style={raizEstilo}>
+      <div className={movil ? 'cab-m' : undefined} style={raizEstilo}>
         {estiloMovil}{cab}
-        <div className="wa-scroll" style={{ flex: 1, overflowY: 'auto', padding: movil ? `12px 16px ${PIE_MOVIL}` : 22 }}>
+        <div key={fase} className="wa-scroll" style={{ flex: 1, overflowY: 'auto', padding: movil ? `12px 16px ${PIE_MOVIL}` : 22 }}>
           <div style={{ maxWidth: 760, margin: '0 auto', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 14 }}>
             {errorBox}
             {/* En el teléfono, una sola fila compacta: dos tarjetas estiradas a
@@ -1975,7 +2032,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                 <button onClick={empezar} disabled={!!ocupado || pendientes.length === 0 || (telefonia ? !telefonia.ok : false)} style={{ ...S.btnP, opacity: !!ocupado || pendientes.length === 0 ? 0.6 : 1 }}>
                   {ocupado ? (pres.modo === 'ia' ? 'Arrancando…' : 'Abriendo la sala…') : pres.modo === 'ia' ? 'Que Fernanda empiece a marcar' : 'Empezar a marcar'}
                 </button>
-                <span style={{ fontSize: 11.5, color: C.g400 }}>{pres.modo === 'ia' ? 'Fernanda marca y habla sola; puedes cerrar esta ventana y volver cuando quieras.' : pres.modo === 'asistido' ? 'Ponte los audífonos: entras mudo, Fernanda habla y tú tomas la llamada cuando quieras.' : 'Ponte los audífonos: entras mudo y solo hablas cuando conteste una persona.'}</span>
+                <span style={{ fontSize: 11.5, color: movil ? C.g500 : C.g400 }}>{pres.modo === 'ia' ? 'Fernanda marca y habla sola; puedes cerrar esta ventana y volver cuando quieras.' : pres.modo === 'asistido' ? 'Ponte los audífonos: entras mudo, Fernanda habla y tú tomas la llamada cuando quieras.' : 'Ponte los audífonos: entras mudo y solo hablas cuando conteste una persona.'}</span>
                 <span style={{ flex: 1 }} />
                 <button onClick={() => accion('terminar')} style={btnD}>Descartar lista</button>
               </div>
@@ -2151,9 +2208,9 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
               );
     })();
     return (
-      <div key={fase} className={movil ? 'cab-m' : undefined} style={raizEstilo}>
+      <div className={movil ? 'cab-m' : undefined} style={raizEstilo}>
         {estiloMovil}{cab}
-        <div className="wa-scroll" style={{ flex: 1, overflowY: 'auto', padding: movil ? `12px 16px ${PIE_MOVIL}` : 22 }}>
+        <div key={fase} className="wa-scroll" style={{ flex: 1, overflowY: 'auto', padding: movil ? `12px 16px ${PIE_MOVIL}` : 22 }}>
           <div style={{ maxWidth: 760, margin: '0 auto', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 14 }}>
             {errorBox}
             {/* La lista como tablero (22-sep-2026): quién sigue sin contestar a
@@ -2175,6 +2232,15 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                     <span key={n}><span style={{ whiteSpace: 'nowrap' }}>{t}{n < todo.length - 1 ? ' ·' : ''}</span>{n < todo.length - 1 ? ' ' : ''}</span>
                   ))}
                 </div>
+                {/* La misma salida que en escritorio (`relanzar`), como
+                    secundaria: la principal de la barra es la del tablero. Si
+                    el tablero no carga, este mismo botón ya es la barra. */}
+                {sesionId && (
+                  <button onClick={() => relanzar(s.id)} disabled={!relanzables || ocupado === 'relanzar'}
+                    style={{ ...secContenido, width: '100%', marginTop: 10, whiteSpace: 'normal', lineHeight: 1.25, ...(relanzables ? null : { opacity: 0.6, cursor: 'default' }) }}>
+                    {ocupado === 'relanzar' ? <><Cargador chico />Armando…</> : `Volver a llamar a los ${relanzables} que faltan`}
+                  </button>
+                )}
               </div>
             )}
             {/* Lo suelto, plegado y en rojo con cuántas cosas son: abierto, sus
@@ -2278,13 +2344,14 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
      del punto es el mismo #1E8A63 del texto «En línea» y el cierre deja el
      azul por el morado principal. */
   const colorEstado = estadoActual === 'en_linea' ? (movil ? '#1E8A63' : '#4FBF95') : estadoActual === 'cierre' ? (movil ? '#5B4BD6' : '#7DA6F5') : estadoActual === 'portero' ? '#E8A838' : '#9B8CFA';
-  const chipRes = (r: string, texto: string) => (
+  const chipRes = (r: string, texto: string, ancho = false) => (
     /* En el teléfono es «opción de contenido» (guía §3.3): contorno lila y
        texto morado, rellena de agua al elegirla — la misma forma que
        «Mándale mientras hablan», para que no parezcan dos familias. */
     <button key={r} onClick={() => guardarResultado(r)} aria-pressed={movil ? actual?.resultado === r : undefined} style={movil ? {
       border: '1.5px solid #9B8CFA', background: actual?.resultado === r ? C.moradoAgua : '#fff',
-      color: '#5B4BD6', borderRadius: 12, padding: '0 14px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+      color: '#5B4BD6', borderRadius: 12, padding: '0 8px', minHeight: 44, minWidth: 0, fontSize: 14, fontWeight: 700, lineHeight: 1.2, cursor: 'pointer', fontFamily: 'inherit',
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', ...(ancho ? { gridColumn: '1 / -1' } : null),
     } : {
       border: `1.5px solid ${actual?.resultado === r ? '#9B8CFA' : C.g200}`, background: actual?.resultado === r ? C.moradoAgua : '#fff',
       color: actual?.resultado === r ? C.moradoTinta : C.g700, borderRadius: 999, padding: '5px 11px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
@@ -2344,7 +2411,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
   /* El mismo ancho para todos los «Quitar» (reunión, datos, etapa, PDF): en
      la misma columna se leen como una sola decisión. */
   const btnQuitarPropuesta: React.CSSProperties = movil
-    ? { ...btnT, flexShrink: 0, width: 92, justifyContent: 'center', padding: '0 8px', fontSize: 14, color: '#C0554E', border: '1px solid #f0c4bd', background: '#fff' }
+    ? { ...quitarMovil, width: 92, padding: '0 8px' }
     : { ...btnT, padding: '2px 7px', fontSize: 10.5, color: '#C0554E' };
   // Terminar se confirma en el teléfono: se pica con el pulgar y no tiene vuelta.
   const terminarConfirmado = async () => {
@@ -2410,7 +2477,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                           <option value="">Déjala como está</option>
                           {ETAPAS_CIERRE.map(e => <option key={e.id} value={e.id}>{e.l}</option>)}
                         </select>
-                        {etapaTocada && <span style={{ fontSize: movil ? 13 : 11.5, color: '#1E8A63', fontWeight: 700 }}>Listo: quedó en «{ETAPAS_CIERRE.find(x => x.id === etapaTocada)?.l}».</span>}
+                        {etapaTocada && <span style={{ fontSize: movil ? 13 : 11.5, color: movil ? verdeTexto : '#1E8A63', fontWeight: 700 }}>Listo: quedó en «{ETAPAS_CIERRE.find(x => x.id === etapaTocada)?.l}».</span>}
                       </Colapsable>
   );
   const saberCaja = actual?.resumen ? (
@@ -2421,9 +2488,9 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
   ) : null;
 
   return (
-    <div key={fase} className={movil ? 'cab-m' : undefined} style={raizEstilo}>
+    <div className={movil ? 'cab-m' : undefined} style={raizEstilo}>
       {estiloMovil}{cab}
-      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: movil ? 'column' : 'row' }}>
+      <div key={fase} style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: movil ? 'column' : 'row' }}>
         {/* Izquierda: el item actual */}
         <div className="wa-scroll" style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: movil ? `12px 16px ${PIE_MOVIL}` : 22 }}>
           {/* ══ 🔴 `minmax(0, 1fr)`: LA REJILLA NO PUEDE ESTIRARSE (19-sep-2026)
@@ -2445,7 +2512,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                  «Reanudar y entrar a la sala» —que no envuelve— estiraba el
                  aviso a 618 px dentro de una columna de 247, y en el teléfono
                  se salía por la derecha con todo y tarjeta. Medido a 390. */
-              <div style={{ background: '#FFF4E5', border: '1px solid #f3d9a4', color: '#9a6a10', borderRadius: 9, padding: '10px 12px', fontSize: 12.5, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', minWidth: 0 }}>
+              <div style={{ background: '#FFF4E5', border: '1px solid #f3d9a4', color: movil ? ambarTextoAgua : '#9a6a10', borderRadius: 9, padding: '10px 12px', fontSize: 12.5, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', minWidth: 0 }}>
                 <span style={{ flex: '1 1 160px', minWidth: 0 }}>
                   {pausada && sesion.pausa_motivo === 'caida' && <b style={{ display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em' }}>Se cortó tu conexión</b>}
                   {pausada && sesion.pausa_motivo === 'disyuntor' && <b style={{ display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em' }}>Se detuvo sola</b>}
@@ -2549,7 +2616,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                   <b style={{ fontSize: movil ? 13 : 12, textTransform: 'uppercase', letterSpacing: '.05em', color: estadoActual === 'en_linea' ? '#1E8A63' : '#4B5563',
                     /* Estado y reloj como en la sala (guía §4): 15 px, sin mayúsculas,
                        verde en línea y gris mientras timbra. */
-                    ...(movil ? { fontSize: 15, fontWeight: 800, textTransform: 'none', letterSpacing: 0, fontVariantNumeric: 'tabular-nums', color: estadoActual === 'en_linea' ? '#1E8A63' : C.g500, lineHeight: 1.3, minWidth: 0 } : null) }}>
+                    ...(movil ? { fontSize: 15, fontWeight: 800, textTransform: 'none', letterSpacing: 0, fontVariantNumeric: 'tabular-nums', color: estadoActual === 'en_linea' ? verdeTexto : C.g500, lineHeight: 1.3, minWidth: 0 } : null) }}>
                     {/* ══ QUÉ ESTÁ PASANDO, DICHO ENTERO ══════════════════
                         Pedido del dueño (17-sep-2026): «en vez de que diga
                         micrófono mudo, pon en el centro qué está pasando: que
@@ -2611,7 +2678,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                     avisa por WhatsApp y se sigue. Lo que cambia es que ahora se
                     VE en qué va ese aviso, sin abrir la conversación. */}
                 {actual.veredicto === 'buzon' && (
-                  <div style={{ background: '#FFF4E5', border: '1px solid #f3d9a4', color: '#9a6a10', borderRadius: 10, padding: '8px 12px', fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>
+                  <div style={{ background: '#FFF4E5', border: '1px solid #f3d9a4', color: movil ? ambarTextoAgua : '#9a6a10', borderRadius: 10, padding: '8px 12px', fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>
                     Cayó en el buzón{actual.veredicto_fuente ? ` (${actual.veredicto_fuente})` : ''}.
                     {sesion.buzon_dejar_mensaje ? ' Se le está dejando el mensaje y' : ''} pasamos solos al siguiente — no tienes que tocar nada.
                     {String(actual.nota || '').startsWith('Buzón') && (
@@ -2642,14 +2709,14 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                     background: C.moradoAgua, border: `1px solid #d6d0fb`, borderLeft: `4px solid ${C.moradoTinta}`,
                     borderRadius: 12, padding: movil ? '10px 12px' : '12px 15px', marginBottom: 12,
                   }}>
-                    <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: C.moradoTinta, opacity: .75 }}>Él pidió esta llamada</div>
+                    <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: C.moradoTinta, opacity: movil ? 1 : .75 }}>Él pidió esta llamada</div>
                     <div style={{ fontSize: movil ? 17 : 18, fontWeight: 800, letterSpacing: '-0.02em', color: C.moradoTinta, lineHeight: 1.25, marginTop: 2 }}>
                       Llamando por seguimiento previo de {actual.nombre || 'este contacto'}
                     </div>
                     {/* La nota trae la hora que él pidió: decírsela —«te marco a
                         las 4 como quedamos»— es lo que separa esta llamada de
                         una insistencia. */}
-                    {actual.nota && <div style={{ fontSize: 12.5, color: C.moradoTinta, opacity: .85, marginTop: 3 }}>{String(actual.nota).replace(/^Volver a llamar:\s*/, '')}</div>}
+                    {actual.nota && <div style={{ fontSize: 12.5, color: C.moradoTinta, opacity: movil ? 1 : .85, marginTop: 3 }}>{String(actual.nota).replace(/^Volver a llamar:\s*/, '')}</div>}
                   </div>
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -2665,6 +2732,13 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                         {actual.hora_local && <> · allá son las {actual.hora_local}</>}
                       </div>
                     ) : <div style={{ fontSize: 12.5, color: C.g500 }}>{[actual.empresa, telefonoLegible(actual.telefono), actual.hora_local ? `allá son las ${actual.hora_local}` : null].filter(Boolean).join(' · ')}</div>}
+                    {/* El dato técnico de quién contestó, pegado a quién es (ronda 1
+                        cabina): al fondo de la ficha quedaba siempre bajo la
+                        franja que desvanece lo que pasa por la barra, y se leía
+                        a ~2:1. Aquí va en el gris secundario, a 4.8:1. */}
+                    {movil && actual.veredicto && estadoActual === 'en_linea' && (
+                      <div style={{ fontSize: 13, color: C.g500, lineHeight: 1.4, marginTop: 1 }}>Contestó {actual.veredicto === 'persona' ? 'una persona' : actual.veredicto} · lo dijo {actual.veredicto_fuente === 'reglas' ? 'la voz' : actual.veredicto_fuente}{actual.veredicto_ms ? ` a los ${(actual.veredicto_ms / 1000).toFixed(1)} s` : ''}</div>
+                    )}
                     {movil && actual.conversation_id && onAbrirConversacion && (
                       <button onClick={() => onAbrirConversacion(actual.conversation_id)} style={{ ...btnT, marginTop: 7 }}>Ver chat</button>
                     )}
@@ -2708,12 +2782,16 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                 {movil && estadoActual === 'en_linea' && (
                   <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
                     <span style={{ ...etiqueta, marginBottom: 0 }}>Cómo quedó</span>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {/* La misma rejilla de dos columnas iguales que «Mándale
+                        mientras hablan» (ronda 1 cabina): en fila suelta salían
+                        2+3 de anchos distintos y parecían otra familia. El
+                        quinto, sin pareja, toma el renglón entero. */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
                       {chipRes('contesto', 'Hablamos')}
                       {chipRes('volver_llamar', 'Volver a llamar')}
                       {chipRes('dieron_datos', 'Dio datos')}
                       {chipRes('no_interesa', 'No le interesa')}
-                      {chipRes('buzon', 'Era buzón')}
+                      {chipRes('buzon', 'Era buzón', true)}
                     </div>
                   </div>
                 )}
@@ -2731,7 +2809,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                         rejilla de dos, cada uno a medio ancho y de pulgar. */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
                       {([['quien_soy', 'Quién soy', 'Le llega tu nombre, Sacs, la liga y por qué le llamas'], ['mandar_info', 'La info de Sacs', 'La información de Sacs en PDF'], ['mandar_cambio', 'Cómo te cambias', '«Ya tengo sistema»: cómo se pasa a Sacs sin empezar de cero'], ['mandar_demo', 'Cómo es la demo', '«¿Cómo funciona?»: qué verá en la demo y cómo arranca']] as const).map(([id, t, d]) => (
-                        <button key={id} onClick={() => rapida(id)} disabled={!!ocupado} title={d} style={{ ...btnS, fontSize: 14, borderRadius: 12, justifyContent: 'center', padding: '0 8px', textAlign: 'center', lineHeight: 1.2 }}>{ocupado === id ? <><Cargador chico />Mandando…</> : t}</button>
+                        <button key={id} onClick={() => rapida(id)} disabled={!!ocupado} title={d} style={{ ...btnS, minHeight: 44, minWidth: 0, fontSize: 14, borderRadius: 12, justifyContent: 'center', padding: '0 8px', textAlign: 'center', lineHeight: 1.2 }}>{ocupado === id ? <><Cargador chico />Mandando…</> : t}</button>
                       ))}
                     </div>
                   </div>
@@ -2750,7 +2828,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                             const mia = l.startsWith('Vendedor:');
                             return <div key={i} style={{ justifySelf: mia ? 'end' : 'start', maxWidth: '88%', background: mia ? C.moradoAgua : '#fff', border: mia ? 'none' : `1px solid ${C.g200}`, color: mia ? C.moradoTinta : C.g700, borderRadius: 10, padding: '6px 10px' }}>{l.replace(/^(Vendedor|Cliente):\s*/, '')}</div>;
                           })
-                        : <div style={{ fontSize: 12, color: C.g400, fontStyle: 'italic' }}>{estadoActual === 'en_linea' || estadoActual === 'cierre' ? 'Sin transcripción todavía.' : 'Fernanda está escuchando quién contesta…'}</div>}
+                        : <div style={{ fontSize: 12, color: movil ? C.g500 : C.g400, fontStyle: 'italic' }}>{estadoActual === 'en_linea' || estadoActual === 'cierre' ? 'Sin transcripción todavía.' : 'Fernanda está escuchando quién contesta…'}</div>}
                     </div>
                   </div>
                 )}
@@ -2830,7 +2908,9 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                     de la ficha había que hacer scroll en plena llamada para
                     encontrarlos. Plegados, con el primer hueco en el título, no
                     empujan los chips: un toque y se leen. */}
-                {movil && ['escuchando', 'portero', 'en_linea'].includes(estadoActual) && (
+                {/* También ya colgado cuando no hay pantalla de decidir (Fernanda
+                    sola): como en escritorio, los horarios siguen a la mano. */}
+                {movil && (['escuchando', 'portero', 'en_linea'].includes(estadoActual) || (estadoActual === 'cierre' && !esperaTuDecision)) && (
                   <div style={{ marginTop: 14 }}>
                     <Colapsable movil titulo="Horarios que le puedes ofrecer" resumen={huecos.length ? `${huecos.length} libres · el primero ${diaCorto(huecos[0].fecha).toLowerCase()} a las ${horaBonita(huecos[0].hora).replace(/ /g, '\u00a0')}` : cargandoHuecos ? 'mirando la agenda…' : 'mirar la agenda'}>
                       {horariosCaja}
@@ -2853,11 +2933,6 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                   </div>
                 )}
 
-                {/* El dato técnico de quién contestó, al final de la ficha en el
-                    teléfono (ronda 5): arriba ocupaba el renglón más valioso. */}
-                {movil && actual.veredicto && estadoActual === 'en_linea' && (
-                  <div style={{ marginTop: 10, fontSize: 13, color: C.g500 }}>Contestó {actual.veredicto === 'persona' ? 'una persona' : actual.veredicto} · lo dijo {actual.veredicto_fuente === 'reglas' ? 'la voz' : actual.veredicto_fuente}{actual.veredicto_ms ? ` a los ${(actual.veredicto_ms / 1000).toFixed(1)} s` : ''}</div>
-                )}
 
                 {bloqueLineas}
 
@@ -2944,62 +3019,14 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
 
                     {/* 1 · LO QUE LA IA ENTENDIÓ — primero, porque es lo que
                            permite cerrar en un clic. */}
-                    {propuesta && (
-                      <div style={{ background: C.moradoAgua, borderRadius: 10, padding: movil ? '12px' : '12px 14px', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: movil ? 10 : 9 }}>
-                        {/* En el teléfono rótulo corto y la pastilla en su mismo
-                            renglón (ronda 5): a 360 la pastilla bajaba sola a otro.
-                            «Aún no hace nada» ya lo dice el «Al confirmar» de abajo. */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ ...etiqueta, ...(movil ? { marginBottom: 0, lineHeight: 1.4, flex: 1, minWidth: 0 } : null) }}>{movil ? 'La IA entendió' : 'La IA entendió · no ha hecho nada todavía'}</span>
-                          {!movil && <span style={{ flex: 1 }} />}
-                          {movil ? (
-                            /* Estado, no botón (guía §6): punto y texto, sin pastilla. */
-                            <span role="status" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, flexShrink: 0, color: tono(propuesta.resultado).fg }}>
-                              <span aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', background: tono(propuesta.resultado).fg }} />
-                              {ETIQUETA_RESULTADO[propuesta.resultado] || propuesta.resultado}
-                            </span>
-                          ) : <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', flexShrink: 0, borderRadius: 999, background: tono(propuesta.resultado).bg, color: tono(propuesta.resultado).fg }}>{ETIQUETA_RESULTADO[propuesta.resultado] || propuesta.resultado}</span>}
-                        </div>
-                        {/* EN EL TELÉFONO, CUÁNTO SE VA A HACER, ARRIBA. La pantalla de
-                            decidir medía tres pantallas; con el conteo se sabe de un
-                            vistazo qué pesa lo que vas a confirmar. */}
-                        {/* Dos renglones con intención (ronda 5): lo que queda
-                            hecho, y debajo lo que le llega al cliente. En uno se
-                            partía a la mitad («3 / mensajes»). */}
-                        {movil && cuentaCierre && (
-                          <div style={{ display: 'grid', gap: 2 }}>
-                            <div style={{ fontSize: 16, fontWeight: 800, color: C.g900, lineHeight: 1.3 }}>
-                              {cuentaCierre.cosas ? `${cuentaCierre.cosas} ${cuentaCierre.cosas === 1 ? 'cosa queda hecha' : 'cosas quedan hechas'} al confirmar` : 'Al confirmar no se hace nada más'}
-                            </div>
-                            <div style={{ fontSize: 14, fontWeight: 600, color: C.g700, lineHeight: 1.35 }}>
-                              {cuentaCierre.mensajes ? `${cuentaCierre.mensajes} ${cuentaCierre.mensajes === 1 ? 'mensaje' : 'mensajes'} a ${String(actual.nombre || 'el cliente').split(' ')[0]}` : `Ningún mensaje a ${String(actual.nombre || 'el cliente').split(' ')[0]}`}
-                            </div>
-                          </div>
-                        )}
-                        {/* En el teléfono el resumen de la IA en dos renglones con
-                            «Ver más» (ronda 5): entero eran 4-5 renglones y lo que
-                            se deja hecho quedaba bajo la barra de «Confirmar». */}
-                        {propuesta.nota && (movil ? (
-                          <div>
-                            {/* Tres renglones (guía §7): en dos cortaba a media frase. «Ver
-                                más» es botón de texto de 44 px que se come su propio aire
-                                con márgenes negativos: ~14 px hasta «Siguiente paso». */}
-                            <div style={{ fontSize: 14, color: C.g700, lineHeight: 1.55, whiteSpace: 'pre-wrap', ...(notaEntera || String(propuesta.nota).length <= 160 ? null : { display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }) }}>{propuesta.nota}</div>
-                            {String(propuesta.nota).length > 160 && <button onClick={() => setNotaEntera(v => !v)} aria-expanded={notaEntera} style={{ display: 'block', minHeight: 44, margin: '-6px 0 -10px', border: 'none', background: 'none', padding: '0 2px', textAlign: 'left', fontFamily: 'inherit', fontSize: 14, fontWeight: 700, color: '#5B4BD6', cursor: 'pointer' }}>{notaEntera ? 'Ver menos' : 'Ver más'}</button>}
-                          </div>
-                        ) : <div style={{ fontSize: 12.5, color: C.g700, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{propuesta.nota}</div>)}
-                        {propuesta.siguiente_paso && (movil
-                          /* En el teléfono no va en morado negrita: así se ven los botones
-                             de texto («Ver más» justo encima) y esto no se toca (guía §6). */
-                          ? <div style={{ fontSize: 14, color: C.g900, fontWeight: 600, lineHeight: 1.45 }}><span style={{ color: C.g500, fontWeight: 600 }}>Siguiente paso: </span>{horasDichas(propuesta.siguiente_paso)}</div>
-                          : <div style={{ fontSize: 12.5, color: C.moradoTinta, fontWeight: 700, lineHeight: 1.45 }}>Siguiente paso: {propuesta.siguiente_paso}</div>)}
-                        {movil && propuesta.siguiente_paso && diaNoCoincide(propuesta.siguiente_paso, propuesta.compromisos?.[0]?.fecha) && (
-                          <div role="note" style={{ fontSize: 14, color: '#9a6a10', background: '#FFF4E5', borderRadius: 8, padding: '8px 10px', lineHeight: 1.4 }}>
-                            Ojo: la cita que se agenda es el <b>{fechaHablada(propuesta.compromisos[0].fecha, propuesta.compromisos[0].hora)}</b>. Si no es ese día, tócale «Cambiar».
-                          </div>
-                        )}
-                        {movil && colQuedo}
-                        {movil && colEtapa}
+                    {/* En el teléfono «¿Cómo quedó?» y «En qué etapa queda» van entre lo que
+                       la IA entendió y lo que se deja hecho (ronda 6), SIEMPRE en el mismo
+                       lugar del árbol, haya propuesta o no: si se movían al llegar la
+                       propuesta, se remontaban y se perdía el foco del apunte. Por eso la
+                       caja lavanda se parte en dos en el teléfono. */}
+                    {(() => {
+                      const cajaIA: React.CSSProperties = { background: C.moradoAgua, borderRadius: movil ? 12 : 10, padding: movil ? '12px' : '12px 14px', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: movil ? 10 : 9 };
+                      const cuerpoIA = propuesta ? (<>
                         {/* En el teléfono «Así le llegan los mensajes» sube antes de
                             la lista de lo que se deja hecho: con cinco cosas y sus
                             «Quitar» en columna, había que bajar dos pantallas para
@@ -3007,7 +3034,8 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                         {movil && extrasEl}
                         {(propuesta.compromisos?.length > 0 || propuesta.datos?.length > 0 || propuesta.envios?.length > 0 || propuesta.etapa) && (
                           <div style={{ display: 'grid', gap: movil ? 8 : 4, fontSize: movil ? 14 : 12, color: C.g700 }}>
-                            <span style={{ ...etiqueta, marginBottom: 0 }}>Al seguir se deja hecho</span>
+                            {/* Sobre el agua #EEECFE el gris #6B7280 da 4.16:1: en el teléfono va un tono más oscuro (6.6:1). */}
+                            <span style={{ ...etiqueta, marginBottom: 0, ...(movil ? { fontSize: 12, color: '#4B5563' } : null) }}>Al seguir se deja hecho</span>
                             {(propuesta.compromisos || []).map((cp: any, i: number) => {
                               const fechaIn = <input type="date" aria-label="Día" value={editando[i]?.fecha ?? cp.fecha} min={new Date().toISOString().slice(0, 10)}
                                 onChange={e => setEditando(v => ({ ...v, [i]: { fecha: e.target.value, hora: v[i]?.hora ?? cp.hora } }))}
@@ -3067,7 +3095,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                             {propuesta.etapa === 'descalificado' && (
                               <div style={{ ...filaPropuesta, color: '#C0554E', fontWeight: 700 }}>
                                 <span style={textoPropuesta}>{movil ? '' : '· '}Se descalifica, sale de la cadencia del agente y de todas las secuencias</span>
-                                <button disabled={!!ocupado} onClick={() => editarCierre({ etapa: null })} style={{ ...btnQuitarPropuesta, color: C.g700 }}>No lo bajes</button>
+                                <button disabled={!!ocupado} onClick={() => editarCierre({ etapa: null })} style={movil ? { ...btnQuitarPropuesta, ...secContenido, width: 92, padding: '0 8px' } : { ...btnQuitarPropuesta, color: C.g700 }}>No lo bajes</button>
                               </div>
                             )}
                             {(propuesta.envios || []).filter((e: any) => e.estado !== 'falta').map((e: any) => (
@@ -3093,18 +3121,84 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                           </div>
                         ))}
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: movil ? 13 : 10.5, color: movil ? C.g500 : C.g400, flex: 1, minWidth: 160, lineHeight: 1.4 }}>Lo que piques abajo manda sobre lo que entendió la IA.</span>
+                          <span style={{ fontSize: movil ? 13 : 10.5, color: movil ? C.g700 : C.g400, flex: 1, minWidth: 160, lineHeight: 1.4 }}>Lo que piques abajo manda sobre lo que entendió la IA.</span>
                           <button disabled={!!ocupado} onClick={descartarPropuesta} style={{ ...btnT, padding: movil ? '0 14px' : '4px 10px', fontSize: movil ? 14 : 11.5, color: '#C0554E', ...(movil ? { border: '1px solid #f0c4bd', background: '#fff' } : null) }}>No fue eso: descartar</button>
                         </div>
-                      </div>
-                    )}
+                      </>) : null;
+                      return (<>
+                        {propuesta && (
+                          <div style={cajaIA}>
+                        {/* En el teléfono rótulo corto y la pastilla en su mismo
+                            renglón (ronda 5): a 360 la pastilla bajaba sola a otro.
+                            «Aún no hace nada» ya lo dice el «Al confirmar» de abajo. */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {/* El mismo rótulo que el cierre de la sala (ronda 1
+                              cabina): morado tinta 12/800 sobre el agua. El gris
+                              daba 4.3:1 sobre #EEECFE y no pasaba. */}
+                          <span style={{ ...etiqueta, ...(movil ? { marginBottom: 0, lineHeight: 1.4, flex: 1, minWidth: 0, fontSize: 12, fontWeight: 800, letterSpacing: '.08em', color: C.moradoTinta } : null) }}>{movil ? 'La IA entendió' : 'La IA entendió · no ha hecho nada todavía'}</span>
+                          {!movil && <span style={{ flex: 1 }} />}
+                          {movil ? (
+                            /* Estado, no botón (guía §6): punto y texto, sin pastilla. */
+                            /* Texto en gris oscuro y el color sólo en el punto,
+                               como la sala: el verde sobre el agua daba 4.2:1. */
+                            <span role="status" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, flexShrink: 0, color: C.g700 }}>
+                              <span aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: tono(propuesta.resultado).fg }} />
+                              {ETIQUETA_RESULTADO[propuesta.resultado] || propuesta.resultado}
+                            </span>
+                          ) : <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', flexShrink: 0, borderRadius: 999, background: tono(propuesta.resultado).bg, color: tono(propuesta.resultado).fg }}>{ETIQUETA_RESULTADO[propuesta.resultado] || propuesta.resultado}</span>}
+                        </div>
+                        {/* EN EL TELÉFONO, CUÁNTO SE VA A HACER, ARRIBA. La pantalla de
+                            decidir medía tres pantallas; con el conteo se sabe de un
+                            vistazo qué pesa lo que vas a confirmar. */}
+                        {/* Dos renglones con intención (ronda 5): lo que queda
+                            hecho, y debajo lo que le llega al cliente. En uno se
+                            partía a la mitad («3 / mensajes»). */}
+                        {movil && cuentaCierre && (
+                          <div style={{ display: 'grid', gap: 2 }}>
+                            <div style={{ fontSize: 16, fontWeight: 800, color: C.g900, lineHeight: 1.3 }}>
+                              {cuentaCierre.cosas ? `${cuentaCierre.cosas} ${cuentaCierre.cosas === 1 ? 'cosa queda hecha' : 'cosas quedan hechas'} al confirmar` : 'Al confirmar no se hace nada más'}
+                            </div>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: C.g700, lineHeight: 1.35 }}>
+                              {cuentaCierre.mensajes ? `${cuentaCierre.mensajes} ${cuentaCierre.mensajes === 1 ? 'mensaje' : 'mensajes'} a ${String(actual.nombre || 'el cliente').split(' ')[0]}` : `Ningún mensaje a ${String(actual.nombre || 'el cliente').split(' ')[0]}`}
+                            </div>
+                          </div>
+                        )}
+                        {/* En el teléfono el resumen de la IA en dos renglones con
+                            «Ver más» (ronda 5): entero eran 4-5 renglones y lo que
+                            se deja hecho quedaba bajo la barra de «Confirmar». */}
+                        {propuesta.nota && (movil ? (
+                          <div>
+                            {/* Tres renglones (guía §7): en dos cortaba a media frase. «Ver
+                                más» es botón de texto de 44 px que se come su propio aire
+                                con márgenes negativos: ~14 px hasta «Siguiente paso». */}
+                            <div style={{ fontSize: 14, color: C.g700, lineHeight: 1.55, whiteSpace: 'pre-wrap', ...(notaEntera || String(propuesta.nota).length <= 160 ? null : { display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }) }}>{propuesta.nota}</div>
+                            {String(propuesta.nota).length > 160 && <button onClick={() => setNotaEntera(v => !v)} aria-expanded={notaEntera} style={{ display: 'block', minHeight: 44, margin: '-6px 0 -10px', border: 'none', background: 'none', padding: 0, textAlign: 'left', fontFamily: 'inherit', fontSize: 14, fontWeight: 700, color: '#5B4BD6', cursor: 'pointer' }}>{notaEntera ? 'Ver menos' : 'Ver más'}</button>}
+                          </div>
+                        ) : <div style={{ fontSize: 12.5, color: C.g700, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{propuesta.nota}</div>)}
+                        {propuesta.siguiente_paso && (movil
+                          /* En el teléfono no va en morado negrita: así se ven los botones
+                             de texto («Ver más» justo encima) y esto no se toca (guía §6). */
+                          ? <div style={{ fontSize: 14, color: C.g900, fontWeight: 600, lineHeight: 1.45 }}><span style={{ color: C.g700, fontWeight: 600 }}>Siguiente paso: </span>{horasDichas(propuesta.siguiente_paso)}</div>
+                          : <div style={{ fontSize: 12.5, color: C.moradoTinta, fontWeight: 700, lineHeight: 1.45 }}>Siguiente paso: {propuesta.siguiente_paso}</div>)}
+                        {movil && propuesta.siguiente_paso && diaNoCoincide(propuesta.siguiente_paso, propuesta.compromisos?.[0]?.fecha) && (
+                          <div role="note" style={{ fontSize: 14, color: ambarTextoAgua, background: '#FFF4E5', borderRadius: 8, padding: '8px 10px', lineHeight: 1.4 }}>
+                            Ojo: la cita que se agenda es el <b>{fechaHablada(propuesta.compromisos[0].fecha, propuesta.compromisos[0].hora)}</b>. Si no es ese día, tócale «Cambiar».
+                          </div>
+                        )}
+                            {!movil && cuerpoIA}
+                          </div>
+                        )}
+                        {movil && colQuedo}
+                        {movil && colEtapa}
+                        {movil && propuesta && <div style={cajaIA}>{cuerpoIA}</div>}
+                      </>);
+                    })()}
 
                     {/* 2 · LOS COLAPSABLES. Cerrados, con lo decidido en el
                            título: se abre sólo lo que se quiere cambiar. */}
-                    {/* En el teléfono, con propuesta, «¿Cómo quedó?» y «En qué etapa
-                        queda» suben dentro de «La IA entendió» (ronda 6). */}
-                    {(!movil || !propuesta) && colQuedo}
-                    {(!movil || !propuesta) && colEtapa}
+                    {/* En el teléfono van arriba, entre las dos cajas de la IA. */}
+                    {!movil && colQuedo}
+                    {!movil && colEtapa}
 
                     {/* SEGUIMIENTO · las cinco salidas que de verdad existen
                         después de una llamada, dichas como se dicen en voz
@@ -3303,10 +3397,13 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                   ancho: no es la acción principal (guía §2). */}
               {botonLista}
               <span role="status" style={{ flex: 1, fontSize: 14, color: C.g500, minWidth: 0, lineHeight: 1.3 }}>
-                {/* «a la vez» ya lo dice la tarjeta de arriba: en la barra, a 360,
-                    «Marcando a 3 a la vez» se partía en dos renglones entre
-                    «Lista» y «Pausar». */}
-                {vivosN > 1 ? `Marcando a ${vivosN}` : est?.pendientes ? 'Marcando al siguiente…' : 'Cerrando la lista…'}
+                {/* «Marcando a 3 a la vez» (guía §2), partido A PROPÓSITO en dos
+                    renglones como el «Lista · 10 / 3/82 hechas» de al lado
+                    (ronda 3): a 360 se partía solo en «Marcando a 3 a / la vez»
+                    y se veía apretado; así se lee igual a 360, 390 y 414. */}
+                {vivosN > 1
+                  ? <><b style={{ display: 'block', color: C.g700, fontWeight: 700 }}>Marcando a {vivosN}</b><span style={{ display: 'block', fontSize: 13 }}>a la vez</span></>
+                  : est?.pendientes ? 'Marcando al siguiente…' : 'Cerrando la lista…'}
               </span>
               <button onClick={() => accion('pausar')} disabled={!!ocupado} style={secMovil}>
                 {ocupado === 'pausar' ? <Cargador /> : <IcoReloj size={15} />}Pausar
@@ -3344,7 +3441,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
               cuatro pestañas van en dos renglones: en uno se pegaban a 0 px y
               «Compromisos» no cabía. */}
           <div style={movil
-            ? { position: 'sticky', top: 0, background: '#fff', zIndex: 1, borderBottom: `1px solid ${C.g200}`, padding: '6px 12px 10px' }
+            ? { position: 'sticky', top: 0, background: '#fff', zIndex: 1, borderBottom: `1px solid ${C.g200}`, padding: '6px 16px 10px' }
             : { display: 'flex', gap: 0, borderBottom: `1px solid ${C.g200}`, position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
             {/* Como el resto de hojas del CRM: el asa de arriba dice «esto se
                 baja» y la ✕ de 44 px la cierra. */}
@@ -3361,9 +3458,9 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
             <div role={movil ? 'tablist' : undefined} style={movil ? { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 } : { display: 'contents' }}>
             {(['lista', 'hechas', 'quitados', 'compromisos'] as const).map(t => (
               <button key={t} onClick={() => setTab(t)} aria-selected={movil ? tab === t : undefined} style={movil ? {
-                minWidth: 0, whiteSpace: 'nowrap', minHeight: 44,
-                border: `1.5px solid ${tab === t ? '#c9bcf7' : C.g200}`, borderRadius: 12, cursor: 'pointer', fontFamily: 'inherit', padding: '0 8px', fontSize: 14,
-                background: tab === t ? C.moradoAgua : '#fff', color: tab === t ? C.moradoTinta : '#4B5563', fontWeight: tab === t ? 800 : 600,
+                /* La opción de contenido de todo el flujo (ronda 3 cabina): el
+                   contorno gris y el lila #C9BCF7 eran una tercera forma de chip. */
+                ...opcionMovil(tab === t), minWidth: 0, whiteSpace: 'nowrap', padding: '0 8px',
               } : {
                 flex: 1, border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '9px 10px', fontSize: 12.5,
                 background: tab === t ? C.moradoAgua : 'transparent', color: tab === t ? C.moradoTinta : '#4B5563', fontWeight: tab === t ? 800 : 500,
@@ -3383,19 +3480,20 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
           {tab === 'quitados' && (
             <>
               {quitados.length > 0 && (
-                <div style={{ padding: '10px 12px', fontSize: movil ? 13 : 11.5, color: C.g500, lineHeight: 1.5, borderBottom: `1px solid ${C.g100}` }}>
+                <div style={{ padding: movil ? '10px 16px' : '10px 12px', fontSize: movil ? 13 : 11.5, color: C.g500, lineHeight: 1.5, borderBottom: `1px solid ${C.g100}` }}>
                   Entraron por la lista <b style={{ color: C.g700 }}>{sesion?.origen?.descripcion || sesion?.nombre || descripcion}</b>.
                 </div>
               )}
-              {quitados.length === 0 && <div style={{ padding: 18, fontSize: movil ? 14 : 12, color: movil ? C.g500 : C.g400 }}>No has quitado a nadie de esta lista.</div>}
+              {quitados.length === 0 && <div style={{ padding: movil ? '18px 16px' : 18, fontSize: movil ? 14 : 12, color: movil ? C.g500 : C.g400 }}>No has quitado a nadie de esta lista.</div>}
               {quitados.map(i => {
                 const porTi = /cancelaste|quitaste/i.test(String(i.motivo_exclusion || ''));
                 // La primera línea de la ficha es «nombre · empresa»: ya está arriba en negritas.
                 const quien = [i.nombre, i.empresa].filter(Boolean).join(' · ');
                 const porQue = [i.nota, ...String(i.resumen || '').split('\n').filter(l => l.trim() && l.trim() !== quien && l.trim() !== i.nombre)].filter(Boolean).join('\n')
                   || 'La trajo el filtro de la lista; el CRM no tenía más historial de este número.';
+                // El canal de 16 px de la pestaña «Por marcar» (ronda 3): al cambiar de pestaña ya no brinca.
                 return (
-                  <div key={i.id} style={{ padding: '9px 12px', borderBottom: `1px solid ${C.g100}` }}>
+                  <div key={i.id} style={{ padding: movil ? '11px 16px' : '9px 12px', borderBottom: `1px solid ${C.g100}` }}>
                     <div style={{ display: 'flex', alignItems: movil ? 'flex-start' : 'center', gap: 8 }}>
                       <div style={{ flex: 1, minWidth: 0, fontSize: movil ? 15 : 13, fontWeight: 600, color: C.g900, ...(movil ? { overflowWrap: 'anywhere', lineHeight: 1.3 } : { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }) }}>
                         {i.nombre || telefonoLegible(i.telefono)}{i.empresa ? <span style={{ fontWeight: 400, color: C.g500 }}> · {i.empresa}</span> : null}
@@ -3413,7 +3511,7 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                         del nombre lo partía («Claudia Tallas / Extra»). */}
                     {movil && (
                       <div style={{ display: 'grid', marginTop: 8 }}>
-                        <button onClick={() => accion('incluir', { item: i.id })} style={{ ...btnT, fontSize: 14, padding: '0 16px', justifyContent: 'center' }}>Volver a meter</button>
+                        <button onClick={() => accion('incluir', { item: i.id })} style={secContenido}>Volver a meter</button>
                       </div>
                     )}
                   </div>
@@ -3458,7 +3556,10 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
                   </div>
                   <div style={{ fontSize: movil ? 13 : 11.5, color: C.g500 }}>{c.titulo}{c.motivo ? ` · ${c.motivo}` : ''}</div>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4, alignItems: 'center' }}>
-                    {c.tipo === 'reunion' ? (
+                    {movil ? (c.tipo === 'reunion'
+                      ? estadoMovil(c.en_google ? '#1E8A63' : '#E8A838', c.en_google ? '#1E8A63' : '#9a6a10', c.en_google ? 'En Google Calendar' : 'No está en Google Calendar')
+                      : estadoMovil('#9B8CFA', C.moradoTinta, 'La marca sola a esa hora')
+                    ) : c.tipo === 'reunion' ? (
                       <span style={{ fontSize: 10.5, fontWeight: 800, borderRadius: 999, padding: '2px 8px', background: c.en_google ? '#EAF8F2' : '#FFF4E5', color: c.en_google ? '#1E8A63' : '#9a6a10' }}>
                         {c.en_google ? 'En Google Calendar' : 'No está en Google Calendar'}
                       </span>
@@ -3474,10 +3575,21 @@ export default function Cabina({ qs, descripcion, total, yo, sesionInicial, onAb
           })}
           {/* LO QUE PARA LA JORNADA, AL FONDO DE LA HOJA. Fuera del camino del
               pulgar mientras se llama, y «Terminar» pide confirmación. */}
-          {movil && (enSala || sola) && !pausada && (
-            <div style={{ display: 'flex', gap: 8, padding: '14px 12px 16px', borderTop: `1px solid ${C.g100}`, marginTop: 4 }}>
-              {!barraConPausa && <button onClick={() => { setListaAbierta(false); accion('pausar'); }} disabled={!!ocupado} style={{ ...btnT, flex: 1, justifyContent: 'center', fontSize: 14 }}><IcoReloj size={14} />Pausar la jornada</button>}
-              <button onClick={terminarConfirmado} disabled={!!ocupado} style={{ ...btnD, flex: 1, fontSize: 14 }}>Terminar la sesión</button>
+          {/* «Salir de la sala» vivía en la tarjeta flotante de Telefonia, que
+              en el teléfono se esconde con la jornada viva (CSS_MOVIL): aquí
+              queda su misma salida, con el mismo evento. */}
+          {movil && (enSala || ((sola) && !pausada)) && (
+            <div style={{ display: 'grid', gap: 8, padding: '14px 12px 16px', borderTop: `1px solid ${C.g100}`, marginTop: 4 }}>
+              {(enSala || sola) && !pausada && (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {!barraConPausa && <button onClick={() => { setListaAbierta(false); accion('pausar'); }} disabled={!!ocupado} style={{ ...btnT, flex: 1, justifyContent: 'center', fontSize: 14 }}><IcoReloj size={14} />Pausar la jornada</button>}
+                  <button onClick={terminarConfirmado} disabled={!!ocupado} style={{ ...btnD, flex: 1, fontSize: 14 }}>Terminar la sesión</button>
+                </div>
+              )}
+              {enSala && (
+                <button onClick={() => { setListaAbierta(false); document.dispatchEvent(new CustomEvent('tel-colgar-sala')); }} title="Salir de la sala"
+                  style={{ ...btnT, width: '100%', justifyContent: 'center', fontSize: 14 }}>Salir de la sala</button>
+              )}
             </div>
           )}
           </>)}
@@ -3540,8 +3652,10 @@ function Colapsable({ titulo, resumen, alerta, abiertoDefecto, movil, accion, ch
   }, [abierto, movil]);
   /* En el teléfono el resumen va DEBAJO del título, a todo lo ancho: lado a
      lado, título y resumen se partían en dos renglones cada uno. */
+  /* En el teléfono lo pendiente va en ámbar (guía §0), no en rojo: el rojo
+     es sólo de Colgar y de lo que se destruye (ronda 1 cabina). */
   if (movil) return (
-    <div ref={caja} style={{ border: `1px solid ${alerta && !abierto ? '#f0c4bd' : C.g200}`, borderRadius: 10, background: '#fff', overflow: 'hidden', scrollMarginBottom: 'calc(96px + env(safe-area-inset-bottom))', scrollMarginTop: 12 }}>
+    <div ref={caja} style={{ border: `1px solid ${alerta && !abierto ? '#E8A838' : C.g200}`, borderRadius: 10, background: '#fff', overflow: 'hidden', scrollMarginBottom: 'calc(96px + env(safe-area-inset-bottom))', scrollMarginTop: 12 }}>
       <button onClick={() => { tocado.current = true; setAbierto(a => !a); }} aria-expanded={abierto} style={{
         width: '100%', display: 'flex', alignItems: 'flex-start', gap: 10, padding: '11px 12px', minHeight: 52,
         background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
@@ -3549,7 +3663,7 @@ function Colapsable({ titulo, resumen, alerta, abiertoDefecto, movil, accion, ch
         <IcoChevronAbajo size={18} style={{ flexShrink: 0, color: C.g500, marginTop: 1, transform: abierto ? 'rotate(180deg)' : 'none', transition: 'transform .12s' }} />
         <span style={{ flex: 1, minWidth: 0, display: 'grid', gap: 2 }}>
           <b style={{ fontSize: 15, color: C.g900, lineHeight: 1.3 }}>{titulo}</b>
-          {resumen && <span style={{ fontSize: 13, color: alerta ? '#C0554E' : C.g500, fontWeight: alerta ? 700 : 500, lineHeight: 1.35 }}>{resumen}</span>}
+          {resumen && <span style={{ fontSize: 13, color: alerta ? '#9a6a10' : C.g500, fontWeight: alerta ? 700 : 500, lineHeight: 1.35 }}>{resumen}</span>}
         </span>
       </button>
       {/* Lo que se puede resolver sin abrirlo, a la vista con el plegable cerrado. */}

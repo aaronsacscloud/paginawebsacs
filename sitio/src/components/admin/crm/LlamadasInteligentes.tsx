@@ -159,7 +159,7 @@ export default function LlamadasInteligentes({ yo }: { yo?: any }) {
   }
 
   return (
-    <div style={{ ...WRAP, ...(esMovil ? { padding: '10px 12px' } : { paddingTop: 22 }) }}>
+    <div style={{ ...WRAP, ...(esMovil ? { padding: '10px 16px' } : { paddingTop: 22 }) }}>
       <style>{CSS_CHISPAS + CSS_SELLO}</style>
       {/* ── EL ENCABEZADO: TÍTULO A LA IZQUIERDA, ACCIONES A LA DERECHA ──────
           Decisión del dueño (21-sep-2026), dos cosas de la misma línea:
