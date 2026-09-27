@@ -12,6 +12,7 @@
 // abierta, el oído es el del chat y este se calla, para no tener dos sockets
 // ni dos presencias del mismo usuario.
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { createPortal } from 'react-dom';
 import type { Arbol as A, Canal as C, Mensaje as M } from './api';
 import { api, hace } from './api';
 import { useRealtime, type Senal } from './useRealtime';
@@ -118,6 +119,36 @@ const CSS = `
    bordes y por debajo de la caja de escribir aunque .eq ya esté oscuro. */
 [data-crm-dark="1"] .eqf-panel{--eqf-panel-fondo:#1d1d24}
 @media (prefers-reduced-motion:reduce){.eqf *,.eqf-panel,.eqf-fondo{animation:none!important;transition:none!important}}
+/* EN EL MENÚ (escritorio). Flotando abajo a la derecha tapaba la última
+   columna de las listas que llegan al fondo —los ··· del Taller—; el dueño
+   eligió el pie del menú (27-sep-2026). Es la misma chispa, con los mismos
+   ojos, en chico: un renglón «Equipo» con quién está y cuántos sin leer. */
+.eqf-menu{margin:6px 8px 2px}
+.eqf-fm{display:flex;align-items:center;gap:9px;width:100%;padding:4px 9px 4px 4px;border-radius:12px;border:1px solid #f6d3e4;background:#fdf3f8;
+  cursor:pointer;font:inherit;text-align:left;color:#241d43;position:relative;transition:background .15s,border-color .15s}
+.eqf-fm:hover{background:#fbe8f2;border-color:#efb9d3}
+.eqf-fm:focus-visible{outline:3px solid ${P.violeta};outline-offset:2px}
+.eqf-fm .eqf-orbe{width:38px;height:38px;flex:none;cursor:inherit}
+.eqf-fm:hover .eqf-orbe{transform:scale(1.06)}
+.eqf-fm .eqf-axo{width:34px;height:34px}
+.eqf-fm .t{display:flex;flex-direction:column;min-width:0;flex:1;gap:1px}
+.eqf-fm .t b{font-size:.81rem;font-weight:800;line-height:1.15}
+.eqf-fm .t small{font-size:.68rem;color:#6f6a86;display:flex;gap:5px;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eqf-fm .pto{width:7px;height:7px;border-radius:50%;background:#cfcbe0;flex:none}
+.eqf-fm .pto.si{background:${P.verde}}
+.eqf-fm .n{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:${P.violetaTinta};color:#fff;font-size:.7rem;font-weight:800;
+  display:inline-flex;align-items:center;justify-content:center;flex:none}
+.eqf-fm .n.men{background:${P.rosa}}
+/* Plegado el menú es un riel de iconos: queda la chispa sola, con su número. */
+.eqf-menu.plegado{margin:2px 0 4px;display:flex;justify-content:center}
+.eqf-menu.plegado .eqf-fm{width:auto;padding:2px;border:0;background:none}
+.eqf-menu.plegado .t{display:none}
+.eqf-menu.plegado .n{position:absolute;top:-3px;right:-5px;border:2px solid #fff}
+/* Las burbujas salen pegadas al menú, a la altura de la chispa. */
+.eqf.anclado{right:auto;left:var(--eqf-x,240px);bottom:var(--eqf-y,22px);align-items:flex-start}
+.eqf.anclado .eqf-burbujas{align-items:flex-start}
+[data-crm-dark="1"] .eqf-fm{background:rgba(217,83,142,.12);border-color:rgba(217,83,142,.32);color:#f1eef8}
+[data-crm-dark="1"] .eqf-fm .t small{color:#b9b4cc}
 `;
 
 let cssPuesto = false;
@@ -221,7 +252,10 @@ function resumen(m: M): string {
   return a.nombre || 'Envió un archivo';
 }
 
-export default function EquipoFlotante({ tabActual }: { tabActual: string }) {
+/* `ancla`: el hueco del pie del menú donde se pinta en escritorio (por portal:
+   el estado —no leídos, tiempo real, burbujas, el chat abierto— sigue siendo
+   UNO, aquí). Sin ancla, o en el teléfono, flota abajo a la derecha como antes. */
+export default function EquipoFlotante({ tabActual, ancla = null, plegado = false }: { tabActual: string; ancla?: HTMLElement | null; plegado?: boolean }) {
   useCss();   // el avatar y los colores son los del chat
   usarCss();
   const movil = useIsMobile();
@@ -357,28 +391,70 @@ export default function EquipoFlotante({ tabActual }: { tabActual: string }) {
   const presentes = otros.map(x => ({ p: x, e: estadoDe(x) })).filter(x => x.e !== 'fuera');
   const uno = otros.length === 1 ? { p: otros[0], e: estadoDe(otros[0]) } : null;
 
+  /* Lo que se dice de quién está, en una línea: con una sola persona enfrente
+     va con nombre; con varias, cuántas. */
+  const presencia = uno
+    ? `${uno.p.nombre.split(' ')[0]} · ${uno.e === 'activo' ? 'en línea' : uno.e === 'ausente' ? 'ausente' : uno.p.visto_at ? hace(uno.p.visto_at) : 'sin conectar'}`
+    : presentes.length ? `${presentes.length} en línea` : 'nadie en línea';
+  const hayAlguien = uno ? uno.e === 'activo' : presentes.length > 0;
+
+  const listaBurbujas = burbujas.length > 0 && (
+    <div className="eqf-burbujas">
+      {burbujas.map(b => (
+        <div key={b.id} role="button" tabIndex={0} className={'eqf-bur' + (b.importante ? ' imp' : b.mencion ? ' men' : '')}
+          onClick={() => abrir(b.canal.id, b.msg.id, b.msg.hilo_de)} onKeyDown={e => { if (e.key === 'Enter') abrir(b.canal.id, b.msg.id, b.msg.hilo_de); }}>
+          <Avatar p={b.msg.autor} size={34} />
+          <div className="cuerpo">
+            <div className="q"><b>{b.msg.autor.nombre}</b><span>· {b.canal.tipo === 'directo' ? 'directo' : `#${b.canal.nombre}`}</span><span>· {hace(b.msg.created_at)}</span>{b.importante && <span className="imp">Importante</span>}{!b.importante && b.mencion && <span className="men">Mención</span>}</div>
+            <div className="t">{resumen(b.msg)}</div>
+          </div>
+          <button className="x" aria-label="Descartar" onClick={e => { e.stopPropagation(); setBurbujas(x => x.filter(y => y.id !== b.id)); }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+          {!b.importante && <span className="barra" />}
+        </div>
+      ))}
+    </div>
+  );
+
+  /* EN EL MENÚ. El renglón se pinta en el hueco del pie; las burbujas salen
+     pegadas al menú, a la altura de la chispa. La posición se toma al pintar:
+     las burbujas duran segundos y el menú no se mueve mientras. */
+  const enMenu = !movil && !!ancla;
+  let posBur: any;
+  if (enMenu && burbujas.length) {
+    const r = ancla!.getBoundingClientRect();
+    posBur = { '--eqf-x': `${Math.round(r.right + 12)}px`, '--eqf-y': `${Math.max(12, Math.round(window.innerHeight - r.bottom))}px` };
+  }
+
   return (
     <>
-      {!abierto && !estorbaElComposer && (
+      {!abierto && !estorbaElComposer && enMenu && createPortal(
+        <div className={'eqf-menu' + (plegado ? ' plegado' : '')}>
+          <button className="eqf-fm" onClick={() => abrir()} title={plegado ? `Equipo · ${presencia}` : 'Equipo'}
+            aria-label={`Abrir Equipo${noLeidos ? `, ${noLeidos} sin leer` : ''}`}>
+            {/* La chispa es un span —el botón es el renglón entero— y lleva las
+                mismas clases que la flotante: así parpadea, sigue el mouse y
+                late cuando llega algo, sin duplicar nada. */}
+            <span key={pulsa} ref={orbeRef as any} className={'eqf-orbe' + (pulsa ? ' pulsa latido' : '') + (burbujas.length ? ' atento' : '')}>
+              <span className="anillo" />
+              <Ojos orbe={orbeRef} atento={pulsa} />
+            </span>
+            <span className="t">
+              <b>Equipo</b>
+              <small><span className={'pto' + (hayAlguien ? ' si' : '')} />{presencia}</small>
+            </span>
+            {noLeidos > 0 && <span className={'n' + (menciones > 0 ? ' men' : '')}>{noLeidos > 99 ? '99+' : noLeidos}</span>}
+          </button>
+        </div>,
+        ancla!,
+      )}
+      {!abierto && !estorbaElComposer && enMenu && burbujas.length > 0 && (
+        <div className="eqf anclado" style={posBur}>{listaBurbujas}</div>
+      )}
+      {!abierto && !estorbaElComposer && !enMenu && (
         <div className={'eqf' + (movil ? ' movil' : '')}>
-          {burbujas.length > 0 && (
-            <div className="eqf-burbujas">
-              {burbujas.map(b => (
-                <div key={b.id} role="button" tabIndex={0} className={'eqf-bur' + (b.importante ? ' imp' : b.mencion ? ' men' : '')}
-                  onClick={() => abrir(b.canal.id, b.msg.id, b.msg.hilo_de)} onKeyDown={e => { if (e.key === 'Enter') abrir(b.canal.id, b.msg.id, b.msg.hilo_de); }}>
-                  <Avatar p={b.msg.autor} size={34} />
-                  <div className="cuerpo">
-                    <div className="q"><b>{b.msg.autor.nombre}</b><span>· {b.canal.tipo === 'directo' ? 'directo' : `#${b.canal.nombre}`}</span><span>· {hace(b.msg.created_at)}</span>{b.importante && <span className="imp">Importante</span>}{!b.importante && b.mencion && <span className="men">Mención</span>}</div>
-                    <div className="t">{resumen(b.msg)}</div>
-                  </div>
-                  <button className="x" aria-label="Descartar" onClick={e => { e.stopPropagation(); setBurbujas(x => x.filter(y => y.id !== b.id)); }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
-                  </button>
-                  {!b.importante && <span className="barra" />}
-                </div>
-              ))}
-            </div>
-          )}
+          {listaBurbujas}
           <div className="eqf-fila">
             {/* Quién está: con una sola persona enfrente (Aaron ↔ Andrea) se dice
                 con nombre; con varias, la pila de los presentes. */}

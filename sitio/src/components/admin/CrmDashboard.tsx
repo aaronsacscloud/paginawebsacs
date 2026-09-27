@@ -594,6 +594,10 @@ export default function CrmDashboard() {
     return permisos[k] !== 'no';
   });
   const isMobile = useIsMobile();
+  /* El hueco del pie del menú donde vive la chispa de Equipo en escritorio.
+     Es un ref-callback con estado: al plegar o desplegar el menú el hueco se
+     vuelve a crear, y el widget tiene que enterarse para mudarse con él. */
+  const [anclaEquipo, setAnclaEquipo] = useState<HTMLDivElement | null>(null);
   // Shell mobile: sheet "Más", búsqueda fullscreen y deal a abrir directo.
   const [masOpen, setMasOpen] = useState(false);
   // REGLA DE VELOCIDAD: los chunks de los destinos del pulgar se precargan en
@@ -1053,6 +1057,13 @@ export default function CrmDashboard() {
             se veía sucio sin que se supiera por qué. */}
         {!sidebarCollapsed ? (
           <div style={{ borderTop: '1px solid #ece6f8', background: 'rgba(255,255,255,.45)' }}>
+            {/* ── EQUIPO: la chispa vive AQUÍ en escritorio ──
+                Flotaba abajo a la derecha y tapaba justo la última columna de
+                cualquier lista que llegara al fondo —los ··· del último
+                renglón del Taller—. En el pie del menú no tapa nada, y sigue
+                enseñando lo mismo: quién está, cuántos sin leer y la burbuja
+                de lo que llega. El widget se pinta aquí por un portal. */}
+            {!isMobile && <div ref={setAnclaEquipo} />}
             {/* ── LA CUENTA: un renglón que LLEVA, no que abre ──
                 Hubo un volado que se desplegaba encima con ajustes, manual y
                 salir. Funcionaba, pero tapaba las dos últimas secciones del
@@ -1144,6 +1155,7 @@ export default function CrmDashboard() {
              suelto se lee como una alerta. La campana tampoco: plegado ya
              flota arriba a la derecha. */
           <div style={{ borderTop: '1px solid #e7e0f7', padding: '6px 0 8px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div ref={setAnclaEquipo} />
             <button
               onClick={() => setSidebarCollapsed(false)}
               aria-label="Abrir menú" title="Abrir menú"
@@ -1391,10 +1403,11 @@ export default function CrmDashboard() {
         </Suspense>
       )}
 
-      {/* Equipo: la esfera flotante de abajo a la derecha, en todas las
-          pantallas. Cerrada enseña lo que llegó; abierta es el chat completo
-          encima del CRM, sin salir de la pestaña en la que uno estaba. */}
-      <ErrorBoundary silencioso><Suspense fallback={null}><EquipoFlotante tabActual={tab} /></Suspense></ErrorBoundary>
+      {/* Equipo: cerrada enseña lo que llegó; abierta es el chat completo
+          encima del CRM, sin salir de la pestaña en la que uno estaba. En
+          escritorio vive en el pie del menú (`ancla`); en el teléfono, donde no
+          hay menú lateral, sigue flotando abajo a la derecha. */}
+      <ErrorBoundary silencioso><Suspense fallback={null}><EquipoFlotante tabActual={tab} ancla={isMobile ? null : anclaEquipo} plegado={sidebarCollapsed} /></Suspense></ErrorBoundary>
       <ErrorBoundary silencioso><Suspense fallback={null}><Telefonia /></Suspense></ErrorBoundary>
 
       {/* ─── Shell MOBILE: BottomNav + "Más" + búsqueda fullscreen ─── */}
