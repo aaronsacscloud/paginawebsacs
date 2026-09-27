@@ -209,6 +209,34 @@ export async function escribirBloqueEnEvento(teamMemberId: string, eventId: stri
   }
 }
 
+/**
+ * Mueve un evento a otra fecha/hora SIN recrearlo: conserva el mismo Meet, la
+ * misma invitación y los mismos invitados. Es para corregir una fecha que se
+ * capturó mal —el cliente recibe el aviso de Google con la fecha buena—, no
+ * para reagendar (reagendar deja rastro de que se movió; esto no).
+ */
+export async function moverCalendarEvent(
+  teamMemberId: string, eventId: string,
+  startDateTime: string, endDateTime: string, timezone: string,
+): Promise<boolean> {
+  const auth = await getAuthenticatedClient(teamMemberId);
+  if (!auth) return false;
+  try {
+    const calendar = google.calendar({ version: 'v3', auth: auth.client });
+    await calendar.events.patch({
+      calendarId: auth.calendarId, eventId, sendUpdates: 'all',
+      requestBody: {
+        start: { dateTime: startDateTime, timeZone: timezone },
+        end: { dateTime: endDateTime, timeZone: timezone },
+      },
+    });
+    return true;
+  } catch (err: any) {
+    console.error('[calendar] no se pudo mover el evento:', err?.message || 'unknown');
+    return false;
+  }
+}
+
 export async function deleteCalendarEvent(teamMemberId: string, eventId: string): Promise<boolean> {
   const auth = await getAuthenticatedClient(teamMemberId);
   if (!auth) return false;

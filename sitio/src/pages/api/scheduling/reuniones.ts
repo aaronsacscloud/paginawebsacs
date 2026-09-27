@@ -1,4 +1,4 @@
-import { conMicroCache } from '../../../lib/crm/micro-cache';
+import { conMicroCache, microCacheInvalidar } from '../../../lib/crm/micro-cache';
 // GET /api/scheduling/reuniones — vista admin de TODAS las reuniones (las del
 // founder y las de partners) enriquecidas para el tab "Reuniones" del CRM:
 //  - host resuelto (nombre del team_member)
@@ -13,7 +13,7 @@ import { getCurrentUser } from '../../../lib/auth/scope';
 import { isPartner } from '../../../lib/scheduling/scope';
 import { alertasInasistencia, ESTADOS } from '../../../lib/crm/reuniones';
 import { fechasDeSerie, revisarRegla, MAX_SESIONES, type ReglaSerie } from '../../../lib/scheduling/recurrencia';
-import { createCalendarEvent } from '../../../lib/google-calendar';
+import { createCalendarEvent, deleteCalendarEvent, moverCalendarEvent } from '../../../lib/google-calendar';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -215,6 +215,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const { data: creadas, error } = await supabase.from('bookings').insert(filas).select('*');
   if (error) return json({ error: error.message }, 500);
+  microCacheInvalidar('scheduling/reuniones');   // la ficha tiene que ver la nueva al recargar
 
   // Leads v2: agendar promueve a Oportunidad, también desde la ficha.
   const cidPromo = filas[0]?.contact_id;
@@ -288,7 +289,7 @@ export const POST: APIRoute = async ({ request }) => {
   }, 201);
 };
 
-// ── PATCH: estado, grabación y minuta ───────────────────────────────────────
+// ── PATCH: estado, grabación, minuta, y corregir fecha/hora ─────────────────
 export const PATCH: APIRoute = async ({ request }) => {
   const user = await getCurrentUser(request);
   if (!user) return json({ error: 'No autenticado' }, 401);
@@ -298,7 +299,8 @@ export const PATCH: APIRoute = async ({ request }) => {
   const id = String(b?.id || '');
   if (!id) return json({ error: 'Falta la reunión.' }, 400);
 
-  const { data: actual } = await supabase.from('bookings').select('id, estado, estado_hist').eq('id', id).maybeSingle();
+  const { data: actual } = await supabase.from('bookings')
+    .select('id, estado, estado_hist, fecha, hora_inicio, hora_fin, host_id, google_event_id, serie_id, timezone_host').eq('id', id).maybeSingle();
   if (!actual) return json({ error: 'Esa reunión ya no existe.' }, 404);
 
   const patch: any = {};
@@ -323,14 +325,55 @@ export const PATCH: APIRoute = async ({ request }) => {
       patch.cancelado_por = b?.quien === 'lead' ? 'lead' : 'sacs';
     }
   }
+  /* ── Corregir la fecha o la hora ──
+     Para una fecha CAPTURADA MAL, no para reagendar: reagendar deja rastro
+     —estado «reagendada», motivo, cuenta en las inasistencias— porque la junta
+     se movió de verdad. Aquí la junta siempre fue en otro día y solo se
+     escribió mal. Se conserva la duración, y el evento de Google se MUEVE (no
+     se recrea): mismo Meet, misma invitación, y el cliente recibe la fecha
+     buena. */
+  const HHMM = /^\d{2}:\d{2}$/;
+  const nuevaFecha = typeof b?.fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(b.fecha) ? b.fecha : null;
+  const nuevaHora = typeof b?.hora_inicio === 'string' && HHMM.test(b.hora_inicio.slice(0, 5)) ? b.hora_inicio.slice(0, 5) : null;
+  if ((b?.fecha && !nuevaFecha) || (b?.hora_inicio && !nuevaHora)) return json({ error: 'La fecha o la hora no se entienden.' }, 400);
+  const horaVieja = String(actual.hora_inicio || '').slice(0, 5);
+  const moverFecha = !!nuevaFecha && nuevaFecha !== actual.fecha;
+  const moverHora = !!nuevaHora && nuevaHora !== horaVieja;
+  if (moverFecha) patch.fecha = nuevaFecha;
+  if (moverHora) {
+    const aMin = (x: string) => { const [h, m] = String(x || '').slice(0, 5).split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+    const dur = actual.hora_fin ? Math.max(15, aMin(actual.hora_fin) - aMin(horaVieja)) : 60;
+    const fin = Math.min(aMin(nuevaHora!) + dur, 23 * 60 + 59);
+    patch.hora_inicio = nuevaHora;
+    patch.hora_fin = `${String(Math.floor(fin / 60)).padStart(2, '0')}:${String(fin % 60).padStart(2, '0')}`;
+  }
+
   if (!Object.keys(patch).length) return json({ ok: true, sin_cambios: true });
 
   patch.updated_at = new Date().toISOString();
   const { data, error } = await supabase.from('bookings').update(patch).eq('id', id)
     .select('*, event_types(id, nombre, slug, color, duracion_minutos, categoria, alerta_inasistencias)').single();
   if (error) return json({ error: error.message }, 500);
+  microCacheInvalidar('scheduling/reuniones');
+
+  let google: boolean | null = null;
+  if (moverFecha || moverHora) {
+    if (actual.google_event_id && actual.host_id) {
+      const f = data.fecha, iso = (h: string) => `${f}T${String(h).slice(0, 5)}:00`;
+      google = await moverCalendarEvent(actual.host_id, actual.google_event_id,
+        iso(data.hora_inicio), iso(data.hora_fin), actual.timezone_host || 'America/Mexico_City').catch(() => false);
+    }
+    // Una sesión de serie que cambia de día puede cambiar de lugar en la serie.
+    if (actual.serie_id && moverFecha) {
+      const { data: resto } = await supabase.from('bookings').select('id')
+        .eq('serie_id', actual.serie_id).order('fecha', { ascending: true }).order('hora_inicio', { ascending: true });
+      for (let i = 0; i < (resto || []).length; i++) {
+        await supabase.from('bookings').update({ serie_indice: i + 1, serie_total: resto!.length }).eq('id', resto![i].id);
+      }
+    }
+  }
   if (patch.minuta?.decision?.tipo) { try { const { aplicarDecisionMinuta } = await import('../../../lib/crm/reuniones-decision'); await aplicarDecisionMinuta(id, patch.minuta.decision, user.nombre || user.email || null); } catch (e: any) { console.error('[reuniones] decision', e?.message || e); } }
-  return json({ ok: true, data });
+  return json({ ok: true, data, google });
 };
 
 /* ── DELETE: borrar una reunión de prueba ────────────────────────────────────
@@ -341,6 +384,13 @@ export const PATCH: APIRoute = async ({ request }) => {
  *
  * Por eso se borra de verdad, y por eso avisa antes: las que dejaron rastro
  * —minuta escrita o mejoras que salieron de ella— no se borran en silencio.
+ *
+ * También para las capturadas con la FECHA MAL (una serie con días de más).
+ * Esas ya le llegaron al cliente como invitación de Google, así que el evento
+ * se borra también allá —con aviso, `sendUpdates: 'all'`, el mismo camino que
+ * cancelar—: si no, el cliente se queda con una junta fantasma en su agenda.
+ * Y si era una sesión de serie, las que quedan se renumeran: «sesión 3 de 4»
+ * en una serie que ya es de tres dice algo que no es.
  */
 export const DELETE: APIRoute = async ({ request, url }) => {
   const user = await getCurrentUser(request);
@@ -349,7 +399,7 @@ export const DELETE: APIRoute = async ({ request, url }) => {
   if (!id) return json({ error: 'id requerido' }, 400);
 
   const { data: b } = await supabase.from('bookings')
-    .select('id, asunto, fecha, minuta, company_id').eq('id', id).maybeSingle();
+    .select('id, asunto, fecha, minuta, company_id, serie_id, host_id, google_event_id').eq('id', id).maybeSingle();
   if (!b) return json({ error: 'Esa reunión ya no existe.' }, 404);
 
   // Lo que cuelga de la reunión no se borra: se desliga. Una mejora que salió
@@ -369,7 +419,28 @@ export const DELETE: APIRoute = async ({ request, url }) => {
 
   const { error } = await supabase.from('bookings').delete().eq('id', id);
   if (error) return json({ error: error.message }, 500);
-  return json({ ok: true, mejoras_desligadas: mejoras || 0 });
+
+  // Google DESPUÉS de la base: si el borrado de aquí falla, la invitación del
+  // cliente tiene que seguir siendo verdad. Si falla Google, lo de aquí ya se
+  // borró y se avisa en vez de tirar todo.
+  let google: boolean | null = null;
+  if (b.google_event_id && b.host_id) {
+    google = await deleteCalendarEvent(b.host_id, b.google_event_id).catch(() => false);
+  }
+
+  if (b.serie_id) {
+    const { data: resto } = await supabase.from('bookings').select('id, fecha, hora_inicio')
+      .eq('serie_id', b.serie_id).order('fecha', { ascending: true }).order('hora_inicio', { ascending: true });
+    const n = (resto || []).length;
+    for (let i = 0; i < n; i++) {
+      await supabase.from('bookings').update({ serie_indice: i + 1, serie_total: n }).eq('id', resto![i].id);
+    }
+  }
+
+  // La lista de la ficha se sirve con micro-caché: sin esto, la reunión borrada
+  // seguiría saliendo hasta un minuto.
+  microCacheInvalidar('scheduling/reuniones');
+  return json({ ok: true, mejoras_desligadas: mejoras || 0, google });
 };
 
 // REGLA DE VELOCIDAD: lectura pesada founder-only → micro-caché 60s en la instancia.

@@ -3334,6 +3334,53 @@ function TabReuniones({ companyId, principal, contactos, flash }: any) {
     }
   }
 
+  /* ELIMINAR ≠ CANCELAR. Cancelar es que se acordó y se echó para atrás: se
+     queda en el historial y cuenta. Eliminar es para lo que nunca debió
+     existir —una sesión con la fecha capturada mal, una de prueba—.
+     Sale de la lista al instante; la recarga trae la serie renumerada y va
+     con `fresco` para no leer la copia de un minuto de la micro-caché. */
+  const [borrando, setBorrando] = useState('');
+  async function borrar(r: any, forzar = false) {
+    if (!forzar && !await confirmar(`¿Eliminar la reunión del ${fmtDate(r.fecha)}?`, {
+      accion: 'Eliminarla', peligro: true,
+      detalle: 'Se borra, no se cancela: úsalo para una fecha capturada mal o una prueba.'
+        + (r.google_event_id ? ' También se quita del calendario de Google, y Google le avisa al invitado que se canceló.' : ''),
+    })) return;
+    setBorrando(r.id);
+    const j = await fetch(`/api/scheduling/reuniones?id=${encodeURIComponent(r.id)}${forzar ? '&forzar=1' : ''}`, { method: 'DELETE' })
+      .then(x => x.json()).catch(() => null);
+    setBorrando('');
+    if (j?.requiere_confirmacion) {
+      if (await confirmar('Esta reunión tiene compromisos', { accion: 'Eliminarla de todos modos', peligro: true, detalle: j.error })) return borrar(r, true);
+      return;
+    }
+    if (!j || j.error) { flash(j?.error || 'No se pudo eliminar la reunión'); return; }
+    setRows(prev => (prev || []).filter(x => x.id !== r.id));
+    flash(j.google === false ? 'Eliminada · no se pudo quitar de Google, bórrala allá' : 'Reunión eliminada');
+    fetch('/api/scheduling/reuniones?company_id=' + companyId + '&fresco=' + Date.now())
+      .then(x => x.json()).then(k => { if (k?.data) setRows(k.data); }).catch(() => {});
+  }
+
+  /* CORREGIR LA FECHA. Para una fecha que se escribió mal, no para reagendar:
+     reagendar deja rastro de que la junta se movió; esto solo arregla un dato.
+     El evento de Google se mueve con ella y el invitado recibe la fecha buena. */
+  const [editFecha, setEditFecha] = useState<{ id: string; fecha: string; hora: string } | null>(null);
+  const [guardandoFecha, setGuardandoFecha] = useState(false);
+  async function guardarFecha() {
+    if (!editFecha || !editFecha.fecha || !editFecha.hora) return;
+    setGuardandoFecha(true);
+    const j = await fetch('/api/scheduling/reuniones', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: editFecha.id, fecha: editFecha.fecha, hora_inicio: editFecha.hora }),
+    }).then(x => x.json()).catch(() => null);
+    setGuardandoFecha(false);
+    if (!j || j.error) { flash(j?.error || 'No se pudo corregir la fecha'); return; }
+    setEditFecha(null);
+    flash(j.sin_cambios ? 'Era la misma fecha' : j.google === false ? 'Fecha corregida · no se pudo mover en Google, muévela allá' : 'Fecha corregida');
+    fetch('/api/scheduling/reuniones?company_id=' + companyId + '&fresco=' + Date.now())
+      .then(x => x.json()).then(k => { if (k?.data) setRows(k.data); }).catch(() => {});
+  }
+
   function linkAgendar(slug: string) {
     const base = window.location.origin + '/agendar/' + slug;
     const params = new URLSearchParams();
@@ -3444,6 +3491,12 @@ function TabReuniones({ companyId, principal, contactos, flash }: any) {
                     <span style={{ ...D.badge, background: st.bg, color: st.color }}>{st.label}</span>
                     <button onClick={() => setCambiando(c => ({ ...c, [r.id]: true }))}
                       style={{ border: 'none', background: 'none', fontSize: '0.68rem', fontWeight: 700, color: '#a5a2af', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>cambiar</button>
+                    <button onClick={() => setEditFecha(editFecha?.id === r.id ? null : { id: r.id, fecha: String(r.fecha || '').slice(0, 10), hora: String(r.hora_inicio || '').slice(0, 5) })}
+                      style={{ border: 'none', background: 'none', fontSize: '0.68rem', fontWeight: 600, color: '#8a7fd6', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>Corregir fecha</button>
+                    <button onClick={() => borrar(r)} disabled={borrando === r.id}
+                      style={{ border: 'none', background: 'none', fontSize: '0.68rem', fontWeight: 600, color: '#c98a86', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
+                      {borrando === r.id ? 'Eliminando…' : 'Eliminar'}
+                    </button>
                   </div>
                 ) : (
                 <div style={{ display: 'flex', border: '1.5px solid #e8e6ee', borderRadius: 10, overflow: 'hidden', background: '#fff' }}>
@@ -3461,11 +3514,41 @@ function TabReuniones({ companyId, principal, contactos, flash }: any) {
                 </div>
                 )}
                 {/* Cancelar solo se ofrece donde todavía se puede: una reunión
-                    que ya pasó no se cancela, y el renglón se ahorra un botón. */}
-                {['agendada', 'confirmada'].includes(e) && (
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 7 }}>
-                    <button onClick={() => marcar(r, 'cancelada')}
-                      style={{ border: 'none', background: 'none', fontSize: '0.68rem', fontWeight: 600, color: '#a5a2af', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>Cancelar reunión</button>
+                    que ya pasó no se cancela, y el renglón se ahorra un botón.
+                    Eliminar va al lado y en otro tono: son dos cosas distintas
+                    —una pasó y se echó para atrás, la otra nunca debió existir—. */}
+                {!(['asistio', 'no_asistio', 'cancelada', 'reagendada'].includes(e) && !cambiando[r.id]) && (
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 7 }}>
+                    {['agendada', 'confirmada'].includes(e) && (
+                      <button onClick={() => marcar(r, 'cancelada')}
+                        style={{ border: 'none', background: 'none', fontSize: '0.68rem', fontWeight: 600, color: '#a5a2af', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>Cancelar reunión</button>
+                    )}
+                    <button onClick={() => setEditFecha(editFecha?.id === r.id ? null : { id: r.id, fecha: String(r.fecha || '').slice(0, 10), hora: String(r.hora_inicio || '').slice(0, 5) })}
+                      style={{ border: 'none', background: 'none', fontSize: '0.68rem', fontWeight: 600, color: '#8a7fd6', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>Corregir fecha</button>
+                    <button onClick={() => borrar(r)} disabled={borrando === r.id}
+                      style={{ border: 'none', background: 'none', fontSize: '0.68rem', fontWeight: 600, color: '#c98a86', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
+                      {borrando === r.id ? 'Eliminando…' : 'Eliminar'}
+                    </button>
+                  </div>
+                )}
+                {editFecha?.id === r.id && (
+                  <div style={{ marginTop: 9, padding: '10px 11px', background: '#faf8ff', border: '1px solid #ede6fb', borderRadius: 10 }}>
+                    <div style={{ display: 'flex', gap: 7 }}>
+                      <input type="date" value={editFecha.fecha} onChange={ev => setEditFecha({ ...editFecha, fecha: ev.target.value })}
+                        aria-label="Fecha correcta" style={{ flex: 1, minWidth: 0, padding: '6px 8px', border: '1.5px solid #e4dffb', borderRadius: 8, fontSize: '0.78rem', fontFamily: 'inherit' }} />
+                      <input type="time" value={editFecha.hora} onChange={ev => setEditFecha({ ...editFecha, hora: ev.target.value })}
+                        aria-label="Hora correcta" style={{ width: 96, padding: '6px 8px', border: '1.5px solid #e4dffb', borderRadius: 8, fontSize: '0.78rem', fontFamily: 'inherit' }} />
+                    </div>
+                    <div style={{ fontSize: '0.66rem', color: '#8d8a97', margin: '6px 0 8px', lineHeight: 1.4 }}>
+                      Corrige un dato mal capturado; no cuenta como reagendada.{r.google_event_id ? ' Se mueve también en Google y el invitado recibe la fecha buena.' : ''}
+                    </div>
+                    <div style={{ display: 'flex', gap: 7, justifyContent: 'flex-end' }}>
+                      <button onClick={() => setEditFecha(null)} style={{ ...D.btnG, padding: '5px 11px', fontSize: '0.72rem' }}>Cancelar</button>
+                      <button onClick={guardarFecha} disabled={guardandoFecha || !editFecha.fecha || !editFecha.hora}
+                        style={{ ...D.btn, padding: '5px 12px', fontSize: '0.72rem', opacity: guardandoFecha ? .6 : 1 }}>
+                        {guardandoFecha ? 'Guardando…' : 'Guardar fecha'}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

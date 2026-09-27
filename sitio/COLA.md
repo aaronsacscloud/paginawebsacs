@@ -1134,7 +1134,15 @@ Lugares: menú lateral (CrmDashboard.tsx ~796), menú plegado (el símbolo), log
 Pregunta abierta: documentos/correos al cliente (dicen «Sacscloud») y el video («Sacs · CRM by Andy Araujo») — ¿cambian a Amby?
 > 23-sep: «que se quede la estrella como está actualmente y solo cambie el AMBY, en la tipografía de Sacs» → prototipo v2 https://code.sacscloud.com/shots/05f1de59d17afb77.png (chispa actual + «Amby» en Clash Display 700 + chip CRM + by Andy Araujo; ícono de la app igual; opciones Amby / AMBY).
 
-## 27-sep-2026 · ficha del cliente → Reuniones: poder ELIMINAR una reunión (EN COLA — entra al terminar el menú ··· de Entregado)
+## 27-sep-2026 · ficha del cliente → Reuniones: poder ELIMINAR una reunión (HECHO 27-sep — Eliminar en cada reunión, borra también el evento de Google y renumera la serie)
 > «aqui tambien te debe de permitir eliminar por que me equivoque en subir las fechas»
 
 Captura: ficha de Live Shows Merchandising, pestaña Reuniones. Serie «Reunión Semanal Mejoras» sesiones 1–4 de 4 (26-sep, 30-sep, 03-oct, 07-oct), las tres futuras en «Agendada» con «Cancelar reunión». Hoy solo existe cancelar; falta eliminar la que se capturó con fecha equivocada. Revisar antes: qué avisa «Cancelar» al cliente (no mandarle un aviso por un error de captura), qué pasa con el evento de Google/Meet, y si una sesión de serie se borra sola o toda la serie.
+
+## 27-sep-2026 · la estrellita (Amby flotante) tapa el menú ··· del último renglón (EN COLA — prototipo primero)
+> «me estorba en esta seccion la estrellita me puedes dar un prototipo de donde podria estar que no afecte»
+
+Captura: Taller → Entregado, la estrella rosa flotante (abajo a la derecha) queda encima de los tres puntos del último renglón. Pide PROTOTIPO de dónde ponerla sin que estorbe, no el cambio directo.
+
+## 27-sep-2026 · Reuniones: además de eliminar, CORREGIR la fecha/hora capturada mal (HECHO 27-sep — «Corregir fecha» mueve también el evento de Google, no cuenta como reagendada)
+> «Y todavía no me permite eliminar y también cambiar las fechas. Por ejemplo, en caso de que me equivoqué de poner una fecha, me permite editarla.»
