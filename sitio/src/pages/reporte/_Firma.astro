@@ -1,0 +1,70 @@
+---
+// La FIRMA del cliente, al pie de los tres documentos que se firman:
+// Reporte de entregas, Trabajo en curso y el ejecutivo (dueño, 27-sep-2026).
+//
+// Sin firmar: nombre, trazo con el dedo o el mouse, y la frase que acepta —la
+// misma que se guarda con la firma, sale de `reporte-firma`—. Firmado: el
+// trazo, el nombre, la frase y cuándo. Una vez firmado ya no se mueve nada.
+//
+// En papel, sin firmar, se imprime la línea para firmar a mano: el PDF que se
+// lleva a una junta también tiene que poder firmarse.
+import { LEYENDA_FIRMA, CON_REVISADO } from '../../lib/crm/reporte-firma';
+const { rep, total = 0 } = Astro.props;
+
+/* Sin la columna (el código llegó antes que el SQL) no se ofrece firmar: un
+   formulario que va a fallar es peor que no tenerlo. */
+const activo = !!rep && 'revisados' in rep;
+const ley = activo ? LEYENDA_FIRMA[rep.tipo] : null;
+const f = rep.firma || null;
+const conRev = CON_REVISADO.includes(rep.tipo) && total > 0;
+const nRev = Object.keys(rep.revisados || {}).length;
+const cuando = f?.at
+  ? new Date(f.at).toLocaleString('es-MX', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' })
+  : '';
+// Solo un PNG en data URL se pinta: es lo único que el API acepta guardar.
+const trazo = typeof f?.trazo === 'string' && f.trazo.startsWith('data:image/png;base64,') ? f.trazo : null;
+---
+{ley && (
+  <section class="firma" id="firma" data-firmado={f ? '1' : '0'}>
+    <div class="st"><span class="x">{ley.titulo}</span><span class="ln"></span></div>
+
+    {conRev && (
+      <p class="p frev">
+        {f ? 'Revisó' : 'Llevas revisados'} <b id="nrev">{nRev}</b> de {total} {total === 1 ? 'punto' : 'puntos'}.
+        {!f && ' Márcalos arriba conforme los revises; al firmar quedan como estén.'}
+      </p>
+    )}
+
+    {f ? (
+      <div class="fhecha">
+        {trazo && <img src={trazo} alt={`Firma de ${f.nombre}`} class="ftrazo" />}
+        <div class="flinea"></div>
+        <div class="fnom">{f.nombre}</div>
+        <div class="fley">«{f.leyenda}»</div>
+        <div class="fcuando">Firmado electrónicamente el {cuando}</div>
+      </div>
+    ) : (<>
+      <form class="fform" id="fform" novalidate>
+        <label class="flbl" for="fnombre">Tu nombre completo</label>
+        <input id="fnombre" name="nombre" class="finp" autocomplete="name" maxlength="120" required />
+        <div class="flbl" id="fpad-l">Tu firma</div>
+        <div class="fpad">
+          <canvas id="fpad" role="img" aria-labelledby="fpad-l"></canvas>
+          <span class="fhint" id="fhint">Firma aquí con el dedo o el mouse</span>
+          <button type="button" class="btn2 fborra" id="fborra">Borrar</button>
+        </div>
+        <label class="fchk"><input type="checkbox" id="facepto" /><span>{ley.frase}</span></label>
+        <div class="fpie">
+          <button type="submit" class="btn fbtn" id="fbtn">Firmar</button>
+          <span class="ferr" id="ferr" role="alert"></span>
+        </div>
+      </form>
+      <div class="fimpresa">
+        <div class="flinea"></div>
+        <div class="fnom">Nombre y firma</div>
+        <div class="fley">«{ley.frase}»</div>
+      </div>
+    </>)}
+    <div class="aviso" id="aviso" role="status" aria-live="polite"></div>
+  </section>
+)}

@@ -27,14 +27,24 @@ export const GET: APIRoute = async ({ request, url }) => {
   const companyId = String(url.searchParams.get('company_id') || '');
   if (!UUID.test(companyId)) return json({ error: 'Falta la cuenta.' }, 400);
 
-  const { data, error } = await supabase.from('reportes_trabajo')
-    .select('id, tipo, folio, desde, hasta, estado, enviado_at, enviado_a, vistas, primera_vista_at, ultima_vista_at, reaccion, reaccion_at, created_at, creado_por')
+  const BASE = 'id, tipo, folio, desde, hasta, estado, enviado_at, enviado_a, vistas, primera_vista_at, ultima_vista_at, reaccion, reaccion_at, created_at, creado_por';
+  /* Si FIRMÓ y cuánto REVISÓ (27-sep-2026). De la firma solo el nombre —el
+     trazo pesa y aquí no se pinta— y del documento solo cuántos puntos trae.
+     Si las columnas todavía no existen (el código llega antes que el SQL), la
+     lista se sirve como antes en vez de tronar. */
+  const consulta = (sel: string) => supabase.from('reportes_trabajo').select(sel)
     .eq('company_id', companyId).order('created_at', { ascending: false }).limit(30);
+  let { data, error } = await consulta(BASE + ', firmado_at, firma_nombre:firma->>nombre, revisados, total_puntos:hechos->total') as any;
+  if (error && /firmado_at|firma|revisados/i.test(error.message)) ({ data, error } = await consulta(BASE) as any);
   if (error) return json({ error: error.message }, 500);
+  data = (data || []).map((r: any) => {
+    const { revisados, ...resto } = r;
+    return { ...resto, revisados_n: revisados ? Object.keys(revisados).length : 0 };
+  });
 
   // Cuánto TIEMPO le dedicó. Es la diferencia entre "lo abrió" y "lo leyó":
   // treinta segundos es un vistazo, cuatro minutos es que se lo tomó en serio.
-  const ids = (data || []).map(r => r.id);
+  const ids = (data || []).map((r: any) => r.id);
   const tiempos: Record<string, { segundos: number; aperturas: number }> = {};
   if (ids.length) {
     const { data: vistas } = await supabase.from('reporte_vistas')
@@ -47,7 +57,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   }
 
   return json({
-    reportes: (data || []).map(r => ({ ...r, ...(tiempos[r.id] || { segundos: 0, aperturas: 0 }) })),
+    reportes: (data || []).map((r: any) => ({ ...r, ...(tiempos[r.id] || { segundos: 0, aperturas: 0 }) })),
   });
 };
 

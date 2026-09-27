@@ -30,6 +30,8 @@
 // se movió la fecha— ni siquiera está en la foto: se filtra al generar.
 import Chispas from '../../components/reporte/ChispasDoc.astro';
 import Sello from '../../components/reporte/SelloChispa.astro';
+import Firma from './_Firma.astro';
+import { llaveTrabajo } from '../../lib/crm/reporte-firma';
 const { rep } = Astro.props;
 const h = rep.hechos || {};
 
@@ -79,6 +81,12 @@ const parte = (t: string | null) => {
 };
 
 const trabajos = h.trabajos || [];
+/* «Revisado» por renglón (dueño, 27-sep-2026). La llave es el folio de la
+   orden —la posición en la foto si no trae—. Firmado, ya no se mueven. */
+const revisados: Record<string, string> = rep.revisados || {};
+const firmado = !!rep.firma;
+// Sin la columna todavía (el código llega antes que el SQL), no se ofrece.
+const conRevisado = 'revisados' in rep;
 
 /* ── Agrupado por MÓDULO ──
    La estructura real del documento: en qué parte del sistema estamos metidos.
@@ -181,8 +189,10 @@ const PIE_ETAPA: Record<number, string> = {
           const k = tipoDe(t.categoria);
           const q = parte(t.cambio);
           const hoy = parte(t.hoy);
+          const llave = llaveTrabajo(t, trabajos.indexOf(t));
+          const hecho = !!revisados[llave];
           return (
-            <div class="it">
+            <div class={`it${hecho ? ' revisada' : ''}`}>
               <div class="enc">
                 <span class="tt">{limpiar(t.titulo)}</span>
                 {/* La etapa, en el renglón. Al agrupar por módulo deja de ser el
@@ -198,21 +208,23 @@ const PIE_ETAPA: Record<number, string> = {
               {/* El video del encargo y el detalle completo, en el mismo
                   renglón: son las dos formas de profundizar y apiladas hacían
                   que cada trabajo midiera el doble. */}
-              {(t.video || q.resto || hoy.resto) && (
-                <div class="pieit">
-                  {t.video && (
-                    <a class="vid" href={t.video} target="_blank" rel="noopener noreferrer">
-                      <span class="pl">▶</span> Ver lo que pedimos
-                    </a>
-                  )}
-                  {(q.resto || hoy.resto) && (
-                    <details>
-                      <summary>Ver el detalle completo</summary>
-                      <div class="mas">{[hoy.resto, q.resto].filter(Boolean).join('\n\n')}</div>
-                    </details>
-                  )}
-                </div>
-              )}
+              {/* Siempre hay pie: ahí va el «revisado» de cada punto. */}
+              <div class="pieit">
+                {t.video && (
+                  <a class="vid" href={t.video} target="_blank" rel="noopener noreferrer">
+                    <span class="pl">▶</span> Ver lo que pedimos
+                  </a>
+                )}
+                {(q.resto || hoy.resto) && (
+                  <details>
+                    <summary>Ver el detalle completo</summary>
+                    <div class="mas">{[hoy.resto, q.resto].filter(Boolean).join('\n\n')}</div>
+                  </details>
+                )}
+                {conRevisado && <button type="button" class={`rev${hecho ? ' on' : ''}`} data-k={llave} aria-pressed={hecho ? 'true' : 'false'} disabled={firmado}>
+                  <span class="rk" aria-hidden="true"></span><span class="rt">{hecho ? 'Revisado' : 'Marcar como revisado'}</span>
+                </button>}
+              </div>
             </div>
           );
         })}
@@ -223,6 +235,8 @@ const PIE_ETAPA: Record<number, string> = {
   {h.sin_fecha > 0 && h.sin_fecha < h.total && (
     <div class="mas">{h.sin_fecha} de los {h.total} todavía no tienen fecha. Te avisamos en cuanto la tengan.</div>
   )}
+
+  <Firma rep={rep} total={trabajos.length} />
 </div>
 
 <div class="pieE">

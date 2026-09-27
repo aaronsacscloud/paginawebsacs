@@ -390,4 +390,59 @@ body{margin:0;padding:0;background:#eef0f4;color:var(--ink);font-family:"DM Sans
 .prog .pb{background:#EFA6CA;color:#1d1545;border-radius:10px;padding:9px 15px;font-weight:800;font-size:.84rem;white-space:nowrap}
 @media(max-width:720px){.prog{flex-wrap:wrap}.prog .pb{width:100%;text-align:center}}
 @media print{.prog{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+
+/* ══ FIRMA DEL CLIENTE Y «REVISADO» POR PUNTO (27-sep-2026) ══════════════════
+   El cliente marca cada punto conforme lo revisa (entregas y curso) y firma al
+   final (los tres documentos). El «revisado» es una palomita en píldora, no un
+   checkbox suelto: en un teléfono el dedo tiene que poder darle a la primera. */
+.rev{margin-left:auto;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--borde);background:#fff;color:var(--ink-2);border-radius:999px;
+  padding:6px 13px 6px 8px;font:inherit;font-size:.74rem;font-weight:700;cursor:pointer;min-height:36px;transition:background .15s,border-color .15s,color .15s}
+.rev:hover:not(:disabled){border-color:var(--verde);color:var(--verde-t)}
+.rev .rk{width:16px;height:16px;border-radius:5px;border:1.5px solid #cfcadf;background:#fff;position:relative;flex:none}
+.rev.on{background:var(--verde-a);border-color:#bfe6d4;color:var(--verde-t)}
+.rev.on .rk{background:var(--verde);border-color:var(--verde)}
+.rev.on .rk:after{content:'';position:absolute;left:4.5px;top:1.5px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.rev:disabled{cursor:default}
+.rev:focus-visible{outline:3px solid var(--violeta);outline-offset:2px}
+.it.revisada{background:linear-gradient(90deg,rgba(79,191,149,.07),transparent 60%)}
+.firma{margin-top:30px}
+.firma-doc{padding:8px 34px 4px}
+.frev{margin:0 0 12px}
+.fform{border:1px solid var(--borde);border-radius:14px;padding:18px 20px;background:var(--tono)}
+.flbl{display:block;font-size:.6rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin:0 0 6px}
+.finp{width:100%;box-sizing:border-box;border:1.5px solid #e4dffb;border-radius:10px;padding:10px 12px;font:inherit;font-size:.92rem;background:#fff;color:var(--ink);margin-bottom:14px}
+.finp:focus{outline:none;border-color:var(--violeta)}
+.fpad{position:relative;height:170px;border:1.5px dashed #d5cff0;border-radius:12px;background:#fff;margin-bottom:12px}
+.fpad canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair;border-radius:12px}
+.fhint{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;color:#a8a3bb;font-size:.84rem;pointer-events:none}
+.fborra{position:absolute;right:8px;top:8px;padding:6px 12px;font-size:.74rem}
+.fchk{display:flex;gap:10px;align-items:flex-start;font-size:.88rem;color:var(--ink);line-height:1.5;cursor:pointer;margin:4px 0 14px}
+.fchk input{width:18px;height:18px;margin-top:2px;accent-color:var(--verde-t);flex:none}
+.fpie{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.fbtn{padding:11px 24px;font-size:.88rem;min-height:44px}
+.fbtn:disabled{opacity:.6;cursor:default}
+.ferr{font-size:.8rem;color:#b3423b;font-weight:600}
+.fhecha{border:1px solid #cdeadd;background:linear-gradient(135deg,var(--verde-a),#fff 70%);border-radius:14px;padding:18px 22px;max-width:460px}
+.ftrazo{display:block;max-width:280px;width:100%;height:auto;max-height:120px;object-fit:contain;object-position:left}
+.flinea{height:1px;background:var(--ink-2);opacity:.45;margin:4px 0 8px;max-width:300px}
+.fnom{font-weight:800;font-size:.92rem;color:var(--ink)}
+.fley{font-size:.8rem;color:var(--ink-2);margin-top:3px;font-style:italic}
+.fcuando{font-size:.74rem;color:var(--verde-t);margin-top:8px;font-weight:700}
+.fimpresa{display:none}
+.aviso{position:fixed;left:50%;bottom:22px;transform:translate(-50%,16px);background:#241d43;color:#fff;border-radius:10px;padding:10px 16px;font-size:.82rem;
+  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:50;max-width:calc(100vw - 32px)}
+.aviso.on{opacity:1;transform:translate(-50%,0)}
+@media(max-width:720px){.firma-doc{padding:8px 18px 4px}.rev{margin-left:0}}
+@media(prefers-reduced-motion:reduce){.aviso,.rev{transition:none}}
+/* En papel: lo revisado dice «Revisado por el cliente» y lo demás no se
+   imprime; sin firma, la línea para firmar a mano. */
+@media print{
+  .fform,.aviso{display:none}
+  .fimpresa{display:block;margin-top:46px}
+  .fimpresa .flinea{max-width:320px;opacity:.8}
+  .rev{border:none;background:none;padding:0;min-height:0;font-size:.7rem}
+  .rev:not(.on){display:none}
+  .rev.on .rt:after{content:' por el cliente'}
+  .firma{break-inside:avoid}
+}
 `;

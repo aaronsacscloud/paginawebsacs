@@ -884,6 +884,19 @@ function SeguimientoReportes({ reportes, flash, recargar }: any) {
 
             {rc && <span style={{ fontSize: '0.62rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px', background: rc.bg, color: rc.fg, whiteSpace: 'nowrap' }}>{rc.t}</span>}
 
+            {/* Si lo FIRMÓ, y si no, cuánto lleva revisado. Firmado manda: es el
+                acuse, y ahí los revisados ya quedaron como quedaron. */}
+            {r.firmado_at ? (
+              <span title={`Firmado ${hace(r.firmado_at)}`}
+                style={{ fontSize: '0.62rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px', background: '#EAF8F2', color: '#1E8A63', whiteSpace: 'nowrap' }}>
+                ✍ Firmado{r.firma_nombre ? ` · ${r.firma_nombre}` : ''}
+              </span>
+            ) : r.revisados_n > 0 ? (
+              <span style={{ fontSize: '0.62rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px', background: '#EEECFE', color: '#5B4BD6', whiteSpace: 'nowrap' }}>
+                Revisó {r.revisados_n}{r.total_puntos ? ` de ${r.total_puntos}` : ''}
+              </span>
+            ) : null}
+
             <button style={{ ...S.btnG, padding: '5px 10px', fontSize: '0.71rem' }} onClick={() => copiar(r)}>Copiar liga</button>
             <a style={{ ...S.btnG, padding: '5px 10px', fontSize: '0.71rem', textDecoration: 'none', display: 'inline-block' }}
                href={`/reporte/${r.id}`} target="_blank" rel="noreferrer">Ver</a>

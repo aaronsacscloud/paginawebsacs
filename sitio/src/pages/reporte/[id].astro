@@ -15,6 +15,7 @@ import Entregas from './_Entregas.astro';
 import Curso from './_Curso.astro';
 import Lead from './_Lead.astro';
 import Recomendaciones from './_Recomendaciones.astro';
+import Firma from './_Firma.astro';
 
 export const prerender = false;
 
@@ -23,8 +24,12 @@ const UUID = /^[0-9a-f-]{36}$/i;
 
 let rep: any = null;
 if (id && UUID.test(id)) {
+  /* `*` y no la lista: la firma y los revisados (27-sep-2026) viven en
+     columnas que el código puede estrenar antes que el SQL. Con la lista, un
+     SELECT de una columna que todavía no existe tumbaba la liga del cliente;
+     así, sin ellas, el reporte se lee igual y solo no ofrece firmar. */
   const { data } = await supabase.from('reportes_trabajo')
-    .select('id, tipo, folio, desde, hasta, hechos, narrativa, reaccion').eq('id', id).maybeSingle();
+    .select('*').eq('id', id).maybeSingle();
   rep = data || null;
 }
 if (!rep) return new Response('Reporte no encontrado', { status: 404 });
@@ -259,6 +264,9 @@ const titulo = n?.titulo || 'Lo que se trabajó en tu cuenta este periodo';
         <div class="f">{n.siguiente.join(' ')}</div>
       </div>
     )}
+
+    {/* El ejecutivo se firma entero: «estoy consciente del trabajo realizado». */}
+    <div class="firma-doc"><Firma rep={rep} /></div>
 
     <div class="reac">
       <div class="q">¿Te sirvió este reporte?</div>

@@ -1147,7 +1147,7 @@ Captura: Taller → Entregado, la estrella rosa flotante (abajo a la derecha) qu
 ## 27-sep-2026 · Reuniones: además de eliminar, CORREGIR la fecha/hora capturada mal (HECHO 27-sep — «Corregir fecha» mueve también el evento de Google, no cuenta como reagendada)
 > «Y todavía no me permite eliminar y también cambiar las fechas. Por ejemplo, en caso de que me equivoqué de poner una fecha, me permite editarla.»
 
-## 27-sep-2026 · reportes al cliente: FIRMA del cliente + «revisado» por punto (EN COLA — entra al terminar la estrellita en el menú)
+## 27-sep-2026 · reportes al cliente: FIRMA del cliente + «revisado» por punto (HECHO 27-sep — falta aplicar scripts/migration-2026-09-reportes-firma.sql)
 > «Adicional, dentro de los reportes que se generan: - Trabajo en curso - Reporte de entrega - Reporte ejecutivo. Deben de aparecer secciones para que el cliente firme y, adicional, que, en cada punto que se le vaya entregando, pueda poner como revisado. Eso de revisado solamente en Trabajo en curso y Reporte de entregas, por favor. En el Reporte ejecutivo, que aparezca la firma de que está consciente del trabajo que se ha realizado.»
 
 Captura: ficha de Live Shows → Consultoría → «Reportes al cliente» (Trabajo en curso · Reporte de entregas · Reporte ejecutivo). Piezas:
