@@ -629,6 +629,23 @@ function Lista({ ordenes, entregas = {}, yo, equipo, abrir, filtro, setFiltro, o
     recargar?.();
   }
 
+  /* Quitar algo ENTREGADO: se archiva el renglón del cliente, que es donde
+     vive lo entregado. Pregunta primero porque sale de su reporte de entregas:
+     no es un borrador, es algo que el cliente ya tiene. */
+  async function quitarEntregada(e: any) {
+    if (!await confirmar(`¿Quitar «${e.titulo}» de lo entregado?`, {
+      accion: 'Quitarla', peligro: true,
+      detalle: 'Deja de verse aquí, en la ficha del cliente y en su reporte de entregas. Se archiva, no se borra del historial.',
+    })) return;
+    const j = await fetch('/api/crm/taller', {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mejora_id: e.id }),
+    }).then(r => r.json()).catch(() => null);
+    if (!j || j.error) { flash?.(j?.error || 'No se pudo quitar'); return; }
+    flash?.('Quitada de lo entregado');
+    recargar?.();
+  }
+
   return (
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 12, marginBottom: 12 }}>
@@ -740,6 +757,7 @@ function Lista({ ordenes, entregas = {}, yo, equipo, abrir, filtro, setFiltro, o
               va a aplicar es a lo que estás viendo. */}
           {sel.size > 0 ? (
             <BarraLote n={sel.size} ids={[...sel]} companyId={abierto.id}
+              modo={dentro === 'entregada' ? 'entregadas' : 'ordenes'}
               giro={abierto.val?.giro} onListo={() => { limpiaSel(); recargar?.(); }}
               onCancelar={limpiaSel} flash={flash} />
           ) : (
@@ -786,49 +804,25 @@ function Lista({ ordenes, entregas = {}, yo, equipo, abrir, filtro, setFiltro, o
               {dentro === 'entregada' ? 'Todavía no se le ha entregado nada a esta cuenta.' : 'Nada de esta cuenta está en esa fase.'}
             </div>
           )}
-          {/* Lo entregado se pinta distinto: no es trabajo, es historial. Sin
-              casilla —no entra a los cambios en bloque— y con su video, que es
-              lo que el cliente ya tiene en la mano.
+          {/* Lo entregado se pinta distinto: no es trabajo, es historial, con
+              su video, que es lo que el cliente ya tiene en la mano.
               SÍ se edita: casi todo se cerró antes de que el taller existiera
               y quedó sin «qué pasaba», sin «qué se hizo» y sin video. El
-              renglón entero abre su orden, igual que uno vivo. */}
+              renglón entero abre su orden, igual que uno vivo, y tiene los
+              mismos tres puntos y la misma casilla para corregir en bloque. */}
           {dentro === 'entregada' && enCuenta.map((e: any) => (
-            <div key={e.id} onClick={() => editarEntregada(e)}
-              title={e.orden_id ? 'Abrir la orden' : 'Completar lo que se hizo'}
-              onMouseEnter={ev => { (ev.currentTarget as HTMLElement).style.background = '#fbfaff'; }}
-              onMouseLeave={ev => { (ev.currentTarget as HTMLElement).style.background = '#fff'; }}
-              style={{
-              display: 'flex', alignItems: 'center', gap: 9, borderTop: '1px solid #f3f1f7',
-              minHeight: 44, background: '#fff', paddingRight: 12, cursor: 'pointer',
-              opacity: abriendo === e.id ? .55 : 1,
-            }}>
-              <span style={{ width: 4, alignSelf: 'stretch', flex: 'none', borderRadius: '0 3px 3px 0', background: P.verde }} />
-              <span style={{ flex: 'none', width: 56, textAlign: 'center', fontSize: '0.55rem', fontWeight: 800, letterSpacing: '.04em', borderRadius: 5, padding: '2px 0', background: P.verdeAgua, color: P.verdeTinta, marginLeft: 9 }}>
-                LISTO
-              </span>
-              <span style={{ flex: 1, minWidth: 0, fontSize: '0.81rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.titulo}</span>
-              {e.cortesia && <span style={{ flex: 'none', borderRadius: 20, padding: '2px 9px', fontSize: '0.66rem', fontWeight: 700, background: P.verdeAgua, color: P.verdeTinta }}>sin costo</span>}
-              <Dato ancho={132} titulo={e.modulo || ''} falta="sin módulo" tono="modulo">{e.modulo || ''}</Dato>
-              <span style={{ flex: 'none', width: 92, textAlign: 'right', fontSize: '0.71rem' }}>
-                {e.video
-                  ? <a href={e.video} target="_blank" rel="noreferrer" onClick={ev => ev.stopPropagation()}
-                      style={{ color: P.violetaTinta, fontWeight: 700, textDecoration: 'none' }}>▶ su video</a>
-                  : <span style={{ color: '#c4c1cc' }}>sin video</span>}
-              </span>
-              <span style={{ flex: 'none', width: 62, textAlign: 'right', fontSize: '0.71rem', color: '#55505f', fontVariantNumeric: 'tabular-nums' }}>{fmt(e.fecha)}</span>
-              <button onClick={ev => { ev.stopPropagation(); editarEntregada(e); }} disabled={abriendo === e.id}
-                aria-label={`Editar «${e.titulo}»`}
-                style={{ flex: 'none', border: '1px solid #e9e3ee', background: '#fff', borderRadius: 8, padding: '4px 10px', fontSize: '0.7rem', fontWeight: 700, color: P.violetaTinta, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-                {abriendo === e.id ? 'Abriendo…' : 'Editar'}
-              </button>
-            </div>
+            <RenglonEntregado key={e.id} e={e} cuenta={cuenta} reuniones={reuniones}
+              abriendo={abriendo === e.id} onEditar={() => editarEntregada(e)}
+              marcada={sel.has(e.id)} onMarcar={() => marca(e.id)} verCasilla={sel.size > 0}
+              acciones={<MenuFila onEditar={() => editarEntregada(e)} onSeleccionar={() => marca(e.id)}
+                onEliminar={() => quitarEntregada(e)} />} />
           ))}
 
           {dentro !== 'entregada' && enCuenta.map((o: any) => (
             <Renglon key={o.id} o={o} abrir={abrir}
               marcada={sel.has(o.id)} onMarcar={() => marca(o.id)} verCasilla={sel.size > 0}
               meta={meta[o.id]} reuniones={reuniones}
-              acciones={<MenuFila onEditar={() => abrir(o.id)} onEliminar={() => quitar(o)} />} />
+              acciones={<MenuFila onEditar={() => abrir(o.id)} onSeleccionar={() => marca(o.id)} onEliminar={() => quitar(o)} />} />
           ))}
         </div>
       ) : (
@@ -933,6 +927,43 @@ function Renglon({ o, abrir, acciones, marcada, onMarcar, meta, reuniones, verCa
   );
 }
 
+/* El renglón de algo ENTREGADO. Las mismas columnas fijas que uno vivo
+   —reunión y módulo en su ancho, para que la lista no haga diente de sierra—,
+   con lo que importa de algo terminado: si fue sin costo, su video y cuándo se
+   entregó. La casilla asoma igual que en los vivos. */
+function RenglonEntregado({ e, cuenta, reuniones, abriendo, onEditar, marcada, onMarcar, verCasilla, acciones }: any) {
+  const [enFila, setEnFila] = useState(false);
+  const meta = e.booking_id ? { booking_id: e.booking_id } : null;
+  return (
+    <div onClick={onEditar}
+      title={e.orden_id ? 'Abrir la orden' : 'Completar lo que se hizo'}
+      onMouseEnter={() => setEnFila(true)} onMouseLeave={() => setEnFila(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 9, borderTop: '1px solid #f3f1f7',
+        minHeight: 44, background: marcada ? '#fdf7fa' : enFila ? '#fbfaff' : '#fff',
+        paddingRight: 10, cursor: 'pointer', opacity: abriendo ? .55 : 1,
+      }}>
+      <span style={{ width: 4, alignSelf: 'stretch', flex: 'none', borderRadius: '0 3px 3px 0', background: P.verde }} />
+      <Casilla marcada={marcada} onMarcar={onMarcar} visible={verCasilla || enFila} />
+      <span style={{ flex: 'none', width: 56, textAlign: 'center', fontSize: '0.55rem', fontWeight: 800, letterSpacing: '.04em', borderRadius: 5, padding: '2px 0', background: P.verdeAgua, color: P.verdeTinta }}>
+        LISTO
+      </span>
+      <span style={{ flex: 1, minWidth: 0, fontSize: '0.81rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.titulo}</span>
+      {e.cortesia && <span style={{ flex: 'none', borderRadius: 20, padding: '2px 9px', fontSize: '0.66rem', fontWeight: 700, background: P.verdeAgua, color: P.verdeTinta }}>sin costo</span>}
+      <Dato ancho={168} titulo={reunionLarga(meta, reuniones)} falta="+ reunión" tono="reunion">{reunionCorta(meta, reuniones, cuenta)}</Dato>
+      <Dato ancho={132} titulo={e.modulo || ''} falta="+ módulo" tono="modulo">{e.modulo || ''}</Dato>
+      <span style={{ flex: 'none', width: 78, textAlign: 'right', fontSize: '0.71rem' }}>
+        {e.video
+          ? <a href={e.video} target="_blank" rel="noreferrer" onClick={ev => ev.stopPropagation()}
+              style={{ color: P.violetaTinta, fontWeight: 700, textDecoration: 'none' }}>▶ su video</a>
+          : <span style={{ color: '#c4c1cc' }}>sin video</span>}
+      </span>
+      <span style={{ flex: 'none', width: 52, textAlign: 'right', fontSize: '0.71rem', color: '#55505f', fontVariantNumeric: 'tabular-nums' }}>{fmt(e.fecha)}</span>
+      {acciones}
+    </div>
+  );
+}
+
 /* LA BARRA DE LOTE. Ocupa el sitio de las pestañas mientras hay selección, y
    guarda tres cosas que SIEMPRE se corrigen en bloque y nunca de una en una:
    la fecha que se prometió en una junta, de qué reunión salió lo que se pidió
@@ -940,7 +971,11 @@ function Renglon({ o, abrir, acciones, marcada, onMarcar, meta, reuniones, verCa
    La prueba de que hacía falta está en los datos: de las 81 mejoras de Ruben's,
    64 ya traían su reunión —la guarda la minuta— pero solo 12 traían módulo.
    Nadie entra quince veces a escribir lo mismo. */
-function BarraLote({ n, ids, companyId, giro, onListo, onCancelar, flash }: any) {
+/* `modo="entregadas"`: la misma barra sobre lo ya entregado. Los ids son de
+   los renglones del cliente —casi todo lo entregado no tiene orden— y no va la
+   fecha: la prometida ya no dice nada de algo que se entregó. */
+function BarraLote({ n, ids, companyId, giro, onListo, onCancelar, flash, modo = 'ordenes' }: any) {
+  const entregadas = modo === 'entregadas';
   const [abierto, setAbierto] = useState('');     // 'fecha' | 'junta' | 'modulo' | 'cobro'
   const [juntas, setJuntas] = useState<any[]>([]);
   const [fecha, setFecha] = useState('');
@@ -972,11 +1007,13 @@ function BarraLote({ n, ids, companyId, giro, onListo, onCancelar, flash }: any)
     setGuardando(true);
     const j = await fetch('/api/crm/taller', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accion: 'lote', ids, [campo]: valor }),
+      body: JSON.stringify(entregadas
+        ? { accion: 'lote_entregadas', mejora_ids: ids, [campo]: valor }
+        : { accion: 'lote', ids, [campo]: valor }),
     }).then(r => r.json()).catch(() => null);
     setGuardando(false); setAbierto('');
     if (!j || j.error) { flash?.(j?.error || 'No se pudo aplicar'); return; }
-    flash?.(`${j.n} ${j.n === 1 ? 'orden actualizada' : 'órdenes actualizadas'}: ${dicho}`);
+    flash?.(`${j.n} ${entregadas ? (j.n === 1 ? 'entregada actualizada' : 'entregadas actualizadas') : (j.n === 1 ? 'orden actualizada' : 'órdenes actualizadas')}: ${dicho}`);
     onListo?.();
   }
 
@@ -1012,7 +1049,7 @@ function BarraLote({ n, ids, companyId, giro, onListo, onCancelar, flash }: any)
     }}>
       <b style={{ fontSize: '0.82rem', marginRight: 3 }}>{n} {n === 1 ? 'seleccionada' : 'seleccionadas'}</b>
 
-      <div style={{ position: 'relative' }}>
+      {!entregadas && <div style={{ position: 'relative' }}>
         <Boton k="fecha">Fecha de entrega</Boton>
         {abierto === 'fecha' && (
           <div style={pop}>
@@ -1029,7 +1066,7 @@ function BarraLote({ n, ids, companyId, giro, onListo, onCancelar, flash }: any)
             </div>
           </div>
         )}
-      </div>
+      </div>}
 
       <div style={{ position: 'relative' }}>
         <Boton k="junta">Reunión de origen</Boton>
@@ -1181,8 +1218,11 @@ function Dato({ children, falta, tono, titulo, ancho = 150 }: any) {
    Antes «Quitar» era un botón rojo permanente pegado a cada renglón: cinco
    botones destructivos en pantalla al mismo tiempo, cada uno más visible que
    la acción que de verdad se usa —abrir la orden—. Guardado detrás de los tres
-   puntos, lo destructivo deja de gritar y sigue estando a un clic. */
-function MenuFila({ onEditar, onEliminar }: any) {
+   puntos, lo destructivo deja de gritar y sigue estando a un clic.
+   «Seleccionar varios» marca esa fila y deja las casillas a la vista: la
+   casilla que asoma al pasar el ratón no la descubre quien no sabe que existe,
+   y el menú es el primer lugar donde se busca. */
+function MenuFila({ onEditar, onEliminar, onSeleccionar }: any) {
   const [abierto, setAbierto] = useState(false);
   const caja = useRef<HTMLDivElement>(null);
 
@@ -1218,6 +1258,12 @@ function MenuFila({ onEditar, onEliminar }: any) {
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f7f6fb'; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}
             onClick={() => { setAbierto(false); onEditar(); }}>Editar</button>
+          {onSeleccionar && (
+            <button role="menuitem" style={{ ...item, color: '#55505f' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f7f6fb'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}
+              onClick={() => { setAbierto(false); onSeleccionar(); }}>Seleccionar varios</button>
+          )}
           <button role="menuitem" style={{ ...item, color: P.rojoTinta }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = P.rojoAgua; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}

@@ -3,7 +3,8 @@
 // GET  ?id=…            → una orden con su bitácora, comentarios y revisiones
 // GET                   → todas las órdenes vivas + el equipo + lo que falta traer del CRM
 //                         + lo entregado de TODAS las cuentas (también las que ya no traen nada abierto)
-// POST {accion:…}       → crear | importar | expediente | revisar | lote | preguntar | responder
+// POST {accion:…}       → crear | importar | expediente | revisar | lote | lote_entregadas | preguntar | responder
+// DELETE {id} | {mejora_id} → archiva una orden, o algo ya entregado
 // PUT  {id, …}          → mover de etapa, poner fecha, asignar, completar datos
 //
 // La orden es la MISMA cosa que el renglón de `mejoras`, en dos vistas: allá es
@@ -175,7 +176,7 @@ export const GET: APIRoute = async ({ request, url }) => {
      CRM; el tope está para avisar si un día deja de ser poco. */
   const TOPE_ENTREGAS = 2000;
   let qe = supabase.from('mejoras')
-    .select('id, company_id, titulo, valor, cortesia, cobro, modulo, categoria, tipo, fecha_entrega, url')
+    .select('id, company_id, titulo, valor, cortesia, cobro, modulo, categoria, tipo, fecha_entrega, url, booking_id')
     .is('archived_at', null).eq('estado', 'entregada')
     .order('fecha_entrega', { ascending: false }).limit(TOPE_ENTREGAS);
   if (empresa) qe = qe.eq('company_id', empresa);
@@ -216,6 +217,8 @@ export const GET: APIRoute = async ({ request, url }) => {
         video: /^https?:\/\//i.test(String(m.url || '').trim()) ? String(m.url).trim() : null,
         folio: ordenDe.has(m.id) ? 'con orden' : null,
         orden_id: ordenDe.get(m.id) || null,
+        // De qué junta salió: el renglón entregado la enseña igual que uno vivo.
+        booking_id: m.booking_id || null,
       });
     }
     /* El nombre viaja con la cuenta: una cuenta sin órdenes vivas no tiene de
@@ -244,7 +247,11 @@ export const GET: APIRoute = async ({ request, url }) => {
   /* Solo el encabezado de las reuniones REFERIDAS: para pintar la pastilla
      hacen falta fecha y asunto, nada más. La lista completa de una cuenta se
      pide al abrir el selector, que es cuando de verdad se necesita. */
-  const bIds = Array.from(new Set(Object.values(meta).map((x: any) => x.booking_id).filter(Boolean)));
+  const bIds = Array.from(new Set([
+    ...Object.values(meta).map((x: any) => x.booking_id),
+    // Las de lo entregado también: su renglón pinta la misma pastilla.
+    ...Object.values(entregas).flat().map((e: any) => e.booking_id),
+  ].filter(Boolean)));
   const reuniones: Record<string, any> = {};
   if (bIds.length) {
     const { data: bk } = await supabase.from('bookings').select('id, fecha, asunto').in('id', bIds as string[]);
@@ -639,6 +646,62 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ ok: true, n: (antes || []).length });
   }
 
+  /* ── Varias ENTREGADAS a la vez ──
+     El mismo lote de arriba, para lo que ya se entregó. Va por el renglón del
+     cliente (`mejoras`) y no por la orden: casi todo lo entregado se cerró
+     antes del taller y no tiene orden que tocar. Si la tiene, también se
+     corrige ahí, para que la orden y el renglón no digan dos cosas.
+     Sin fecha: la prometida ya no significa nada en algo entregado, y la de
+     entrega es un hecho, no algo que se corrija en bloque. */
+  if (accion === 'lote_entregadas') {
+    const ids: string[] = Array.from(new Set((b?.mejora_ids || []).map(String).filter(Boolean))).slice(0, 200) as string[];
+    if (!ids.length) return json({ error: 'No hay nada seleccionado.' }, 400);
+
+    const ponModulo = 'modulo' in (b || {});
+    const ponJunta = 'booking_id' in (b || {});
+    const ponCobro = 'cobro' in (b || {});
+    if (!ponModulo && !ponJunta && !ponCobro) return json({ error: 'No hay nada que cambiar.' }, 400);
+
+    const modulo = typeof b?.modulo === 'string' && b.modulo.trim() ? b.modulo.trim().slice(0, 120) : null;
+    const booking = b?.booking_id || null;
+    const cobro = ['cortesia', 'pagada'].includes(b?.cobro) ? b.cobro : null;
+    if (ponCobro && b?.cobro && !cobro) return json({ error: 'El cobro solo puede ser cortesía o pagada.' }, 400);
+    if (modulo && !esModuloValido(modulo)) return json({ error: 'Ese módulo no está en el menú de SACS.' }, 400);
+
+    // Solo lo que de verdad está entregado y vivo: una selección vieja en
+    // pantalla no puede tocar algo que se reabrió o se archivó mientras tanto.
+    const { data: antes } = await supabase.from('mejoras').select('id')
+      .in('id', ids).eq('estado', 'entregada').is('archived_at', null);
+    const vale = (antes || []).map((x: any) => x.id);
+    if (!vale.length) return json({ error: 'Eso ya no está entre lo entregado.' }, 404);
+
+    const pm: any = { updated_at: new Date().toISOString() };
+    if (ponJunta) { pm.booking_id = booking; pm.origen = booking ? 'junta' : 'manual'; }
+    if (ponModulo) pm.modulo = modulo;
+    // `cortesia` se mueve con `cobro`: es la que lee el reporte de entregas.
+    if (ponCobro) { pm.cobro = cobro; pm.cortesia = cobro === 'cortesia'; }
+    const { error: eU } = await supabase.from('mejoras').update(pm).in('id', vale);
+    if (eU) return json({ error: eU.message }, 500);
+
+    // Las que tienen orden: el mismo dato del otro lado, y su bitácora.
+    if (ponModulo || ponCobro) {
+      const { data: lig } = await supabase.from('taller_orden_mejoras').select('orden_id').in('mejora_id', vale);
+      const oIds = Array.from(new Set((lig || []).map((x: any) => x.orden_id)));
+      if (oIds.length) {
+        const po: any = { updated_at: new Date().toISOString() };
+        if (ponModulo) po.modulo = modulo;
+        if (ponCobro) po.cobro = cobro;
+        await supabase.from('taller_ordenes').update(po).in('id', oIds);
+        const nota = [
+          ponModulo ? (modulo ? 'módulo → ' + modulo : 'se le quitó el módulo') : '',
+          ponCobro ? (cobro === 'cortesia' ? 'queda como cortesía' : cobro === 'pagada' ? 'queda como pagada' : 'se le quitó el cobro') : '',
+        ].filter(Boolean).join(' · ');
+        for (const oid of oIds) await apunta(oid as string, quien(user), null, null, 'En bloque (entregadas): ' + nota);
+      }
+    }
+    return json({ ok: true, n: vale.length });
+  }
+
   /* ── El resumen para desarrollo ──
      Lo que se escribe en el paso 1 se escribe para que quede constancia de lo
      acordado con el cliente, y sale largo: en OT-0013 son 1,900 caracteres.
@@ -803,6 +866,29 @@ export const DELETE: APIRoute = async ({ request }) => {
   const user = await getCurrentUser(request);
   if (!user) return json({ error: 'No autenticado' }, 401);
   const b = await request.json().catch(() => ({} as any));
+
+  /* ── Quitar algo ENTREGADO ──
+     Se llama por el renglón del cliente, porque lo entregado de antes del
+     taller no tiene orden. Se archiva —deja de salir aquí, en su ficha y en su
+     reporte de entregas— pero no se borra: se le entregó a un cliente.
+     Su orden se va con él solo si era suya nada más; una orden que cerró el
+     mismo bug en tres cuentas sigue siendo historia de las otras dos. */
+  if (b?.mejora_id) {
+    const mejora_id = String(b.mejora_id);
+    const ahora = new Date().toISOString();
+    const { error: eM } = await supabase.from('mejoras').update({ archived_at: ahora, updated_at: ahora }).eq('id', mejora_id);
+    if (eM) return json({ error: eM.message }, 500);
+    const { data: lig } = await supabase.from('taller_orden_mejoras').select('orden_id').eq('mejora_id', mejora_id);
+    for (const l of lig || []) {
+      const { count } = await supabase.from('taller_orden_mejoras').select('mejora_id', { count: 'exact', head: true }).eq('orden_id', l.orden_id);
+      if ((count || 0) <= 1) {
+        await supabase.from('taller_ordenes').update({ archived_at: ahora }).eq('id', l.orden_id).then(() => {}, () => {});
+        await apunta(l.orden_id, quien(user), null, null, 'Se quitó de lo entregado');
+      }
+    }
+    return json({ ok: true });
+  }
+
   const id = String(b?.id || '');
   if (!id) return json({ error: 'Falta la orden.' }, 400);
   const { error } = await supabase.from('taller_ordenes').update({ archived_at: new Date().toISOString() }).eq('id', id);

@@ -1133,3 +1133,8 @@ Logo redibujado en vector (fiel al PNG del dueño): /opt/sacs/videos/amby-logo/l
 Lugares: menú lateral (CrmDashboard.tsx ~796), menú plegado (el símbolo), login (login.astro:35 y :75, versión en blanco), PWA (public/crm-manifest.json «SACS CRM» + crm-icon-*.png), título de pestaña (admin/crm.astro «CRM — Sacs»), favicon del CRM.
 Pregunta abierta: documentos/correos al cliente (dicen «Sacscloud») y el video («Sacs · CRM by Andy Araujo») — ¿cambian a Amby?
 > 23-sep: «que se quede la estrella como está actualmente y solo cambie el AMBY, en la tipografía de Sacs» → prototipo v2 https://code.sacscloud.com/shots/05f1de59d17afb77.png (chispa actual + «Amby» en Clash Display 700 + chip CRM + by Andy Araujo; ícono de la app igual; opciones Amby / AMBY).
+
+## 27-sep-2026 · ficha del cliente → Reuniones: poder ELIMINAR una reunión (EN COLA — entra al terminar el menú ··· de Entregado)
+> «aqui tambien te debe de permitir eliminar por que me equivoque en subir las fechas»
+
+Captura: ficha de Live Shows Merchandising, pestaña Reuniones. Serie «Reunión Semanal Mejoras» sesiones 1–4 de 4 (26-sep, 30-sep, 03-oct, 07-oct), las tres futuras en «Agendada» con «Cancelar reunión». Hoy solo existe cancelar; falta eliminar la que se capturó con fecha equivocada. Revisar antes: qué avisa «Cancelar» al cliente (no mandarle un aviso por un error de captura), qué pasa con el evento de Google/Meet, y si una sesión de serie se borra sola o toda la serie.
