@@ -16,7 +16,7 @@ import KpiCard, { SIN_FECHA } from '../ui/KpiCard';
 import { confirmar } from '../../../../lib/ui/confirmar';
 import { P } from '../../../../lib/crm/paleta';
 import Chispas, { Sello, CSS_CHISPAS, CSS_SELLO } from '../ui/Chispas';
-import { modulosParaGiro } from '../../../../lib/crm/modulos-sacs';
+import { modulosParaGiro, MENU_PLANOS } from '../../../../lib/crm/modulos-sacs';
 /* Los dos documentos que ya existen en Consultoría, tal cual. NO son una copia:
    se importan los mismos componentes, así que el que se manda desde el taller
    es el mismo documento —misma foto, mismo folio, mismo correo— que el que se
@@ -515,6 +515,8 @@ function Lista({ ordenes, entregas = {}, yo, equipo, abrir, filtro, setFiltro, o
      ya no estás viendo. */
   const [sel, setSel] = useState<Set<string>>(() => new Set());
   const limpiaSel = () => setSel(new Set());
+  // El renglón entregado al que se le está abriendo expediente: un solo clic.
+  const [abriendo, setAbriendo] = useState('');
   const marca = (id: string) => setSel(p => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   const q = filtro.trim().toLowerCase();
@@ -531,20 +533,46 @@ function Lista({ ordenes, entregas = {}, yo, equipo, abrir, filtro, setFiltro, o
 
   /* Una cuenta es un PROYECTO. Antes eran dieciocho folios sueltos agrupados
      por nombre; lo que se trabaja no es una orden, es «lo de Rubens». */
-  const resumir = (l: string, filas: any[]) => ({
-    l, filas,
-    atraso: Math.max(0, ...filas.map((o: any) => { const d = diasHasta(o.fecha_prometida); return d != null && d < 0 ? -d : 0; })),
-    sinFecha: filas.filter((o: any) => !o.fecha_prometida).length,
-    sinDueno: filas.filter((o: any) => !o.asignado_id).length,
-    prox: filas.map((o: any) => o.fecha_prometida).filter(Boolean).sort()[0] || null,
-    tramos: TRAMOS.map(t => ({ ...t, n: filas.filter(t.f).length })).filter(t => t.n > 0),
-    val: cuentas[filas[0]?.company_id] || null,
-  });
+  /* `id` va aparte de `filas`: una cuenta con todo entregado no tiene filas
+     de dónde sacarlo, y sin él no hay reporte, ni orden nueva, ni historial. */
+  const resumir = (l: string, filas: any[], id?: string | null) => {
+    const cid = id || filas[0]?.company_id || null;
+    return {
+      l, filas, id: cid,
+      atraso: Math.max(0, ...filas.map((o: any) => { const d = diasHasta(o.fecha_prometida); return d != null && d < 0 ? -d : 0; })),
+      sinFecha: filas.filter((o: any) => !o.fecha_prometida).length,
+      sinDueno: filas.filter((o: any) => !o.asignado_id).length,
+      prox: filas.map((o: any) => o.fecha_prometida).filter(Boolean).sort()[0] || null,
+      tramos: TRAMOS.map(t => ({ ...t, n: filas.filter(t.f).length })).filter(t => t.n > 0),
+      val: (cid && cuentas[cid]) || null,
+    };
+  };
 
-  const proyectos = Object.entries(lista.reduce((a: any, o: any) => {
+  /* Qué id tiene cada nombre de cuenta. La lista agrupa por nombre —así se
+     lee—, y una cuenta sin órdenes vivas solo existe en `cuentas`. */
+  const idDe: Record<string, string> = {};
+  for (const [cid, c] of Object.entries(cuentas) as [string, any][]) if (c?.nombre) idDe[c.nombre] = cid;
+
+  const vivos = Object.entries(lista.reduce((a: any, o: any) => {
     const k = cuentaDe(o); (a[k] = a[k] || []).push(o); return a;
   }, {})).map(([l, filas]: any) => resumir(l, filas))
     .sort((a, b) => b.atraso - a.atraso || b.sinFecha - a.sinFecha || b.filas.length - a.filas.length);
+
+  /* LAS CUENTAS QUE YA NO TRAEN NADA ABIERTO. Antes el taller se armaba solo
+     con órdenes vivas: al aprobarle a Live Shows su única orden, la cuenta
+     desapareció —y con ella su pestaña Entregado—, y lo que se le hizo antes
+     del taller no se podía abrir para completarlo. Van al final y solo en la
+     vista de todo: «por arrancar» o «vencidos» son preguntas sobre trabajo
+     abierto, y una cuenta al día no es respuesta a ninguna. */
+  const conVivas = new Set(vivos.map(p => p.l));
+  const alDia = vista === 'todas' && !afin
+    ? Object.entries(entregas as Record<string, any[]>)
+        .map(([cid, filas]) => ({ cid, l: cuentas[cid]?.nombre as string, n: (filas || []).length }))
+        .filter(x => x.l && x.n > 0 && !conVivas.has(x.l) && (!q || x.l.toLowerCase().includes(q)))
+        .sort((a, b) => a.l.localeCompare(b.l, 'es'))
+        .map(x => resumir(x.l, [], x.cid))
+    : [];
+  const proyectos = [...vivos, ...alDia];
 
   /* Al abrir una cuenta se ven TODAS sus gestiones, no solo las del momento
      que esté elegido arriba: adentro el que separa es el filtro de etapas, y
@@ -559,12 +587,26 @@ function Lista({ ordenes, entregas = {}, yo, equipo, abrir, filtro, setFiltro, o
      taller existiera o desde Consultoría, y nunca hubo una orden que enseñar.
      Las órdenes que SÍ se entregaron por aquí ya cerraron su renglón, así que
      aparecen una sola vez. */
-  const idCuenta = filasCuenta[0]?.company_id || null;
+  const idCuenta = filasCuenta[0]?.company_id || (cuenta ? idDe[cuenta] : null) || null;
   const entregadasCuenta: any[] = idCuenta
     ? (entregas[idCuenta] || []).filter((e: any) =>
         !q || (String(e.titulo || '') + ' ' + cuenta).toLowerCase().includes(q))
     : [];
-  const abierto = filasCuenta.length ? resumir(cuenta, filasCuenta) : null;
+  // Abierta aunque no traiga nada vivo: su historial también es el proyecto.
+  const abierto = filasCuenta.length || (idCuenta && (entregas[idCuenta] || []).length)
+    ? resumir(cuenta, filasCuenta, idCuenta) : null;
+
+  /* EDITAR LO ENTREGADO. Si ya tiene orden, se abre esa; si se cerró antes
+     del taller, se le abre un expediente —ya entregado, sin revisión ni
+     avisos— para poder escribir qué pasaba, qué se hizo y su video. */
+  async function editarEntregada(e: any) {
+    if (e.orden_id) { abrir(e.orden_id); return; }
+    if (abriendo) return;
+    setAbriendo(e.id);
+    const j = await api({ accion: 'expediente', mejora_id: e.id }, 'POST');
+    setAbriendo('');
+    if (j?.orden_id) abrir(j.orden_id);
+  }
   const enCuenta = !abierto ? []
     : dentro === 'entregada' ? entregadasCuenta
     : dentro === 'todas' ? abierto.filas
@@ -632,7 +674,7 @@ function Lista({ ordenes, entregas = {}, yo, equipo, abrir, filtro, setFiltro, o
             estando dentro de Ruben's es preguntar algo que la pantalla ya sabe
             —y es por donde se cuelan las órdenes en la cuenta equivocada—. */}
         <button style={{ ...S.btn, padding: '8px 14px', fontSize: '0.79rem', marginLeft: 'auto' }}
-          onClick={() => onNueva(abierto ? abierto.filas[0]?.company_id : undefined)}>
+          onClick={() => onNueva(abierto ? abierto.id : undefined)}>
           + Nueva orden{abierto ? ` para ${abierto.l}` : ''}
         </button>
       </div>
@@ -673,7 +715,8 @@ function Lista({ ordenes, entregas = {}, yo, equipo, abrir, filtro, setFiltro, o
               </span>
             )}
             <span style={{ fontSize: '0.75rem', color: abierto.atraso ? P.rojoTinta : '#8d8a97', fontWeight: abierto.atraso ? 700 : 400 }}>
-              {abierto.atraso ? `${abierto.atraso} días tarde` : abierto.prox ? `la próxima, el ${fmt(abierto.prox)}` : 'sin fecha comprometida'}
+              {abierto.atraso ? `${abierto.atraso} días tarde` : abierto.prox ? `la próxima, el ${fmt(abierto.prox)}`
+                : abierto.filas.length ? 'sin fecha comprometida' : 'nada en curso'}
             </span>
             {/* Los dos documentos de la cuenta, a la derecha del todo: se
                 mandan al terminar de mirar el proyecto, no antes. */}
@@ -684,10 +727,10 @@ function Lista({ ordenes, entregas = {}, yo, equipo, abrir, filtro, setFiltro, o
           </div>
 
           {reporte === 'entregas' && (
-            <ReporteEntregas companyId={abierto.filas[0]?.company_id} cliente={abierto.l} onCerrar={() => setReporte('')} />
+            <ReporteEntregas companyId={abierto.id} cliente={abierto.l} onCerrar={() => setReporte('')} />
           )}
           {reporte === 'curso' && (
-            <ReporteCurso companyId={abierto.filas[0]?.company_id} cliente={abierto.l} onCerrar={() => setReporte('')} />
+            <ReporteCurso companyId={abierto.id} cliente={abierto.l} onCerrar={() => setReporte('')} />
           )}
 
           {/* O las pestañas, o la barra de lote: nunca las dos. La barra cae
@@ -696,7 +739,7 @@ function Lista({ ordenes, entregas = {}, yo, equipo, abrir, filtro, setFiltro, o
               selección no se puede cambiar de pestaña, y está bien: lo que se
               va a aplicar es a lo que estás viendo. */}
           {sel.size > 0 ? (
-            <BarraLote n={sel.size} ids={[...sel]} companyId={abierto.filas[0]?.company_id}
+            <BarraLote n={sel.size} ids={[...sel]} companyId={abierto.id}
               giro={abierto.val?.giro} onListo={() => { limpiaSel(); recargar?.(); }}
               onCancelar={limpiaSel} flash={flash} />
           ) : (
@@ -744,12 +787,20 @@ function Lista({ ordenes, entregas = {}, yo, equipo, abrir, filtro, setFiltro, o
             </div>
           )}
           {/* Lo entregado se pinta distinto: no es trabajo, es historial. Sin
-              casilla ni menú —no hay nada que cambiarle— y con su video, que
-              es lo que el cliente ya tiene en la mano. */}
+              casilla —no entra a los cambios en bloque— y con su video, que es
+              lo que el cliente ya tiene en la mano.
+              SÍ se edita: casi todo se cerró antes de que el taller existiera
+              y quedó sin «qué pasaba», sin «qué se hizo» y sin video. El
+              renglón entero abre su orden, igual que uno vivo. */}
           {dentro === 'entregada' && enCuenta.map((e: any) => (
-            <div key={e.id} style={{
+            <div key={e.id} onClick={() => editarEntregada(e)}
+              title={e.orden_id ? 'Abrir la orden' : 'Completar lo que se hizo'}
+              onMouseEnter={ev => { (ev.currentTarget as HTMLElement).style.background = '#fbfaff'; }}
+              onMouseLeave={ev => { (ev.currentTarget as HTMLElement).style.background = '#fff'; }}
+              style={{
               display: 'flex', alignItems: 'center', gap: 9, borderTop: '1px solid #f3f1f7',
-              minHeight: 44, background: '#fff', paddingRight: 12,
+              minHeight: 44, background: '#fff', paddingRight: 12, cursor: 'pointer',
+              opacity: abriendo === e.id ? .55 : 1,
             }}>
               <span style={{ width: 4, alignSelf: 'stretch', flex: 'none', borderRadius: '0 3px 3px 0', background: P.verde }} />
               <span style={{ flex: 'none', width: 56, textAlign: 'center', fontSize: '0.55rem', fontWeight: 800, letterSpacing: '.04em', borderRadius: 5, padding: '2px 0', background: P.verdeAgua, color: P.verdeTinta, marginLeft: 9 }}>
@@ -765,7 +816,11 @@ function Lista({ ordenes, entregas = {}, yo, equipo, abrir, filtro, setFiltro, o
                   : <span style={{ color: '#c4c1cc' }}>sin video</span>}
               </span>
               <span style={{ flex: 'none', width: 62, textAlign: 'right', fontSize: '0.71rem', color: '#55505f', fontVariantNumeric: 'tabular-nums' }}>{fmt(e.fecha)}</span>
-              <span style={{ flex: 'none', width: 22 }} />
+              <button onClick={ev => { ev.stopPropagation(); editarEntregada(e); }} disabled={abriendo === e.id}
+                aria-label={`Editar «${e.titulo}»`}
+                style={{ flex: 'none', border: '1px solid #e9e3ee', background: '#fff', borderRadius: 8, padding: '4px 10px', fontSize: '0.7rem', fontWeight: 700, color: P.violetaTinta, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                {abriendo === e.id ? 'Abriendo…' : 'Editar'}
+              </button>
             </div>
           ))}
 
@@ -778,8 +833,13 @@ function Lista({ ordenes, entregas = {}, yo, equipo, abrir, filtro, setFiltro, o
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(290px,1fr))', gap: 12 }}>
-          {proyectos.map((p: any) => (
-            <div key={p.l} onClick={() => { setCuenta(p.l); limpiaSel(); }}
+          {proyectos.map((p: any) => {
+            /* Una cuenta sin nada abierto entra directo a lo entregado: en
+               «Todas» no habría nada que ver, y lo que se viene a hacer aquí es
+               completar su historial. */
+            const nEnt = p.filas.length ? 0 : (entregas[p.id] || []).length;
+            return (
+            <div key={p.l} onClick={() => { setCuenta(p.l); setDentro(p.filas.length ? 'todas' : 'entregada'); limpiaSel(); }}
               style={{ ...S.caja, cursor: 'pointer', transition: 'box-shadow .12s' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 3px 14px rgba(16,24,40,.08)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}>
@@ -798,16 +858,22 @@ function Lista({ ordenes, entregas = {}, yo, equipo, abrir, filtro, setFiltro, o
                 </span>
               </div>
               {/* La barra reparte las órdenes por etapa. No es adorno: dice si el
-                  proyecto está arrancando o ya en marcha sin leer un número. */}
+                  proyecto está arrancando o ya en marcha sin leer un número.
+                  Sin nada abierto va entera en verde: todo lo que hay, está. */}
               <div style={{ display: 'flex', height: 6, borderRadius: 99, overflow: 'hidden', background: '#f2f1f6', margin: '11px 0 7px', gap: 2 }}>
-                {p.tramos.map((t: any) => <span key={t.l} style={{ flex: t.n, background: t.c }} />)}
+                {p.filas.length
+                  ? p.tramos.map((t: any) => <span key={t.l} style={{ flex: t.n, background: t.c }} />)
+                  : <span style={{ flex: 1, background: '#4FBF95' }} />}
               </div>
               <div style={{ fontSize: '0.71rem', color: '#8d8a97' }}>
-                {p.tramos.map((t: any) => `${t.n} ${t.l}`).join(' · ')}
+                {p.filas.length
+                  ? p.tramos.map((t: any) => `${t.n} ${t.l}`).join(' · ')
+                  : `nada en curso · ${nEnt} ${nEnt === 1 ? 'entregada' : 'entregadas'}`}
                 {p.sinDueno ? ` · ${p.sinDueno} sin dueño` : ''}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -1167,10 +1233,20 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
   const [d, setD] = useState<any>(null);
   const [edit, setEdit] = useState<any>({});
   const [guardando, setGuardando] = useState(false);
+  /* Completar una ENTREGADA. `null` = todavía no se decide: al abrirla por
+     primera vez, la que no dice nada de lo que se hizo —casi todas las de
+     antes del taller— entra ya en edición, porque a eso se viene. Después de
+     guardar se queda abierta: un expediente se llena en varias pasadas. */
+  const [completar, setCompletar] = useState<boolean | null>(null);
 
   const traer = useCallback(async () => {
     const j = await fetch('/api/crm/taller?id=' + id).then(r => r.json()).catch(() => null);
-    if (j && !j.error) { setD(j); setEdit({}); }
+    if (j && !j.error) {
+      setD(j); setEdit({});
+      const x = j.orden || {};
+      setCompletar(prev => prev ?? (x.etapa === 'entregada'
+        && !x.problema && !x.esperado && !x.criterios && !x.video_url && !x.verificacion));
+    }
   }, [id]);
   useEffect(() => { traer(); }, [traer]);
 
@@ -1217,6 +1293,8 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
   };
   const paso = PASO_DE[o.etapa] || 1;
   const cerrada = o.etapa === 'entregada';
+  // En edición, los pasos 1 y 2 doblados repetirían lo que se está escribiendo.
+  const completando = cerrada && !!completar;
 
   // Las llaves de cada paso, dichas ANTES de intentarlo y no como un error
   // después. Son los mismos candados que el API ya exige.
@@ -1377,7 +1455,7 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
                 </span>
               </div>
             </div>
-          ) : (
+          ) : completando ? null : (
             <Doblado n={1} titulo="Lo que se necesita" de="lo escribiste tú">
               <Lectura k="problema" l="Qué pasa hoy" />
               <Lectura k="esperado" l="Qué debería pasar" />
@@ -1512,7 +1590,7 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
                 </div>
               )}
             </div>
-          ) : (
+          ) : completando ? null : (
             <Doblado n={2} titulo="El compromiso y la entrega" de={paso < 2 ? 'cuando la mandes a desarrollo' : 'lo llenó desarrollo'}>
               <div style={{ fontSize: '0.79rem', color: '#3f3c4a', lineHeight: 1.6 }}>
                 {o.fecha_prometida ? <>Prometida para el <b>{fmt(o.fecha_prometida)}</b></> : 'Sin fecha todavía'}
@@ -1536,10 +1614,28 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
             <div style={{ ...S.caja, borderColor: cerrada ? '#ececec' : P.violetaBorde, boxShadow: cerrada ? 'none' : '0 2px 12px rgba(155,140,250,.09)' }}>
               <span style={{ ...S.lbl, color: cerrada ? P.verdeTinta : P.violetaTinta }}>3 · Tu revisión</span>
               {cerrada ? (
-                <div style={{ fontSize: '0.8rem', color: '#3f3c4a', lineHeight: 1.6, marginTop: 6 }}>
-                  Entregada el <b>{fmt(o.entregada_at)}</b>. Ya aparece en Consultoría del cliente, en «Ya entregado»,
-                  con su fecha y su video.
-                </div>
+                <>
+                  <div style={{ fontSize: '0.8rem', color: '#3f3c4a', lineHeight: 1.6, marginTop: 6, display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
+                    <span style={{ flex: 1, minWidth: 240 }}>
+                      Entregada el <b>{fmt(o.entregada_at)}</b>. Ya aparece en Consultoría del cliente, en «Ya entregado»,
+                      con su fecha y su video.
+                    </span>
+                    {!completando && (
+                      <button style={S.btnSec} onClick={() => setCompletar(true)}>Editar lo que se hizo</button>
+                    )}
+                  </div>
+                  {completando && (
+                    <Expediente v={v} set={set} equipo={equipo} sucio={sucio} guardando={guardando}
+                      onGuardar={() => guarda().then(ok => ok && flash('Guardado en el expediente'))}
+                      /* «Listo» guarda lo que haya antes de cerrar: cerrar la
+                         edición con cambios sin guardar es perderlos a la
+                         siguiente recarga, sin aviso. */
+                      onListo={async () => {
+                        if (sucio) { const ok = await guarda(); if (!ok) return; flash('Guardado en el expediente'); }
+                        setCompletar(false);
+                      }} />
+                  )}
+                </>
               ) : (
                 <RevisionPaso o={o} d={d} api={api} traer={traer} flash={flash} quedan={quedan} />
               )}
@@ -1572,6 +1668,76 @@ function PanelOrden({ id, equipo, onCerrar, api, flash }: any) {
             )}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════ El expediente de una entregada ═══════════════════
+   Lo mismo que se llena en los pasos 1 y 2, pero de algo que YA pasó: casi
+   todo lo entregado se cerró antes de que el taller existiera, y quedó con
+   título y fecha nada más. Aquí se escribe qué pasaba, qué se hizo, con qué se
+   dio por buena y el video.
+   Sin botones de etapa: no hay a dónde mandarla. El video, el módulo y el
+   cobro viajan al renglón del cliente al guardar —el API lo hace—, así que la
+   pestaña Entregado y el reporte de entregas los ven sin copiar nada. */
+function Expediente({ v, set, equipo, sucio, guardando, onGuardar, onListo }: any) {
+  const area = (k: string, l: string, ph = '—', rows = 3) => (
+    <div style={{ marginTop: 10 }}>
+      <span style={S.lbl}>{l}</span>
+      <textarea value={v(k)} onChange={e => set(k, e.target.value)} rows={rows} placeholder={ph}
+        style={{ ...S.input, resize: 'vertical', lineHeight: 1.5 }} />
+    </div>
+  );
+  // Un módulo viejo escrito a mano —«Dashboard»— no está en el menú; se deja
+  // como opción para que el selector no lo pinte vacío y parezca que no hay.
+  const modulo = String(v('modulo') || '');
+  return (
+    <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f2f1f6' }}>
+      <span style={{ ...S.lbl, color: P.violetaTinta }}>Lo que se hizo</span>
+      <div style={{ fontSize: '0.71rem', color: '#8d8a97', lineHeight: 1.45 }}>
+        Para lo que se entregó antes de que existiera el taller. Nada de esto cambia la fecha de entrega ni le llega como aviso al cliente.
+      </div>
+      {area('problema', 'Qué pasaba')}
+      {area('esperado', 'Qué se hizo · cómo quedó')}
+      {area('criterios', 'Con qué se dio por buena')}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, marginTop: 10 }}>
+        <div><span style={S.lbl}>Módulo</span>
+          <select value={modulo} onChange={e => set('modulo', e.target.value)} style={S.input}>
+            <option value="">— sin definir —</option>
+            {modulo && !MENU_PLANOS.includes(modulo) && <option value={modulo}>{modulo}</option>}
+            {modulosParaGiro(null).map((fa: any) => (
+              <optgroup key={fa.familia} label={fa.familia}>
+                {fa.modulos.map((m: string) => <option key={m} value={m}>{m}</option>)}
+              </optgroup>
+            ))}
+          </select></div>
+        <div><span style={S.lbl}>Quién lo hizo</span>
+          <select value={v('asignado_id') || ''} onChange={e => set('asignado_id', e.target.value)} style={S.input}>
+            <option value="">— sin asignar —</option>
+            {equipo.map((q: any) => <option key={q.id} value={q.id}>{q.nombre}</option>)}
+          </select></div>
+        <div><span style={S.lbl}>Cobro</span>
+          <select value={v('cobro') || ''} onChange={e => set('cobro', e.target.value)} style={S.input}>
+            <option value="">— sin definir —</option><option value="cortesia">Cortesía</option><option value="pagada">Pagada</option>
+          </select></div>
+      </div>
+      <div style={{ marginTop: 10 }}>
+        <span style={S.lbl}>Video de lo que se entregó</span>
+        <input value={v('video_url')} onChange={e => set('video_url', e.target.value)}
+          placeholder="https://… la pantalla grabada mostrando cómo quedó" style={S.input} />
+        {v('video_url') && <div style={{ marginTop: 8, maxWidth: 520 }}><Video url={v('video_url')} /></div>}
+      </div>
+      {area('verificacion', '…o cómo se verifica, si no hay video', 'Entra a Reportes → Cortesías y revisa que el total coincida con el precio.', 2)}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 13, flexWrap: 'wrap' }}>
+        <button style={{ ...S.btn, padding: '8px 15px', fontSize: '0.8rem', opacity: !sucio || guardando ? .5 : 1, cursor: sucio ? 'pointer' : 'default' }}
+          disabled={!sucio || guardando} onClick={onGuardar}>
+          {guardando ? 'Guardando…' : 'Guardar'}
+        </button>
+        <button style={S.btnG} disabled={guardando} onClick={onListo}>Listo</button>
+        <span style={{ fontSize: '0.71rem', color: '#8d8a97' }}>
+          {sucio ? 'Hay cambios sin guardar.' : 'El video, el módulo y el cobro también se ven en la ficha del cliente.'}
+        </span>
       </div>
     </div>
   );

@@ -2,7 +2,8 @@
 //
 // GET  ?id=…            → una orden con su bitácora, comentarios y revisiones
 // GET                   → todas las órdenes vivas + el equipo + lo que falta traer del CRM
-// POST {accion:…}       → crear | importar | revisar | lote | preguntar | responder
+//                         + lo entregado de TODAS las cuentas (también las que ya no traen nada abierto)
+// POST {accion:…}       → crear | importar | expediente | revisar | lote | preguntar | responder
 // PUT  {id, …}          → mover de etapa, poner fecha, asignar, completar datos
 //
 // La orden es la MISMA cosa que el renglón de `mejoras`, en dos vistas: allá es
@@ -157,30 +158,54 @@ export const GET: APIRoute = async ({ request, url }) => {
      el cliente de $200 mil y para el de cortesía.
      Va en el MISMO viaje que la lista —tres consultas agregadas— y no en una
      por cuenta al abrirla: con veinte cuentas serían veinte viajes. */
-  const ids = Array.from(new Set((data || []).map((o: any) => o.company_id).filter(Boolean)));
-  const cuentas: Record<string, any> = {};
   /* LO QUE YA SE LE ENTREGÓ, renglón por renglón y no solo el número.
      El encabezado decía «12 ya entregadas» y la pestaña Entregado salía en
      cero: contaban cosas distintas. Lo entregado vive en el renglón del
      cliente —`mejoras` en estado entregada—, y la mayoría se cerró antes de
      que el taller existiera o desde Consultoría, así que nunca hubo una orden
      con etapa «entregada» que enseñar. Se traen los renglones, no el conteo:
-     es la misma consulta que ya se hacía para contar. */
+     es la misma consulta que ya se hacía para contar.
+
+     Y se traen de TODAS las cuentas, no solo de las que tienen órdenes vivas.
+     Antes esta consulta iba filtrada por las cuentas de la lista, y la lista
+     solo tenía las que traían algo abierto: una cuenta con todo entregado
+     —Live Shows, al aprobarle su única orden (OT-0061)— desaparecía del
+     taller junto con su historial, y no había forma de abrirla para completar
+     lo que se le hizo. Eran cinco cuentas así. Son 68 renglones en todo el
+     CRM; el tope está para avisar si un día deja de ser poco. */
+  const TOPE_ENTREGAS = 2000;
+  let qe = supabase.from('mejoras')
+    .select('id, company_id, titulo, valor, cortesia, cobro, modulo, categoria, tipo, fecha_entrega, url')
+    .is('archived_at', null).eq('estado', 'entregada')
+    .order('fecha_entrega', { ascending: false }).limit(TOPE_ENTREGAS);
+  if (empresa) qe = qe.eq('company_id', empresa);
+  const { data: entregadasTodas } = await qe;
+  if ((entregadasTodas || []).length >= TOPE_ENTREGAS) {
+    console.warn(`[taller] lo entregado llegó al tope de ${TOPE_ENTREGAS}: puede faltar historial`);
+  }
+  /* Qué orden tiene cada renglón entregado. Con ella, «editar» abre la orden
+     que ya existe en vez de crear un segundo expediente de lo mismo. */
+  const ordenDe = new Map((ligadas || []).map((l: any) => [l.mejora_id, l.orden_id]));
+
+  /* Las cuentas del taller: las que tienen algo abierto Y las que tienen
+     historial. La capacitación no hace a una cuenta «del taller» —la da el
+     consultor—, pero si la cuenta ya está, sus videos sí salen en su pestaña. */
+  const ids = Array.from(new Set([
+    ...(data || []).map((o: any) => o.company_id),
+    ...(entregadasTodas || []).filter((m: any) => m.categoria !== 'capacitacion').map((m: any) => m.company_id),
+  ].filter(Boolean)));
+  const cuentas: Record<string, any> = {};
   const entregas: Record<string, any[]> = {};
   if (ids.length) {
-    const [subs, entregadas, cos] = await Promise.all([
+    const [subs, cos] = await Promise.all([
       supabase.from('subscriptions').select('company_id, arr, estado').in('company_id', ids),
-      supabase.from('mejoras')
-        .select('id, company_id, titulo, valor, cortesia, cobro, modulo, categoria, tipo, fecha_entrega, url')
-        .in('company_id', ids).is('archived_at', null).eq('estado', 'entregada')
-        .order('fecha_entrega', { ascending: false }).limit(800),
-      supabase.from('companies').select('id, sacs_account, giro').in('id', ids),
+      supabase.from('companies').select('id, nombre, nombre_comercial, sacs_account, giro').in('id', ids),
     ]);
-    for (const id of ids) cuentas[id as string] = { arr: 0, entregadas: 0, sacs: null, giro: null };
+    for (const id of ids) cuentas[id as string] = { arr: 0, entregadas: 0, sacs: null, giro: null, nombre: null };
     for (const x of subs.data || []) {
       if (x.estado === 'activa' && cuentas[x.company_id]) cuentas[x.company_id].arr += Number(x.arr || 0);
     }
-    for (const m of entregadas.data || []) {
+    for (const m of entregadasTodas || []) {
       if (!cuentas[m.company_id]) continue;
       cuentas[m.company_id].entregadas++;
       (entregas[m.company_id] = entregas[m.company_id] || []).push({
@@ -189,10 +214,17 @@ export const GET: APIRoute = async ({ request, url }) => {
         cortesia: !!m.cortesia || m.cobro === 'cortesia',
         // Solo http(s): la liga se pinta como botón y se abre en otra pestaña.
         video: /^https?:\/\//i.test(String(m.url || '').trim()) ? String(m.url).trim() : null,
-        folio: (ligadas || []).find((l: any) => l.mejora_id === m.id) ? 'con orden' : null,
+        folio: ordenDe.has(m.id) ? 'con orden' : null,
+        orden_id: ordenDe.get(m.id) || null,
       });
     }
-    for (const c of cos.data || []) if (cuentas[c.id]) { cuentas[c.id].sacs = c.sacs_account; cuentas[c.id].giro = c.giro; }
+    /* El nombre viaja con la cuenta: una cuenta sin órdenes vivas no tiene de
+       dónde sacarlo en la pantalla, y sin él no hay tarjeta que pintar. Es el
+       mismo criterio que `cuentaDe` usa para las órdenes. */
+    for (const c of cos.data || []) if (cuentas[c.id]) {
+      cuentas[c.id].sacs = c.sacs_account; cuentas[c.id].giro = c.giro;
+      cuentas[c.id].nombre = c.nombre_comercial || c.nombre || null;
+    }
   }
 
   /* DE QUÉ REUNIÓN SALIÓ Y EN QUÉ MÓDULO SE TRABAJA.
@@ -292,6 +324,68 @@ export const POST: APIRoute = async ({ request }) => {
       creadas.push(orden);
     }
     return json({ ok: true, creadas: creadas.length, ordenes: creadas }, 201);
+  }
+
+  /* ── El expediente de algo que se entregó antes del taller ──
+     La mayoría de lo entregado se cerró cuando el taller no existía, o desde
+     Consultoría: es un renglón del cliente con título y fecha, sin «qué pasaba»,
+     sin «con qué se dio por buena» y muchas veces sin video. Para completarlo
+     hace falta la orden, que es donde viven esos campos.
+     Nace YA ENTREGADA: no pasa por recibida ni por revisión —no hay nada que
+     revisar, el cliente ya lo tiene— y no manda avisos. Tampoco lleva fecha
+     prometida, así que no entra al cumplimiento de fechas: no se prometió
+     nada desde aquí. Si el renglón ya tiene orden, se devuelve esa. */
+  if (accion === 'expediente') {
+    const mejora_id = String(b?.mejora_id || '');
+    if (!mejora_id) return json({ error: 'Falta lo entregado.' }, 400);
+
+    const { data: yaLig } = await supabase.from('taller_orden_mejoras').select('orden_id').eq('mejora_id', mejora_id).limit(1);
+    if (yaLig?.length) return json({ ok: true, orden_id: yaLig[0].orden_id, existia: true });
+
+    const { data: m } = await supabase.from('mejoras')
+      .select('id, titulo, descripcion, tipo, modulo, company_id, cobro, cortesia, url, estado, fecha_entrega')
+      .eq('id', mejora_id).maybeSingle();
+    if (!m) return json({ error: 'Eso ya no existe en la ficha del cliente.' }, 404);
+    if (m.estado !== 'entregada') return json({ error: 'Solo se completa así lo que ya se entregó. Lo abierto se manda al taller.' }, 400);
+
+    const tipo = m.tipo === 'falla' ? 'falla' : 'mejora';
+    // El mediodía evita que la fecha de entrega cambie de día al pintarse en México.
+    const entregada_at = m.fecha_entrega ? m.fecha_entrega + 'T12:00:00Z' : new Date().toISOString();
+    const { data: orden, error } = await supabase.from('taller_ordenes').insert({
+      company_id: m.company_id,
+      tipo,
+      titulo: m.titulo,
+      // Mismo reparto que al mandar una al taller: en una falla la descripción
+      // es el problema; en una mejora, lo que se pidió.
+      problema: tipo === 'falla' ? (m.descripcion || null) : null,
+      criterios: tipo === 'mejora' ? (m.descripcion || null) : null,
+      modulo: m.modulo || null,
+      /* El `url` de un renglón ENTREGADO es el video de la entrega —aprobar lo
+         escribe ahí—, no la evidencia del problema como en uno abierto. */
+      video_url: m.url || null,
+      cobro: m.cobro || (m.cortesia ? 'cortesia' : null),
+      prioridad: 'baja',
+      solicitante_id: user.id,
+      etapa: 'entregada',
+      entregada_at,
+    }).select('id, folio').single();
+    if (error || !orden) return json({ error: error?.message || 'No se pudo abrir el expediente.' }, 500);
+
+    const { error: eL } = await supabase.from('taller_orden_mejoras').insert({ orden_id: orden.id, mejora_id: m.id });
+    if (eL) {
+      // Sin la liga, lo que se escriba aquí nunca llega a la ficha del cliente.
+      await supabase.from('taller_ordenes').delete().eq('id', orden.id).then(() => {}, () => {});
+      /* Doble clic: el índice único de `mejora_id` deja entrar solo a uno. El
+         segundo no es un error, es la misma petición: se le da la que ganó. */
+      if ((eL as any).code === '23505') {
+        const { data: gano } = await supabase.from('taller_orden_mejoras').select('orden_id').eq('mejora_id', m.id).limit(1);
+        if (gano?.length) return json({ ok: true, orden_id: gano[0].orden_id, existia: true });
+      }
+      return json({ error: eL.message }, 500);
+    }
+    await apunta(orden.id, quien(user), null, 'entregada',
+      `Expediente de algo ya entregado${m.fecha_entrega ? ' el ' + m.fecha_entrega : ''}, para completar lo que se hizo`);
+    return json({ ok: true, orden_id: orden.id, folio: orden.folio }, 201);
   }
 
   // ── La conversación técnica vive en la orden ──
@@ -673,6 +767,29 @@ export const PUT: APIRoute = async ({ request }) => {
         .eq('id', l.mejora_id).then(() => {}, () => {});
     }
     await apunta(id, quien(user), null, null, `Le cambió el nombre: «${o.titulo}» → «${p.titulo}»`);
+  }
+
+  /* Lo demás que el cliente ve también viaja, por la misma razón que el nombre.
+     El módulo y el cobro se escriben en los dos lados igual que en bloque. El
+     video, solo si la orden YA está entregada: en una abierta, el video llega
+     al renglón al aprobarla; en una cerrada —un expediente que se completa
+     después— no hay aprobación que lo lleve, y sin esto la pestaña Entregado
+     y el reporte de entregas seguirían diciendo «sin video». */
+  const alCliente: any = {};
+  if ('modulo' in p && (p.modulo || null) !== (o.modulo || null)) alCliente.modulo = p.modulo || null;
+  if ('cobro' in p && p.cobro !== o.cobro) { alCliente.cobro = p.cobro; alCliente.cortesia = p.cobro === 'cortesia'; }
+  const sigueEntregada = o.etapa === 'entregada' && (!etapa || etapa === 'entregada');
+  if (sigueEntregada && 'video_url' in p && (p.video_url || null) !== (o.video_url || null)) alCliente.url = p.video_url || null;
+  if (Object.keys(alCliente).length) {
+    const { data: lig } = await supabase.from('taller_orden_mejoras').select('mejora_id').eq('orden_id', id);
+    const mIds = (lig || []).map((x: any) => x.mejora_id);
+    if (mIds.length) {
+      await supabase.from('mejoras').update({ ...alCliente, updated_at: new Date().toISOString() })
+        .in('id', mIds).then(() => {}, () => {});
+    }
+  }
+  if (sigueEntregada && Object.keys(p).some(k => !['updated_at', 'titulo'].includes(k))) {
+    await apunta(id, quien(user), null, null, 'Completó el expediente de lo que se entregó');
   }
 
   p.updated_at = new Date().toISOString();
