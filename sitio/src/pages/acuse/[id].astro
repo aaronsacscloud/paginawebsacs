@@ -133,6 +133,9 @@ const ACOMP: Record<string, string> = {
   basico: 'Acompañamiento básico',
   implementacion: 'Implementación asistida',
   consultoria_andy: 'Consultoría Andy',
+  // Las de seguimiento semanal (dueño, 27-sep-2026). Sin esta línea, el acuse
+  // del cliente decía «consultoria_andy_vip» tal cual.
+  consultoria_andy_vip: 'Consultoría Andy VIP',
 };
 let empresaCliente: any = company;
 if (!empresaCliente && quote?.company_id) {

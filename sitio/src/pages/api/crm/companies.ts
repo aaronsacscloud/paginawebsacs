@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { microCacheInvalidar } from '../../../lib/crm/micro-cache';
 
 export const prerender = false;
 
@@ -53,6 +54,7 @@ export const POST: APIRoute = async ({ request }) => {
     .single();
 
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  microCacheInvalidar('');   // la lista de Clientes lo tiene que ver al recargar
   return new Response(JSON.stringify(data), { status: 201 });
 };
 
@@ -88,5 +90,6 @@ export const PUT: APIRoute = async ({ request }) => {
     .single();
 
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  microCacheInvalidar('');   // la lista de Clientes lo tiene que ver al recargar
   return new Response(JSON.stringify(data));
 };

@@ -12,6 +12,7 @@
 // no la llave — si cambiara, todo lo capturado quedaría huérfano en silencio.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { microCacheInvalidar } from '../../../lib/crm/micro-cache';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -213,6 +214,9 @@ export const PUT: APIRoute = async ({ request, url }) => {
     if (!cambios.length) return json({ ok: true, sin_cambios: true });
     const { error } = await supabase.from(tabla).update({ propiedades: nuevo }).eq('id', b.entidad_id);
     if (error) return json({ error: error.message }, 500);
+    // Las listas (Clientes filtra por estos campos) se sirven con micro-caché:
+    // sin esto, lo que se acaba de marcar no aparece al volver a la lista.
+    microCacheInvalidar('');
 
     // Todo cambio queda en la Actividad: sin el historial, dentro de tres meses
     // nadie sabe de dónde salió un dato ni quién lo cambió.

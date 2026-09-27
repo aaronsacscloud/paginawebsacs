@@ -16,6 +16,7 @@ import { SENAL_LABEL } from '../../../lib/crm/senales';
 import { useIsMobile } from '../../../lib/ui/mobile';
 import HealthScoreBadge from './HealthScoreBadge';
 import { swrGet } from '../../../lib/crm/swr';
+import { guardarSnap } from '../../../lib/crm/snapshot';
 import VistaRapida, { HojaEsqueleto } from './ui/VistaRapida';
 import FilaDeslizable from './ui/FilaDeslizable';
 import EstadoVacio from './ui/EstadoVacio';
@@ -288,12 +289,17 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       }
       const j = await r.json().catch(() => ({}));
       if (!r.ok || j.error) { alert(j.error || 'No se pudo guardar.'); }
-      else { setEditId(null); show('Contacto actualizado'); load(); }
+      else { setEditId(null); show('Contacto actualizado'); load(true); }
     } catch (e: any) { alert('Error: ' + (e?.message || e)); }
     setSaving(false);
   }
 
-  async function load() {
+  /* `fresco`: se acaba de cambiar algo en la ficha (p. ej. marcarla «Consultoría
+     Andy»). Entonces no se pinta el caché ni se acepta la copia de la
+     micro-caché del servidor: se pide la lista recién hecha y se guarda como el
+     caché bueno. Sin esto, la cuenta que acabas de marcar no aparecía en el
+     filtro aunque el dato ya estaba guardado (Vende Tu Closet, 27-sep-2026). */
+  async function load(fresco = false) {
     setError(null);
     // REGLA DE VELOCIDAD: pinta el caché al instante (y apaga el spinner), revalida detrás
     let pinto = false;
@@ -301,10 +307,14 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       if (j?.error) return;
       setData(j.data || []); setTot(j.tot || null); setLoading(false); pinto = true;
     };
-    setLoading(true);
+    if (!fresco) setLoading(true);
+    const URL_CLIENTES = '/api/crm/arr/clientes';
+    const lista = fresco
+      ? fetch(URL_CLIENTES + '?fresco=1').then(r => r.json()).then(j => { if (!j?.error) { aplicar(j); guardarSnap(URL_CLIENTES, j); } })
+      : swrGet(URL_CLIENTES, aplicar);
     try {
       const [, pj] = await Promise.all([
-        swrGet('/api/crm/arr/clientes', aplicar),
+        lista,
         fetch('/api/crm/pipelines').then(r => r.json()).catch(() => ({ data: [] })),
       ]);
       const cli = (pj.data || []).find((p: any) => p.tipo === 'cliente');
@@ -320,11 +330,11 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
     setData(d => d.map(c => c.id === id ? { ...c, pipeline_stage: key } : c));
     try {
       const r = await fetch('/api/crm/companies', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, pipeline_stage: key }) });
-      if (!r.ok) { const j = await r.json().catch(() => ({})); if (j.error) { alert(j.error + '\n¿Corriste migration-2026-07-pipelines.sql?'); load(); return; } }
+      if (!r.ok) { const j = await r.json().catch(() => ({})); if (j.error) { alert(j.error + '\n¿Corriste migration-2026-07-pipelines.sql?'); load(true); return; } }
       const toLabel = stageBy[key]?.label || key;
       logStageChange({ company_id: id, contact_id: prev?.contacto?.id || null, fromLabel: prev?.pipeline_stage ? stageBy[prev.pipeline_stage]?.label : undefined, toLabel });
       show(`Cliente movido a ${toLabel}`);
-    } catch { load(); }
+    } catch { load(true); }
   }
 
   /* ── Definición del datatable estándar ── */
@@ -706,7 +716,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   ];
 
   if (loading) return <Cargando texto="Cargando clientes…" />;
-  if (error) return <div style={{ padding: 48, textAlign: 'center', color: '#E54B4B' }}>{error} <button style={S.btnSmall} onClick={load}>Reintentar</button></div>;
+  if (error) return <div style={{ padding: 48, textAlign: 'center', color: '#E54B4B' }}>{error} <button style={S.btnSmall} onClick={() => load(true)}>Reintentar</button></div>;
 
   // Un ícono y un botón, como en Cotizaciones: los secundarios son íconos sin
   // texto y solo la acción principal lleva color. El menú "Más acciones"
@@ -842,7 +852,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
                           method: 'PUT', headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ id: c.id, archived_at: new Date().toISOString() }),
                         }).catch(() => {});
-                        load();
+                        load(true);
                       },
                     }}>
                   <div className="m-row" onClick={() => setRapida(c)}>
@@ -1100,12 +1110,12 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
             verTodoLabel="Ver ficha completa ›"
             ficha={isMobile ? (
               <Suspense fallback={<HojaEsqueleto />}>
-                <ClienteDrawer360 companyId={c.id} embebido onClose={() => setRapida(null)} onChanged={load} />
+                <ClienteDrawer360 companyId={c.id} embebido onClose={() => setRapida(null)} onChanged={() => load(true)} />
               </Suspense>
             ) : undefined} />
         );
       })()}
-      {detailId && <Suspense fallback={<Cargando texto="Cargando cliente…" alto={260} />}><ClienteDrawer360 companyId={detailId} tabInicial={detailTab} onClose={() => { setDetailId(null); setDetailTab(undefined); }} onChanged={load} /></Suspense>}
+      {detailId && <Suspense fallback={<Cargando texto="Cargando cliente…" alto={260} />}><ClienteDrawer360 companyId={detailId} tabInicial={detailTab} onClose={() => { setDetailId(null); setDetailTab(undefined); }} onChanged={() => load(true)} /></Suspense>}
 
       {motivoMasivo && (
         <MotivoBajaMasivo ids={Array.from(selEx)}
@@ -1113,13 +1123,13 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           onListo={(msg) => {
             setMotivoMasivo(false); setSelEx(new Set());
             setAvisoEx(msg); setTimeout(() => setAvisoEx(''), 6000);
-            load();
+            load(true);
           }} />
       )}
       {avisoEx && (
         <div className="crm-toast-bottom" style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#fff', padding: '10px 18px', borderRadius: 10, fontSize: 13, zIndex: 1200, boxShadow: '0 8px 24px rgba(0,0,0,0.25)', maxWidth: '90vw', textAlign: 'center' }}>{avisoEx}</div>
       )}
-      {showNuevo && <Suspense fallback={<Cargando texto="Abriendo…" alto={200} />}><NuevoClienteModal onClose={() => setShowNuevo(false)} onCreated={(id) => { setShowNuevo(false); load(); if (id) setDetailId(id); }} /></Suspense>}
+      {showNuevo && <Suspense fallback={<Cargando texto="Abriendo…" alto={200} />}><NuevoClienteModal onClose={() => setShowNuevo(false)} onCreated={(id) => { setShowNuevo(false); load(true); if (id) setDetailId(id); }} /></Suspense>}
       <Toast toast={toast} />
     </div>
   );

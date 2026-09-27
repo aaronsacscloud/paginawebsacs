@@ -30,8 +30,20 @@ export function microCacheInvalidar(prefijo = '') {
  *  nunca se cachean. */
 export function conMicroCache(clave: string, ttlMs: number, handler: (ctx: any) => Promise<Response>) {
   return async (ctx: any) => {
+    /* `?fresco=1`: quien acaba de ESCRIBIR y necesita ver su cambio. Se salta
+       la caché y la vacía para esta lectura, sin guardar una entrada propia
+       —con la hora en la URL cada petición sería una clave nueva que nunca se
+       reusa—. Invalidar al escribir no alcanza solo: Vercel puede contestar la
+       lectura desde otra instancia, con su propia copia vieja. Caso real
+       (27-sep-2026): Vende Tu Closet se marcó «Consultoría Andy» en la ficha y
+       la lista de Clientes, al recargarse, siguió sin ella. */
+    const u = new URL(ctx.request.url);
+    if (u.searchParams.has('fresco')) {
+      microCacheInvalidar(clave + '|');
+      return handler(ctx);
+    }
     try {
-      const k = clave + '|' + (new URL(ctx.request.url).search || '');
+      const k = clave + '|' + (u.search || '');
       // Timeout defensivo: si el backend se atora (visto en prod: cuelgues de
       // ~60 s intermitentes de infra), respondemos 504 rápido y NO cacheamos —
       // el cliente SWR muestra su caché y reintenta después.
