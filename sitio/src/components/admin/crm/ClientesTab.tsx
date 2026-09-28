@@ -54,6 +54,10 @@ const ESTADO_SUB = (c: any): { label: string; bg: string; color: string } => {
 };
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
+/* Las cuentas VIP de consultoría —seguimiento semanal— van SIEMPRE primero en la
+   lista (dueño, 27-sep-2026). Fuera del componente para que la tabla no
+   recalcule su orden en cada render. */
+const esVip = (c: any) => (c?.propiedades || {}).tipo_acompanamiento === 'consultoria_andy_vip';
 const fmtDate = (d?: string | null) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '—';
 
 /* Densidad enterprise de las celdas (estilos propios del tab). */
@@ -368,6 +372,12 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
         return (
           <td style={{ ...T.td, ...T.ell, fontWeight: 700 }}>
             {titulo}
+            {esVip(c) && (
+              <span title="Consultoría Andy VIP · seguimiento semanal"
+                style={{ marginLeft: 7, fontSize: '0.6rem', fontWeight: 800, letterSpacing: '.05em', borderRadius: 20, padding: '2px 7px', background: 'linear-gradient(135deg,#EEECFE,#FCE7F1)', color: '#9c3d70', verticalAlign: 'middle' }}>
+                VIP
+              </span>
+            )}
             {/* Con varias cuentas de SACS hay que enseñarlas TODAS: si solo se ve
                 una, el renglón parece de otro cliente (y los montos, que son la
                 suma de ambas, no cuadran con lo que se ve dentro de esa cuenta). */}
@@ -701,8 +711,24 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   const quick: QuickDef[] = [
     {
       key: 'acompanamiento', label: 'Acompañamiento',
-      options: (campos.find((p: any) => p.key === 'tipo_acompanamiento')?.opciones || []).map((o: any) => ({ v: o.v, l: o.l })),
-      apply: (c, v) => (c.propiedades || {}).tipo_acompanamiento === v,
+      /* Una familia de opciones —«Consultoría Andy» y «Consultoría Andy VIP»—
+         también se puede ver junta: «Consultoría Andy (todas)», con las VIP
+         arriba. Sale sola de las opciones: cualquier valor que tenga otros
+         que empiezan con él + «_» es una familia, y su «(todas)» es `valor*`. */
+      options: (() => {
+        const ops: { v: string; l: string }[] = (campos.find((p: any) => p.key === 'tipo_acompanamiento')?.opciones || []).map((o: any) => ({ v: o.v, l: o.l }));
+        const out = [...ops];
+        for (const raiz of ops.filter(o => ops.some(x => x.v.startsWith(o.v + '_')))) {
+          // «(todas)» va justo después del último miembro de la familia.
+          const ultima = [...out].reverse().find(x => x.v === raiz.v || x.v.startsWith(raiz.v + '_'))!;
+          out.splice(out.indexOf(ultima) + 1, 0, { v: raiz.v + '*', l: raiz.l + ' (todas)' });
+        }
+        return out;
+      })(),
+      apply: (c, v) => {
+        const t = String((c.propiedades || {}).tipo_acompanamiento || '');
+        return v.endsWith('*') ? (t === v.slice(0, -1) || t.startsWith(v.slice(0, -1) + '_')) : t === v;
+      },
     },
     { key: 'plan', label: 'Plan', options: Object.entries(PLAN_BADGE).map(([v, b]) => ({ v, l: b.label })), apply: (c, v) => c.plan === v },
     { key: 'licencia', label: 'Licencia', options: [{ v: 'si', l: 'Vitalicia' }, { v: 'no', l: 'Recurrente' }], apply: (c, v) => (v === 'si') === !!c.vitalicia },
@@ -767,6 +793,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
         const arrRiesgo = listaM.filter(enRiesgo).reduce((a: number, c: any) => a + (Number(c.arr) || (Number(c.mrr) || 0) * 12), 0);
         if (chipCl === 'riesgo') listaM = listaM.filter(enRiesgo);
         listaM = [...listaM].sort((a: any, b: any) => (arrAsc ? 1 : -1) * (Number(a.arr || 0) - Number(b.arr || 0)));
+        listaM = [...listaM.filter(esVip), ...listaM.filter((c: any) => !esVip(c))];   // las VIP primero, también aquí
         const iniciales = (n: string) => {
           const stop = ['de', 'del', 'la', 'los', 'las', 'para', 'y', 'e'];
           const ws = String(n || '').split(/\s+/).filter(w => w && !stop.includes(w.toLowerCase()));
@@ -997,6 +1024,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           data={dataEtiquetada}
           cols={verExclientes ? colsExcliente : cols}
           quick={verExclientes ? [] : quick}
+          primero={verExclientes ? undefined : esVip}
           vistasBase={vistasBase}
           sinVistas
           quickExtra={verExclientes ? undefined : <FiltroRenovacion valor={rangoRenov} onCambio={setRangoRenov} />}

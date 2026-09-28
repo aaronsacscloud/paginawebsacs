@@ -168,7 +168,7 @@ export function FiltroDesplegable({ qd, valor, onElegir, isMobile }: { qd: Quick
 export default function TablaEnterprise({
   tabla, data, cols, quick = [], vistasBase, searchText, searchPlaceholder = 'Buscar…',
   actions, onRowClick, rowKey = (r: any) => r.id, customBody, mobileCard, minWidth = 1080, emptyMsg = 'Sin resultados con esos filtros.',
-  sinVistas = false, headerTint = false, quickExtra,
+  sinVistas = false, headerTint = false, quickExtra, primero,
 }: {
   tabla: string;
   data: any[];
@@ -195,6 +195,10 @@ export default function TablaEnterprise({
   mobileCard?: ((row: any) => ReactNode) | null; // en mobile: renderiza la fila como card (mismo pipeline)
   minWidth?: number;
   emptyMsg?: string;
+  /** Filas que van SIEMPRE arriba (p. ej. las cuentas VIP), sea cual sea el
+   *  orden elegido. Dentro de cada grupo se respeta ese orden: ordenar por
+   *  ARR deja las VIP arriba por ARR y el resto debajo por ARR. */
+  primero?: (row: any) => boolean;
 }) {
   const isMobile = useIsMobile();
   // La tabla ABRE en vistasBase[0], así que el estado inicial tiene que salir
@@ -289,8 +293,10 @@ export default function TablaEnterprise({
         return (va < vb ? -1 : va > vb ? 1 : 0) * sort.dir;
       });
     }
+    // Las que van primero, sin romper el orden de nadie: dos pasadas estables.
+    if (primero) out = [...out.filter(r => primero(r)), ...out.filter(r => !primero(r))];
     return out;
-  }, [data, search, quickVals, conds, sort, quick, colBy, searchText]);
+  }, [data, search, quickVals, conds, sort, quick, colBy, searchText, primero]);
 
   const totalPag = Math.max(1, Math.ceil(filtrados.length / pageSize));
   const pagina = filtrados.slice(page * pageSize, (page + 1) * pageSize);
