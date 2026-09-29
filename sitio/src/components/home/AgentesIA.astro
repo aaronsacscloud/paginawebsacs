@@ -1,0 +1,579 @@
+---
+/**
+ * AgentesIA — «Un día en piloto automático» (29-sep-2026, rumbo a la expo de tecnología y moda).
+ *
+ * Va justo debajo del hero y cuenta Fashion OS en una sola escena: el dueño al centro, orquestando,
+ * y cinco agentes de IA alrededor (Inventario, Ventas, Clientes, Compras, Precios). Mientras se baja
+ * pasa un martes de una marca con cinco tiendas, hora por hora: cada agente se enciende, hace su
+ * parte y queda marcado; las decisiones con dinero esperan el «Aprobar» del dueño (se pueden tocar);
+ * al final, el interruptor de piloto automático pone a los agentes a trabajar en vivo.
+ *
+ * Escritorio (≥1024 px y sin «reducir movimiento»): riel con escena pegada, el mismo patrón de
+ * Suenos y de las historias. Teléfono, tableta vertical y «reducir movimiento»: línea de tiempo
+ * normal, sin bloquear el scroll. El scroll se lee con rAF y listener pasivo solo mientras la
+ * sección está en vista; los temporizadores se apagan al salir de la vista o al ocultar la pestaña.
+ *
+ * Todo es un ejemplo ilustrativo; las funciones son las que ya promete el plan Automatiza
+ * (traspasos y resurtido, drop multicanal, avisos por WhatsApp, orden al proveedor, rebajas).
+ */
+const ICO: Record<string, string> = {
+  inv: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5V6.8a1.8 1.8 0 1 1 1.8-1.8"/><path d="M12 7.5 3.4 14.2a1 1 0 0 0 .6 1.8h16a1 1 0 0 0 .6-1.8z"/></svg>',
+  ven: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 8h13l-1 12.5h-11z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg>',
+  cli: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h16v11H9l-5 4z"/><path d="M12 13.2s-3-1.8-3-3.6a1.6 1.6 0 0 1 3-.8 1.6 1.6 0 0 1 3 .8c0 1.8-3 3.6-3 3.6z"/></svg>',
+  com: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5 12 3.5l8.5 4v9L12 20.5l-8.5-4z"/><path d="m3.5 7.5 8.5 4 8.5-4M12 11.5v9"/></svg>',
+  pre: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12.5V4.5h8l9 9-8 8z"/><circle cx="8" cy="9" r="1.4"/></svg>',
+  tu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/><path d="M18.5 16v4M16.5 18h4"/></svg>',
+  wa: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1-.3-.1-.5-.1-.7.2l-.9 1.2c-.2.2-.4.2-.7.1a8 8 0 0 1-4-3.5c-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6a1.1 1.1 0 0 0-.8.4 3.4 3.4 0 0 0-1 2.5 5.9 5.9 0 0 0 1.2 3.1 13.5 13.5 0 0 0 5.2 4.6c1.9.8 2.7.9 3.6.7a3.1 3.1 0 0 0 2-1.4 2.5 2.5 0 0 0 .2-1.4c-.1-.1-.3-.2-.6-.3zM12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2z"/></svg>',
+};
+
+// Los cinco agentes alrededor del dueño, en el orden de su hora (de arriba y en el sentido del reloj).
+const AGENTES = [
+  { id: 'inv', nombre: 'Inventario', hecho: '38 tallas acomodadas' },
+  { id: 'ven', nombre: 'Ventas', hecho: '41 pedidos cobrados' },
+  { id: 'cli', nombre: 'Clientes', hecho: '212 clientas avisadas' },
+  { id: 'com', nombre: 'Compras', hecho: 'Orden al proveedor lista' },
+  { id: 'pre', nombre: 'Precios', hecho: '14 modelos en rebaja' },
+];
+// Pentágono alrededor del centro (radio 34 % del cuadro): arriba, derecha, abajo-derecha, abajo-izquierda, izquierda.
+const POS = AGENTES.map((_, k) => {
+  const a = (-90 + 72 * k) * (Math.PI / 180);
+  return { x: +(50 + 34 * Math.cos(a)).toFixed(2), y: +(50 + 34 * Math.sin(a)).toFixed(2) };
+});
+
+type Accion = { img?: string; alt?: string; titulo: string; detalle: string; chip?: string; chipTipo?: 'ok' | 'vivo'; aprobar?: string; que?: string; wa?: boolean };
+const CAPS: { agente: string; hora: string; momento: string; quien: string; titulo: string; texto: string; accion: Accion }[] = [
+  {
+    agente: 'inv', hora: '07:00', momento: 'Antes de abrir', quien: 'Agente de Inventario',
+    titulo: 'Cada talla amanece en la tienda correcta.',
+    texto: 'Revisó tus cinco tiendas y el CEDIS mientras dormías: el vestido rosa talla M se va a agotar en Polanco y sobra en Satélite. Te pidió el visto bueno por WhatsApp y a las 7:04 el traspaso ya iba en camino.',
+    accion: { img: '/images/prod-vestido-rosa.webp', alt: 'Vestido rosa', titulo: 'Traspaso Satélite → Polanco', detalle: 'Vestido rosa · talla M · 3 piezas', chip: '✓ Aprobado 7:04', chipTipo: 'ok' },
+  },
+  {
+    agente: 'ven', hora: '10:30', momento: 'Sale el drop', quien: 'Agente de Ventas',
+    titulo: 'El drop sale solo, en todos tus canales.',
+    texto: 'Publicó la colección nueva en tu tienda en línea, Instagram y TikTok Shop con las mismas tallas y precios, y cobra cada pedido por WhatsApp. Si una talla se agota en tienda, se apaga en todos lados.',
+    accion: { img: '/images/prod-bolsa.webp', alt: 'Bolsa rosa acolchada', titulo: 'Drop Primavera', detalle: '24 modelos · 4 canales · 12 pedidos en la primera hora', chip: 'En vivo', chipTipo: 'vivo' },
+  },
+  {
+    agente: 'cli', hora: '13:00', momento: 'Tus clientas', quien: 'Agente de Clientes',
+    titulo: 'Tu clienta se entera primero.',
+    texto: 'Avisó por WhatsApp a las 212 clientas que compran tu marca que ya llegó su talla, con los puntos de su monedero listos para usarse. 31 contestaron y 9 ya apartaron.',
+    accion: { img: '/images/prod-vestido-negro.webp', alt: 'Vestido negro', titulo: '«Ya llegó tu talla»', detalle: 'Vestido negro · 212 clientas · 9 apartados', chip: '✓ Enviado', chipTipo: 'ok' },
+  },
+  {
+    agente: 'com', hora: '16:00', momento: 'La compra', quien: 'Agente de Compras',
+    titulo: 'Compra lo que se va a vender.',
+    texto: 'El botín negro 25 se va a agotar en seis días. Calculó la curva por tienda con lo que de verdad rotó y dejó lista la orden al proveedor. El dinero lo decides tú.',
+    accion: { img: '/images/botin-negro.webp', alt: 'Botín negro', titulo: 'Orden de compra · Botín negro', detalle: 'Curva 23 a 27 · 60 pares · llega en 9 días', aprobar: '✓ Enviada al proveedor', que: 'compra' },
+  },
+  {
+    agente: 'pre', hora: '19:00', momento: 'Fin de temporada', quien: 'Agente de Precios',
+    titulo: 'La rebaja llega en el momento exacto.',
+    texto: 'Detectó 14 modelos de la temporada pasada que ya no rotan. Programó la rebaja para el lunes en tus cinco tiendas y en línea, y dejó de resurtirlos.',
+    accion: { img: '/images/rack-vestido.webp', alt: 'Vestido verde', titulo: 'Rebaja programada · lunes', detalle: '14 modelos · −30 % · 5 tiendas y en línea', aprobar: '✓ Programada', que: 'rebaja' },
+  },
+  {
+    agente: 'tu', hora: '21:00', momento: 'Tu resumen', quien: 'Tú, desde tu celular',
+    titulo: 'Tú solo decides lo que importa.',
+    texto: 'Tu resumen llega a tu WhatsApp: cuánto vendiste, lo que hicieron tus agentes y lo que espera tu visto bueno.',
+    accion: { wa: true, titulo: 'Tu día: $186,450 en ventas', detalle: '1,240 tareas de tus agentes' },
+  },
+];
+const FINAL_I = CAPS.length + 1;
+---
+<section class="ag" id="agentes" aria-label="Fashion OS: un día de tu marca en piloto automático">
+  <div class="ag-escena">
+    <span class="ag-reloj" aria-hidden="true">06:00</span>
+    <div class="ag-marco">
+      <div class="ag-caps">
+        <div class="ag-cap ag-cap--intro is-on" data-i="0" data-hora="06:00">
+          <p class="ag-kicker"><i aria-hidden="true"></i>Fashion OS · Agentes de IA</p>
+          <h2 class="ag-h2">Tú orquestas.<br /><span>Tus agentes operan.</span></h2>
+          <p class="ag-p">Así corre un martes en una marca de moda con cinco tiendas. Cada agente de IA se encarga de una parte de la operación; tú solo apruebas lo que importa.</p>
+          <p class="ag-baja" aria-hidden="true">Baja y mira su día
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+          </p>
+        </div>
+
+        {CAPS.map((c, k) => (
+          <article class="ag-cap" data-i={k + 1} data-hora={c.hora} data-agente={c.agente}>
+            <p class="ag-hora"><b>{c.hora}</b> · {c.momento}</p>
+            <p class="ag-quien"><span set:html={ICO[c.agente]} />{c.quien}</p>
+            <h3 class="ag-h3">{c.titulo}</h3>
+            <p class="ag-p">{c.texto}</p>
+            <div class:list={['ag-accion', { 'ag-accion--resumen': c.accion.wa }]} data-estado={c.accion.aprobar ? 'pendiente' : 'listo'} data-que={c.accion.que}>
+              {c.accion.wa
+                ? <span class="ag-accion-wa" set:html={ICO.wa} />
+                : <img class="ag-accion-img" src={c.accion.img} alt={c.accion.alt} width="160" height="160" loading="lazy" decoding="async" />}
+              <div class="ag-accion-txt">
+                <b>{c.accion.titulo}</b>
+                <small>{c.accion.detalle}{c.accion.wa && <> · <span class="ag-resumen-dec">Te esperan 2 decisiones: apruébalas desde aquí o desde tu WhatsApp.</span></>}</small>
+              </div>
+              {c.accion.chip && <span class:list={['ag-chip', `ag-chip--${c.accion.chipTipo}`]}>{c.accion.chipTipo === 'vivo' && <i aria-hidden="true"></i>}{c.accion.chip}</span>}
+              {c.accion.aprobar && <button type="button" class="ag-aprobar" data-hecho={c.accion.aprobar}>Aprobar</button>}
+            </div>
+          </article>
+        ))}
+
+        <div class="ag-cap ag-cap--final" data-i={FINAL_I} data-hora="24/7" data-agente="auto">
+          <p class="ag-hora"><b>24/7</b> · Piloto automático</p>
+          <h2 class="ag-h2 ag-h2--final">Tu marca, en piloto automático.</h2>
+          <p class="ag-p">Fashion OS no reemplaza tu criterio: lo multiplica. Tus agentes hacen la operación de todos los días y tú diriges la marca.</p>
+          <div class="ag-auto">
+            <button type="button" class="ag-switch" role="switch" aria-checked="false">
+              <span class="ag-switch-riel" aria-hidden="true"><span class="ag-switch-bola"></span></span>
+              <span class="ag-switch-txt">Piloto automático <b>Apagado</b></span>
+            </button>
+            <p class="ag-vivo" aria-live="polite"><i aria-hidden="true"></i><span>Enciéndelo y mira a tus agentes trabajar.</span></p>
+          </div>
+          <div class="ag-ctas">
+            <a class="ag-cta ag-cta--1" href="/prueba-gratis" data-evento="agentes_cta_prueba">Prueba 7 días gratis</a>
+            <a class="ag-cta ag-cta--2" href="/contacto" data-evento="agentes_cta_demo">Agenda una demo</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="ag-der">
+        <div class="ag-orquesta" aria-hidden="true">
+          <svg class="ag-lineas" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+            <circle class="ag-orbita" cx="50" cy="50" r="34" />
+            {AGENTES.map((a, k) => <line class="ag-linea" data-agente={a.id} x1="50" y1="50" x2={POS[k].x} y2={POS[k].y} />)}
+          </svg>
+          <div class="ag-tu">
+            <svg class="ag-tu-giro" viewBox="0 0 100 100">
+              <defs><path id="ag-arco" d="M50,50 m-41,0 a41,41 0 1,1 82,0 a41,41 0 1,1 -82,0" /></defs>
+              <text><textPath href="#ag-arco" textLength="256" lengthAdjust="spacing">TÚ ORQUESTAS · TÚ DECIDES · TÚ APRUEBAS ·</textPath></text>
+            </svg>
+            <span class="ag-tu-t">Tú</span>
+          </div>
+          {AGENTES.map((a, k) => (
+            <div class="ag-nodo" data-agente={a.id} style={`--x:${POS[k].x}%;--y:${POS[k].y}%`}>
+              <span class="ag-nodo-ico" set:html={ICO[a.id]} />
+              <span class="ag-nodo-n">{a.nombre}</span>
+              <span class="ag-nodo-e" data-espera="En espera" data-hecho={`✓ ${a.hecho}`}>En espera</span>
+            </div>
+          ))}
+        </div>
+        <dl class="ag-metricas">
+          <div><dt>Ventas de hoy</dt><dd class="ag-m-ventas">$0</dd></div>
+          <div><dt>Tareas de tus agentes</dt><dd class="ag-m-tareas">0</dd></div>
+          <div><dt>Decisiones tuyas</dt><dd class="ag-m-dec">1 de 3</dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <nav class="ag-tiempo" aria-label="Horas del día">
+      <ol>
+        {CAPS.map((c, k) => <li data-i={k + 1}><button type="button"><i><b></b></i><span>{c.hora}</span></button></li>)}
+        <li data-i={FINAL_I}><button type="button"><i><b></b></i><span>24/7</span></button></li>
+      </ol>
+      <a class="ag-saltar" href="#recorrido" data-evento="agentes_saltar">Saltar
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+      </a>
+    </nav>
+  </div>
+</section>
+
+<style>
+  /* ── Base = línea de tiempo (teléfono, tableta vertical, «reducir movimiento» y sin JS) ── */
+  .ag {
+    --ag-negro: #0B0B0C; --ag-marfil: #F4F1EA; --ag-ambar: #E8A838;
+    --ag-tenue: rgba(244, 241, 234, 0.66); --ag-linea: rgba(244, 241, 234, 0.14);
+    position: relative; background: var(--ag-negro); color: var(--ag-marfil); overflow: clip;
+  }
+  .ag-escena { position: relative; padding: 72px 20px 72px; }
+  .ag-reloj, .ag-tiempo, .ag-metricas, .ag-baja { display: none; }
+  .ag-marco { display: flex; flex-direction: column; gap: 36px; max-width: 560px; margin: 0 auto; }
+  .ag-caps, .ag-der { display: contents; }
+  .ag-cap { order: 2; }
+  .ag-cap.ag-cap--intro { order: 0; }
+  .ag-orquesta { order: 1; }
+  .ag-cap.ag-cap--final { order: 3; }
+
+  .ag-kicker { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 20px; font-family: var(--font-display); font-size: 11px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ag-ambar); }
+  .ag-kicker i { width: 7px; height: 7px; border-radius: 50%; background: var(--ag-ambar); }
+  .ag-h2 { font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: clamp(38px, 10vw, 84px); line-height: 0.95; letter-spacing: -0.005em; margin: 0; color: var(--ag-marfil); text-wrap: balance; }
+  .ag-h2 span { color: var(--ag-ambar); }
+  .ag-p { font-size: clamp(15px, 1.12vw, 18px); line-height: 1.6; color: var(--ag-tenue); max-width: 46ch; margin: 16px 0 0; }
+
+  .ag-hora { margin: 0 0 12px; font-family: var(--font-display); font-size: 12px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ag-tenue); }
+  .ag-hora b { color: var(--ag-ambar); font-weight: 700; }
+  .ag-quien { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 14px; padding: 6px 12px 6px 9px; border: 1px solid rgba(244, 241, 234, 0.18); border-radius: 999px; font-family: var(--font-display); font-size: 12.5px; font-weight: 600; color: var(--ag-marfil); }
+  .ag-quien :global(svg) { width: 16px; height: 16px; color: var(--ag-ambar); display: block; }
+  .ag-h3 { font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: clamp(28px, 3.3vw, 54px); line-height: 0.98; letter-spacing: -0.005em; margin: 0; color: var(--ag-marfil); text-wrap: balance; }
+
+  /* la tarjeta de lo que hizo el agente: marfil sobre negro, como una notificación */
+  .ag-accion { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 22px; padding: 12px 14px 12px 12px; max-width: 470px; background: var(--ag-marfil); color: #141414; border-radius: 16px; box-shadow: 0 24px 48px -28px rgba(0, 0, 0, 0.9); }
+  .ag-accion-img { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; background: #fff; flex-shrink: 0; }
+  .ag-accion-wa { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: #25D366; color: #fff; flex-shrink: 0; }
+  .ag-accion-wa :global(svg) { width: 28px; height: 28px; }
+  .ag-accion-txt { flex: 1 1 180px; min-width: 0; }
+  .ag-accion-txt b { display: block; font-family: var(--font-display); font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+  .ag-accion-txt small { display: block; margin-top: 3px; font-size: 12.5px; line-height: 1.4; color: #5B5A57; }
+  .ag-chip { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; padding: 7px 11px; border-radius: 999px; font-family: var(--font-display); font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+  .ag-chip--ok { background: #DCF3E4; color: #0B5A34; }
+  .ag-chip--vivo { background: #141414; color: #fff; }
+  .ag-chip--vivo i { width: 7px; height: 7px; border-radius: 50%; background: #FF4D4D; animation: agLate 1.2s ease-in-out infinite; }
+  .ag-aprobar { flex-shrink: 0; min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: #141414; color: #fff; font-family: var(--font-display); font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.25s, transform 0.2s; }
+  .ag-aprobar:hover { background: #2B2B2E; }
+  .ag-aprobar:active { transform: scale(0.97); }
+  .ag-aprobar:focus-visible, .ag-switch:focus-visible, .ag-tiempo button:focus-visible, .ag-cta:focus-visible { outline: 2px solid var(--ag-ambar); outline-offset: 3px; }
+  .ag-accion[data-estado="aprobada"] .ag-aprobar { background: #1F8F5F; cursor: default; }
+  .ag-accion[data-estado="aprobada"] { box-shadow: 0 0 0 2px #1F8F5F, 0 24px 48px -28px rgba(0, 0, 0, 0.9); }
+
+  /* ── la orquesta: tú al centro, cinco agentes alrededor ── */
+  .ag-orquesta { position: relative; width: min(100%, 360px); aspect-ratio: 1; margin: 0 auto; }
+  .ag-lineas { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .ag-orbita { fill: none; stroke: var(--ag-linea); stroke-width: 0.3; stroke-dasharray: 0.4 1.4; }
+  .ag-linea { stroke: var(--ag-linea); stroke-width: 0.3; transition: stroke 0.4s; }
+  .ag-linea.is-on { stroke: var(--ag-ambar); stroke-width: 0.45; stroke-dasharray: 1.4 1.4; animation: agFluye 0.9s linear infinite; }
+  .ag.is-auto .ag-linea { stroke: rgba(232, 168, 56, 0.55); stroke-dasharray: 1.4 1.4; animation: agFluye 1.4s linear infinite; }
+  .ag-tu { position: absolute; left: 50%; top: 50%; width: 24%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 50% 38%, #202024, #0B0B0C 72%); border: 1px solid rgba(232, 168, 56, 0.35); transition: border-color 0.4s, box-shadow 0.4s; }
+  /* max-width: none — la regla global `svg { max-width: 100% }` lo encogía y el texto giraba ENCIMA del «Tú» */
+  /* el anillo corre pegado al borde del círculo (radio del círculo + 5 px) para no chocar con las etiquetas de los agentes */
+  .ag-tu-giro { position: absolute; left: calc(-11% - 6px); top: calc(-11% - 6px); width: calc(122% + 12px); height: calc(122% + 12px); max-width: none; animation: agGira 32s linear infinite; }
+  .ag-tu-giro text { font-family: var(--font-display); font-size: 6.2px; font-weight: 600; fill: rgba(244, 241, 234, 0.5); }
+  .ag-tu-t { position: relative; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: clamp(28px, 8vw, 52px); line-height: 1; color: var(--ag-marfil); }
+  .ag-tu.is-on, .ag.is-auto .ag-tu { border-color: var(--ag-ambar); box-shadow: 0 0 0 10px rgba(232, 168, 56, 0.1); }
+
+  .ag-nodo { position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -28px); display: flex; flex-direction: column; align-items: center; gap: 6px; width: 118px; text-align: center; }
+  .ag-nodo-ico { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: #161618; border: 1px solid rgba(244, 241, 234, 0.2); color: rgba(244, 241, 234, 0.7); transition: background 0.4s, color 0.4s, border-color 0.4s, transform 0.4s; }
+  .ag-nodo-ico :global(svg) { width: 24px; height: 24px; display: block; }
+  .ag-nodo-n { font-family: var(--font-display); font-size: 13px; font-weight: 600; color: var(--ag-marfil); }
+  .ag-nodo-e { min-height: 1.3em; font-size: 11px; line-height: 1.3; color: rgba(244, 241, 234, 0.45); }
+  .ag-nodo.is-on .ag-nodo-ico { background: var(--ag-ambar); border-color: var(--ag-ambar); color: #141414; transform: scale(1.12); }
+  .ag-nodo.is-on .ag-nodo-e { color: var(--ag-ambar); }
+  .ag-nodo.is-hecho .ag-nodo-ico { border-color: rgba(244, 241, 234, 0.55); color: var(--ag-marfil); }
+  .ag-nodo.is-hecho .ag-nodo-e { color: rgba(244, 241, 234, 0.78); }
+  .ag-nodo.is-pulso .ag-nodo-ico { animation: agPulso 1.2s ease; }
+
+  /* ── cierre: el interruptor de piloto automático ── */
+  .ag-auto { display: flex; flex-direction: column; gap: 14px; margin-top: 26px; }
+  .ag-switch { display: inline-flex; align-items: center; gap: 14px; align-self: flex-start; padding: 0; border: 0; background: none; color: var(--ag-marfil); cursor: pointer; font-family: var(--font-display); font-size: 15px; font-weight: 600; }
+  .ag-switch-riel { position: relative; width: 72px; height: 40px; flex-shrink: 0; border-radius: 999px; background: rgba(244, 241, 234, 0.18); transition: background 0.35s; }
+  .ag-switch-bola { position: absolute; top: 4px; left: 4px; width: 32px; height: 32px; border-radius: 50%; background: var(--ag-marfil); transition: transform 0.4s cubic-bezier(0.3, 1.4, 0.5, 1); }
+  .ag-switch[aria-checked="true"] .ag-switch-riel { background: var(--ag-ambar); }
+  .ag-switch[aria-checked="true"] .ag-switch-bola { transform: translateX(32px); }
+  .ag-switch-txt b { margin-left: 4px; color: rgba(244, 241, 234, 0.55); font-weight: 600; }
+  .ag-switch[aria-checked="true"] .ag-switch-txt b { color: var(--ag-ambar); }
+  .ag-vivo { display: flex; align-items: center; gap: 10px; min-height: 1.6em; margin: 0; font-size: 14px; line-height: 1.4; color: var(--ag-tenue); }
+  .ag-vivo i { width: 8px; height: 8px; flex-shrink: 0; border-radius: 50%; background: rgba(244, 241, 234, 0.3); }
+  .ag.is-auto .ag-vivo i { background: #3DDC84; animation: agLate 1.2s ease-in-out infinite; }
+  .ag.is-auto .ag-vivo { color: var(--ag-marfil); }
+  .ag-ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+  .ag-cta { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 26px; border-radius: 999px; font-family: var(--font-display); font-size: 15px; font-weight: 700; text-decoration: none; transition: transform 0.2s, background 0.2s, color 0.2s; }
+  .ag-cta--1 { background: var(--ag-marfil); color: #141414; }
+  .ag-cta--1:hover { background: #fff; color: #141414; text-decoration: none; transform: translateY(-1px); }
+  .ag-cta--2 { border: 1px solid rgba(244, 241, 234, 0.4); color: var(--ag-marfil); }
+  .ag-cta--2:hover { border-color: var(--ag-marfil); color: var(--ag-marfil); text-decoration: none; transform: translateY(-1px); }
+
+  /* línea de tiempo: cada hora es una tarjeta con su riel a la izquierda y entra al verse */
+  .ag-cap:not(.ag-cap--intro):not(.ag-cap--final) { position: relative; padding-left: 22px; border-left: 1px solid var(--ag-linea); }
+  .ag-cap:not(.ag-cap--intro):not(.ag-cap--final)::before { content: ''; position: absolute; left: -5px; top: 2px; width: 9px; height: 9px; border-radius: 50%; background: var(--ag-ambar); }
+  .ag.is-js:not(.is-escena) .ag-cap { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+  .ag.is-js:not(.is-escena) .ag-cap.is-visto { opacity: 1; transform: none; }
+  .ag:not(.is-visible) .ag-tu-giro, .ag:not(.is-visible) .ag-linea, .ag:not(.is-visible) .ag-chip--vivo i { animation-play-state: paused; }
+
+  /* ── Escritorio: escena pegada; el scroll pasa las horas del día ── */
+  .ag.is-escena { height: 640vh; overflow: visible; }
+  .ag.is-escena .ag-escena { position: sticky; top: 0; height: 100vh; padding: 0; overflow: hidden; }
+  .ag.is-escena .ag-reloj { display: block; position: absolute; right: -1.5vw; bottom: -5vh; z-index: 0; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: min(30vw, 58vh); line-height: 0.8; letter-spacing: -0.01em; color: transparent; -webkit-text-stroke: 1px rgba(244, 241, 234, 0.08); pointer-events: none; user-select: none; white-space: nowrap; }
+  .ag.is-escena .ag-reloj.is-cambia { animation: agReloj 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
+  .ag.is-escena .ag-marco { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); align-items: center; gap: clamp(32px, 4vw, 72px); height: 100%; max-width: 1320px; padding: 104px clamp(28px, 5vw, 72px) 118px; }
+  .ag.is-escena .ag-caps { display: block; position: relative; height: min(560px, 100%); }
+  .ag.is-escena .ag-der { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+  .ag.is-escena .ag-orquesta { width: min(100%, 56vh, 540px); }
+  .ag.is-escena .ag-cap { position: absolute; left: 0; right: 0; top: 50%; padding: 0; border: 0; opacity: 0; visibility: hidden; transform: translateY(calc(-50% + 18px)); transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.5s; pointer-events: none; }
+  .ag.is-escena .ag-cap::before { display: none; }
+  .ag.is-escena .ag-cap.is-on { opacity: 1; visibility: visible; transform: translateY(-50%); pointer-events: auto; transition-delay: 0s; }
+  .ag.is-escena .ag-cap.is-on .ag-accion { animation: agEntra 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both; }
+  .ag.is-escena .ag-baja { display: inline-flex; align-items: center; gap: 8px; margin: 30px 0 0; font-family: var(--font-display); font-size: 13px; font-weight: 600; color: var(--ag-marfil); opacity: 0.8; }
+  .ag.is-escena .ag-baja svg { animation: agBaja 1.6s ease-in-out infinite; }
+  .ag.is-escena .ag-nodo-ico { width: 64px; height: 64px; }
+  .ag.is-escena .ag-nodo-n { font-size: 14px; }
+  .ag.is-escena .ag-nodo-e { font-size: 12px; }
+  .ag.is-escena .ag-nodo { transform: translate(-50%, -32px); width: 150px; }
+  .ag.is-escena .ag-nodo.is-on .ag-nodo-ico { box-shadow: 0 0 0 10px rgba(232, 168, 56, 0.14), 0 0 44px rgba(232, 168, 56, 0.35); }
+  .ag.is-escena .ag-tu.is-on, .ag.is-escena.is-auto .ag-tu { box-shadow: 0 0 0 12px rgba(232, 168, 56, 0.1), 0 0 70px rgba(232, 168, 56, 0.28); }
+  .ag.is-escena .ag-metricas { display: grid; grid-template-columns: repeat(3, auto); gap: clamp(20px, 2.6vw, 40px); margin: 0; }
+  .ag-metricas dt { font-family: var(--font-display); font-size: 10.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(244, 241, 234, 0.5); }
+  .ag-metricas dd { margin: 6px 0 0; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: clamp(22px, 2vw, 30px); line-height: 1; color: var(--ag-marfil); font-variant-numeric: tabular-nums; }
+  .ag.is-escena .ag-tiempo { display: flex; position: absolute; left: 0; right: 0; bottom: 24px; z-index: 3; justify-content: center; align-items: center; gap: 26px; }
+  .ag-tiempo ol { display: flex; gap: 14px; margin: 0; padding: 0; list-style: none; }
+  .ag-tiempo button { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 6px 2px; border: 0; background: none; cursor: pointer; font-family: var(--font-display); font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; color: rgba(244, 241, 234, 0.5); transition: color 0.3s; }
+  .ag-tiempo button i { position: relative; display: block; width: 52px; height: 3px; border-radius: 2px; overflow: hidden; background: rgba(244, 241, 234, 0.2); transition: background 0.3s; }
+  .ag-tiempo button i b { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--ag-ambar); }
+  .ag-tiempo li.is-hecho button { color: rgba(244, 241, 234, 0.72); }
+  .ag-tiempo li.is-hecho button i { background: rgba(244, 241, 234, 0.72); }
+  .ag-tiempo li.is-on button { color: var(--ag-marfil); }
+  .ag-saltar { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border: 1px solid rgba(244, 241, 234, 0.3); border-radius: 999px; font-family: var(--font-display); font-size: 12.5px; font-weight: 600; color: var(--ag-marfil); text-decoration: none; transition: background 0.3s, color 0.3s; }
+  .ag-saltar:hover { background: var(--ag-marfil); color: #141414; text-decoration: none; }
+  .ag.is-final .ag-saltar { opacity: 0; pointer-events: none; }
+
+  @keyframes agFluye { to { stroke-dashoffset: -2.8; } }
+  @keyframes agGira { to { transform: rotate(360deg); } }
+  @keyframes agLate { 50% { opacity: 0.35; } }
+  @keyframes agPulso { 30% { background: var(--ag-ambar); border-color: var(--ag-ambar); color: #141414; transform: scale(1.14); } }
+  @keyframes agEntra { from { opacity: 0; transform: translateY(14px) scale(0.98); } to { opacity: 1; transform: none; } }
+  @keyframes agReloj { from { opacity: 0.2; transform: translateY(4%); } to { opacity: 1; transform: none; } }
+  @keyframes agBaja { 50% { transform: translateY(4px); } }
+
+  /* Teléfono: la tarjeta de acción a lo ancho y el botón debajo del texto */
+  @media (max-width: 767px) {
+    .ag-escena { padding: 64px 16px 64px; }
+    .ag-marco { gap: 40px; }
+    .ag-h3 { font-size: 30px; }
+    .ag-accion { max-width: none; }
+    .ag-aprobar { flex: 1 1 100%; }
+    .ag-ctas { flex-direction: column; }
+    .ag-cta { width: 100%; }
+    .ag-orquesta { width: min(100%, 340px); }
+    .ag-nodo { width: 104px; transform: translate(-50%, -25px); }
+    .ag-nodo-ico { width: 50px; height: 50px; }
+    /* en el teléfono el estado («✓ 38 tallas acomodadas») se partía en dos renglones y chocaba con el centro:
+       aquí manda el agente encendido, y lo que hizo cada uno ya lo cuenta su tarjeta */
+    .ag-nodo-e { display: none; }
+    .ag-escena { padding-bottom: 48px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ag-tu-giro, .ag-linea, .ag-chip--vivo i, .ag-vivo i, .ag-nodo-ico { animation: none !important; }
+    .ag.is-js .ag-cap { opacity: 1 !important; transform: none !important; transition: none !important; }
+  }
+</style>
+
+<script>
+  (() => {
+    const sec = document.getElementById('agentes');
+    if (!sec) return;
+    const q = <T extends Element>(s: string) => sec.querySelector<T>(s);
+    const qa = <T extends Element>(s: string) => Array.from(sec.querySelectorAll<T>(s));
+    // Todo lo que se toca en cada cuadro se busca UNA vez (regla de rendimiento: nada de querySelector en el scroll).
+    const caps = qa<HTMLElement>('.ag-cap');
+    const nodos = qa<HTMLElement>('.ag-nodo');
+    const estados = nodos.map((n) => n.querySelector<HTMLElement>('.ag-nodo-e')!);
+    const lineas = qa<SVGLineElement>('.ag-linea');
+    const tu = q<HTMLElement>('.ag-tu');
+    const reloj = q<HTMLElement>('.ag-reloj');
+    const marcas = qa<HTMLElement>('.ag-tiempo li');
+    const barras = marcas.map((m) => m.querySelector<HTMLElement>('b')!);
+    const mVentas = q<HTMLElement>('.ag-m-ventas');
+    const mTareas = q<HTMLElement>('.ag-m-tareas');
+    const mDec = q<HTMLElement>('.ag-m-dec');
+    const resumenDec = q<HTMLElement>('.ag-resumen-dec');
+    const sw = q<HTMLButtonElement>('.ag-switch');
+    const swTxt = q<HTMLElement>('.ag-switch-txt b');
+    const vivoTxt = q<HTMLElement>('.ag-vivo span');
+    const orquesta = q<HTMLElement>('.ag-orquesta');
+    const finalCap = q<HTMLElement>('.ag-cap--final');
+    const N = caps.length;            // intro + 6 horas + cierre
+    const FINAL = N - 1;
+    const TU = N - 2;                 // 21:00, el resumen del dueño
+    const HORAS = caps.map((c) => c.dataset.hora || '');
+    // Un día de ejemplo que sube con las horas (el resumen de las 21:00 dice lo mismo).
+    const VENTAS = [0, 0, 38900, 92300, 131750, 164200, 186450, 186450];
+    const TAREAS = [0, 126, 418, 702, 881, 1037, 1240, 1240];
+    const VIVO: [string, string][] = [
+      ['ven', 'Agente de Ventas · cobró el pedido #1,284 por WhatsApp'],
+      ['inv', 'Agente de Inventario · pasó 2 piezas talla S a Coyoacán'],
+      ['cli', 'Agente de Clientes · le recordó su apartado a Mariana'],
+      ['com', 'Agente de Compras · confirmó 60 pares en camino al CEDIS'],
+      ['pre', 'Agente de Precios · dejó lista la rebaja del lunes en 5 tiendas'],
+      ['ven', 'Agente de Ventas · publicó 3 looks nuevos en TikTok Shop'],
+    ];
+    const idxAgente: Record<string, number> = {};
+    nodos.forEach((n, k) => { idxAgente[n.dataset.agente || ''] = k; });
+    const fmt = new Intl.NumberFormat('es-MX');
+    const ph = (ev: string, props?: Record<string, unknown>) => { try { (window as any).sacsPH?.(ev, props); } catch { /* medir no rompe nada */ } };
+    const hitos = new Set<string>();
+    const hito = (k: string, props?: Record<string, unknown>) => { if (hitos.has(k)) return; hitos.add(k); ph('agentes_' + k, props); };
+    const mq = window.matchMedia('(min-width: 1024px) and (prefers-reduced-motion: no-preference)');
+
+    let escena = false, visible = false, cur = -1, raf = 0, alto = 0;
+    let auto = false, vivoT = 0, vivoK = 0, tourT = 0, tourK = 0, finalVisible = false;
+    let aprobadas = 1;                // el traspaso de las 7:04 ya viene aprobado
+    const TOTAL_DEC = 3;
+    sec.classList.add('is-js');
+
+    /* ── la orquesta: estado de cada agente para el momento `i` del día ── */
+    function pintaDiagrama(i: number) {
+      nodos.forEach((n, k) => {
+        const c = k + 1;              // capítulo (hora) de ese agente
+        const on = i === c;
+        const hecho = i > c;
+        n.classList.toggle('is-on', on);
+        n.classList.toggle('is-hecho', hecho);
+        const e = estados[k];
+        const txt = on ? 'Trabajando…' : hecho ? (e.dataset.hecho || '') : (e.dataset.espera || '');
+        if (e.textContent !== txt) e.textContent = txt;
+      });
+      lineas.forEach((l, k) => l.classList.toggle('is-on', i === k + 1));
+      tu?.classList.toggle('is-on', i >= TU);
+    }
+
+    /* ── contadores que corren al número de la hora ── */
+    const corriendo = new Map<HTMLElement, number>();
+    function cuenta(el: HTMLElement | null, desde: number, hasta: number, pinta: (v: number) => string) {
+      if (!el) return;
+      cancelAnimationFrame(corriendo.get(el) || 0);
+      const t0 = performance.now(), dur = 700;
+      const paso = (t: number) => {
+        const f = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - f, 3);
+        el.textContent = pinta(desde + (hasta - desde) * e);
+        if (f < 1) corriendo.set(el, requestAnimationFrame(paso)); else corriendo.delete(el);
+      };
+      corriendo.set(el, requestAnimationFrame(paso));
+    }
+
+    function muestra(i: number) {
+      if (i === cur) return;
+      const antes = cur < 0 ? 0 : cur;
+      cur = i;
+      caps.forEach((c, k) => c.classList.toggle('is-on', k === i));
+      pintaDiagrama(i);
+      marcas.forEach((m) => { const k = +(m.dataset.i || 0); m.classList.toggle('is-on', k === i); m.classList.toggle('is-hecho', k < i); });
+      sec.classList.toggle('is-final', i === FINAL);
+      if (reloj && HORAS[i] && reloj.textContent !== HORAS[i]) {
+        reloj.textContent = HORAS[i];
+        reloj.classList.remove('is-cambia');
+        requestAnimationFrame(() => requestAnimationFrame(() => reloj.classList.add('is-cambia')));   // doble rAF, sin forzar reflow
+      }
+      cuenta(mVentas, VENTAS[antes] ?? 0, VENTAS[i] ?? 0, (v) => '$' + fmt.format(Math.round(v)));
+      cuenta(mTareas, TAREAS[antes] ?? 0, TAREAS[i] ?? 0, (v) => fmt.format(Math.round(v)));
+      alFinal(i === FINAL);
+      if (i >= 1) hito('dia');
+      if (i >= 4) hito('50');
+      if (i === FINAL) hito('final');
+    }
+    function barra(i: number, f: number) {
+      barras.forEach((b, k) => {
+        const m = +(marcas[k].dataset.i || 0);
+        const w = m < i ? 100 : m === i ? Math.round(f * 100) : 0;
+        b.style.width = w + '%';
+      });
+    }
+
+    /* ── escritorio: el progreso del riel decide la hora ── */
+    function mide() {
+      raf = 0;
+      const r = sec!.getBoundingClientRect();
+      const total = alto - window.innerHeight;
+      const p = total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0;
+      const x = p * N;
+      const i = Math.min(N - 1, Math.floor(x));
+      muestra(i);
+      barra(i, i === FINAL ? 1 : x - i);
+    }
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(mide); };
+    marcas.forEach((m) => m.querySelector('button')?.addEventListener('click', () => {
+      const k = +(m.dataset.i || 0);
+      const top = sec!.getBoundingClientRect().top + window.scrollY;
+      const total = alto - window.innerHeight;
+      window.scrollTo({ top: top + ((k + 0.35) / N) * total, behavior: 'smooth' });
+      ph('agentes_hora', { a: k });
+    }));
+
+    /* ── piloto automático: el interruptor del cierre ── */
+    function tickVivo() {
+      const [a, t] = VIVO[vivoK++ % VIVO.length];
+      if (vivoTxt) vivoTxt.textContent = t;
+      const n = nodos[idxAgente[a]];
+      if (n) { n.classList.remove('is-pulso'); requestAnimationFrame(() => requestAnimationFrame(() => n.classList.add('is-pulso'))); }
+    }
+    function puedeCorrer() { return auto && visible && !document.hidden && (escena ? cur === FINAL : finalVisible); }
+    function arrancaVivo() { if (vivoT || !puedeCorrer()) return; tickVivo(); vivoT = window.setInterval(() => { if (puedeCorrer()) tickVivo(); else paraVivo(); }, 2300); }
+    function paraVivo() { if (vivoT) { clearInterval(vivoT); vivoT = 0; } }
+    function enciende(on: boolean, porUsuario: boolean) {
+      auto = on;
+      sw?.setAttribute('aria-checked', String(on));
+      if (swTxt) swTxt.textContent = on ? 'Encendido' : 'Apagado';
+      sec!.classList.toggle('is-auto', on);
+      if (on) arrancaVivo();
+      else { paraVivo(); if (vivoTxt) vivoTxt.textContent = 'Modo manual: cada acción espera tu aprobación.'; }
+      if (porUsuario) ph('agentes_piloto', { on });
+    }
+    // La primera vez que se llega al cierre, el interruptor se prende solo (es la demostración); después manda el usuario.
+    function alFinal(enFinal: boolean) {
+      if (!enFinal) { paraVivo(); return; }
+      if (!hitos.has('auto_solo')) { hitos.add('auto_solo'); window.setTimeout(() => { if (!auto && (escena ? cur === FINAL : finalVisible)) enciende(true, false); }, 700); }
+      else arrancaVivo();
+    }
+    sw?.addEventListener('click', () => enciende(!auto, true));
+
+    /* ── aprobar: las decisiones con dinero son del dueño ── */
+    function pintaDecisiones() {
+      if (mDec) mDec.textContent = `${aprobadas} de ${TOTAL_DEC}`;
+      if (!resumenDec) return;
+      const f = TOTAL_DEC - aprobadas;
+      resumenDec.textContent = f === 0
+        ? 'aprobaste las 3 decisiones del día; lo demás lo hicieron tus agentes.'
+        : f === 1 ? 'te espera 1 decisión: apruébala desde aquí o desde tu WhatsApp.' : `te esperan ${f} decisiones: apruébalas desde aquí o desde tu WhatsApp.`;
+    }
+    qa<HTMLButtonElement>('.ag-aprobar').forEach((b) => b.addEventListener('click', () => {
+      const card = b.closest<HTMLElement>('.ag-accion');
+      if (!card || card.dataset.estado === 'aprobada') return;
+      card.dataset.estado = 'aprobada';
+      b.textContent = b.dataset.hecho || '✓ Aprobada';
+      b.disabled = true;
+      aprobadas = Math.min(TOTAL_DEC, aprobadas + 1);
+      pintaDecisiones();
+      ph('agentes_aprobar', { que: card.dataset.que });
+    }));
+    pintaDecisiones();
+
+    /* ── teléfono: la orquesta da una vuelta sola mientras se ve ── */
+    function tourPaso() { tourK = (tourK % (TU + 1)) + 1; pintaDiagrama(tourK); }
+    function arrancaTour() { if (tourT || escena || document.hidden) return; tourPaso(); tourT = window.setInterval(tourPaso, 1500); }
+    function paraTour() { if (tourT) { clearInterval(tourT); tourT = 0; } }
+    const ioOrq = orquesta ? new IntersectionObserver((es) => { if (es[0].isIntersecting) arrancaTour(); else paraTour(); }, { threshold: 0.35 }) : null;
+    const ioFinal = finalCap ? new IntersectionObserver((es) => {
+      finalVisible = es[0].isIntersecting;
+      if (escena) return;
+      if (finalVisible) { hito('final'); alFinal(true); } else paraVivo();
+    }, { threshold: 0.4 }) : null;
+    const ioCap = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-visto'); ioCap.unobserve(e.target); } }), { threshold: 0.15 });
+
+    function aplicaModo() {
+      escena = mq.matches;
+      sec!.classList.toggle('is-escena', escena);
+      alto = sec!.offsetHeight;
+      cur = -1;
+      paraVivo(); paraTour();
+      if (escena) {
+        ioOrq?.disconnect();
+        if (visible) { window.addEventListener('scroll', onScroll, { passive: true }); mide(); }
+      } else {
+        window.removeEventListener('scroll', onScroll);
+        caps.forEach((c) => { c.classList.remove('is-on'); ioCap.observe(c); });
+        pintaDiagrama(0);
+        if (orquesta) ioOrq?.observe(orquesta);
+        if (finalCap) ioFinal?.observe(finalCap);
+      }
+    }
+
+    const io = new IntersectionObserver((es) => {
+      visible = es[0].isIntersecting;
+      sec.classList.toggle('is-visible', visible);
+      document.body.classList.toggle('agentes-activo', visible && escena);   // la barra flotante de WhatsApp no tapa la línea de tiempo
+      if (visible) {
+        hito('ver', { escena });
+        if (escena) { window.addEventListener('scroll', onScroll, { passive: true }); mide(); }
+        if (auto) arrancaVivo();
+      } else {
+        window.removeEventListener('scroll', onScroll);
+        paraVivo(); paraTour();
+      }
+    }, { rootMargin: '120px 0px' });
+
+    // Pestaña oculta = nada corriendo; al volver, retoma lo que toque.
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { paraVivo(); paraTour(); return; }
+      if (auto) arrancaVivo();
+    });
+    window.addEventListener('resize', () => { alto = sec.offsetHeight; if (escena && visible) onScroll(); }, { passive: true });
+    mq.addEventListener('change', aplicaModo);
+    qa<HTMLElement>('[data-evento]').forEach((a) => a.addEventListener('click', () => ph(a.dataset.evento || '', { hora: cur })));
+
+    aplicaModo();
+    io.observe(sec);
+  })();
+</script>

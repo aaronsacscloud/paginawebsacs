@@ -1,8 +1,11 @@
 ---
 import Suenos from './home/Suenos.astro';
+import AgentesIA from './home/AgentesIA.astro';
 
 interface Props {
   eyebrow?: string;
+  /** Línea de evolución bajo el título (29-sep-2026): de lo que fue el software a lo que es hoy; el último paso se enciende. */
+  evolucion?: string[];
   title: string;
   subtitle: string;
   subtitleMobile?: string;
@@ -12,6 +15,7 @@ interface Props {
 
 const {
   eyebrow = 'Comercio Consciente',
+  evolucion = [],
   title,
   subtitle,
   subtitleMobile = subtitle,
@@ -108,7 +112,13 @@ const useCases = [
 
   <div class="hero-banner-content">
     <div class="hero-text">
+      <p class="hero-kicker"><i aria-hidden="true"></i>{eyebrow}</p>
       <h1 class="hero-title">{title}</h1>
+      {evolucion.length > 0 && (
+        <ol class="hero-evo" aria-label="La evolución del software de moda">
+          {evolucion.map((e, i) => <li class:list={['hero-evo-paso', { 'is-hoy': i === evolucion.length - 1 }]} style={`--i:${i}`}>{e}</li>)}
+        </ol>
+      )}
       <p class="hero-subtitle"><span class="hero-subtitle-full">{subtitle}</span><span class="hero-subtitle-short">{subtitleMobile}</span></p>
       <div class="hero-ctas">
         <a href={primaryCTA.href} class="hero-btn hero-btn-filled">
@@ -290,6 +300,9 @@ const useCases = [
   </div>
 </section>
 
+
+<!-- ═══ Fashion OS en acción (29-sep-2026): un día de la marca con sus agentes de IA, justo bajo el hero ═══ -->
+<AgentesIA />
 
 <!-- ═══ BLOQUE 1b: el recorrido del cliente — del post a su WhatsApp, con scroll ═══ -->
 <section class="recorrido flujo" id="recorrido" aria-label="Del live a la venta">
@@ -3602,6 +3615,23 @@ const useCases = [
     animation: heroSube 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
+  /* Etiqueta «Fashion OS · ahora con agentes de IA» sobre el título (29-sep-2026) */
+  .hero-kicker { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 var(--space-5); padding: 7px 14px 7px 12px; border: 1px solid rgba(0, 0, 0, 0.12); border-radius: 999px; background: #fff; font-family: var(--font-display); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-primary); animation: heroFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .hero-kicker i { width: 8px; height: 8px; border-radius: 50%; background: #E8A838; box-shadow: 0 0 0 4px rgba(232, 168, 56, 0.22); }
+  /* La evolución: Punto de venta → Inventario por talla → Omnicanal → Agentes de IA; los pasos entran uno tras otro y el de hoy queda encendido */
+  .hero-evo { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 0; margin: 0 0 var(--space-6); padding: 0; font-family: var(--font-display); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #8C8A85; }
+  .hero-evo-paso { display: inline-flex; align-items: center; white-space: nowrap; opacity: 0; animation: heroEvo 0.5s ease forwards; animation-delay: calc(0.35s + var(--i) * 0.28s); }
+  .hero-evo-paso:not(:last-child)::after { content: '→'; margin: 0 10px; font-family: system-ui, sans-serif; opacity: 0.7; }
+  .hero-evo-paso.is-hoy { gap: 8px; padding: 7px 13px 7px 11px; border-radius: 999px; background: #141414; color: #fff; }
+  .hero-evo-paso.is-hoy::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #E8A838; box-shadow: 0 0 0 3px rgba(232, 168, 56, 0.3); }
+  @keyframes heroEvo { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .hero-kicker, .hero-evo-paso { animation: none; opacity: 1; } }
+  @media (max-width: 767px) {
+    .hero-kicker { font-size: 10.5px; padding: 6px 12px 6px 10px; margin-bottom: 14px; }
+    .hero-evo { font-size: 10.5px; letter-spacing: 0.04em; margin-bottom: 16px; }
+    .hero-evo-paso:not(:last-child)::after { margin: 0 7px; }
+  }
+
   /* Igual que heroFadeUp pero SIN empezar en invisible: el título es el elemento
      más grande de la primera pantalla y el navegador lo tiene que poder pintar de
      inmediato. Lo que se mueve es su posición, no su presencia. */
@@ -3623,7 +3653,7 @@ const useCases = [
     font-size: clamp(1rem, 1.5vw, 1.175rem);
     line-height: 1.6;
     color: var(--color-text-secondary);
-    max-width: 500px;
+    max-width: 540px;
     margin-bottom: var(--space-10);
     animation: heroFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both;
   }

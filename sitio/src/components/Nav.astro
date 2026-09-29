@@ -4,10 +4,10 @@ import { giroIcons } from '../data/giro-icons';
 import { giroVinetas } from '../data/giro-vinetas';
 import { waDemoGiro, waLink } from '../lib/whatsapp';
 
-// Verticales de Sacs: hoy el sitio es Fashion Commerce; las demás abren WhatsApp mientras
-// no tengan su propia página (Aaron, 13-sep-2026).
+// Verticales de Sacs: hoy el sitio es Fashion OS (antes «Fashion Commerce»; cambió el 29-sep-2026,
+// rumbo a la expo); las demás abren WhatsApp mientras no tengan su propia página (Aaron, 13-sep-2026).
 const verticales = [
-  { id: 'moda', label: 'Fashion Commerce', desc: 'Ropa, calzado y accesorios: tallas, colores, curvas y temporadas. Estás aquí.', img: '/images/verticales/moda', aqui: true },
+  { id: 'moda', label: 'Fashion OS', desc: 'Ropa, calzado y accesorios: tallas, colores, curvas y temporadas. Estás aquí.', img: '/images/verticales/moda', aqui: true },
   { id: 'retail', label: 'Retail', desc: 'Tiendas de todo tipo: piso, inventario, caja y clientes.', img: '/images/verticales/retail' },
   { id: 'joyeria', label: 'Joyería', desc: 'Piezas únicas, quilates, apartados y garantía.', img: '/images/verticales/joyeria' },
   { id: 'consignacion', label: 'Consignación de lujo', desc: 'Bolsas, relojes y piezas de diseñador a consignación.', img: '/images/verticales/consignacion' },
@@ -66,7 +66,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
       <span class="nav-wordmark" aria-hidden="true">Sacs</span>
     </a>
     <button type="button" class="nav-vertical" id="nav-vertical" aria-haspopup="dialog" aria-controls="vert-modal" aria-expanded="false" title="Ver todos los tipos de comercio que opera Sacs">
-      <span class="nav-vertical-txt">Fashion Commerce</span>
+      <span class="nav-vertical-txt">Fashion OS</span>
       <svg width="9" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     </div>
@@ -1600,11 +1600,11 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     .mm-lang-opt.is-on { background: #1D1D1F; color: #fff; border-color: #1D1D1F; }
   }
 
-  /* ─── Lockup de marca: Sacs · Fashion Commerce ─── */
+  /* ─── Lockup de marca: Sacs · Fashion OS ─── */
   .nav-marca { display: flex; align-items: center; flex-shrink: 0; margin-right: var(--space-3); }
   .nav-marca .nav-logo { margin-right: 0 !important; display: block; line-height: 1; }
   .nav-wordmark { display: block; font-family: 'Clash Display', var(--font-display); font-size: 28px; font-weight: 700; line-height: 1; letter-spacing: -0.01em; color: currentColor; }
-  /* 'Sacs | Fashion Commerce': una sola marca, separada por una barra fina */
+  /* 'Sacs | Fashion OS': una sola marca, separada por una barra fina */
   .nav-vertical { display: inline-flex; align-items: center; gap: 6px; margin: 5px 0 0 8px; padding: 0 0 0 8px; border: 0; border-left: 1.5px solid #1D1D1F; background: none; color: #1D1D1F; font-family: 'Clash Display', var(--font-display); font-size: 17px; font-weight: 600; letter-spacing: -0.01em; text-transform: none; line-height: 1; cursor: pointer; white-space: nowrap; opacity: 1; transition: opacity 0.2s; }
   .nav-vertical:hover { opacity: 0.7; }
   .nav-vertical:hover { opacity: 1; }
@@ -1615,7 +1615,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
        salía de la cabecera de 72 px y la palabra «Sacs» aparecía CORTADA por
        arriba en iPhone y en Android (medido el 17-sep-2026 en las tres
        pantallas). Vuelve a una sola línea, como en escritorio, que además es
-       como se escribe la marca: Sacs | Fashion Commerce. */
+       como se escribe la marca: Sacs | Fashion OS. */
     .nav-marca { flex-direction: row; align-items: center; gap: 0; margin-right: auto; }
     .nav-wordmark { font-size: 22px; }
     .nav-vertical { margin: 1px 0 0 7px; padding: 0 0 0 7px; border-left: 1.5px solid #1D1D1F; font-size: 11px; letter-spacing: -0.005em; }
