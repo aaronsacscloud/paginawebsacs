@@ -1,6 +1,8 @@
 ---
 import Suenos from './home/Suenos.astro';
+import LaOrden from './home/LaOrden.astro';
 import AgentesIA from './home/AgentesIA.astro';
+import PasoAPaso from './home/PasoAPaso.astro';
 
 interface Props {
   eyebrow?: string;
@@ -301,8 +303,11 @@ const useCases = [
 </section>
 
 
-<!-- ═══ Fashion OS en acción (29-sep-2026): un día de la marca con sus agentes de IA, justo bajo el hero ═══ -->
+<!-- ═══ Fashion OS en acción (29-sep-2026): la dueña le da la orden a Sacs y, abajo, un día de la marca con sus agentes de IA ═══ -->
+<LaOrden />
 <AgentesIA />
+<!-- …y la escalera de planes: empieza vendiendo y sube hasta Automatiza -->
+<PasoAPaso />
 
 <!-- ═══ BLOQUE 1b: el recorrido del cliente — del post a su WhatsApp, con scroll ═══ -->
 <section class="recorrido flujo" id="recorrido" aria-label="Del live a la venta">
@@ -3617,13 +3622,13 @@ const useCases = [
 
   /* Etiqueta «Fashion OS · ahora con agentes de IA» sobre el título (29-sep-2026) */
   .hero-kicker { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 var(--space-5); padding: 7px 14px 7px 12px; border: 1px solid rgba(0, 0, 0, 0.12); border-radius: 999px; background: #fff; font-family: var(--font-display); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-primary); animation: heroFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
-  .hero-kicker i { width: 8px; height: 8px; border-radius: 50%; background: #E8A838; box-shadow: 0 0 0 4px rgba(232, 168, 56, 0.22); }
+  .hero-kicker i { width: 8px; height: 8px; border-radius: 50%; background: var(--color-primary); box-shadow: 0 0 0 4px rgba(75, 123, 229, 0.2); }
   /* La evolución: Punto de venta → Inventario por talla → Omnicanal → Agentes de IA; los pasos entran uno tras otro y el de hoy queda encendido */
   .hero-evo { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 0; margin: 0 0 var(--space-6); padding: 0; font-family: var(--font-display); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #8C8A85; }
   .hero-evo-paso { display: inline-flex; align-items: center; white-space: nowrap; opacity: 0; animation: heroEvo 0.5s ease forwards; animation-delay: calc(0.35s + var(--i) * 0.28s); }
   .hero-evo-paso:not(:last-child)::after { content: '→'; margin: 0 10px; font-family: system-ui, sans-serif; opacity: 0.7; }
-  .hero-evo-paso.is-hoy { gap: 8px; padding: 7px 13px 7px 11px; border-radius: 999px; background: #141414; color: #fff; }
-  .hero-evo-paso.is-hoy::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #E8A838; box-shadow: 0 0 0 3px rgba(232, 168, 56, 0.3); }
+  .hero-evo-paso.is-hoy { gap: 8px; padding: 7px 13px 7px 11px; border-radius: 999px; background: var(--color-primary-btn); color: #fff; }
+  .hero-evo-paso.is-hoy::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3); }
   @keyframes heroEvo { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { .hero-kicker, .hero-evo-paso { animation: none; opacity: 1; } }
   @media (max-width: 767px) {

@@ -1158,3 +1158,8 @@ Revisar antes: cómo se sirven hoy los documentos públicos (foto en jsonb + lig
 
 ## 27-sep-2026 · estrellita (Equipo) al pie del menú lateral (HECHO 27-sep — renglón «Equipo» en el pie; plegado, la chispa sola; en el teléfono sigue flotando)
 > «en el menu lateral esta bien»
+
+## 29-sep-2026 · portada Fashion OS v2: la instrucción a pantalla completa + escena de agentes más de moda (con el azul de Sacs) + «paso a paso» (HECHO 29-sep — commit local, falta que el dueño diga «publica»)
+> «me gusta solo que no se vea AI SLOP usa los colores que tenemos de Sacs que ya se usa el azul por favor eso mejoralo y antes de eso pon una animación loca de una persona dando una instrucción de "Sacs" opera mi negocio el día de hoy, y avísame cuando termines los surtidos se ve que se da esa instrucción full screen en grande y de ahí aparece esta pantalla más moderna más fashion con más imágenes más moda, y después de ahí, ya ponemos abajo una imagen que muestre que puede iniciar paso a paso si quieres vender controlar fidelizar automatizar y ya de ahí bajas a lo demás que existe primero haz el diseño y luego optimiza pero debe verse más de moda»
+- Hecho: `home/LaOrden.astro` (la dueña de traje azul le dicta a Sacs la nota de voz; la frase pasa gigante detrás de ella como portada de revista y una cortina azul trae «Entendido.»), `home/AgentesIA.astro` rehecho como editorial claro (hora gigante + foto por hora, equipo de 5 agentes arriba, collage del día al cierre; Aprobar, contadores e interruptor igual) y `home/PasoAPaso.astro` (escalera Vende → Controla → Fideliza → Automatiza con precios de data/plans.ts). Hero con acentos azules.
+- Fotos nuevas con gpt-image-2.5 (flare/sunburst) en public/images/fashion-os/ (WebP 85, 480/960/1536).

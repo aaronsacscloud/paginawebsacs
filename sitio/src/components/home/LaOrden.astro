@@ -1,0 +1,344 @@
+---
+/**
+ * LaOrden — «Sacs, opera mi negocio el día de hoy…» (29-sep-2026, portada Fashion OS v2 rumbo a la expo).
+ *
+ * Va entre el hero y «Un día en piloto automático»: la dueña de una marca de moda, de traje azul Sacs,
+ * le dicta a Sacs una nota de voz. Su frase pasa gigante DETRÁS de ella, trozo por trozo, como la
+ * portada de una revista; abajo se transcribe palabra por palabra. Al terminar, una cortina azul trae
+ * la respuesta de Sacs («Entendido.») y los cinco agentes se encienden: de ahí entra la escena del día.
+ *
+ * Escritorio (≥1024 px y sin «reducir movimiento»): riel con escena pegada; el scroll dicta la frase
+ * y corre la cortina (rAF + listener pasivo solo mientras la sección está en vista).
+ * Teléfono y tableta: la escena ocupa la pantalla y la frase se reproduce sola una vez al verse
+ * (con «Otra vez»); el temporizador se apaga al salir de la vista o al ocultar la pestaña.
+ * «Reducir movimiento» y sin JS: póster fijo con la frase completa y la respuesta debajo.
+ *
+ * Foto: generada con gpt-image-2.5 (recorte con fondo transparente), public/images/fashion-os/.
+ */
+const TROZOS = ['Sacs,', 'opera', 'mi negocio', 'el día de hoy,', 'y avísame', 'cuando termines', 'los surtidos.'];
+const PALABRAS = TROZOS.flatMap((t) => t.split(' '));
+const AGENTES = ['Inventario', 'Ventas', 'Clientes', 'Compras', 'Precios'];
+// La onda de la nota de voz: alturas fijas (mismo dibujo en cada visita), cada barra late a su ritmo.
+const ONDA = Array.from({ length: 34 }, (_, k) => Math.round(28 + 72 * Math.abs(Math.sin(k * 1.7) * Math.cos(k * 0.45))));
+---
+<section class="lo" id="orden" aria-labelledby="lo-frase">
+  <div class="lo-escena">
+    <p class="lo-folio" aria-hidden="true">
+      <span>Fashion OS</span>
+      <span class="lo-folio-c">N.º 01 — La orden</span>
+      <span>06:40 · Ciudad de México</span>
+    </p>
+
+    <div class="lo-foto">
+      <div class="lo-gigante" aria-hidden="true">
+        {TROZOS.map((t, k) => (
+          <span class:list={['lo-g', { 'is-on': k === 0 }]} data-k={k} style={`--n:${t.length};--m:${Math.max(...t.split(' ').map((w) => w.length))}`}>{t}</span>
+        ))}
+      </div>
+      <img
+        class="lo-ella"
+        src="/images/fashion-os/orden-ella.webp"
+        srcset="/images/fashion-os/orden-ella-640.webp 640w, /images/fashion-os/orden-ella.webp 1024w"
+        sizes="(min-width: 1024px) 60vh, 70vw"
+        width="1024" height="1536"
+        alt="La dueña de una marca de moda, de traje azul, le dicta una nota de voz a Sacs desde su celular"
+        loading="lazy" decoding="async"
+      />
+    </div>
+
+    <div class="lo-voz">
+      <p class="lo-kicker"><i aria-hidden="true"></i><span class="lo-k-grab">Nota de voz para Sacs</span><span class="lo-k-env">Enviada a Sacs · 06:40</span></p>
+      <h2 class="lo-frase" id="lo-frase">
+        <span aria-hidden="true">«</span>{PALABRAS.map((p, k) => <><span class="lo-w" data-k={k}>{p}</span>{k < PALABRAS.length - 1 ? ' ' : ''}</>)}<span aria-hidden="true">»</span>
+      </h2>
+      <div class="lo-nota" aria-hidden="true">
+        <span class="lo-mic">
+          <svg class="lo-mic-v" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          <svg class="lo-mic-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12.5 4.5 4.5L20 6"/></svg>
+        </span>
+        <span class="lo-onda">{ONDA.map((h, k) => <i style={`--h:${h}%;--k:${k}`}></i>)}</span>
+        <span class="lo-tiempo">0:01</span>
+      </div>
+    </div>
+
+    <div class="lo-azul" data-c="0">
+      <div class="lo-azul-in">
+        <p class="lo-azul-de"><b>Sacs</b> respondió · 06:40</p>
+        <p class="lo-azul-h">Entendido.</p>
+        <p class="lo-azul-p">Tus agentes ya están operando tu día. Te aviso por WhatsApp en cuanto terminen los surtidos.</p>
+        <ul class="lo-agentes" aria-label="Agentes en marcha">
+          {AGENTES.map((a, k) => <li style={`--k:${k}`}><i aria-hidden="true"></i>{a}</li>)}
+        </ul>
+        <a class="lo-sigue" href="#agentes" data-evento="orden_sigue">Míralos trabajar
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+        </a>
+      </div>
+      <button type="button" class="lo-repite" data-evento="orden_repetir">↻ Otra vez</button>
+    </div>
+
+    <a class="lo-saltar" href="#agentes" data-evento="orden_saltar">Saltar
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+    </a>
+  </div>
+</section>
+
+<style>
+  /* ── Base = póster fijo (sin JS y «reducir movimiento»): la frase completa y la respuesta debajo ── */
+  .lo {
+    --lo-marfil: #F5F3EE; --lo-tinta: #141414; --lo-azul: #4B7BE5; --lo-azul-o: #3A62C4;
+    --lo-gris: #C3BEB4; --lo-tenue: #6E6A62; --c: 0;
+    position: relative; background: var(--lo-marfil); color: var(--lo-tinta); overflow: clip;
+  }
+  .lo-escena { position: relative; display: flex; flex-direction: column; padding: 92px 0 0; }
+  .lo-folio { display: flex; justify-content: space-between; gap: 12px; margin: 0; padding: 0 16px 12px; border-bottom: 1px solid rgba(20, 20, 20, 0.12); font-family: var(--font-display); font-size: 10.5px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--lo-tenue); }
+  .lo-folio-c { display: none; }
+
+  /* la foto: la palabra gigante va DETRÁS de ella (portada de revista) */
+  .lo-foto { position: relative; height: min(72svh, 640px); min-height: 440px; isolation: isolate; }
+  /* en el teléfono la palabra va arriba y su cabeza apenas la muerde; el traje azul ya es la marca, las letras van en tinta */
+  .lo-gigante { position: absolute; left: 0; right: 0; top: 2%; z-index: 0; display: grid; place-items: center; height: 34%; }
+  .lo-g { grid-area: 1 / 1; max-width: 94vw; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: min(22vw, calc(150vw / var(--m))); line-height: 0.84; letter-spacing: -0.02em; text-transform: uppercase; text-align: center; text-wrap: balance; color: var(--lo-tinta); opacity: 0; user-select: none; }
+  .lo-g.is-on { opacity: 1; }
+  .lo-ella { position: absolute; z-index: 1; bottom: 0; left: 50%; height: 84%; width: auto; max-width: none; transform: translateX(-50%); transform-origin: 50% 100%; }
+
+  /* la nota de voz: la transcripción, palabra por palabra */
+  .lo-voz { position: relative; z-index: 2; margin: -132px 16px 0; padding: 18px 18px 16px; background: #fff; border-radius: 20px; box-shadow: 0 18px 40px -24px rgba(20, 20, 20, 0.35); }
+  .lo-kicker { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-family: var(--font-display); font-size: 10.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--lo-azul-o); }
+  .lo-kicker i { width: 8px; height: 8px; border-radius: 50%; background: #E5484D; }
+  .lo-k-env { display: none; }
+  .lo-frase { margin: 0; font-family: var(--font-display); font-size: clamp(21px, 5.6vw, 30px); font-weight: 600; line-height: 1.18; letter-spacing: -0.025em; color: var(--lo-tinta); text-wrap: pretty; }
+  .lo-w { transition: color 0.35s ease; }
+  .lo-nota { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+  .lo-mic { position: relative; flex-shrink: 0; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: var(--lo-azul); color: #fff; }
+  .lo-mic svg { grid-area: 1 / 1; width: 18px; height: 18px; transition: opacity 0.3s, transform 0.3s; }
+  .lo-mic-ok { opacity: 0; transform: scale(0.6); }
+  .lo-onda { flex: 1; display: flex; align-items: center; gap: 3px; height: 30px; min-width: 0; overflow: hidden; }
+  .lo-onda i { flex: 1 0 2px; max-width: 4px; height: var(--h); border-radius: 2px; background: var(--lo-azul); opacity: 0.85; transform-origin: 50% 50%; }
+  .lo-tiempo { flex-shrink: 0; font-family: var(--font-display); font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--lo-tenue); }
+
+  /* la respuesta de Sacs: bloque azul (en el póster fijo va debajo; con JS es una cortina) */
+  .lo-azul { position: relative; z-index: 5; margin-top: 28px; background: var(--lo-azul); color: #fff; }
+  .lo-azul-in { padding: 56px 20px 64px; max-width: 1200px; }
+  .lo-azul-de { margin: 0 0 18px; font-family: var(--font-display); font-size: 11px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255, 255, 255, 0.82); }
+  .lo-azul-de b { font-family: 'Clash Display', var(--font-display); font-size: 13px; letter-spacing: 0.04em; color: #fff; }
+  .lo-azul-h { margin: 0; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: clamp(64px, 19vw, 220px); line-height: 0.86; letter-spacing: -0.03em; }
+  .lo-azul-p { margin: 22px 0 0; max-width: 30ch; font-family: var(--font-display); font-size: clamp(19px, 2.1vw, 30px); font-weight: 500; line-height: 1.25; letter-spacing: -0.02em; }
+  .lo-agentes { display: flex; flex-wrap: wrap; gap: 8px; margin: 30px 0 0; padding: 0; list-style: none; }
+  .lo-agentes li { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px 9px 12px; border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 999px; font-family: var(--font-display); font-size: 13.5px; font-weight: 600; }
+  .lo-agentes i { width: 8px; height: 8px; border-radius: 50%; background: #fff; }
+  .lo-sigue { display: inline-flex; align-items: center; gap: 10px; margin-top: 34px; font-family: var(--font-display); font-size: 15px; font-weight: 600; color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, 0.6); padding-bottom: 4px; }
+  .lo-sigue:hover { color: #fff; text-decoration: none; border-color: #fff; }
+  .lo-sigue:focus-visible, .lo-saltar:focus-visible, .lo-repite:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+  .lo-saltar:focus-visible { outline-color: var(--lo-azul); }
+  .lo-repite, .lo-saltar { display: none; }
+
+  /* ── Con JS (teléfono, tableta y escritorio) ── */
+  .lo.is-js .lo-w { color: var(--lo-gris); }
+  .lo.is-js .lo-w.is-dicha { color: var(--lo-tinta); }
+  .lo.is-js .lo-w.is-ahora { color: var(--lo-azul); }
+  .lo.is-js .lo-g { opacity: 0; transform: translateY(38%) scaleY(1.25); clip-path: inset(-40% -6% 100% -6%); transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), clip-path 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+  /* el trozo que entra espera un instante a que el que sale se vaya (sale rápido): no se enciman */
+  .lo.is-js .lo-g.is-on { opacity: 1; transform: none; clip-path: inset(-40% -6% -14% -6%); transition-delay: 0.12s; }
+  .lo.is-js .lo-g.is-ido { opacity: 0; transform: translateY(-34%); clip-path: inset(-40% -6% -14% -6%); transition-duration: 0.26s, 0.4s, 0.4s; }
+  .lo.is-js.is-grabando .lo-onda i { animation: loOnda 0.9s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -0.11s); }
+  .lo.is-enviado .lo-kicker i { background: var(--lo-azul); }
+  .lo.is-enviado .lo-k-grab { display: none; }
+  .lo.is-enviado .lo-k-env { display: inline; }
+  .lo.is-enviado .lo-mic-v { opacity: 0; transform: scale(0.6); }
+  .lo.is-enviado .lo-mic-ok { opacity: 1; transform: none; }
+  .lo.is-enviado .lo-onda i { opacity: 0.35; }
+  .lo:not(.is-visible) .lo-onda i { animation-play-state: paused; }
+
+  /* la cortina azul: sube desde abajo y tapa la escena */
+  .lo.is-js .lo-azul { position: absolute; inset: 0; margin: 0; display: flex; align-items: center; clip-path: inset(calc((1 - var(--c)) * 100%) 0 0 0); pointer-events: none; }
+  .lo.is-js.is-azul .lo-azul { pointer-events: auto; }
+  /* mientras la cortina no ha subido, su texto no recibe foco (va invisible) */
+  .lo.is-js:not(.is-azul) .lo-azul-in, .lo.is-js:not(.is-azul) .lo-repite { visibility: hidden; }
+  .lo.is-js .lo-azul-in { width: 100%; }
+  .lo.is-js .lo-azul-h, .lo.is-js .lo-azul-p, .lo.is-js .lo-azul-de, .lo.is-js .lo-sigue { opacity: 0; transform: translateY(26px); transition: opacity 0.6s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+  .lo.is-js .lo-agentes li { opacity: 0; transform: translateY(12px); transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), background 0.4s, color 0.4s; transition-delay: calc(0.45s + var(--k) * 0.12s); }
+  .lo.is-js .lo-agentes i { background: transparent; box-shadow: inset 0 0 0 1.5px currentColor; transition: background 0.3s, box-shadow 0.3s; transition-delay: calc(1.05s + var(--k) * 0.14s); }
+  .lo.is-azul .lo-azul-de { opacity: 1; transform: none; }
+  .lo.is-azul .lo-azul-h { opacity: 1; transform: none; transition-delay: 0.08s; }
+  .lo.is-azul .lo-azul-p { opacity: 1; transform: none; transition-delay: 0.2s; }
+  .lo.is-azul .lo-sigue { opacity: 1; transform: none; transition-delay: 1.4s; }
+  .lo.is-azul .lo-agentes li { opacity: 1; transform: none; background: #fff; color: var(--lo-azul-o); }
+  .lo.is-azul .lo-agentes i { background: #3DDC84; box-shadow: none; }
+
+  /* teléfono y tableta: la escena ocupa la pantalla y se reproduce sola */
+  .lo.is-auto .lo-escena { min-height: 100svh; }
+  .lo.is-auto .lo-foto { flex: 1; height: auto; }
+  .lo.is-auto .lo-voz { margin-bottom: 16px; }
+  .lo.is-auto .lo-azul { transition: clip-path 0.9s cubic-bezier(0.7, 0, 0.2, 1); }
+  .lo.is-auto.is-azul { --c: 1; }
+  .lo.is-auto .lo-repite { display: inline-flex; position: absolute; left: 20px; bottom: 20px; padding: 10px 16px; border: 1px solid rgba(255, 255, 255, 0.55); border-radius: 999px; background: none; color: #fff; font-family: var(--font-display); font-size: 13px; font-weight: 600; cursor: pointer; }
+
+  @keyframes loOnda { from { transform: scaleY(0.25); } to { transform: scaleY(1); } }
+
+  /* ── Tableta ancha ── */
+  @media (min-width: 640px) {
+    .lo-folio { padding: 0 32px 14px; }
+    .lo-folio-c { display: inline; }
+    .lo-voz { margin: -150px auto 0; width: min(560px, calc(100% - 64px)); }
+    .lo-azul-in { padding: 72px 40px 80px; }
+  }
+
+  /* ── Escritorio: escena pegada, el scroll dicta la frase ── */
+  .lo.is-escena { height: 440vh; }
+  .lo.is-escena .lo-escena { position: sticky; top: 0; height: 100vh; padding: 0; overflow: hidden; display: block; }
+  .lo.is-escena .lo-folio { position: absolute; top: 92px; left: 4vw; right: 4vw; padding: 0 0 12px; z-index: 3; font-size: 11px; }
+  .lo.is-escena .lo-foto { position: absolute; inset: 0; height: auto; min-height: 0; }
+  .lo.is-escena .lo-gigante { top: 17vh; height: 40vh; transform: translateX(calc(var(--q, 0) * -2.5vw)); }
+  .lo.is-escena .lo-g { max-width: none; white-space: nowrap; font-size: min(40vh, calc(142vw / var(--n))); text-wrap: nowrap; }
+  .lo.is-escena .lo-ella { left: 58%; height: 91vh; transform: translateX(-50%) scale(calc(1 + var(--q, 0) * 0.06)); }
+  .lo.is-escena .lo-voz { position: absolute; left: 4vw; bottom: 9vh; width: min(31vw, 500px); margin: 0; padding: 0; background: none; box-shadow: none; }
+  .lo.is-escena .lo-frase { font-size: clamp(26px, 2.35vw, 40px); line-height: 1.14; }
+  .lo.is-escena .lo-nota { margin-top: 22px; padding: 8px 16px 8px 8px; background: #fff; border-radius: 999px; box-shadow: 0 10px 30px -18px rgba(20, 20, 20, 0.4); max-width: 380px; }
+  .lo.is-escena .lo-azul-in { padding: 0 4vw; }
+  .lo.is-escena .lo-azul-h { font-size: min(19vw, 34vh); }
+  .lo.is-escena .lo-saltar { display: inline-flex; position: absolute; right: 4vw; bottom: 5vh; z-index: 4; align-items: center; gap: 8px; padding: 9px 16px; border: 1px solid rgba(20, 20, 20, 0.2); border-radius: 999px; font-family: var(--font-display); font-size: 12.5px; font-weight: 600; color: var(--lo-tinta); text-decoration: none; background: rgba(245, 243, 238, 0.9); transition: background 0.3s, color 0.3s, opacity 0.3s; }
+  .lo.is-escena .lo-saltar:hover { background: var(--lo-tinta); color: #fff; text-decoration: none; }
+  .lo.is-escena.is-azul .lo-saltar { opacity: 0; pointer-events: none; }
+
+  /* teléfono: una sola sombra corta (regla de rendimiento móvil) */
+  @media (max-width: 767px) {
+    .lo-voz { box-shadow: 0 8px 18px -12px rgba(20, 20, 20, 0.3); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lo-onda i { animation: none !important; }
+    .lo.is-js .lo-g, .lo.is-js .lo-azul, .lo.is-js .lo-w { transition: none !important; }
+  }
+</style>
+
+<script>
+  (() => {
+    const sec = document.getElementById('orden');
+    if (!sec) return;
+    const escenaEl = sec.querySelector<HTMLElement>('.lo-escena')!;
+    const gigante = sec.querySelector<HTMLElement>('.lo-gigante')!;
+    const respuesta = sec.querySelector<HTMLElement>('.lo-azul-h');
+    const trozos = Array.from(sec.querySelectorAll<HTMLElement>('.lo-g'));
+    const palabras = Array.from(sec.querySelectorAll<HTMLElement>('.lo-w'));
+    const tiempo = sec.querySelector<HTMLElement>('.lo-tiempo');
+    const NT = trozos.length;                       // 7 trozos de la frase
+    const ENVIADO = NT, AZUL = NT + 1;              // después: nota enviada y respuesta de Sacs
+    // Última palabra de cada trozo: hasta ahí va la transcripción.
+    const FIN: number[] = [];
+    trozos.reduce((acc, t) => { const n = acc + (t.textContent || '').trim().split(/\s+/).length; FIN.push(n - 1); return n; }, 0);
+    const ph = (ev: string, props?: Record<string, unknown>) => { try { (window as any).sacsPH?.(ev, props); } catch { /* medir no rompe nada */ } };
+    const hitos = new Set<string>();
+    const hito = (k: string) => { if (!hitos.has(k)) { hitos.add(k); ph('orden_' + k); } };
+    const mqEscena = window.matchMedia('(min-width: 1024px) and (prefers-reduced-motion: no-preference)');
+    const mqMovimiento = window.matchMedia('(prefers-reduced-motion: no-preference)');
+
+    let modo: 'fijo' | 'escena' | 'auto' = 'fijo';
+    let visible = false, beat = -1, raf = 0, alto = 0, autoT = 0, autoBeat = -1, reprodujo = false;
+
+    /* ── pinta el momento `b`: 0–6 la frase, 7 enviada, 8 respuesta azul ── */
+    function pinta(b: number) {
+      if (b === beat) return;
+      beat = b;
+      const t = Math.min(b, NT - 1);
+      trozos.forEach((g, k) => { g.classList.toggle('is-on', k === t); g.classList.toggle('is-ido', k < t); });
+      const hasta = b < 0 ? -1 : FIN[t];
+      const desde = t > 0 ? FIN[t - 1] + 1 : 0;
+      palabras.forEach((w, k) => {
+        w.classList.toggle('is-dicha', k <= hasta);
+        w.classList.toggle('is-ahora', b < ENVIADO && k >= desde && k <= hasta);
+      });
+      sec!.classList.toggle('is-grabando', b >= 0 && b < ENVIADO);
+      sec!.classList.toggle('is-enviado', b >= ENVIADO);
+      sec!.classList.toggle('is-azul', b >= AZUL);
+      if (tiempo) tiempo.textContent = '0:0' + Math.max(1, t + 1);
+      if (b >= AZUL) hito('fin');
+    }
+
+    /* ── los trozos gigantes caben a lo ancho (se mide al cargar y al cambiar el tamaño, nunca en el scroll) ── */
+    function ajusta() {
+      const ancho = gigante.clientWidth * 0.95;
+      trozos.forEach((g) => {
+        g.style.fontSize = '';
+        const w = g.scrollWidth;
+        if (w > ancho) g.style.fontSize = (parseFloat(getComputedStyle(g).fontSize) * (ancho / w)).toFixed(1) + 'px';
+      });
+      // «Entendido.» también, al ancho de su bloque
+      if (respuesta) {
+        respuesta.style.fontSize = '';
+        const w = respuesta.scrollWidth, cab = respuesta.clientWidth * 0.99;
+        if (w > cab) respuesta.style.fontSize = (parseFloat(getComputedStyle(respuesta).fontSize) * (cab / w)).toFixed(1) + 'px';
+      }
+    }
+
+    /* ── escritorio: el progreso del riel dicta la frase y corre la cortina ── */
+    function mide() {
+      raf = 0;
+      const r = sec!.getBoundingClientRect();
+      const total = alto - window.innerHeight;
+      const p = total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0;
+      // 0–64 %: la frase, trozo por trozo · 64–72 %: nota enviada · 72–88 %: sube la cortina · resto: la respuesta quieta
+      const FRASE = 0.64, ENV = 0.72, CORT = 0.16;
+      const c = Math.min(1, Math.max(0, (p - ENV) / CORT));
+      const b = p < FRASE ? Math.min(NT - 1, Math.floor((p / FRASE) * NT)) : c < 0.92 ? ENVIADO : AZUL;
+      escenaEl.style.setProperty('--q', Math.min(1, p / ENV).toFixed(3));
+      escenaEl.style.setProperty('--c', c.toFixed(3));
+      pinta(b);
+    }
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(mide); };
+
+    /* ── teléfono y tableta: se reproduce sola una vez al verse ── */
+    function pasoAuto() {
+      autoBeat++;
+      pinta(autoBeat);
+      if (autoBeat >= AZUL) { paraAuto(); return; }
+      autoT = window.setTimeout(pasoAuto, autoBeat === ENVIADO - 1 ? 900 : autoBeat === ENVIADO ? 1100 : 640);
+    }
+    function arrancaAuto() { if (autoT || modo !== 'auto' || document.hidden || autoBeat >= AZUL) return; reprodujo = true; autoT = window.setTimeout(pasoAuto, autoBeat < 0 ? 350 : 500); }
+    function paraAuto() { if (autoT) { clearTimeout(autoT); autoT = 0; } }
+    const ioAuto = new IntersectionObserver((es) => {
+      const en = es[0].isIntersecting;
+      document.body.classList.toggle('orden-activo', en);   // mientras se ve la escena, el botón de WhatsApp no tapa la nota ni «Otra vez»
+      if (en) arrancaAuto(); else paraAuto();
+    }, { threshold: 0.55 });
+    sec.querySelector('.lo-repite')?.addEventListener('click', () => { paraAuto(); autoBeat = -1; beat = -2; pinta(-1); arrancaAuto(); });
+
+    function aplicaModo() {
+      window.removeEventListener('scroll', onScroll);
+      paraAuto(); ioAuto.disconnect(); document.body.classList.remove('orden-activo');
+      modo = mqEscena.matches ? 'escena' : mqMovimiento.matches ? 'auto' : 'fijo';
+      sec!.classList.toggle('is-js', modo !== 'fijo');
+      sec!.classList.toggle('is-escena', modo === 'escena');
+      sec!.classList.toggle('is-auto', modo === 'auto');
+      escenaEl.style.removeProperty('--c');
+      escenaEl.style.removeProperty('--q');
+      alto = sec!.offsetHeight;
+      beat = -2;
+      ajusta();
+      if (modo === 'fijo') { sec!.classList.remove('is-grabando', 'is-enviado', 'is-azul'); return; }
+      if (modo === 'escena') { pinta(0); if (visible) { window.addEventListener('scroll', onScroll, { passive: true }); mide(); } }
+      else { autoBeat = reprodujo ? AZUL : -1; pinta(reprodujo ? AZUL : -1); ioAuto.observe(escenaEl); }
+    }
+
+    const io = new IntersectionObserver((es) => {
+      visible = es[0].isIntersecting;
+      sec.classList.toggle('is-visible', visible);
+      if (modo === 'escena') document.body.classList.toggle('orden-activo', visible);   // la barra de WhatsApp no tapa la escena
+      if (visible) {
+        hito('ver');
+        if (modo === 'escena') { window.addEventListener('scroll', onScroll, { passive: true }); mide(); }
+      } else {
+        window.removeEventListener('scroll', onScroll);
+        paraAuto();
+      }
+    }, { rootMargin: '120px 0px' });
+
+    document.addEventListener('visibilitychange', () => { if (document.hidden) paraAuto(); else if (visible && modo === 'auto') arrancaAuto(); });
+    window.addEventListener('resize', () => { alto = sec.offsetHeight; ajusta(); if (modo === 'escena' && visible) onScroll(); }, { passive: true });
+    mqEscena.addEventListener('change', aplicaModo);
+    mqMovimiento.addEventListener('change', aplicaModo);
+    sec.querySelectorAll<HTMLElement>('[data-evento]').forEach((a) => a.addEventListener('click', () => ph(a.dataset.evento || '')));
+    document.fonts?.ready.then(ajusta);
+
+    aplicaModo();
+    io.observe(sec);
+  })();
+</script>
