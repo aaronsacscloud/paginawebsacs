@@ -18,15 +18,7 @@ import { esMP4, mp4OpusAOgg } from '../../../../lib/whatsapp/ogg';
 import { marcarReciente, ordenarPorReciente, cuantosRecientes, leerRecientes } from '../../../../lib/crm/recientes';
 import { tic, ticListo, ticError } from '../../../../lib/ui/tacto';
 import { campoDe, ES_LIBRE, nombreVariable } from '../../../../lib/whatsapp/variables-plantilla';
-
-/* Cómo se escriben nuestros grupos de plantillas cuando se enseñan.
-   La clave es corta —cabe en el chip y se teclea al crear la plantilla— y el
-   rótulo es la frase con la que el dueño la pidió. Un grupo sin entrada aquí
-   se enseña con su clave tal cual: nada se esconde por no estar en la lista. */
-const GRUPO_PL: Record<string, string> = {
-  apertura: 'Apertura de conversación',
-  llamada: 'Llamadas',
-};
+import { GRUPO_PL } from '../../../../lib/whatsapp/grupos-plantilla';
 
 type Modo = 'wa' | 'correo' | 'nota';
 type Popup = 'cotizacion' | 'agendar' | null | 'ia' | 'emoji' | 'variables' | 'snippets' | 'adjuntar' | 'prueba';

@@ -8,6 +8,7 @@ import { S, Tag, Aviso, Vacio, chip } from '../email/ui';
 import { C, label } from './estilo';
 import MockupWhatsApp from './MockupWhatsApp';
 import { CAMPOS, campoDe, ES_LIBRE, etiquetaLibre } from '../../../../lib/whatsapp/variables-plantilla';
+import { GRUPO_PL } from '../../../../lib/whatsapp/grupos-plantilla';
 import SubirImagen from '../ui/SubirImagen';
 import { confirmar } from '../../../../lib/ui/confirmar';
 
@@ -329,6 +330,12 @@ function EditorPlantilla({ form, setForm, onCrear, guardando, onCancelar }: { fo
           ))}
           <select style={{ ...inp, width: 'auto' }} value={form.idioma} onChange={e => setForm({ ...form, idioma: e.target.value })}>
             <option value="es_MX">es_MX</option><option value="es">es</option><option value="en_US">en_US</option>
+          </select>
+          {/* Nuestro grupo, no el de Meta: es por lo que se filtra al enviar
+              («Categoría» en el selector de plantillas). */}
+          <select style={{ ...inp, width: 'auto' }} value={form.grupo || ''} onChange={e => setForm({ ...form, grupo: e.target.value || null })} title="Grupo para encontrarla al enviar">
+            <option value="">Sin grupo</option>
+            {Object.entries(GRUPO_PL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
           </select>
         </div>
 
