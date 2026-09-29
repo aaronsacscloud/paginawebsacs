@@ -147,6 +147,17 @@ const planesStructuredData = [aggregateOfferSchema, faqSchema];
 
           <div class="plan-divider"></div>
 
+          {plan.destacado && (
+            <div class="plan-destacado">
+              <span class="plan-destacado-kicker">{plan.destacado.kicker}</span>
+              <p class="plan-destacado-titulo">{plan.destacado.titulo}</p>
+              <p class="plan-destacado-texto">{plan.destacado.texto}</p>
+              <div class="plan-destacado-plataformas" role="list" aria-label="Plataformas compatibles">
+                {plan.destacado.plataformas.map((p) => <span role="listitem">{p}</span>)}
+              </div>
+            </div>
+          )}
+
           {plan.inheritsFrom && (
             <p class="plan-inherits">Todo en {plan.inheritsFrom}, más:</p>
           )}
@@ -333,7 +344,7 @@ const planesStructuredData = [aggregateOfferSchema, faqSchema];
     <div class="addons-grid">
       <div class="addon-card addon-card--ia">
         <div class="addon-card-content">
-          <span class="addon-ia-kicker">Conector de datos de Sacs</span>
+          <span class="addon-ia-kicker">Conector de datos de Sacs · incluido en el plan Automatiza</span>
           <h3 class="addon-plugin-name">Opera todo Sacs desde ChatGPT, Claude, Grok o Muse</h3>
           <p class="addon-desc">Conectas tu cuenta de Sacs a la plataforma de IA que ya usas y le preguntas y le pides en lenguaje natural: qué talla se está acabando en Polanco, cuánto vendió la colección esta semana, que arme el traspaso o la orden de compra. Tus datos, en tu asistente, con permisos por usuario.</p>
           <div class="addon-ia-plataformas" role="group" aria-label="Plataformas compatibles">
@@ -2431,6 +2442,14 @@ const planesStructuredData = [aggregateOfferSchema, faqSchema];
 @media (min-width: 768px) {
   .addons-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* Plan Automatiza: bloque destacado del MCP de Sacscloud (arriba de sus funciones) */
+.plan-destacado { background: linear-gradient(135deg, #0E0D0C 0%, #15203a 100%); color: #fff; border-radius: var(--radius-md, 12px); padding: var(--space-5); margin: 0 0 var(--space-6); }
+.plan-destacado-kicker { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #8FB0FF; margin-bottom: 8px; }
+.plan-destacado-titulo { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; margin: 0 0 8px; color: #fff; }
+.plan-destacado-texto { font-size: 0.8125rem; line-height: 1.55; color: rgba(255,255,255,0.78); margin: 0 0 12px; }
+.plan-destacado-plataformas { display: flex; flex-wrap: wrap; gap: 6px; }
+.plan-destacado-plataformas span { font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); color: #fff; }
 
 /* Integraciones e-commerce: sección aparte de los módulos */
 .integraciones-section { background: var(--color-bg-card, #fff); }

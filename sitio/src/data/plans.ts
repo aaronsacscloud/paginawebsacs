@@ -25,6 +25,8 @@ export interface Plan {
   cta: { label: string; href: string; variant: 'primary' | 'secondary' };
   features: (string | { category: string; items: string[] })[];
   services: string[];
+  /** Bloque destacado arriba de las funciones del plan (p. ej. el MCP de Sacscloud en Automatiza). */
+  destacado?: { kicker: string; titulo: string; texto: string; plataformas: string[] };
 }
 
 export interface ComparisonFeature {
@@ -132,6 +134,13 @@ export const plans: Plan[] = [
     highlighted: false,
     inheritsFrom: 'Fideliza y Multiplica',
     cta: { label: 'Inicia ahora', href: '/registro?plan=automatiza', variant: 'secondary' },
+    // 29-sep-2026 (dueño): el acceso al MCP de Sacscloud va al inicio del plan, en su propia sección.
+    destacado: {
+      kicker: 'Incluido · MCP de Sacscloud',
+      titulo: 'Maneja todo Sacs desde Claude, ChatGPT o cualquier IA',
+      texto: 'Te damos acceso al MCP de Sacscloud: conectas tus ventas, inventario y clientes a la IA que ya usas y desde ahí consultas, operas y creas cualquier automatización, en lenguaje natural.',
+      plataformas: ['Claude', 'ChatGPT', 'Gemini', 'Cualquier LLM con MCP'],
+    },
     features: [
       { category: 'Especialista IA dedicado', items: ['Una persona real que diseña tus automatizaciones contigo', 'Sesión mensual para ajustar y agregar automatizaciones', 'Arranque completo de tu operación con IA'] },
       { category: 'AXO · Copiloto IA', items: ['Pregúntale cuánto llevas vendido del modelo nuevo, y actúa al momento', 'Te avisa de la talla que se va a agotar y te dice qué hacer', 'Aprende de tu operación y se vuelve más inteligente cada día'] },
