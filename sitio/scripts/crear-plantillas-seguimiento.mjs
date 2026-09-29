@@ -7,7 +7,12 @@
 //    conexión?»…). Una sola plantilla sirve para todo porque el motivo lo escribe
 //    quien la manda.
 //  - prueba_datos_acceso_v1: pedir nombre y correo para crear la prueba gratis.
-//  - prueba_accesos_listos_v1: la prueba ya quedó dada de alta: link, usuario y contraseña.
+//  - prueba_lista_v1: la prueba ya quedó dada de alta, con el link al sistema.
+//    SIN usuario ni contraseña: Meta rechazó al instante (INCORRECT_CATEGORY) las versiones
+//    con credenciales —con contraseña en UTILITY y MARKETING, y con solo el usuario en
+//    UTILITY—: lo trata como mensaje de inicio de sesión, que solo cabe en AUTHENTICATION (OTP).
+//    Usuario y contraseña van como mensaje normal cuando el cliente contesta y abre la
+//    ventana de 24 h.
 //
 // Todas llevan grupo `seguimiento` («Seguimiento de consultoría» en el selector) y el
 // nombre de quien escribe sale del CRM (campo `agente`), así sirve para Fernanda,
@@ -37,10 +42,10 @@ const PLANTILLAS = [
     ejemplos: ['Ana', 'Fernanda'],
   },
   {
-    nombre: 'prueba_accesos_listos_v1', categoria: 'UTILITY',
-    cuerpo: 'Hola {{1}}, ¿cómo estás? Soy {{2}}, de Sacscloud. Tus accesos a la prueba gratis de Sacs ya quedaron registrados.\n\nEntra aquí: {{3}}\nUsuario: {{4}}\nContraseña: {{5}}\n\nSi algo no te deja entrar, respóndeme por aquí y lo resolvemos.',
-    variables_map: ['primer_nombre', 'agente', 'libre:Link para entrar', 'email', 'libre:Contraseña'],
-    ejemplos: ['Ana', 'Fernanda', 'https://app.sacscloud.com', 'ana@boutiqueana.com', 'Prueba2026'],
+    nombre: 'prueba_lista_v1', categoria: 'UTILITY',
+    cuerpo: 'Hola {{1}}, ¿cómo estás? Soy {{2}}, de Sacscloud. Tu prueba gratis de Sacs ya quedó lista y registrada.\n\nEl sistema lo abres aquí: {{3}}\n\nRespóndeme este mensaje y por aquí mismo te comparto tus datos para entrar.',
+    variables_map: ['primer_nombre', 'agente', 'libre:Link del sistema'],
+    ejemplos: ['Ana', 'Fernanda', 'https://app.sacscloud.com'],
   },
 ];
 
