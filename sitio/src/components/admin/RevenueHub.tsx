@@ -88,6 +88,7 @@ import { SeccionWA } from './crm/whatsapp/ConfigWhatsApp';
 import TrabajoEnvios from './TrabajoEnvios';
 import TrabajoReactivacion from './TrabajoReactivacion';
 import TrabajoSeguimiento from './TrabajoSeguimiento';
+import AgenteInterruptor from './AgenteInterruptor';
 import ReglasAgente from './ReglasAgente';
 import { TI_CSS } from './TrabajoPanel';
 
@@ -4134,6 +4135,10 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             { g: 'Trabajo inteligente', mods: [
               // Los ajustes del agente viven aquí, con el resto de la configuración (decisión 2026-09-04): Trabajo inteligente es para trabajar.
               { id: 'agente', nom: 'Agente IA', sub: 'Lo que el agente tiene a la mano al escribir. La reactivación se trabaja en Trabajo inteligente.', items: [
+                // Apagado el 29-sep-2026 para frenar el gasto de IA; se prende aquí en un clic.
+                { id: 'encendido', ico: 'llave', t: 'Prender o apagar el agente', v: 'Apagado no gasta créditos de IA',
+                  d: 'Con el agente apagado no propone respuestas, toques ni mensajes de preparación, y no llama a Claude. Las confirmaciones y recordatorios de reuniones siguen saliendo.',
+                  editor: <AgenteInterruptor /> },
                 { id: 'herramientas', ico: 'catalogo', t: 'Herramientas del agente', v: 'Promociones · recursos · plantillas',
                   d: 'Promociones vigentes (las menciona una vez y con fecha límite), recursos que puede adjuntar (imagen, PDF, video) y las plantillas de Meta que crea por momento.',
                   editor: <div className="ti-raiz" style={{ background: 'transparent' }}><style>{TI_CSS}</style><TrabajoEnvios soloHerramientas /></div> },

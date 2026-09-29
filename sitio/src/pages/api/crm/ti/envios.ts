@@ -2,6 +2,7 @@
 // GET  → { pendientes, recientes, config }   lo que va a salir y lo que ya pasó
 // POST { id, accion: 'vetar'|'editar'|'enviar_ya', mensaje?, motivo? }
 //      { accion: 'agente_interruptor', activo: boolean }   prende/apaga el agente (solo founder)
+//      { accion: 'agente_estado' }                         ¿está prendido? (Configuración → Agente IA)
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
@@ -60,6 +61,10 @@ export const POST: APIRoute = async ({ request }) => {
   // INTERRUPTOR DEL AGENTE (29-sep-2026): el dueño lo apagó para frenar el gasto de IA y lo quiere poder prender en un
   // clic. Escribe con parcharConfig (no borra otras llaves y queda en ti_config_hist). Con `agente_activo` en false,
   // decidirTurno y todas las rutas del agente dejan de llamar a Claude.
+  if (accion === 'agente_estado') {
+    const cfgE: any = await leerConfig();
+    return json({ ok: true, agente_activo: cfgE.agente_activo === true });
+  }
   if (accion === 'agente_interruptor') {
     if (user.role !== 'founder') return json({ error: 'Solo el dueño puede prender o apagar el agente' }, 403);
     const activo = b.activo === true;

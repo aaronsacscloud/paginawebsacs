@@ -318,7 +318,7 @@ export async function decidirTurno(contactId: string, nota?: string, opts: { tar
   // APAGADO CENTRAL (29-sep-2026, decisión del dueño: pausar el gasto del agente). `agente_activo` ya frenaba las rutas
   // principales (respuestas, silencios, citas, calificación…), pero contrataciones, compromisos, regeneraciones, el árbitro
   // y la prueba llamaban aquí directo y seguían gastando. Con el agente apagado NINGUNA ruta redacta ni llama a Claude.
-  // Se vuelve a prender con el botón del agente (Trabajo → Envíos) o con parcharConfig({ agente_activo: true }).
+  // Se vuelve a prender en Configuración → Trabajo inteligente → Agente IA → «Prender o apagar el agente».
   {
     const { leerConfig } = await import('./motor');
     const cfgA: any = await leerConfig().catch(() => ({}));
