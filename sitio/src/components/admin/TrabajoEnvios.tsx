@@ -174,6 +174,10 @@ export default function TrabajoEnvios({ onIrAprendizaje, soloHerramientas }: { o
         <div className="ti-cab">
           <div className="ti-chips">
             <span className={'ti-chip ' + (cfg?.agente_activo ? 'chip-verde' : 'chip-tipo')}>{cfg ? (cfg.agente_activo ? (cfg.modo === 'vivo' ? 'Agente en vivo' : 'Agente en sombra') : 'Agente apagado') : '…'}</span>
+            {cfg && <button className="ti-chip chip-tipo" style={{ cursor: 'pointer', border: 0 }} disabled={ocupado}
+              title={cfg.agente_activo ? 'Deja de proponer y de gastar en IA hasta que lo vuelvas a prender' : 'Vuelve a proponer respuestas a los leads (gasta créditos de IA)'}
+              onClick={async () => { const activo = !cfg.agente_activo; const j = await post('/api/crm/ti/envios', { accion: 'agente_interruptor', activo }); if (j) { mostrar(activo ? 'Agente prendido' : 'Agente apagado', activo ? 'Vuelve a proponer respuestas a los leads.' : 'No propone ni gasta créditos de IA hasta que lo prendas.', 'ok'); await cargar(); } }}>
+              {cfg.agente_activo ? 'Apagar agente' : 'Prender agente'}</button>}
             {cfg && <span className="ti-chip chip-tipo">Veto: {cfg.veto_min} min</span>}
             {!!cfg?.pruebas?.length && <span className="ti-chip chip-p2">Pruebas: {cfg.pruebas.length} número{cfg.pruebas.length > 1 ? 's' : ''}</span>}
             <span className="ti-chip chip-tipo">{pend.length ? `Envío 1 de ${pend.length}` : 'Nada por salir'}</span>

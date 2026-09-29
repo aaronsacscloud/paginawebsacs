@@ -1,6 +1,7 @@
 // TRABAJO INTELIGENTE · «Próximos envíos» del agente SDR (N2: auto con veto).
 // GET  → { pendientes, recientes, config }   lo que va a salir y lo que ya pasó
 // POST { id, accion: 'vetar'|'editar'|'enviar_ya', mensaje?, motivo? }
+//      { accion: 'agente_interruptor', activo: boolean }   prende/apaga el agente (solo founder)
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
@@ -56,6 +57,18 @@ export const POST: APIRoute = async ({ request }) => {
   if (!user) return json({ error: 'Sin sesión' }, 401);
   const b = await request.json().catch(() => ({}));
   const { id, accion } = b || {};
+  // INTERRUPTOR DEL AGENTE (29-sep-2026): el dueño lo apagó para frenar el gasto de IA y lo quiere poder prender en un
+  // clic. Escribe con parcharConfig (no borra otras llaves y queda en ti_config_hist). Con `agente_activo` en false,
+  // decidirTurno y todas las rutas del agente dejan de llamar a Claude.
+  if (accion === 'agente_interruptor') {
+    if (user.role !== 'founder') return json({ error: 'Solo el dueño puede prender o apagar el agente' }, 403);
+    const activo = b.activo === true;
+    const { parcharConfig } = await import('../../../../lib/crm/ti/config-parche');
+    const nuevo = await parcharConfig({ agente_activo: activo });
+    if (!nuevo || nuevo.agente_activo !== activo) return json({ error: 'No se pudo guardar el cambio. Intenta de nuevo.' }, 500);
+    await supabase.from('ia_log').insert({ accion: activo ? 'agente_prendido' : 'agente_apagado', razon: activo ? 'prendido desde Próximos envíos' : 'apagado desde Próximos envíos', detalle: { por: user.id } });
+    return json({ ok: true, agente_activo: activo });
+  }
   // La GALERÍA del agente (imágenes que puede mandar) se administra desde aquí mismo.
   if (accion === 'galeria_agregar') {
     const nombre = String(b.nombre || '').trim().slice(0, 120), url = String(b.url || '').trim();

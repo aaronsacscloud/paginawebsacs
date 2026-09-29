@@ -315,6 +315,15 @@ export async function aplicarRechazo(contactId: string, motivo: string) {
 /** Un turno del agente para un contacto: lee, decide, no envía. */
 export async function decidirTurno(contactId: string, nota?: string, opts: { tarea?: string; modelo?: string; simularEntrante?: string; _reintentoFalso?: boolean } = {}): Promise<{ salida: SalidaAgente | null; costo: number; conversationId: string | null; telefono: string | null; motivo?: string }> {
   if (!hasApiKey()) return { salida: null, costo: 0, conversationId: null, telefono: null, motivo: 'sin_api_key' };
+  // APAGADO CENTRAL (29-sep-2026, decisión del dueño: pausar el gasto del agente). `agente_activo` ya frenaba las rutas
+  // principales (respuestas, silencios, citas, calificación…), pero contrataciones, compromisos, regeneraciones, el árbitro
+  // y la prueba llamaban aquí directo y seguían gastando. Con el agente apagado NINGUNA ruta redacta ni llama a Claude.
+  // Se vuelve a prender con el botón del agente (Trabajo → Envíos) o con parcharConfig({ agente_activo: true }).
+  {
+    const { leerConfig } = await import('./motor');
+    const cfgA: any = await leerConfig().catch(() => ({}));
+    if (cfgA?.agente_activo !== true) return { salida: null, costo: 0, conversationId: null, telefono: null, motivo: 'agente_apagado' };
+  }
   if (!(globalThis as any).__ia_proposito) (globalThis as any).__ia_proposito = `agente:${opts.tarea || 'respuesta'}`;   // atribución del gasto en ia_uso
   const [{ msjs, conversationId, telefono, phoneNumberId }, { data: c }, { data: perfil }] = await Promise.all([
     charla(contactId),
