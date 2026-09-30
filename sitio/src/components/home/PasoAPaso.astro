@@ -6,23 +6,44 @@
  * Cuatro fotos en escalera (Vende → Controla → Fideliza y Multiplica → Automatiza), cada una con su plan
  * y su precio mensual real (data/plans.ts, el mismo de /planes). Una línea azul sube por los escalones.
  *
- * Escritorio: escalera de cuatro columnas que entra al verse. Teléfono: carrusel con los escalones,
- * se desliza hacia arriba. «Reducir movimiento»: todo quieto. Fotos: gpt-image-2.5, public/images/fashion-os/.
+ * 30-sep-2026 (dueño): «cuando bajo del plan Vende, ese card se hace más grande hacia abajo, de forma
+ * interactiva, con una flecha donde explicamos mira todo lo que puedes hacer con el plan Vende, y ya
+ * mostramos lo demás». Cada escalón tiene su flecha: al tocarla (o la tarjeta) se despliega hacia abajo
+ * con un contador, el riel azul que se dibuja y las categorías del plan como acordeón — las MISMAS
+ * funciones de /planes (data/plans.ts), para que nunca digan cosas distintas. Uno abierto a la vez.
+ *
+ * Escritorio: escalera de cuatro columnas que entra al verse. Teléfono: carrusel con los escalones.
+ * Sin JS: todo desplegado. «Reducir movimiento»: sin rebotes ni transiciones. Fotos: gpt-image-2.5.
  */
 import { plans } from '../../data/plans';
 
-const precio = (id: string) => {
-  const p = plans.find((x) => x.id === id);
-  return p ? '$' + new Intl.NumberFormat('es-MX').format(p.monthly.mxn) : '';
-};
-const nombre = (id: string) => plans.find((x) => x.id === id)?.name || id;
-
-const PASOS = [
+const fmt = new Intl.NumberFormat('es-MX');
+const BASE = [
   { id: 'vende', n: '01', foto: 'paso-vende', alt: 'Una clienta paga con su celular en el mostrador de una boutique', texto: 'Cobra por talla y color en el piso, en línea y en redes, sobre un solo inventario.' },
   { id: 'controla', n: '02', foto: 'paso-controla', alt: 'Una encargada escanea la etiqueta de una prenda en la bodega, con los racks ordenados por color', texto: 'Inventario por talla y color en todas tus tiendas, conteos desde el celular y compras por curva.' },
   { id: 'fideliza', n: '03', foto: 'paso-fideliza', alt: 'Una estilista le entrega a una clienta frecuente su prenda envuelta con listón azul', texto: 'Monedero, WhatsApp y campañas que hacen volver a tu clienta cada temporada.' },
   { id: 'automatiza', n: '04', foto: 'paso-automatiza', alt: 'La dueña sale de su boutique con un café, revisando su celular mientras su marca opera sola', texto: 'Tus agentes de IA operan el día y el MCP de Sacscloud conecta Claude o ChatGPT. Tú solo apruebas.', marca: 'Incluye agentes de IA' },
 ];
+const PASOS = BASE.map((b) => {
+  const plan = plans.find((x) => x.id === b.id)!;
+  // Las funciones del plan, por categoría; «· pronto» se vuelve etiqueta en vez de texto.
+  const sueltas = plan.features.filter((f): f is string => typeof f === 'string');
+  const cats = [
+    ...plan.features.filter((f): f is { category: string; items: string[] } => typeof f !== 'string').map((f) => ({ nombre: f.category, items: f.items })),
+    ...(sueltas.length ? [{ nombre: 'Incluye', items: sueltas }] : []),
+  ].map((c) => ({ nombre: c.nombre, items: c.items.map((t) => ({ t: t.replace(/\s*·\s*pronto\s*$/i, ''), pronto: /·\s*pronto\s*$/i.test(t) })) }));
+  return {
+    ...b,
+    nombre: plan.name,
+    precio: '$' + fmt.format(plan.monthly.mxn),
+    cats,
+    total: cats.reduce((n, c) => n + c.items.length, 0),
+    hereda: plan.inheritsFrom || null,
+    servicios: plan.services,
+    destacado: plan.destacado || null,
+    empieza: plan.cta.href,
+  };
+});
 ---
 <section class="pp" id="paso-a-paso" aria-labelledby="pp-titulo">
   <div class="pp-in">
@@ -40,8 +61,8 @@ const PASOS = [
 
     <ol class="pp-escalera">
       {PASOS.map((p, k) => (
-        <li class:list={['pp-paso', { 'pp-paso--ia': p.marca }]} style={`--k:${k}`}>
-          <a href="/planes" data-evento="pasos_plan" data-plan={p.id} aria-label={`${p.n} · ${nombre(p.id)}: ${p.texto} Desde ${precio(p.id)} al mes por sucursal. Ver el plan`}>
+        <li class:list={['pp-paso', { 'pp-paso--ia': p.marca }]} style={`--k:${k}`} data-plan={p.id}>
+          <div class="pp-cara">
             <span class="pp-foto">
               <img
                 src={`/images/fashion-os/${p.foto}-480.webp`}
@@ -51,14 +72,70 @@ const PASOS = [
               />
               {p.marca && <span class="pp-marca">{p.marca}</span>}
             </span>
-            <span class="pp-n">{p.n}</span>
-            <b class="pp-nombre">{nombre(p.id)}</b>
-            <span class="pp-texto">{p.texto}</span>
-            <span class="pp-precio">desde <b>{precio(p.id)}</b> /mes por sucursal</span>
-            <span class="pp-ver" aria-hidden="true">Ver plan
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            <span class="pp-n" aria-hidden="true">{p.n}</span>
+            <h3 class="pp-nombre">{p.nombre}</h3>
+            <p class="pp-texto">{p.texto}</p>
+            <p class="pp-precio">desde <b>{p.precio}</b> /mes por sucursal</p>
+          </div>
+
+          <button type="button" class="pp-abre" aria-expanded="false" aria-controls={`pp-mas-${p.id}`}>
+            <span class="pp-flecha" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
             </span>
-          </a>
+            <span class="pp-abre-t"><span class="pp-abre-ver">Mira todo lo que puedes hacer con {p.nombre}</span><span class="pp-abre-cierra">Ocultar lo que incluye</span></span>
+          </button>
+
+          <div class="pp-mas" id={`pp-mas-${p.id}`} role="region" aria-label={`Todo lo que incluye ${p.nombre}`}>
+            <div class="pp-mas-rec">
+              <div class="pp-mas-in">
+                <p class="pp-mas-t"><b class="pp-cuenta" data-n={p.total}>{p.total}</b><span>cosas que haces con {p.nombre}</span></p>
+                {p.hereda && (
+                  <p class="pp-hereda">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                    Todo lo de {p.hereda}, y además:
+                  </p>
+                )}
+                {p.destacado && (
+                  <div class="pp-mcp">
+                    <span class="pp-mcp-k">{p.destacado.kicker}</span>
+                    <b>{p.destacado.titulo}</b>
+                    <span class="pp-mcp-p">{p.destacado.plataformas.map((x) => <i>{x}</i>)}</span>
+                  </div>
+                )}
+                <ol class="pp-cats">
+                  {p.cats.map((c, j) => (
+                    <li class:list={['pp-cat', { 'is-abierta': j === 0 }]}>
+                      <button type="button" class="pp-cat-b" aria-expanded={j === 0 ? 'true' : 'false'} aria-controls={`pp-${p.id}-c${j}`}>
+                        <i class="pp-punto" aria-hidden="true"></i>
+                        <span class="pp-cat-n">{c.nombre}</span>
+                        <small>{c.items.length}</small>
+                        <svg class="pp-cat-v" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                      </button>
+                      <div class="pp-cat-mas" id={`pp-${p.id}-c${j}`}>
+                        <div class="pp-cat-rec">
+                          <ul>
+                            {c.items.map((it, q) => (
+                              <li style={`--q:${q}`}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4.5 12.5 4.5 4.5L19.5 7"/></svg>
+                                <span>{it.t}{it.pronto && <em>pronto</em>}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+                <p class="pp-servicios"><b>Además:</b> {p.servicios.join(' · ')}</p>
+                <div class="pp-mas-ctas">
+                  <a class="pp-empieza" href={p.empieza} data-evento="pasos_empieza" data-plan={p.id}>Empieza con {p.nombre}</a>
+                  <a class="pp-compara" href="/planes" data-evento="pasos_compara" data-plan={p.id}>Compara los 4 planes
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
         </li>
       ))}
     </ol>
@@ -67,7 +144,7 @@ const PASOS = [
 
 <style>
   .pp {
-    --pp-marfil: #F5F3EE; --pp-tinta: #141414; --pp-azul: #4B7BE5; --pp-azul-o: #3A62C4; --pp-azul-b: #4470D8;
+    --pp-marfil: #F5F3EE; --pp-tinta: #141414; --pp-azul: #4B7BE5; --pp-azul-o: #3A62C4; --pp-azul-b: #4470D8; --pp-azul-t: #E9EFFD;
     --pp-texto: #45433E; --pp-tenue: #6E6A62; --pp-linea: rgba(20, 20, 20, 0.12); --pp-sube: 30px; --pp-gap: 14px;
     position: relative; background: var(--pp-marfil); color: var(--pp-tinta); border-top: 1px solid var(--pp-linea); overflow: clip;
   }
@@ -83,7 +160,7 @@ const PASOS = [
   .pp-cta--1:hover { background: #2A2A2A; color: #fff; text-decoration: none; transform: translateY(-1px); }
   .pp-cta--2 { border: 1px solid rgba(20, 20, 20, 0.3); color: var(--pp-tinta); }
   .pp-cta--2:hover { border-color: var(--pp-tinta); color: var(--pp-tinta); text-decoration: none; transform: translateY(-1px); }
-  .pp-cta:focus-visible, .pp-paso a:focus-visible { outline: 2px solid var(--pp-azul); outline-offset: 4px; }
+  .pp-cta:focus-visible, .pp-abre:focus-visible, .pp-cat-b:focus-visible, .pp-empieza:focus-visible, .pp-compara:focus-visible { outline: 2px solid var(--pp-azul); outline-offset: 3px; }
 
   /* la escalera: en el teléfono es un carrusel que sube al deslizar */
   .pp-escalera { display: flex; align-items: flex-start; gap: var(--pp-gap); margin: 44px -16px 0; padding: 0 16px 8px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 16px; list-style: none; scrollbar-width: none; }
@@ -92,27 +169,97 @@ const PASOS = [
   /* la línea azul: el borde de arriba de cada escalón y el tramo que sube al siguiente */
   .pp-paso::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--pp-azul); transform-origin: left; }
   .pp-paso + .pp-paso::after { content: ''; position: absolute; left: calc(-1 * var(--pp-gap)); top: 0; width: var(--pp-gap); height: calc(var(--pp-sube) + 2px); border-left: 2px solid var(--pp-azul); border-top: 2px solid var(--pp-azul); box-sizing: border-box; }
-  .pp-paso a { display: block; color: inherit; text-decoration: none; }
-  .pp-paso a:hover { color: inherit; text-decoration: none; }
+
+  .pp-cara { display: block; transition: opacity 0.35s ease; }
+  .pp.is-js .pp-cara { cursor: pointer; }
   .pp-foto { position: relative; display: block; aspect-ratio: 3 / 4; overflow: hidden; border-radius: 3px; background: #E6E2D9; }
   .pp-foto img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
-  .pp-paso a:hover .pp-foto img { transform: scale(1.04); }
+  .pp-paso:hover .pp-foto img, .pp-paso.is-abierto .pp-foto img { transform: scale(1.04); }
   .pp-marca { position: absolute; left: 10px; top: 10px; padding: 6px 10px; border-radius: 999px; background: var(--pp-azul-b); color: #fff; font-family: var(--font-display); font-size: 11.5px; font-weight: 700; }
   .pp-n { display: block; margin-top: 16px; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: 44px; line-height: 0.9; letter-spacing: -0.03em; color: var(--pp-azul); }
-  .pp-nombre { display: block; margin-top: 8px; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: 26px; line-height: 1; letter-spacing: -0.015em; }
-  .pp-texto { display: block; margin-top: 10px; font-size: 14px; line-height: 1.5; color: var(--pp-texto); }
-  .pp-precio { display: block; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--pp-linea); font-size: 13px; color: var(--pp-tenue); }
+  .pp-nombre { margin: 8px 0 0; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: 26px; line-height: 1; letter-spacing: -0.015em; color: var(--pp-tinta); }
+  .pp-texto { margin: 10px 0 0; font-size: 14px; line-height: 1.5; color: var(--pp-texto); }
+  .pp-precio { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--pp-linea); font-size: 13px; color: var(--pp-tenue); }
   .pp-precio b { font-family: var(--font-display); font-size: 17px; font-weight: 700; color: var(--pp-tinta); }
   .pp-paso--ia .pp-precio b { color: var(--pp-azul-o); }
-  .pp-ver { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; font-family: var(--font-display); font-size: 13.5px; font-weight: 700; color: var(--pp-azul-o); }
-  .pp-ver svg { transition: transform 0.25s; }
-  .pp-paso a:hover .pp-ver svg { transform: translateX(3px); }
+
+  /* la flecha que despliega el escalón: rebota para invitar a tocarla y gira al abrir */
+  .pp-abre { display: none; }
+  .pp.is-js .pp-abre { scroll-margin-top: 92px; display: flex; align-items: center; gap: 12px; width: 100%; margin-top: 14px; padding: 8px 14px 8px 8px; border: 1px solid rgba(75, 123, 229, 0.4); border-radius: 999px; background: #fff; color: var(--pp-azul-o); font-family: var(--font-display); font-size: 13.5px; font-weight: 600; line-height: 1.25; text-align: left; cursor: pointer; transition: background 0.25s, color 0.25s, border-color 0.25s, box-shadow 0.25s; }
+  .pp.is-js .pp-abre:hover, .pp.is-js .pp-paso.is-abierto .pp-abre { background: var(--pp-azul); border-color: var(--pp-azul); color: #fff; }
+  .pp-flecha { flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--pp-azul); color: #fff; transition: transform 0.5s cubic-bezier(0.3, 1.4, 0.5, 1), background 0.25s, color 0.25s; }
+  .pp-abre:hover .pp-flecha, .pp-paso.is-abierto .pp-flecha { background: #fff; color: var(--pp-azul); }
+  .pp-paso.is-abierto .pp-flecha { transform: rotate(180deg); }
+  .pp.is-visible .pp-paso:not(.is-abierto) .pp-flecha svg { animation: ppBota 1.5s ease-in-out infinite; animation-delay: calc(var(--k) * 0.18s); }
+  .pp-abre-cierra { display: none; }
+  .pp-paso.is-abierto .pp-abre-ver { display: none; }
+  .pp-paso.is-abierto .pp-abre-cierra { display: inline; }
+
+  /* el despliegue: la tarjeta crece hacia abajo (filas de grid 0fr → 1fr) */
+  .pp-mas { display: grid; grid-template-rows: 1fr; }
+  .pp.is-js .pp-mas { grid-template-rows: 0fr; transition: grid-template-rows 0.65s cubic-bezier(0.16, 1, 0.3, 1); }
+  .pp.is-js .pp-paso.is-abierto .pp-mas { grid-template-rows: 1fr; }
+  .pp-mas-rec { min-height: 0; overflow: hidden; }
+  .pp-mas-in { margin-top: 12px; padding: 18px 16px 18px; background: #fff; border: 1px solid var(--pp-linea); border-top: 2px solid var(--pp-azul); border-radius: 0 0 6px 6px; }
+  .pp.is-js .pp-mas-in { opacity: 0; transform: translateY(-12px); transition: opacity 0.3s ease, transform 0.55s cubic-bezier(0.16, 1, 0.3, 1); }
+  .pp.is-js .pp-paso.is-abierto .pp-mas-in { opacity: 1; transform: none; transition-delay: 0.1s; }
+  .pp-mas-t { display: flex; align-items: baseline; gap: 10px; margin: 0; font-family: var(--font-display); font-size: 13.5px; font-weight: 600; line-height: 1.25; color: var(--pp-texto); }
+  .pp-mas-t b { font-family: 'Clash Display', var(--font-display); font-size: 40px; font-weight: 700; line-height: 0.85; letter-spacing: -0.03em; color: var(--pp-azul); font-variant-numeric: tabular-nums; }
+  .pp-hereda { display: inline-flex; align-items: center; gap: 6px; margin: 14px 0 0; padding: 6px 11px 6px 9px; border-radius: 999px; background: var(--pp-azul-t); color: var(--pp-azul-o); font-family: var(--font-display); font-size: 12px; font-weight: 600; }
+  .pp-mcp { margin-top: 14px; padding: 13px 14px; border-radius: 10px; background: var(--pp-azul-b); color: #fff; }
+  .pp-mcp-k { display: block; font-family: var(--font-display); font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.85; }
+  .pp-mcp b { display: block; margin-top: 6px; font-family: var(--font-display); font-size: 14.5px; line-height: 1.3; }
+  .pp-mcp-p { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+  .pp-mcp-p i { padding: 3px 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.18); font-family: var(--font-display); font-size: 11px; font-style: normal; font-weight: 600; }
+
+  /* las categorías sobre el riel azul: cada una se abre como acordeón */
+  .pp-cats { position: relative; margin: 16px 0 0; padding: 0 0 0 20px; list-style: none; }
+  .pp-cats::before { content: ''; position: absolute; left: 4px; top: 16px; bottom: 16px; width: 2px; background: var(--pp-azul); transform-origin: top; }
+  .pp.is-js .pp-cats::before { transform: scaleY(0); transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
+  .pp.is-js .pp-paso.is-abierto .pp-cats::before { transform: none; transition-delay: 0.25s; }
+  .pp-cat + .pp-cat { border-top: 1px solid var(--pp-linea); }
+  .pp-cat-b { position: relative; display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px 0; border: 0; background: none; color: var(--pp-tinta); font-family: var(--font-display); font-size: 14px; font-weight: 600; line-height: 1.25; text-align: left; cursor: pointer; }
+  .pp-cat-b:hover .pp-cat-n { color: var(--pp-azul-o); }
+  .pp-punto { position: absolute; left: -20px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 2px var(--pp-azul); transition: background 0.3s, transform 0.3s; }
+  .pp-cat.is-abierta .pp-punto { background: var(--pp-azul); transform: scale(1.2); }
+  .pp-cat-n { flex: 1; min-width: 0; transition: color 0.2s; }
+  .pp-cat-b small { flex-shrink: 0; min-width: 24px; padding: 2px 7px; border-radius: 999px; background: #F1EFEA; color: var(--pp-tenue); font-family: var(--font-display); font-size: 11px; font-weight: 600; text-align: center; transition: background 0.3s, color 0.3s; }
+  .pp-cat.is-abierta .pp-cat-b small { background: var(--pp-azul-t); color: var(--pp-azul-o); }
+  .pp-cat-v { flex-shrink: 0; color: var(--pp-tenue); transition: transform 0.35s ease, color 0.3s; }
+  .pp-cat.is-abierta .pp-cat-v { transform: rotate(180deg); color: var(--pp-azul-o); }
+  .pp-cat-mas { display: grid; grid-template-rows: 1fr; }
+  .pp.is-js .pp-cat-mas { grid-template-rows: 0fr; transition: grid-template-rows 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+  .pp.is-js .pp-cat.is-abierta .pp-cat-mas { grid-template-rows: 1fr; }
+  .pp-cat-rec { min-height: 0; overflow: hidden; }
+  .pp-cat-mas ul { display: grid; gap: 9px; margin: 0; padding: 0 0 14px; list-style: none; }
+  .pp-cat-mas li { display: flex; gap: 8px; font-size: 13.5px; line-height: 1.42; color: var(--pp-texto); }
+  .pp-cat-mas li svg { flex-shrink: 0; margin-top: 3px; color: var(--pp-azul); }
+  .pp-cat-mas em { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #F1EFEA; color: var(--pp-tenue); font-family: var(--font-display); font-size: 10.5px; font-style: normal; font-weight: 600; vertical-align: 1px; }
+  .pp.is-js .pp-cat-mas li { opacity: 0; transform: translateX(-8px); transition: opacity 0.3s ease, transform 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+  .pp.is-js .pp-paso.is-abierto .pp-cat.is-abierta .pp-cat-mas li { opacity: 1; transform: none; transition-delay: calc(0.18s + var(--q) * 0.04s); }
+
+  .pp-servicios { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--pp-linea); font-size: 12.5px; line-height: 1.5; color: var(--pp-tenue); }
+  .pp-servicios b { color: var(--pp-tinta); font-weight: 600; }
+  .pp-mas-ctas { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+  .pp-empieza { display: flex; align-items: center; justify-content: center; min-height: 46px; padding: 0 18px; border-radius: 999px; background: var(--pp-azul-b); color: #fff; font-family: var(--font-display); font-size: 14px; font-weight: 700; text-align: center; text-decoration: none; transition: background 0.2s, transform 0.2s; }
+  .pp-empieza:hover { background: var(--pp-azul-o); color: #fff; text-decoration: none; transform: translateY(-1px); }
+  .pp-compara { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--font-display); font-size: 13.5px; font-weight: 600; color: var(--pp-azul-o); text-decoration: none; }
+  .pp-compara:hover { color: var(--pp-azul); text-decoration: none; }
+  .pp-compara svg { transition: transform 0.25s; }
+  .pp-compara:hover svg { transform: translateX(3px); }
+
+  /* con un escalón abierto, los demás se hacen a un lado (vuelven al pasar el mouse) */
+  .pp-escalera.hay-abierto .pp-paso:not(.is-abierto) .pp-cara { opacity: 0.45; }
+  .pp-escalera.hay-abierto .pp-paso:not(.is-abierto):hover .pp-cara { opacity: 1; }
+  .pp-paso.is-abierto::before { height: 3px; }
 
   /* entra al verse: los escalones suben uno tras otro y la línea se dibuja */
   .pp.is-js .pp-paso { opacity: 0; transform: translateY(36px); transition: opacity 0.6s ease, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--k) * 0.12s); }
   .pp.is-js .pp-paso::before { transform: scaleX(0); transition: transform 0.6s cubic-bezier(0.7, 0, 0.2, 1); transition-delay: calc(0.35s + var(--k) * 0.12s); }
   .pp.is-visto .pp-paso { opacity: 1; transform: none; }
   .pp.is-visto .pp-paso::before { transform: none; }
+
+  @keyframes ppBota { 0%, 100% { transform: translateY(-1px); } 50% { transform: translateY(3px); } }
 
   @media (min-width: 640px) {
     .pp-in { padding: 96px 32px 104px; }
@@ -128,11 +275,21 @@ const PASOS = [
     .pp-ctas { flex-shrink: 0; margin-top: 0; }
     .pp-escalera { margin: 72px 0 0; padding: 0; overflow: visible; }
     .pp-paso { flex: 1 1 0; min-width: 0; }
+    /* el escalón abierto se hace MÁS GRANDE: crece a lo ancho mientras se despliega hacia abajo */
+    /* la entrada escalonada conserva su retraso; el crecer al abrir va sin retraso */
+    .pp.is-js .pp-paso { transition: opacity 0.6s ease, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1), flex-grow 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--k) * 0.12s), calc(var(--k) * 0.12s), 0s; }
+    .pp-escalera.hay-abierto .pp-paso.is-abierto { flex-grow: 2.3; }
+    .pp-paso.is-abierto .pp-mas-in { padding: 22px 24px 22px; }
+    .pp-paso.is-abierto .pp-cat-mas ul { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 22px; }
+    .pp-paso.is-abierto .pp-mas-ctas { flex-direction: row; align-items: center; gap: 18px; }
+    .pp-paso.is-abierto .pp-empieza { padding: 0 26px; }
     .pp-n { font-size: clamp(44px, 3.8vw, 64px); }
     .pp-nombre { font-size: clamp(22px, 1.9vw, 30px); }
   }
   @media (prefers-reduced-motion: reduce) {
     .pp.is-js .pp-paso, .pp.is-js .pp-paso::before { opacity: 1; transform: none; transition: none; }
+    .pp.is-js .pp-mas, .pp.is-js .pp-mas-in, .pp.is-js .pp-cat-mas, .pp.is-js .pp-cat-mas li, .pp.is-js .pp-cats::before, .pp-flecha { transition: none !important; }
+    .pp-flecha svg { animation: none !important; }
   }
 </style>
 
@@ -141,15 +298,77 @@ const PASOS = [
     const sec = document.getElementById('paso-a-paso');
     if (!sec) return;
     sec.classList.add('is-js');
+    const escalera = sec.querySelector<HTMLElement>('.pp-escalera')!;
+    const pasos = Array.from(sec.querySelectorAll<HTMLElement>('.pp-paso'));
+    const quieto = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const ph = (ev: string, props?: Record<string, unknown>) => { try { (window as any).sacsPH?.(ev, props); } catch { /* medir no rompe nada */ } };
+    const panelDe = (li: HTMLElement) => li.querySelector<HTMLElement>('.pp-mas')!;
+
+    // Lo plegado no recibe foco ni lo lee el lector de pantalla (sin JS, todo queda desplegado).
+    pasos.forEach((li) => {
+      panelDe(li).inert = true;
+      li.querySelectorAll<HTMLElement>('.pp-cat:not(.is-abierta) .pp-cat-mas').forEach((m) => { m.inert = true; });
+    });
+
+    /* el contador de funciones corre de 0 al total al abrir */
+    function cuenta(el: HTMLElement) {
+      const n = +(el.dataset.n || 0);
+      if (quieto.matches) { el.textContent = String(n); return; }
+      const t0 = performance.now();
+      const paso = (t: number) => {
+        const f = Math.min(1, (t - t0) / 800);
+        el.textContent = String(Math.round(n * (1 - Math.pow(1 - f, 3))));
+        if (f < 1) requestAnimationFrame(paso);
+      };
+      el.textContent = '0';
+      requestAnimationFrame(paso);
+    }
+
+    function abre(li: HTMLElement, on: boolean, porUsuario: boolean) {
+      li.classList.toggle('is-abierto', on);
+      li.querySelector('.pp-abre')?.setAttribute('aria-expanded', String(on));
+      panelDe(li).inert = !on;
+      if (on) {
+        pasos.forEach((o) => { if (o !== li && o.classList.contains('is-abierto')) abre(o, false, false); });   // uno a la vez
+        const c = li.querySelector<HTMLElement>('.pp-cuenta');
+        if (c) cuenta(c);
+        if (porUsuario) {
+          ph('pasos_abrir', { plan: li.dataset.plan });
+          // Si el despliegue queda abajo de la pantalla, se acerca para que se vea crecer.
+          window.setTimeout(() => {
+            const b = li.querySelector<HTMLElement>('.pp-abre');
+            if (b && b.getBoundingClientRect().top > window.innerHeight * 0.6) b.scrollIntoView({ behavior: quieto.matches ? 'auto' : 'smooth', block: 'start' });
+          }, 120);
+        }
+      }
+      escalera.classList.toggle('hay-abierto', pasos.some((o) => o.classList.contains('is-abierto')));
+    }
+
+    pasos.forEach((li) => {
+      const toca = () => abre(li, !li.classList.contains('is-abierto'), true);
+      li.querySelector('.pp-abre')?.addEventListener('click', toca);
+      li.querySelector('.pp-cara')?.addEventListener('click', toca);
+      const cats = Array.from(li.querySelectorAll<HTMLElement>('.pp-cat'));
+      cats.forEach((cat) => cat.querySelector('.pp-cat-b')?.addEventListener('click', () => {
+        const on = !cat.classList.contains('is-abierta');
+        cats.forEach((o) => {
+          const ab = o === cat ? on : false;
+          o.classList.toggle('is-abierta', ab);
+          o.querySelector('.pp-cat-b')?.setAttribute('aria-expanded', String(ab));
+          const m = o.querySelector<HTMLElement>('.pp-cat-mas');
+          if (m) m.inert = !ab;
+        });
+        if (on) ph('pasos_categoria', { plan: li.dataset.plan, cat: cat.querySelector('.pp-cat-n')?.textContent });
+      }));
+    });
+
+    // Entra al verse (una vez) y las flechas rebotan solo mientras la sección está en pantalla.
     const io = new IntersectionObserver((es) => {
-      if (!es[0].isIntersecting) return;
-      sec.classList.add('is-visto');
-      io.disconnect();
-      try { (window as any).sacsPH?.('pasos_ver'); } catch { /* medir no rompe nada */ }
-    }, { threshold: 0.18 });
-    io.observe(sec.querySelector('.pp-escalera') || sec);
-    sec.querySelectorAll<HTMLElement>('[data-evento]').forEach((a) => a.addEventListener('click', () => {
-      try { (window as any).sacsPH?.(a.dataset.evento || '', { plan: a.dataset.plan }); } catch { /* medir no rompe nada */ }
-    }));
+      const en = es[0].isIntersecting;
+      sec.classList.toggle('is-visible', en);
+      if (en && !sec.classList.contains('is-visto')) { sec.classList.add('is-visto'); ph('pasos_ver'); }
+    }, { threshold: 0.12 });
+    io.observe(escalera);
+    sec.querySelectorAll<HTMLElement>('[data-evento]').forEach((a) => a.addEventListener('click', () => ph(a.dataset.evento || '', { plan: a.dataset.plan })));
   })();
 </script>
