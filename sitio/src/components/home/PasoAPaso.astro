@@ -208,7 +208,7 @@ const PASOS = BASE.map((b) => {
   .pp-velo { position: absolute; inset: 0; background: linear-gradient(to top, rgba(10, 10, 10, 0.78) 0%, rgba(10, 10, 10, 0.5) 38%, rgba(10, 10, 10, 0.08) 72%, rgba(10, 10, 10, 0) 100%); }
   .pp-titular { position: absolute; left: 20px; right: 20px; bottom: 26px; }
   .pp-t-k { margin: 0; font-family: var(--font-display); font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255, 255, 255, 0.86); }
-  .pp-t-h { margin: 12px 0 0; max-width: 16ch; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: clamp(32px, 9vw, 112px); line-height: 0.96; letter-spacing: -0.02em; color: #fff; text-wrap: balance; }
+  .pp-t-h { margin: 12px 0 0; max-width: 16ch; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: clamp(30px, min(9vw, 11vh), 112px); line-height: 0.96; letter-spacing: -0.02em; color: #fff; text-wrap: balance; }
   .pp-t-h .w { display: inline-block; white-space: pre; }
   .pp-t-precio { margin: 16px 0 0; font-size: 14.5px; color: rgba(255, 255, 255, 0.88); }
   .pp-t-precio b { font-family: var(--font-display); font-size: 18px; color: #fff; }
@@ -317,10 +317,11 @@ const PASOS = BASE.map((b) => {
     .pp-titular { left: 4vw; right: 4vw; bottom: 48px; }
     .pp-t-precio { font-size: 16px; }
     .pp.is-escena .pp-riel { height: 200vh; }
-    .pp.is-escena .pp-paso-k { left: 4vw; right: 4vw; top: 104px; font-size: 12px; }
+    .pp.is-escena .pp-paso-k { left: 4vw; right: 4vw; top: clamp(64px, 11vh, 104px); font-size: 12px; }
     .pp.is-escena .pp-paso-t { display: none; }
-    /* la escalera cabe en la pantalla: las fotos se limitan por el alto disponible */
-    .pp.is-escena .pp-esc { width: min(1180px, 92vw, calc((100vh - 400px) * 3 + 3 * var(--pp-gap))); top: 55%; }
+    /* la escalera cabe en la pantalla: va debajo de «Paso N de 4» y las fotos se limitan por el alto que queda
+       (foto 3:4 → ancho de columna = alto × 0.75; cuatro columnas = alto × 3) */
+    .pp.is-escena .pp-esc { top: calc(clamp(64px, 11vh, 104px) + 36px); transform: translateX(-50%); width: min(1180px, 92vw, calc((100vh - clamp(64px, 11vh, 104px) - 190px - 3 * var(--pp-sube)) * 3 + 3 * var(--pp-gap))); }
     .pp.is-escena .pp-titular { left: 5vw; right: 5vw; bottom: 11vh; }
   }
   @media (min-width: 1400px) {
@@ -354,7 +355,9 @@ const PASOS = BASE.map((b) => {
       activa: false, n: -1, fase: -1,
     }));
     type Cap = (typeof caps)[number];
-    let escena = false, raf = 0;
+    let escena = false, raf = 0, fijada = false;
+    // La barra de WhatsApp se oculta solo mientras la foto de un paso está pegada a la pantalla.
+    const fija = (on: boolean) => { if (on !== fijada) { fijada = on; document.body.classList.toggle('pasos-activo', on); } };
 
     /* ── geometría: de qué tarjeta crece la foto y cuánto (se mide al cargar/cambiar tamaño, no en el scroll) ── */
     function geo(c: Cap) {
@@ -381,9 +384,11 @@ const PASOS = BASE.map((b) => {
     function cuadro() {
       raf = 0;
       const vh = window.innerHeight;
+      let pegada = false;
       for (const c of caps) {
         if (!c.activa) continue;
         const r = c.riel.getBoundingClientRect();
+        if (r.top <= 0 && r.bottom >= vh) pegada = true;
         const total = r.height - vh;
         const p = total > 0 ? clamp(-r.top / total) : 0;
         // 0–10 %: la escalera · 10–58 %: la foto crece · 40–60 %: entra el velo · 50–78 %: la frase · 80 %+: precio y flecha
@@ -401,6 +406,7 @@ const PASOS = BASE.map((b) => {
           if (fase === 2) hito('pasos_paso_' + c.plan, { plan: c.plan });
         }
       }
+      fija(pegada);
     }
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(cuadro); };
 
@@ -410,9 +416,8 @@ const PASOS = BASE.map((b) => {
         if (c) c.activa = en.isIntersecting;
       });
       const alguna = caps.some((c) => c.activa);
-      document.body.classList.toggle('pasos-activo', escena && alguna);   // la barra de WhatsApp no tapa la foto a pantalla completa
       if (escena && alguna) { window.addEventListener('scroll', onScroll, { passive: true }); onScroll(); }
-      else window.removeEventListener('scroll', onScroll);
+      else { window.removeEventListener('scroll', onScroll); fija(false); }
     }, { rootMargin: '0px' });
 
     function aplicaModo() {
@@ -425,7 +430,7 @@ const PASOS = BASE.map((b) => {
         ['--e', '--v', '--gx', '--gy', '--gr', '--gb', '--dx', '--dy', '--s0'].forEach((v) => c.esc.style.removeProperty(v));
       });
       if (escena) { mideTodo(); onScroll(); }
-      else { window.removeEventListener('scroll', onScroll); document.body.classList.remove('pasos-activo'); }
+      else { window.removeEventListener('scroll', onScroll); fija(false); }
     }
 
     /* ── lo que incluye: cada categoría entra al verse y el contador corre una vez ── */

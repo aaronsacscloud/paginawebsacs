@@ -24,7 +24,7 @@ const AGENTES = [
   { id: 'inv', n: '01', nombre: 'Inventario', rol: 'Surte tus tiendas antes de abrir', foto: 'h07', pos: '80% 50%' },
   { id: 'ven', n: '02', nombre: 'Ventas', rol: 'Lanza el drop en todos tus canales', foto: 'h10', pos: '57% 50%' },
   { id: 'cli', n: '03', nombre: 'Clientes', rol: 'Le avisa primero a tu clienta', foto: 'h13', pos: '62% 50%' },
-  { id: 'com', n: '04', nombre: 'Compras', rol: 'Arma la orden al proveedor', foto: 'h16', pos: '66% 50%' },
+  { id: 'com', n: '04', nombre: 'Compras', rol: 'Arma la orden al proveedor', foto: 'h16', pos: '30% 50%' },
   { id: 'pre', n: '05', nombre: 'Precios', rol: 'Rebaja en el momento exacto', foto: 'h19', pos: '62% 50%' },
 ];
 
@@ -52,8 +52,8 @@ const CAPS: { agente: string; hora: string; momento: string; quien: string; luga
     accion: { img: '/images/prod-vestido-negro.webp', alt: 'Vestido negro', titulo: '«Ya llegó tu talla»', detalle: 'Vestido negro · 212 clientas · 9 apartados', chip: '✓ Enviado', chipTipo: 'ok' },
   },
   {
-    agente: 'com', hora: '16:00', momento: 'La compra', quien: 'Agente de Compras', lugar: 'León, Guanajuato',
-    foto: 'h16', alt: 'Un artesano revisa un botín negro en su taller, frente a los estantes de producción',
+    agente: 'com', hora: '16:00', momento: 'La compra', quien: 'Agente de Compras', lugar: 'Tienda insignia, CDMX',
+    foto: 'h16', alt: 'En una tienda de moda enorme, la gerente revisa en su tableta la orden de compra mientras el equipo resurte la pared de botines',
     titulo: 'Compra lo que se va a vender.',
     texto: 'El botín negro 25 se va a agotar en seis días. Calculó la curva por tienda con lo que de verdad rotó y dejó lista la orden al proveedor. El dinero lo decides tú.',
     accion: { img: '/images/botin-negro.webp', alt: 'Botín negro', titulo: 'Orden de compra · Botín negro', detalle: 'Curva 23 a 27 · 60 pares · llega en 9 días', aprobar: '✓ Enviada al proveedor', que: 'compra' },
@@ -297,7 +297,7 @@ const hhmm = (h: string) => h.split(':');
   /* ── Escritorio: escena pegada; el scroll pasa las horas del día ── */
   .ag.is-escena { height: 620vh; overflow: visible; }
   .ag.is-escena .ag-escena { position: sticky; top: 0; height: 100vh; padding: 0; overflow: hidden; }
-  .ag.is-escena .ag-barra { display: flex; position: absolute; top: 88px; left: 4vw; right: 4vw; z-index: 3; align-items: center; justify-content: space-between; gap: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--ag-linea); }
+  .ag.is-escena .ag-barra { display: flex; position: absolute; top: clamp(60px, 10vh, 88px); left: 4vw; right: 4vw; z-index: 3; align-items: center; justify-content: space-between; gap: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--ag-linea); }
   .ag-barra-t { margin: 0; font-family: var(--font-display); font-size: 11px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ag-tenue); white-space: nowrap; }
   .ag-barra-t b { color: var(--ag-tinta); font-weight: 600; }
   .ag-equipo { display: flex; gap: 6px; margin: 0; padding: 0; list-style: none; }
@@ -313,14 +313,21 @@ const hhmm = (h: string) => h.split(':');
   .ag-metricas dt { font-family: var(--font-display); font-size: 10px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ag-tenue); white-space: nowrap; }
   .ag-metricas dd { margin: 4px 0 0; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: clamp(17px, 1.4vw, 21px); line-height: 1; font-variant-numeric: tabular-nums; color: var(--ag-tinta); }
 
-  .ag.is-escena .ag-marco { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(32px, 4vw, 72px); max-width: none; height: 100%; margin: 0; padding: 150px 4vw 104px; }
+  .ag.is-escena .ag-marco { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(32px, 4vw, 72px); max-width: none; height: 100%; margin: 0; padding: calc(clamp(60px, 10vh, 88px) + 62px) 4vw clamp(76px, 11.5vh, 104px); }
   .ag.is-escena .ag-caps, .ag.is-escena .ag-fotos { display: block; position: relative; }
   /* la hora que sale se va rápido y la que entra espera a que se vaya: los textos no se enciman */
   .ag.is-escena .ag-cap { position: absolute; left: 0; right: 0; top: 50%; opacity: 0; visibility: hidden; transform: translateY(calc(-50% + 22px)); transition: opacity 0.26s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.26s; pointer-events: none; }
   .ag.is-escena .ag-cap.is-on { opacity: 1; visibility: visible; transform: translateY(-50%); pointer-events: auto; transition: opacity 0.5s ease 0.22s, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.22s, visibility 0s linear 0s; }
   .ag.is-escena .ag-cap.is-on .ag-accion { animation: agEntra 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both; }
-  .ag.is-escena .ag-hora { font-size: min(16vh, 9.4vw); }
-  .ag.is-escena .ag-h2 { font-size: clamp(48px, 4.8vw, 84px); }
+  .ag.is-escena .ag-hora { font-size: min(14vh, 9.4vw); }
+  .ag.is-escena .ag-h2 { font-size: clamp(40px, min(4.8vw, 8.5vh), 84px); }
+  .ag.is-escena .ag-h3 { font-size: clamp(26px, min(3.1vw, 5.6vh), 50px); }
+  /* el cierre (24/7) lleva más cosas: todo más compacto para que quepa en pantallas bajas */
+  .ag.is-escena .ag-hora--247 { font-size: min(11vh, 7vw); }
+  .ag.is-escena .ag-h2--final { margin-top: 10px; font-size: clamp(32px, min(4.4vw, 7vh), 80px); }
+  .ag.is-escena .ag-cap--final .ag-p { margin-top: 12px; }
+  .ag.is-escena .ag-cap--final .ag-auto { margin-top: 18px; gap: 10px; }
+  .ag.is-escena .ag-cap--final .ag-ctas { margin-top: 20px; }
   .ag.is-escena .ag-baja { display: inline-flex; align-items: center; gap: 8px; margin: 30px 0 0; font-family: var(--font-display); font-size: 13px; font-weight: 600; color: var(--ag-tinta); }
   .ag.is-escena .ag-baja svg { animation: agBaja 1.6s ease-in-out infinite; }
 
@@ -331,15 +338,17 @@ const hhmm = (h: string) => h.split(':');
   .ag.is-escena .ag-foto.is-on > img { transform: none; }
   .ag.is-escena .ag-foto figcaption { padding: 60px 22px 18px; font-size: 11px; }
   .ag.is-escena .ag-foto--intro, .ag.is-escena .ag-foto--final { display: flex; flex-direction: column; justify-content: center; background: var(--ag-marfil); }
+  .ag.is-escena .ag-foto--final { justify-content: flex-start; }
+  .ag.is-escena .ag-dia { flex: 1; min-height: 0; grid-template-rows: repeat(2, minmax(0, 1fr)); }
   .ag.is-escena .ag-reparto { margin: 0; padding: 0; overflow: visible; gap: clamp(10px, 1vw, 16px); }
   .ag.is-escena .ag-reparto li { flex: 1 1 0; min-width: 0; opacity: 0; transform: translateY(28px); transition: opacity 0.6s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(0.1s + var(--k) * 0.09s); }
   .ag.is-escena .ag-foto--intro.is-on .ag-reparto li { opacity: 1; transform: none; }
   .ag.is-escena .ag-reparto li:nth-child(even) { margin-top: 44px; }
-  .ag.is-escena .ag-reparto-img { aspect-ratio: 3 / 4.6; }
+  .ag.is-escena .ag-reparto-img { aspect-ratio: 3 / 4.6; max-height: 38vh; }
   .ag.is-escena .ag-reparto b { font-size: clamp(17px, 1.45vw, 22px); }
   .ag.is-escena .ag-reparto small { font-size: 12px; }
   .ag.is-escena .ag-dia { gap: 8px; }
-  .ag.is-escena .ag-dia li { aspect-ratio: 4 / 3.4; opacity: 0; transform: scale(0.96); transition: opacity 0.5s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
+  .ag.is-escena .ag-dia li { aspect-ratio: auto; min-height: 0; opacity: 0; transform: scale(0.96); transition: opacity 0.5s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
   .ag.is-escena .ag-foto--final.is-on .ag-dia li { opacity: 1; transform: none; }
   .ag.is-escena .ag-foto--final.is-on .ag-dia li:nth-child(2) { transition-delay: 0.08s; }
   .ag.is-escena .ag-foto--final.is-on .ag-dia li:nth-child(3) { transition-delay: 0.16s; }
@@ -348,7 +357,7 @@ const hhmm = (h: string) => h.split(':');
   .ag.is-escena .ag-foto--final.is-on .ag-dia li:nth-child(6) { transition-delay: 0.4s; }
 
   /* la regla del tiempo, abajo */
-  .ag.is-escena .ag-tiempo { display: flex; position: absolute; left: 4vw; right: 4vw; bottom: 26px; z-index: 3; align-items: flex-end; gap: 28px; }
+  .ag.is-escena .ag-tiempo { display: flex; position: absolute; left: 4vw; right: 4vw; bottom: clamp(12px, 2.9vh, 26px); z-index: 3; align-items: flex-end; gap: 28px; }
   .ag-tiempo ol { display: flex; flex: 1; margin: 0; padding: 0; list-style: none; }
   .ag-tiempo li { flex: 1; }
   .ag-tiempo button { display: flex; flex-direction: column; align-items: flex-start; gap: 9px; width: 100%; padding: 6px 0; border: 0; background: none; cursor: pointer; font-family: var(--font-display); font-size: 11px; font-weight: 500; letter-spacing: 0.12em; color: var(--ag-tenue); transition: color 0.3s; }
@@ -367,6 +376,13 @@ const hhmm = (h: string) => h.split(':');
   @keyframes agEntra { from { opacity: 0; transform: translateY(14px) scale(0.98); } to { opacity: 1; transform: none; } }
   @keyframes agBaja { 50% { transform: translateY(4px); } }
 
+  @media (max-height: 640px) {
+    .ag.is-escena .ag-cap--final .ag-p { display: none; }
+  }
+  @media (max-height: 720px) {
+    .ag.is-escena .ag-cap:not(.ag-cap--intro):not(.ag-cap--final) .ag-p { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .ag.is-escena .ag-accion { margin-top: 16px; }
+  }
   /* Escritorio angosto: la barra de arriba sin título para que quepan equipo y números */
   @media (max-width: 1279px) {
     .ag-barra-t { display: none; }
@@ -428,9 +444,12 @@ const hhmm = (h: string) => h.split(':');
     const ph = (ev: string, props?: Record<string, unknown>) => { try { (window as any).sacsPH?.(ev, props); } catch { /* medir no rompe nada */ } };
     const hitos = new Set<string>();
     const hito = (k: string, props?: Record<string, unknown>) => { if (hitos.has(k)) return; hitos.add(k); ph('agentes_' + k, props); };
-    const mq = window.matchMedia('(min-width: 1024px) and (prefers-reduced-motion: no-preference)');
+    // Con menos de 560 px de alto la escena no cabe: va en flujo como en la tableta.
+    const mq = window.matchMedia('(min-width: 1024px) and (min-height: 560px) and (prefers-reduced-motion: no-preference)');
 
-    let escena = false, visible = false, cur = -1, raf = 0, alto = 0;
+    let escena = false, visible = false, cur = -1, raf = 0, alto = 0, fijada = false;
+    // La barra flotante de WhatsApp se oculta solo mientras la escena está pegada (no tapa la regla del tiempo).
+    const fija = (on: boolean) => { if (on !== fijada) { fijada = on; document.body.classList.toggle('agentes-activo', on); } };
     let auto = false, vivoT = 0, vivoK = 0, finalVisible = false;
     let aprobadas = 1;                // el aviso de surtidos de las 7:52 ya viene resuelto
     const TOTAL_DEC = 3;
@@ -489,6 +508,7 @@ const hhmm = (h: string) => h.split(':');
       const r = sec!.getBoundingClientRect();
       const total = alto - window.innerHeight;
       const p = total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0;
+      fija(r.top <= 0 && r.bottom >= window.innerHeight);
       const x = p * N;
       const i = Math.min(N - 1, Math.floor(x));
       muestra(i);
@@ -581,7 +601,7 @@ const hhmm = (h: string) => h.split(':');
     const io = new IntersectionObserver((es) => {
       visible = es[0].isIntersecting;
       sec.classList.toggle('is-visible', visible);
-      document.body.classList.toggle('agentes-activo', visible && escena);   // la barra flotante de WhatsApp no tapa la regla del tiempo
+      if (!visible || !escena) fija(false);
       if (visible) {
         hito('ver', { escena });
         if (escena) { window.addEventListener('scroll', onScroll, { passive: true }); mide(); }

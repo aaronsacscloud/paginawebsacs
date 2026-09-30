@@ -16,7 +16,7 @@ interface Props {
 }
 
 const {
-  eyebrow = 'Comercio Consciente',
+  eyebrow = '',
   evolucion = [],
   title,
   subtitle,
@@ -114,7 +114,7 @@ const useCases = [
 
   <div class="hero-banner-content">
     <div class="hero-text">
-      <p class="hero-kicker"><i aria-hidden="true"></i>{eyebrow}</p>
+      {eyebrow && <p class="hero-kicker"><i aria-hidden="true"></i>{eyebrow}</p>}
       <h1 class="hero-title">{title}</h1>
       {evolucion.length > 0 && (
         <ol class="hero-evo" aria-label="La evolución del software de moda">
@@ -192,15 +192,6 @@ const useCases = [
             loading="eager"
             fetchpriority="high"
           />
-          <div class="hero-mobile-notif hero-mobile-notif-1" aria-hidden="true">
-            <div class="hmn-icon hmn-icon-shop">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M20 4H4v2l1 1v11h14V7l1-1V4zM9 18v-4h6v4H9zm9 0h-1v-5a1 1 0 00-1-1H8a1 1 0 00-1 1v5H6V7.5l-.5-.5h13l-.5.5V18z"/><path d="M3 2h18a1 1 0 011 1v1H2V3a1 1 0 011-1z"/></svg>
-            </div>
-            <div class="hmn-body">
-              <span class="hmn-title">Tienda en línea</span>
-              <span class="hmn-msg">Pedido #384 — $1,290</span>
-            </div>
-          </div>
           <div class="hero-mobile-notif hero-mobile-notif-2" aria-hidden="true">
             <div class="hmn-icon hmn-icon-inv">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
@@ -232,28 +223,6 @@ const useCases = [
           fetchpriority="high"
         />
         <!-- Notificaciones animadas sobre la imagen -->
-        <div class="hero-notif hero-notif-1" aria-hidden="true">
-          <div class="hero-notif-icon hero-notif-icon-loyalty">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.611.611l4.458-1.495A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.325 0-4.47-.744-6.227-2.01l-.435-.326-2.847.954.954-2.847-.326-.435A9.956 9.956 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
-          </div>
-          <div class="hero-notif-body">
-            <span class="hero-notif-title">Fidelización</span>
-            <span class="hero-notif-msg">5 seguimientos pendientes de clientes</span>
-          </div>
-          <span class="hero-notif-badge">5</span>
-        </div>
-
-        <div class="hero-notif hero-notif-2" aria-hidden="true">
-          <div class="hero-notif-icon hero-notif-icon-shop">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M20 4H4v2l1 1v11h14V7l1-1V4zM9 18v-4h6v4H9zm9 0h-1v-5a1 1 0 00-1-1H8a1 1 0 00-1 1v5H6V7.5l-.5-.5h13l-.5.5V18z"/><path d="M3 2h18a1 1 0 011 1v1H2V3a1 1 0 011-1z"/></svg>
-          </div>
-          <div class="hero-notif-body">
-            <span class="hero-notif-title">Tienda en línea</span>
-            <span class="hero-notif-msg">Pedido #384 — $1,290</span>
-          </div>
-          <span class="hero-notif-badge">+1</span>
-        </div>
-
         <div class="hero-notif hero-notif-3" aria-hidden="true">
           <div class="hero-notif-icon hero-notif-icon-inventory">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
@@ -263,28 +232,6 @@ const useCases = [
             <span class="hero-notif-msg">Transferir 40 uds. a Suc. Centro</span>
           </div>
           <span class="hero-notif-time">Sugerencia</span>
-        </div>
-
-        <div class="hero-notif hero-notif-4" aria-hidden="true">
-          <div class="hero-notif-icon hero-notif-icon-receiving">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M12 2L2 7v10l10 5 10-5V7L12 2z" fill="none" stroke="#fff" stroke-width="1.5"/><path d="M12 12v10M2 7l10 5 10-5" fill="none" stroke="#fff" stroke-width="1.5"/><path d="M8 4.5l8 4" fill="none" stroke="#fff" stroke-width="1.5"/></svg>
-          </div>
-          <div class="hero-notif-body">
-            <span class="hero-notif-title">Recepción de mercancía</span>
-            <span class="hero-notif-msg">OC #192 llega mañana — 120 pzas.</span>
-          </div>
-          <span class="hero-notif-time">Mañana</span>
-        </div>
-
-        <div class="hero-notif hero-notif-5" aria-hidden="true">
-          <div class="hero-notif-icon hero-notif-icon-shrink">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M12 9v2m0 4h.01M5.07 19H18.93a2 2 0 001.73-3L13.73 4a2 2 0 00-3.46 0L3.34 16a2 2 0 001.73 3z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-          <div class="hero-notif-body">
-            <span class="hero-notif-title">Alerta de merma</span>
-            <span class="hero-notif-msg">Suc. Polanco: 2.3% esta semana</span>
-          </div>
-          <span class="hero-notif-badge">!</span>
         </div>
 
         <div class="hero-notif hero-notif-6" aria-hidden="true">
@@ -3627,8 +3574,8 @@ const useCases = [
   .hero-evo { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 0; margin: 0 0 var(--space-6); padding: 0; font-family: var(--font-display); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #8C8A85; }
   .hero-evo-paso { display: inline-flex; align-items: center; white-space: nowrap; opacity: 0; animation: heroEvo 0.5s ease forwards; animation-delay: calc(0.35s + var(--i) * 0.28s); }
   .hero-evo-paso:not(:last-child)::after { content: '→'; margin: 0 10px; font-family: system-ui, sans-serif; opacity: 0.7; }
-  .hero-evo-paso.is-hoy { gap: 8px; padding: 7px 13px 7px 11px; border-radius: 999px; background: var(--color-primary-btn); color: #fff; }
-  .hero-evo-paso.is-hoy::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3); }
+  /* el paso de hoy, solo en azul (30-sep-2026: sin pastilla, más elegante) */
+  .hero-evo-paso.is-hoy { color: var(--color-primary); font-weight: 700; }
   @keyframes heroEvo { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { .hero-kicker, .hero-evo-paso { animation: none; opacity: 1; } }
   @media (max-width: 767px) {
@@ -3818,9 +3765,7 @@ const useCases = [
     display: flex;
     align-items: center;
     gap: 8px;
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.97);
     border-radius: 12px;
     padding: 8px 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
