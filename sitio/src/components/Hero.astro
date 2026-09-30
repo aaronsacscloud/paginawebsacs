@@ -253,8 +253,10 @@ const useCases = [
 <!-- ═══ Fashion OS en acción (29-sep-2026): la dueña le da la orden a Sacs y, abajo, un día de la marca con sus agentes de IA ═══ -->
 <LaOrden />
 <AgentesIA />
-<!-- …y la escalera de planes: empieza vendiendo y sube hasta Automatiza -->
-<PasoAPaso />
+<!-- …y el paso a paso (30-sep-2026): la foto de cada plan crece a pantalla completa JUSTO antes de su sección.
+     Vende va aquí (luego «Del live a la venta», el pilar Vende … «De tu foto a tu reel»); Controla, Fideliza y
+     Automatiza van dentro de #tablet-section, antes de su pilar. -->
+<PasoAPaso cabecera paso="vende" />
 
 <!-- ═══ BLOQUE 1b: el recorrido del cliente — del post a su WhatsApp, con scroll ═══ -->
 <section class="recorrido flujo" id="recorrido" aria-label="Del live a la venta">
@@ -1346,6 +1348,9 @@ const useCases = [
     </div>
   </section>
 
+  <!-- Paso 02 · Controla: su foto a pantalla completa y, abajo, el pilar -->
+  <PasoAPaso paso="controla" />
+
   <div class="pillar-section pillar-section--stock pillar-section--left" id="pilar-stock" data-pillar="stock">
     <div class="pillar-bg-pattern" aria-hidden="true"></div>
     <div class="pillar-inner container">
@@ -2039,6 +2044,9 @@ const useCases = [
   <!-- El tablero operativo entra aquí, antes de Fideliza: primero se ve que el
      sistema decide por ti, y de ahí se pasa a la relación con el cliente. -->
 <!-- ── Pillar 3: Fideliza ── -->
+  <!-- Paso 03 · Fideliza: su foto a pantalla completa y, abajo, el pilar -->
+  <PasoAPaso paso="fideliza" />
+
   <div class="pillar-section pillar-section--crm pillar-section--right" id="pilar-crm" data-pillar="crm">
     <div class="pillar-bg-pattern" aria-hidden="true"></div>
     <div class="pillar-inner container">
@@ -3021,7 +3029,10 @@ const useCases = [
 
   <!-- ── Fideliza continuation: CRM + Marketing relacional ── -->
   <!-- ── Pillar 4: Automatiza ── -->
-  <div class="pillar-section pillar-section--ai pillar-section--left" data-pillar="ai">
+  <!-- Paso 04 · Automatiza: su foto a pantalla completa y, abajo, el pilar -->
+  <PasoAPaso paso="automatiza" />
+
+  <div class="pillar-section pillar-section--ai pillar-section--left" id="pilar-ai" data-pillar="ai">
     <div class="pillar-bg-pattern" aria-hidden="true"></div>
     <div class="pillar-inner container">
       <div class="pillar-text">

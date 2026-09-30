@@ -1,174 +1,142 @@
 ---
 /**
- * PasoAPaso — «Empieza donde estás. Sube cuando quieras.» (29-sep-2026, portada Fashion OS v2).
+ * PasoAPaso — un capítulo del «paso a paso» de la portada (Fashion OS v2, 29/30-sep-2026).
  *
- * Va después de «Un día en piloto automático»: la marca no tiene que automatizar todo el primer día.
+ * Se usa cuatro veces en Hero.astro, cada una JUSTO ANTES de la sección de su plan:
+ *   <PasoAPaso cabecera paso="vende" />   → luego «Del live a la venta», el pilar Vende … «De tu foto a tu reel»
+ *   <PasoAPaso paso="controla" />         → luego el pilar Controla y la operación administrativa
+ *   <PasoAPaso paso="fideliza" />         → luego el pilar Fideliza
+ *   <PasoAPaso paso="automatiza" />       → luego el pilar Automatiza y «Del análisis a la venta»
  *
- * 30-sep-2026 (dueño, 2.ª vuelta): nada de clics. «Al hacer scroll la foto se hace más grande y dice en
- * grande un texto de todo lo que necesitas para multiplicar tus ventas en tu negocio de moda, y una flecha
- * para ver abajo lo que incluye; sin dar clicks, solo un proceso natural donde sigues dando scroll y se
- * genera la transformación».
+ * Pedidos del dueño: nada de clics — «al hacer scroll la foto se hace más grande y dice en grande un texto
+ * de todo lo que necesitas…, y una flecha para ver abajo lo que incluye». Y en la 3.ª vuelta: «la foto
+ * está muy bien así; lo que incluye el plan no es momento: una vez que aparece la imagen grande, lo mandamos
+ * directo a toda la sección de Vende … y así con Controla, Fideliza y Automatiza. Juega con los fondos,
+ * arriésgate más, que se vea más maximalista».
  *
- * Así que es un capítulo por plan (Vende → Controla → Fideliza y Multiplica → Automatiza), cada uno con
- * su riel y escena pegada: la escalera de los cuatro planes con el paso actual marcado; al bajar, la
- * foto de ese paso CRECE desde su tarjeta hasta llenar la pantalla (recorte + escala, ver `geo`), entra
- * el velo y la frase gigante palabra por palabra, el precio y la flecha. Al terminar el riel, abajo sale
- * «lo que incluye» ese plan — las MISMAS funciones de /planes (data/plans.ts) — y sigue el siguiente paso.
+ * Cada capítulo: riel con escena pegada. Sobre un fondo de color con la palabra del paso gigante y en
+ * movimiento (Vende azul Sacs · Controla negro con rayas de cebra como la tienda · Fideliza fucsia ·
+ * Automatiza marino con líneas de neón), la escalera de los cuatro planes con el paso actual marcado; al
+ * bajar, la foto de ese paso CRECE desde su tarjeta hasta llenar la pantalla (recorte + escala, ver `geo`),
+ * entra el velo y la frase gigante palabra por palabra, el precio y la flecha que baja a la sección del plan.
  *
- * Con «reducir movimiento» o sin JS: la escalera una vez y cada plan como foto con su frase + lo que
- * incluye, todo quieto. El scroll se lee con rAF y listener pasivo solo mientras algún capítulo está en
- * vista; la geometría se mide al cargar y al cambiar el tamaño, nunca en el scroll.
+ * «Reducir movimiento» o sin JS: la escalera (solo en el primero) y la foto con su frase, todo quieto.
+ * El scroll se lee con rAF y listener pasivo solo mientras algún capítulo está en vista; la geometría se
+ * mide al cargar y al cambiar el tamaño, nunca en el scroll.
  * Fotos: gpt-image-2.5 (verticales para el teléfono; en escritorio, la misma escena extendida a lo ancho).
  */
 import { plans } from '../../data/plans';
 
+interface Props {
+  paso: 'vende' | 'controla' | 'fideliza' | 'automatiza';
+  /** Solo el primero: el titular «Empieza donde estás. Sube cuando quieras.» arriba del capítulo. */
+  cabecera?: boolean;
+}
+const { paso, cabecera = false } = Astro.props;
+
 const F = '/images/fashion-os/';
 const fmt = new Intl.NumberFormat('es-MX');
 const BASE = [
-  { id: 'vende', n: '01', corto: 'Vende', foto: 'paso-vende', alt: 'Una clienta paga con su celular en el mostrador de una boutique', frase: 'Todo lo que necesitas para multiplicar tus ventas en tu negocio de moda.' },
-  { id: 'controla', n: '02', corto: 'Controla', foto: 'paso-controla', alt: 'Una encargada escanea la etiqueta de una prenda en la bodega, con los racks ordenados por color', frase: 'Todo lo que necesitas para tener cada talla, en cada tienda, bajo control.' },
-  { id: 'fideliza', n: '03', corto: 'Fideliza', foto: 'paso-fideliza', alt: 'Una estilista le entrega a una clienta frecuente su prenda envuelta con listón azul', frase: 'Todo lo que necesitas para que tu clienta vuelva cada temporada.' },
-  { id: 'automatiza', n: '04', corto: 'Automatiza', foto: 'paso-automatiza', alt: 'La dueña sale de su boutique con un café, revisando su celular mientras su marca opera sola', frase: 'Todo lo que necesitas para que tu marca opere en piloto automático.' },
+  { id: 'vende', n: '01', corto: 'Vende', foto: 'paso-vende', sigue: '#recorrido', alt: 'Una clienta paga con su celular en el mostrador de una boutique', frase: 'Todo lo que necesitas para multiplicar tus ventas en tu negocio de moda.' },
+  { id: 'controla', n: '02', corto: 'Controla', foto: 'paso-controla', sigue: '#pilar-stock', alt: 'Una encargada escanea la etiqueta de una prenda en la bodega, con los racks ordenados por color', frase: 'Todo lo que necesitas para tener cada talla, en cada tienda, bajo control.' },
+  { id: 'fideliza', n: '03', corto: 'Fideliza', foto: 'paso-fideliza', sigue: '#pilar-crm', alt: 'Una estilista le entrega a una clienta frecuente su prenda envuelta con listón azul', frase: 'Todo lo que necesitas para que tu clienta vuelva cada temporada.' },
+  { id: 'automatiza', n: '04', corto: 'Automatiza', foto: 'paso-automatiza', sigue: '#pilar-ai', alt: 'La dueña sale de su boutique con un café, revisando su celular mientras su marca opera sola', frase: 'Todo lo que necesitas para que tu marca opere en piloto automático.' },
 ];
 const PASOS = BASE.map((b) => {
   const plan = plans.find((x) => x.id === b.id)!;
-  // Las funciones del plan, por categoría; «· pronto» se vuelve etiqueta en vez de texto.
-  const sueltas = plan.features.filter((f): f is string => typeof f === 'string');
-  const cats = [
-    ...plan.features.filter((f): f is { category: string; items: string[] } => typeof f !== 'string').map((f) => ({ nombre: f.category, items: f.items })),
-    ...(sueltas.length ? [{ nombre: 'Incluye', items: sueltas }] : []),
-  ].map((c) => ({ nombre: c.nombre, items: c.items.map((t) => ({ t: t.replace(/\s*·\s*pronto\s*$/i, ''), pronto: /·\s*pronto\s*$/i.test(t) })) }));
-  return {
-    ...b,
-    nombre: plan.name,
-    precio: '$' + fmt.format(plan.monthly.mxn),
-    cats,
-    total: cats.reduce((n, c) => n + c.items.length, 0),
-    hereda: plan.inheritsFrom || null,
-    servicios: plan.services,
-    destacado: plan.destacado || null,
-    empieza: plan.cta.href,
-  };
+  return { ...b, nombre: plan.name, precio: '$' + fmt.format(plan.monthly.mxn) };
 });
+const k = Math.max(0, PASOS.findIndex((q) => q.id === paso));
+const p = PASOS[k];
+// La palabra del fondo, repetida para que cruce toda la pantalla.
+const tira = Array.from({ length: 5 }, () => p.corto.toUpperCase()).join(' · ');
 ---
-<section class="pp" id="paso-a-paso" aria-labelledby="pp-titulo">
-  <header class="pp-cabeza">
-    <p class="pp-kicker"><i aria-hidden="true"></i>Empieza paso a paso</p>
-    <h2 class="pp-h2" id="pp-titulo">Empieza donde estás.<br /><span>Sube cuando quieras.</span></h2>
-    <div class="pp-lado">
-      <p class="pp-p">Sacs crece contigo: arranca vendiendo, controla tu inventario por talla, haz que tu clienta vuelva y, cuando estés lista, pon tu marca en piloto automático. Cada paso se suma al anterior, sin migrar datos ni cambiar de sistema.</p>
-      <div class="pp-ctas">
-        <a class="pp-cta pp-cta--1" href="/planes" data-evento="pasos_planes">Compara los planes</a>
-        <a class="pp-cta pp-cta--2" href="/prueba-gratis" data-evento="pasos_prueba">Prueba 7 días gratis</a>
-      </div>
-    </div>
-  </header>
-
-  {PASOS.map((p, k) => (
-    <article class="pp-cap" data-plan={p.id} style={`--k:${k}`} aria-labelledby={`pp-h-${p.id}`}>
-      <div class="pp-riel">
-        <div class="pp-escena">
-          <p class="pp-paso-k" aria-hidden="true"><i></i>Paso {k + 1} de 4</p>
-          <p class="pp-paso-t" aria-hidden="true">{p.n} <span>{p.corto}</span></p>
-
-          <ol class="pp-esc" aria-hidden={k > 0 ? 'true' : undefined} aria-label={k === 0 ? 'Los cuatro planes, del primero al último' : undefined}>
-            {PASOS.map((q, j) => (
-              <li class:list={['pp-e', { 'is-actual': j === k, 'is-hecho': j < k }]} style={`--j:${j}`}>
-                <span class="pp-e-foto">
-                  <picture>
-                    <source media="(min-width: 1024px)" srcset={`${F}${q.foto}-ancha-960.webp`} />
-                    <img src={`${F}${q.foto}-480.webp`} alt="" width="480" height="720" loading="lazy" decoding="async" />
-                  </picture>
-                  {j < k && <i class="pp-e-ok" aria-hidden="true">✓</i>}
-                </span>
-                <span class="pp-e-n">{q.n}</span>
-                <span class="pp-e-nombre"><span class="pp-e-largo">{q.nombre}</span><span class="pp-e-corto">{q.corto}</span></span>
-                <span class="pp-e-precio">desde {q.precio}/mes</span>
-              </li>
-            ))}
-          </ol>
-
-          <div class="pp-lienzo">
-            <div class="pp-grande">
-              <picture>
-                <source media="(min-width: 1024px)" srcset={`${F}${p.foto}-ancha-960.webp 960w, ${F}${p.foto}-ancha.webp 1536w`} sizes="100vw" />
-                <img src={`${F}${p.foto}-1024.webp`} srcset={`${F}${p.foto}.webp 800w, ${F}${p.foto}-1024.webp 1024w`} sizes="100vw" alt={p.alt} width="1024" height="1536" loading="lazy" decoding="async" />
-              </picture>
-            </div>
-            <div class="pp-velo" aria-hidden="true"></div>
-            <div class="pp-titular">
-              <p class="pp-t-k">Paso {p.n} · Plan {p.nombre}</p>
-              <h3 class="pp-t-h" id={`pp-h-${p.id}`}>{p.frase.split(' ').map((w, i) => <span class="w" style={`--i:${i}`}>{w} </span>)}</h3>
-              <p class="pp-t-precio">desde <b>{p.precio}</b> /mes por sucursal</p>
-              <a class="pp-t-flecha" href={`#pp-inc-${p.id}`} data-evento="pasos_flecha" data-plan={p.id}>
-                <span class="pp-t-circ" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg></span>
-                Mira lo que incluye
-              </a>
-            </div>
-          </div>
+<section class:list={['pp', `pp--${p.id}`, { 'pp--primero': cabecera }]} id={cabecera ? 'paso-a-paso' : `paso-${p.id}`} aria-labelledby={cabecera ? 'pp-titulo' : `pp-h-${p.id}`}>
+  {cabecera && (
+    <header class="pp-cabeza">
+      <p class="pp-kicker"><i aria-hidden="true"></i>Empieza paso a paso</p>
+      <h2 class="pp-h2" id="pp-titulo">Empieza donde estás.<br /><span>Sube cuando quieras.</span></h2>
+      <div class="pp-lado">
+        <p class="pp-p">Sacs crece contigo: arranca vendiendo, controla tu inventario por talla, haz que tu clienta vuelva y, cuando estés lista, pon tu marca en piloto automático. Cada paso se suma al anterior, sin migrar datos ni cambiar de sistema.</p>
+        <div class="pp-ctas">
+          <a class="pp-cta pp-cta--1" href="/planes" data-evento="pasos_planes">Compara los planes</a>
+          <a class="pp-cta pp-cta--2" href="/prueba-gratis" data-evento="pasos_prueba">Prueba 7 días gratis</a>
         </div>
       </div>
+    </header>
+  )}
 
-      <div class="pp-inc" id={`pp-inc-${p.id}`}>
-        <div class="pp-inc-cabeza">
-          <div>
-            <p class="pp-inc-k">Lo que incluye {p.nombre}</p>
-            <p class="pp-inc-num"><b class="pp-cuenta" data-n={p.total}>{p.total}</b><span>cosas que haces con {p.nombre}</span></p>
-          </div>
-          {p.hereda && (
-            <p class="pp-hereda">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-              Todo lo de {p.hereda}, y además:
-            </p>
-          )}
+  <article class="pp-cap" data-plan={p.id} style={`--k:${k}`}>
+    <div class="pp-riel">
+      <div class="pp-escena">
+        <div class="pp-fondo" aria-hidden="true">
+          {[0, 1, 2].map((r) => <span class="pp-fondo-f" style={`--r:${r}`}>{tira}</span>)}
         </div>
-        {p.destacado && (
-          <div class="pp-mcp">
-            <span class="pp-mcp-k">{p.destacado.kicker}</span>
-            <b>{p.destacado.titulo}</b>
-            <span class="pp-mcp-t">{p.destacado.texto}</span>
-            <span class="pp-mcp-p">{p.destacado.plataformas.map((x) => <i>{x}</i>)}</span>
-          </div>
-        )}
-        <div class="pp-inc-cats">
-          {p.cats.map((c) => (
-            <section class="pp-inc-cat">
-              <h4><i aria-hidden="true"></i>{c.nombre}<small>{c.items.length}</small></h4>
-              <ul>
-                {c.items.map((it, q) => (
-                  <li style={`--q:${q}`}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4.5 12.5 4.5 4.5L19.5 7"/></svg>
-                    <span>{it.t}{it.pronto && <em>pronto</em>}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
+        <p class="pp-paso-k" aria-hidden="true"><i></i>Paso {k + 1} de 4</p>
+        <p class="pp-paso-t" aria-hidden="true">{p.n} <span>{p.corto}</span></p>
+
+        <ol class="pp-esc" aria-hidden={cabecera ? undefined : 'true'} aria-label={cabecera ? 'Los cuatro planes, del primero al último' : undefined}>
+          {PASOS.map((q, j) => (
+            <li class:list={['pp-e', { 'is-actual': j === k, 'is-hecho': j < k }]} style={`--j:${j}`}>
+              <span class="pp-e-foto">
+                <picture>
+                  <source media="(min-width: 1024px)" srcset={`${F}${q.foto}-ancha-960.webp`} />
+                  <img src={`${F}${q.foto}-480.webp`} alt="" width="480" height="720" loading="lazy" decoding="async" />
+                </picture>
+                {j < k && <i class="pp-e-ok" aria-hidden="true">✓</i>}
+              </span>
+              <span class="pp-e-n">{q.n}</span>
+              <span class="pp-e-nombre"><span class="pp-e-largo">{q.nombre}</span><span class="pp-e-corto">{q.corto}</span></span>
+              <span class="pp-e-precio">desde {q.precio}/mes</span>
+            </li>
           ))}
-        </div>
-        <div class="pp-inc-pie">
-          <p class="pp-servicios"><b>Además:</b> {p.servicios.join(' · ')}</p>
-          <div class="pp-inc-ctas">
-            <a class="pp-empieza" href={p.empieza} data-evento="pasos_empieza" data-plan={p.id}>Empieza con {p.nombre}</a>
-            <a class="pp-compara" href="/planes" data-evento="pasos_compara" data-plan={p.id}>Compara los 4 planes
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </ol>
+
+        <div class="pp-lienzo">
+          <div class="pp-grande">
+            <picture>
+              <source media="(min-width: 1024px)" srcset={`${F}${p.foto}-ancha-960.webp 960w, ${F}${p.foto}-ancha.webp 1536w`} sizes="100vw" />
+              <img src={`${F}${p.foto}-1024.webp`} srcset={`${F}${p.foto}.webp 800w, ${F}${p.foto}-1024.webp 1024w`} sizes="100vw" alt={p.alt} width="1024" height="1536" loading="lazy" decoding="async" />
+            </picture>
+          </div>
+          <div class="pp-velo" aria-hidden="true"></div>
+          <div class="pp-titular">
+            <p class="pp-t-k">Paso {p.n} · Plan {p.nombre}</p>
+            <h3 class="pp-t-h" id={`pp-h-${p.id}`}>{p.frase.split(' ').map((w, i) => <span class="w" style={`--i:${i}`}>{w} </span>)}</h3>
+            <p class="pp-t-precio">desde <b>{p.precio}</b> /mes por sucursal</p>
+            <a class="pp-t-flecha" href={p.sigue} data-evento="pasos_flecha" data-plan={p.id}>
+              <span class="pp-t-circ" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg></span>
+              Mira lo que incluye
             </a>
           </div>
         </div>
       </div>
-    </article>
-  ))}
+    </div>
+  </article>
 </section>
 
 <style>
   .pp {
-    --pp-marfil: #F5F3EE; --pp-tinta: #141414; --pp-azul: #4B7BE5; --pp-azul-o: #3A62C4; --pp-azul-b: #4470D8; --pp-azul-t: #E9EFFD;
-    --pp-texto: #45433E; --pp-tenue: #6E6A62; --pp-linea: rgba(20, 20, 20, 0.12);
+    --pp-marfil: #F5F3EE; --pp-tinta: #141414; --pp-azul: #4B7BE5; --pp-azul-o: #3A62C4; --pp-azul-b: #4470D8;
+    --pp-texto: #45433E; --pp-linea: rgba(20, 20, 20, 0.12);
     --pp-gap: 8px; --pp-sube: 18px;
-    position: relative; background: var(--pp-marfil); color: var(--pp-tinta); border-top: 1px solid var(--pp-linea);
+    /* el color de cada capítulo (maximalista): fondo, la palabra gigante, y lo que va encima */
+    --pp-fondo: var(--pp-azul-b); --pp-fondo-t: #5B86EA; --pp-trazo: rgba(255, 255, 255, 0.34);
+    --pp-sobre: #fff; --pp-sobre-2: rgba(255, 255, 255, 0.8); --pp-numero: #fff; --pp-marco: #fff;
+    position: relative; background: var(--pp-marfil); color: var(--pp-tinta);
+  }
+  .pp--controla {
+    --pp-fondo: #0B0B0C; --pp-fondo-t: #1C1C1F; --pp-trazo: rgba(255, 255, 255, 0.26); --pp-numero: #7FA3F0;
+  }
+  .pp--fideliza {
+    --pp-fondo: #DB3F77; --pp-fondo-t: #E8639A; --pp-trazo: rgba(255, 255, 255, 0.36); --pp-numero: #fff;
+  }
+  .pp--automatiza {
+    --pp-fondo: #0A1648; --pp-fondo-t: #14267A; --pp-trazo: rgba(127, 163, 240, 0.45); --pp-numero: #7FA3F0;
   }
 
-  /* ── cabecera ── */
-  .pp-cabeza { max-width: 1320px; margin: 0 auto; padding: 76px 16px 12px; }
+  /* ── cabecera (solo en el primero) ── */
+  .pp-cabeza { max-width: 1320px; margin: 0 auto; padding: 76px 16px 56px; border-top: 1px solid var(--pp-linea); }
   .pp-kicker { display: flex; align-items: center; gap: 10px; margin: 0 0 18px; font-family: var(--font-display); font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--pp-azul-o); }
   .pp-kicker i { width: 8px; height: 8px; border-radius: 50%; background: var(--pp-azul); }
   .pp-h2 { margin: 0; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: clamp(40px, 10.4vw, 92px); line-height: 0.94; letter-spacing: -0.02em; text-wrap: balance; }
@@ -180,29 +148,37 @@ const PASOS = BASE.map((b) => {
   .pp-cta--1:hover { background: #2A2A2A; color: #fff; text-decoration: none; transform: translateY(-1px); }
   .pp-cta--2 { border: 1px solid rgba(20, 20, 20, 0.3); color: var(--pp-tinta); }
   .pp-cta--2:hover { border-color: var(--pp-tinta); color: var(--pp-tinta); text-decoration: none; transform: translateY(-1px); }
-  .pp-cta:focus-visible, .pp-t-flecha:focus-visible, .pp-empieza:focus-visible, .pp-compara:focus-visible { outline: 2px solid var(--pp-azul); outline-offset: 3px; }
+  .pp-cta:focus-visible, .pp-t-flecha:focus-visible { outline: 2px solid var(--pp-azul); outline-offset: 3px; }
 
-  /* ── Base = quieto (sin JS y «reducir movimiento»): la escalera una vez y cada plan como foto + lo que incluye ── */
-  .pp-escena { position: relative; max-width: 1320px; margin: 0 auto; padding: 0 16px; }
+  /* ── el capítulo: fondo de color, la palabra gigante y la escalera ── */
+  .pp-escena { position: relative; overflow: hidden; background: var(--pp-fondo); color: var(--pp-sobre); padding: 56px 16px; }
+  /* Controla: rayas de cebra como las paredes de la tienda; Automatiza: líneas de neón como su piso */
+  .pp--controla .pp-escena { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='240' viewBox='0 0 260 240'%3E%3Cg fill='none' stroke='%23fff' stroke-opacity='.11' stroke-width='18' stroke-linecap='round'%3E%3Cpath d='M-30 30C30 -5 80 70 140 32S230 -8 290 30'/%3E%3Cpath d='M-30 90C30 55 80 130 140 92S230 52 290 90'/%3E%3Cpath d='M-30 150C30 115 80 190 140 152S230 112 290 150'/%3E%3Cpath d='M-30 210C30 175 80 250 140 212S230 172 290 210'/%3E%3C/g%3E%3C/svg%3E"); background-size: 260px 240px; }
+  .pp--automatiza .pp-escena { background-image: radial-gradient(ellipse at 50% 110%, rgba(75, 123, 229, 0.45), transparent 60%), repeating-linear-gradient(112deg, transparent 0 58px, rgba(127, 163, 240, 0.22) 58px 60px); }
+  .pp-fondo { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-around; overflow: hidden; pointer-events: none; }
+  .pp-fondo-f { display: block; white-space: nowrap; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: clamp(64px, 17vh, 190px); line-height: 0.9; letter-spacing: -0.02em; color: var(--pp-fondo-t); transform: translateX(calc(-8% + var(--r) * -14%)); }
+  .pp-fondo-f:nth-child(2) { color: transparent; -webkit-text-stroke: 1.5px var(--pp-trazo); }
   .pp-paso-k, .pp-paso-t { display: none; }
-  .pp-cap + .pp-cap .pp-esc { display: none; }
-  .pp-esc { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--pp-gap); align-items: start; margin: 36px 0 0; padding: 0; list-style: none; }
+
+  .pp-esc { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--pp-gap); align-items: start; margin: 0 auto; max-width: 1180px; padding: 0; list-style: none; }
+  .pp:not(.pp--primero) .pp-esc { display: none; }
   .pp-e { position: relative; margin-top: calc((3 - var(--j)) * var(--pp-sube)); padding-top: 12px; }
-  /* la línea azul: el borde de arriba de cada escalón y el tramo que sube al siguiente */
-  .pp-e::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--pp-azul); }
-  .pp-e + .pp-e::after { content: ''; position: absolute; left: calc(-1 * var(--pp-gap)); top: 0; width: var(--pp-gap); height: calc(var(--pp-sube) + 2px); border-left: 2px solid var(--pp-azul); border-top: 2px solid var(--pp-azul); box-sizing: border-box; }
-  .pp-e-foto { position: relative; display: block; aspect-ratio: 3 / 4; overflow: hidden; border-radius: 3px; background: #E6E2D9; transition: box-shadow 0.4s, opacity 0.4s; }
+  /* la línea de la escalera: el borde de arriba de cada escalón y el tramo que sube al siguiente */
+  .pp-e::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--pp-marco); }
+  .pp-e + .pp-e::after { content: ''; position: absolute; left: calc(-1 * var(--pp-gap)); top: 0; width: var(--pp-gap); height: calc(var(--pp-sube) + 2px); border-left: 2px solid var(--pp-marco); border-top: 2px solid var(--pp-marco); box-sizing: border-box; }
+  .pp-e-foto { position: relative; display: block; aspect-ratio: 3 / 4; overflow: hidden; border-radius: 3px; background: rgba(255, 255, 255, 0.12); transition: box-shadow 0.4s, opacity 0.4s; }
   .pp-e-foto img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
-  .pp-e.is-actual .pp-e-foto { box-shadow: 0 0 0 3px var(--pp-marfil), 0 0 0 5px var(--pp-azul); }
-  .pp-e.is-hecho .pp-e-foto { opacity: 0.55; }
-  .pp-e-ok { position: absolute; right: 6px; top: 6px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--pp-azul); color: #fff; font-size: 11px; font-style: normal; font-weight: 700; }
-  .pp-e-n { display: block; margin-top: 10px; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: 20px; line-height: 0.9; letter-spacing: -0.02em; color: var(--pp-azul); }
-  .pp-e-nombre { display: block; margin-top: 4px; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: 13px; line-height: 1.05; color: var(--pp-tinta); }
+  .pp-e.is-actual .pp-e-foto { box-shadow: 0 0 0 3px var(--pp-fondo), 0 0 0 6px var(--pp-marco); }
+  .pp-e.is-hecho .pp-e-foto { opacity: 0.5; }
+  .pp-e-ok { position: absolute; right: 6px; top: 6px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: #fff; color: var(--pp-fondo); font-size: 11px; font-style: normal; font-weight: 700; }
+  .pp-e-n { display: block; margin-top: 10px; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: 20px; line-height: 0.9; letter-spacing: -0.02em; color: var(--pp-numero); }
+  .pp-e-nombre { display: block; margin-top: 4px; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: 13px; line-height: 1.05; color: var(--pp-sobre); }
   .pp-e-largo, .pp-e-precio { display: none; }
   .pp-e.is-hecho .pp-e-n, .pp-e.is-hecho .pp-e-nombre { opacity: 0.55; }
 
   /* la foto grande con su frase (en el póster quieto va como bloque; en escena es la pantalla completa) */
-  .pp-lienzo { position: relative; margin-top: 32px; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 3px; background: #1C1B19; color: #fff; }
+  .pp-lienzo { position: relative; z-index: 2; max-width: 1320px; margin: 40px auto 0; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 3px; background: #1C1B19; color: #fff; }
+  .pp:not(.pp--primero) .pp-lienzo { margin-top: 0; }
   .pp-grande { position: absolute; inset: 0; }
   .pp-grande img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
   .pp-velo { position: absolute; inset: 0; background: linear-gradient(to top, rgba(10, 10, 10, 0.78) 0%, rgba(10, 10, 10, 0.5) 38%, rgba(10, 10, 10, 0.08) 72%, rgba(10, 10, 10, 0) 100%); }
@@ -214,61 +190,26 @@ const PASOS = BASE.map((b) => {
   .pp-t-precio b { font-family: var(--font-display); font-size: 18px; color: #fff; }
   .pp-t-flecha { display: inline-flex; align-items: center; gap: 12px; margin-top: 20px; font-family: var(--font-display); font-size: 15px; font-weight: 600; color: #fff; text-decoration: none; }
   .pp-t-flecha:hover { color: #fff; text-decoration: none; }
-  .pp-t-circ { width: 46px; height: 46px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center; background: #fff; color: var(--pp-azul-o); }
-
-  /* ── lo que incluye: todo a la vista, entra al bajar ── */
-  .pp-inc { max-width: 1320px; margin: 0 auto; padding: 56px 16px 72px; scroll-margin-top: 72px; }
-  .pp-inc-cabeza { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 40px; padding-bottom: 20px; border-bottom: 1px solid var(--pp-linea); }
-  .pp-inc-k { margin: 0; font-family: var(--font-display); font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--pp-azul-o); }
-  .pp-inc-num { display: flex; align-items: baseline; gap: 12px; margin: 10px 0 0; font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--pp-texto); }
-  .pp-inc-num b { font-family: 'Clash Display', var(--font-display); font-size: clamp(56px, 7vw, 96px); font-weight: 700; line-height: 0.8; letter-spacing: -0.035em; color: var(--pp-azul); font-variant-numeric: tabular-nums; }
-  .pp-hereda { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 7px 12px 7px 10px; border-radius: 999px; background: var(--pp-azul-t); color: var(--pp-azul-o); font-family: var(--font-display); font-size: 12.5px; font-weight: 600; }
-  .pp-mcp { display: grid; gap: 6px; margin-top: 24px; padding: 18px 20px; border-radius: 12px; background: var(--pp-azul-b); color: #fff; }
-  .pp-mcp-k { font-family: var(--font-display); font-size: 10.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.85; }
-  .pp-mcp b { font-family: 'Clash Display', var(--font-display); font-size: clamp(20px, 2vw, 28px); line-height: 1.1; }
-  .pp-mcp-t { max-width: 70ch; font-size: 14px; line-height: 1.5; opacity: 0.92; }
-  .pp-mcp-p { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-  .pp-mcp-p i { padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.18); font-family: var(--font-display); font-size: 11.5px; font-style: normal; font-weight: 600; }
-  .pp-inc-cats { margin-top: 28px; column-gap: 40px; }
-  .pp-inc-cat { break-inside: avoid; margin: 0 0 28px; }
-  .pp-inc-cat h4 { display: flex; align-items: center; gap: 9px; margin: 0 0 12px; font-family: var(--font-display); font-size: 15px; font-weight: 700; line-height: 1.25; color: var(--pp-tinta); }
-  .pp-inc-cat h4 i { width: 9px; height: 9px; flex-shrink: 0; border-radius: 50%; background: var(--pp-azul); }
-  .pp-inc-cat h4 small { padding: 1px 7px; border-radius: 999px; background: var(--pp-azul-t); color: var(--pp-azul-o); font-size: 11px; font-weight: 600; }
-  .pp-inc-cat ul { display: grid; gap: 9px; margin: 0; padding: 0 0 0 18px; list-style: none; border-left: 2px solid var(--pp-azul-t); }
-  .pp-inc-cat li { display: flex; gap: 8px; font-size: 14px; line-height: 1.45; color: var(--pp-texto); }
-  .pp-inc-cat li svg { flex-shrink: 0; margin-top: 3px; color: var(--pp-azul); }
-  .pp-inc-cat em { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #EDEAE3; color: var(--pp-tenue); font-family: var(--font-display); font-size: 10.5px; font-style: normal; font-weight: 600; vertical-align: 1px; }
-  .pp-inc-pie { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px 32px; padding-top: 20px; border-top: 1px solid var(--pp-linea); }
-  .pp-servicios { margin: 0; max-width: 70ch; font-size: 13px; line-height: 1.5; color: var(--pp-tenue); }
-  .pp-servicios b { color: var(--pp-tinta); font-weight: 600; }
-  .pp-inc-ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; }
-  .pp-empieza { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 26px; border-radius: 999px; background: var(--pp-azul-b); color: #fff; font-family: var(--font-display); font-size: 14.5px; font-weight: 700; text-decoration: none; transition: background 0.2s, transform 0.2s; }
-  .pp-empieza:hover { background: var(--pp-azul-o); color: #fff; text-decoration: none; transform: translateY(-1px); }
-  .pp-compara { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-display); font-size: 14px; font-weight: 600; color: var(--pp-azul-o); text-decoration: none; }
-  .pp-compara:hover { color: var(--pp-azul); text-decoration: none; }
-  .pp-compara svg { transition: transform 0.25s; }
-  .pp-compara:hover svg { transform: translateX(3px); }
-  /* con JS, cada categoría entra al verse (una sola vez) */
-  .pp.is-js .pp-inc-cat li { opacity: 0; transform: translateY(8px); transition: opacity 0.4s ease, transform 0.55s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--q) * 0.045s); }
-  .pp.is-js .pp-inc-cat.is-visto li { opacity: 1; transform: none; }
-  .pp.is-js .pp-inc-cat h4 { opacity: 0; transform: translateY(10px); transition: opacity 0.4s ease, transform 0.55s cubic-bezier(0.16, 1, 0.3, 1); }
-  .pp.is-js .pp-inc-cat.is-visto h4 { opacity: 1; transform: none; }
+  .pp-t-circ { width: 46px; height: 46px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center; background: #fff; color: var(--pp-fondo); }
+  .pp--controla .pp-t-circ, .pp--automatiza .pp-t-circ { color: var(--pp-azul-o); }
 
   /* ══ Escena: el scroll hace la transformación (teléfono y escritorio, con movimiento permitido) ══ */
   .pp.is-escena .pp-riel { height: 190vh; }
-  .pp.is-escena .pp-escena { position: sticky; top: 0; height: 100vh; max-width: none; margin: 0; padding: 0; overflow: hidden;
-    --e: 0; --v: 0; --gx: 50vw; --gr: 50vw; --gy: 50vh; --gb: 50vh; --dx: 0px; --dy: 0px; --s0: 0.2; }
-  .pp.is-escena .pp-paso-k { display: flex; align-items: center; gap: 9px; position: absolute; left: 16px; right: 16px; top: 84px; z-index: 2; margin: 0; font-family: var(--font-display); font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--pp-azul-o); opacity: calc(1 - var(--e) * 2); }
-  .pp.is-escena .pp-paso-k i { width: 8px; height: 8px; border-radius: 50%; background: var(--pp-azul); }
+  .pp.is-escena .pp-escena { position: sticky; top: 0; height: 100vh; padding: 0;
+    --e: 0; --v: 0; --q: 0; --gx: 50vw; --gr: 50vw; --gy: 50vh; --gb: 50vh; --dx: 0px; --dy: 0px; --s0: 0.2; }
+  /* la palabra del fondo cruza la pantalla con el scroll (la fila de en medio en sentido contrario) */
+  .pp.is-escena .pp-fondo-f { transform: translateX(calc(-8% + var(--r) * -14% + var(--q) * 22%)); }
+  .pp.is-escena .pp-fondo-f:nth-child(2) { transform: translateX(calc(-30% - var(--q) * 22%)); }
+  .pp.is-escena .pp-paso-k { display: flex; align-items: center; gap: 9px; position: absolute; left: 16px; right: 16px; top: 84px; z-index: 2; margin: 0; font-family: var(--font-display); font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--pp-sobre); opacity: calc(1 - var(--e) * 2); }
+  .pp.is-escena .pp-paso-k i { width: 8px; height: 8px; border-radius: 50%; background: var(--pp-numero); }
   /* teléfono: el nombre del paso en grande llena el aire de arriba y se va cuando crece la foto */
-  .pp.is-escena .pp-paso-t { display: block; position: absolute; left: 16px; right: 16px; top: 118px; z-index: 2; margin: 0; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: clamp(48px, 15vw, 88px); line-height: 0.9; letter-spacing: -0.03em; color: var(--pp-azul); opacity: calc(1 - var(--e) * 2.2); }
-  .pp.is-escena .pp-paso-t span { display: block; color: var(--pp-tinta); }
-  .pp.is-escena .pp-cap + .pp-cap .pp-esc { display: grid; }
-  .pp.is-escena .pp-esc { position: absolute; left: 50%; top: 60%; z-index: 1; width: calc(100% - 32px); max-width: 1180px; margin: 0; transform: translate(-50%, -50%); }
+  .pp.is-escena .pp-paso-t { display: block; position: absolute; left: 16px; right: 16px; top: 118px; z-index: 2; margin: 0; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: clamp(48px, 15vw, 88px); line-height: 0.9; letter-spacing: -0.03em; color: var(--pp-numero); opacity: calc(1 - var(--e) * 2.2); }
+  .pp.is-escena .pp-paso-t span { display: block; color: var(--pp-sobre); }
+  .pp.is-escena .pp-esc { display: grid; position: absolute; left: 50%; top: 60%; z-index: 1; width: calc(100% - 32px); max-width: 1180px; margin: 0; transform: translate(-50%, -50%); }
   .pp.is-escena .pp-e:not(.is-actual) { opacity: calc(1 - var(--e) * 1.8); }
   .pp.is-escena .pp-e.is-actual .pp-e-n, .pp.is-escena .pp-e.is-actual .pp-e-nombre, .pp.is-escena .pp-e.is-actual .pp-e-precio { opacity: calc(1 - var(--e) * 3); }
   /* la foto crece desde su tarjeta: el recorte se abre y la imagen se acerca a su tamaño de pantalla completa */
-  .pp.is-escena .pp-lienzo { position: absolute; inset: 0; z-index: 3; margin: 0; aspect-ratio: auto; border-radius: 0; background: none; overflow: visible; pointer-events: none; }
+  .pp.is-escena .pp-lienzo { position: absolute; inset: 0; z-index: 3; max-width: none; margin: 0; aspect-ratio: auto; border-radius: 0; background: none; overflow: visible; pointer-events: none; }
   .pp.is-escena .pp-grande { clip-path: inset(calc(var(--gy) * (1 - var(--e))) calc(var(--gr) * (1 - var(--e))) calc(var(--gb) * (1 - var(--e))) calc(var(--gx) * (1 - var(--e))) round calc(3px * (1 - var(--e)))); }
   .pp.is-escena .pp-grande img { transform-origin: 50% 50%; transform: translate(calc(var(--dx) * (1 - var(--e))), calc(var(--dy) * (1 - var(--e)))) scale(calc(var(--s0) + (1 - var(--s0)) * var(--e))); }
   .pp.is-escena .pp-velo { opacity: var(--v); }
@@ -287,36 +228,34 @@ const PASOS = BASE.map((b) => {
 
   @media (min-width: 640px) {
     .pp { --pp-gap: 14px; --pp-sube: 28px; }
-    .pp-cabeza { padding: 96px 32px 16px; }
-    .pp-escena, .pp-inc { padding-left: 32px; padding-right: 32px; }
+    .pp-cabeza { padding: 96px 32px 64px; }
+    .pp-escena { padding: 64px 32px; }
     .pp-e-n { font-size: 30px; }
     .pp-e-nombre { font-size: 17px; }
     .pp-lienzo { aspect-ratio: 16 / 10; }
     .pp-titular { left: 32px; right: 32px; bottom: 36px; }
-    .pp-inc-cats { columns: 2; }
     .pp.is-escena .pp-paso-k, .pp.is-escena .pp-paso-t { left: 32px; right: 32px; }
     .pp.is-escena .pp-esc { width: calc(100% - 64px); }
     .pp.is-escena .pp-titular { left: 32px; right: 32px; }
   }
   @media (min-width: 1024px) {
     .pp { --pp-gap: clamp(16px, 1.8vw, 28px); --pp-sube: min(56px, 6vh); }
-    .pp-cabeza { padding: 128px 4vw 24px; }
+    .pp-cabeza { padding: 128px 4vw 88px; }
     .pp-h2 { font-size: clamp(56px, 6vw, 104px); }
     /* el titular a lo ancho en dos renglones; debajo, el texto y los botones en una fila */
     .pp-lado { display: flex; align-items: flex-end; justify-content: space-between; gap: 5vw; margin-top: 28px; }
     .pp-p { margin-top: 0; }
     .pp-ctas { flex-shrink: 0; margin-top: 0; }
-    .pp-escena, .pp-inc { padding-left: 4vw; padding-right: 4vw; }
+    .pp-escena { padding: 96px 4vw; }
     .pp-e-largo, .pp-e-precio { display: block; }
     .pp-e-corto { display: none; }
     .pp-e-n { margin-top: 14px; font-size: clamp(34px, 3.2vw, 52px); }
     .pp-e-nombre { margin-top: 6px; font-size: clamp(19px, 1.7vw, 26px); }
-    .pp-e-precio { margin-top: 8px; font-size: 13px; color: var(--pp-tenue); }
-    .pp-inc { padding-top: 88px; padding-bottom: 104px; }
-    .pp-inc-cats { columns: 3; column-gap: 48px; }
+    .pp-e-precio { margin-top: 8px; font-size: 13px; color: var(--pp-sobre-2); }
     .pp-titular { left: 4vw; right: 4vw; bottom: 48px; }
     .pp-t-precio { font-size: 16px; }
     .pp.is-escena .pp-riel { height: 200vh; }
+    .pp.is-escena .pp-escena { padding: 0; }
     .pp.is-escena .pp-paso-k { left: 4vw; right: 4vw; top: clamp(64px, 11vh, 104px); font-size: 12px; }
     .pp.is-escena .pp-paso-t { display: none; }
     /* la escalera cabe en la pantalla: va debajo de «Paso N de 4» y las fotos se limitan por el alto que queda
@@ -324,19 +263,14 @@ const PASOS = BASE.map((b) => {
     .pp.is-escena .pp-esc { top: calc(clamp(64px, 11vh, 104px) + 36px); transform: translateX(-50%); width: min(1180px, 92vw, calc((100vh - clamp(64px, 11vh, 104px) - 190px - 3 * var(--pp-sube)) * 3 + 3 * var(--pp-gap))); }
     .pp.is-escena .pp-titular { left: 5vw; right: 5vw; bottom: 11vh; }
   }
-  @media (min-width: 1400px) {
-    .pp-inc-cats { columns: 4; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .pp.is-js .pp-inc-cat li, .pp.is-js .pp-inc-cat h4 { opacity: 1; transform: none; transition: none; }
-  }
 </style>
 
 <script>
   (() => {
-    const sec = document.getElementById('paso-a-paso');
-    if (!sec) return;
-    sec.classList.add('is-js');
+    // Hay cuatro capítulos en la página (uno antes de cada plan): un solo controlador para todos.
+    const secs = Array.from(document.querySelectorAll<HTMLElement>('.pp'));
+    if (!secs.length) return;
+    secs.forEach((s) => s.classList.add('is-js'));
     const mqMovimiento = window.matchMedia('(prefers-reduced-motion: no-preference)');
     const mqAncho = window.matchMedia('(min-width: 1024px)');
     const ph = (ev: string, props?: Record<string, unknown>) => { try { (window as any).sacsPH?.(ev, props); } catch { /* medir no rompe nada */ } };
@@ -345,15 +279,18 @@ const PASOS = BASE.map((b) => {
     const clamp = (x: number) => Math.min(1, Math.max(0, x));
 
     // Todo lo que se toca en cada cuadro se busca UNA vez (regla de rendimiento: nada de querySelector en el scroll).
-    const caps = Array.from(sec.querySelectorAll<HTMLElement>('.pp-cap')).map((el) => ({
-      el,
-      plan: el.dataset.plan || '',
-      riel: el.querySelector<HTMLElement>('.pp-riel')!,
-      esc: el.querySelector<HTMLElement>('.pp-escena')!,
-      foto: el.querySelector<HTMLElement>('.pp-e.is-actual .pp-e-foto')!,
-      palabras: Array.from(el.querySelectorAll<HTMLElement>('.pp-t-h .w')),
-      activa: false, n: -1, fase: -1,
-    }));
+    const caps = secs.map((sec) => {
+      const el = sec.querySelector<HTMLElement>('.pp-cap')!;
+      return {
+        sec, el,
+        plan: el.dataset.plan || '',
+        riel: el.querySelector<HTMLElement>('.pp-riel')!,
+        esc: el.querySelector<HTMLElement>('.pp-escena')!,
+        foto: el.querySelector<HTMLElement>('.pp-e.is-actual .pp-e-foto')!,
+        palabras: Array.from(el.querySelectorAll<HTMLElement>('.pp-t-h .w')),
+        activa: false, n: -1, fase: -1,
+      };
+    });
     type Cap = (typeof caps)[number];
     let escena = false, raf = 0, fijada = false;
     // La barra de WhatsApp se oculta solo mientras la foto de un paso está pegada a la pantalla.
@@ -395,6 +332,7 @@ const PASOS = BASE.map((b) => {
         const g = clamp((p - 0.1) / 0.48);
         const e = g < 0.5 ? 4 * g * g * g : 1 - Math.pow(-2 * g + 2, 3) / 2;
         c.esc.style.setProperty('--e', e.toFixed(4));
+        c.esc.style.setProperty('--q', p.toFixed(3));
         c.esc.style.setProperty('--v', clamp((p - 0.4) / 0.2).toFixed(3));
         const n = Math.round(clamp((p - 0.5) / 0.28) * c.palabras.length);
         if (n !== c.n) { c.n = n; c.palabras.forEach((w, i) => w.classList.toggle('is-on', i < n)); }
@@ -415,52 +353,29 @@ const PASOS = BASE.map((b) => {
         const c = caps.find((x) => x.riel === en.target);
         if (c) c.activa = en.isIntersecting;
       });
-      const alguna = caps.some((c) => c.activa);
-      if (escena && alguna) { window.addEventListener('scroll', onScroll, { passive: true }); onScroll(); }
+      if (escena && caps.some((c) => c.activa)) { window.addEventListener('scroll', onScroll, { passive: true }); onScroll(); }
       else { window.removeEventListener('scroll', onScroll); fija(false); }
     }, { rootMargin: '0px' });
 
     function aplicaModo() {
       escena = mqMovimiento.matches;
-      sec!.classList.toggle('is-escena', escena);
+      secs.forEach((s) => s.classList.toggle('is-escena', escena));
       caps.forEach((c) => {
         c.n = -1; c.fase = -1;
         c.el.classList.remove('is-t1', 'is-flecha');
         c.palabras.forEach((w) => w.classList.remove('is-on'));
-        ['--e', '--v', '--gx', '--gy', '--gr', '--gb', '--dx', '--dy', '--s0'].forEach((v) => c.esc.style.removeProperty(v));
+        ['--e', '--q', '--v', '--gx', '--gy', '--gr', '--gb', '--dx', '--dy', '--s0'].forEach((v) => c.esc.style.removeProperty(v));
       });
       if (escena) { mideTodo(); onScroll(); }
       else { window.removeEventListener('scroll', onScroll); fija(false); }
     }
 
-    /* ── lo que incluye: cada categoría entra al verse y el contador corre una vez ── */
-    function cuenta(el: HTMLElement) {
-      const n = +(el.dataset.n || 0);
-      if (!mqMovimiento.matches) { el.textContent = String(n); return; }
-      const t0 = performance.now();
-      const paso = (t: number) => {
-        const f = Math.min(1, (t - t0) / 900);
-        el.textContent = String(Math.round(n * (1 - Math.pow(1 - f, 3))));
-        if (f < 1) requestAnimationFrame(paso);
-      };
-      el.textContent = '0';
-      requestAnimationFrame(paso);
-    }
-    const ioInc = new IntersectionObserver((es) => es.forEach((en) => {
-      if (!en.isIntersecting) return;
-      const t = en.target as HTMLElement;
-      if (t.classList.contains('pp-cuenta')) cuenta(t); else t.classList.add('is-visto');
-      ioInc.unobserve(t);
-    }), { threshold: 0.2 });
-    sec.querySelectorAll<HTMLElement>('.pp-inc-cat, .pp-cuenta').forEach((el) => ioInc.observe(el));
-
     // Sección en vista: la flecha rebota solo entonces.
-    const io = new IntersectionObserver((es) => {
-      const en = es[0].isIntersecting;
-      sec.classList.toggle('is-visible', en);
-      if (en) hito('pasos_ver');
-    }, { threshold: 0 });
-    io.observe(sec);
+    const io = new IntersectionObserver((es) => es.forEach((en) => {
+      (en.target as HTMLElement).classList.toggle('is-visible', en.isIntersecting);
+      if (en.isIntersecting) hito('pasos_ver');
+    }), { threshold: 0 });
+    secs.forEach((s) => io.observe(s));
 
     let rz = 0;
     window.addEventListener('resize', () => { if (!rz) rz = requestAnimationFrame(() => { rz = 0; mideTodo(); onScroll(); }); }, { passive: true });
@@ -468,7 +383,7 @@ const PASOS = BASE.map((b) => {
     mqAncho.addEventListener('change', () => { mideTodo(); onScroll(); });
     document.fonts?.ready.then(() => { mideTodo(); onScroll(); });
     window.addEventListener('load', () => { mideTodo(); onScroll(); });
-    sec.querySelectorAll<HTMLElement>('[data-evento]').forEach((a) => a.addEventListener('click', () => ph(a.dataset.evento || '', { plan: a.dataset.plan })));
+    secs.forEach((s) => s.querySelectorAll<HTMLElement>('[data-evento]').forEach((a) => a.addEventListener('click', () => ph(a.dataset.evento || '', { plan: a.dataset.plan }))));
 
     aplicaModo();
     caps.forEach((c) => ioCap.observe(c.riel));
