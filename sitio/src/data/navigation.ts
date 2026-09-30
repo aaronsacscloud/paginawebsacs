@@ -795,6 +795,7 @@ export const navLinks: NavLink[] = [
           { label: 'Marketing por correo', href: '/producto/marketing-por-correo' },
           { label: 'Marketing por WhatsApp', href: '/producto/marketing-por-whatsapp' },
           { label: 'Membresías y suscripciones', href: '/producto/membresias-y-suscripciones' },
+          { label: 'Marketplaces', href: '/producto/marketplaces' },
         ],
       },
       {
@@ -854,6 +855,7 @@ export const footerLinks = {
     { label: 'Marketing por correo', href: '/producto/marketing-por-correo' },
     { label: 'Marketing por WhatsApp', href: '/producto/marketing-por-whatsapp' },
     { label: 'Membresías y suscripciones', href: '/producto/membresias-y-suscripciones' },
+    { label: 'Marketplaces', href: '/producto/marketplaces' },
   ],
   automatiza: [
     { label: 'Especialista IA dedicado', href: '/producto/especialista-ia' },

@@ -326,6 +326,19 @@ export const pillars: Pillar[] = [
         },
         status: 'live',
       },
+      {
+        slug: 'marketplaces',
+        pillarId: 'fideliza',
+        label: 'Marketplaces',
+        title: 'Marketplaces para Marcas de Moda — Sacs',
+        description: 'Conecta tu marca a Mercado Libre, Amazon, Liverpool y más marketplaces desde un solo inventario: publicaciones, precios, stock y pedidos orquestados sin doble captura.',
+        hero: {
+          eyebrow: 'Fideliza',
+          headline: 'Todos tus marketplaces, un solo inventario',
+          subtitle: 'Publica, sincroniza stock y surte pedidos de cada marketplace desde Sacs.',
+        },
+        status: 'coming-soon',
+      },
     ],
   },
   {
