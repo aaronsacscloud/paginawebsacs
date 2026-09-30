@@ -3,26 +3,32 @@
  * PasoAPaso — «Empieza donde estás. Sube cuando quieras.» (29-sep-2026, portada Fashion OS v2).
  *
  * Va después de «Un día en piloto automático»: la marca no tiene que automatizar todo el primer día.
- * Cuatro fotos en escalera (Vende → Controla → Fideliza y Multiplica → Automatiza), cada una con su plan
- * y su precio mensual real (data/plans.ts, el mismo de /planes). Una línea azul sube por los escalones.
  *
- * 30-sep-2026 (dueño): «cuando bajo del plan Vende, ese card se hace más grande hacia abajo, de forma
- * interactiva, con una flecha donde explicamos mira todo lo que puedes hacer con el plan Vende, y ya
- * mostramos lo demás». Cada escalón tiene su flecha: al tocarla (o la tarjeta) se despliega hacia abajo
- * con un contador, el riel azul que se dibuja y las categorías del plan como acordeón — las MISMAS
- * funciones de /planes (data/plans.ts), para que nunca digan cosas distintas. Uno abierto a la vez.
+ * 30-sep-2026 (dueño, 2.ª vuelta): nada de clics. «Al hacer scroll la foto se hace más grande y dice en
+ * grande un texto de todo lo que necesitas para multiplicar tus ventas en tu negocio de moda, y una flecha
+ * para ver abajo lo que incluye; sin dar clicks, solo un proceso natural donde sigues dando scroll y se
+ * genera la transformación».
  *
- * Escritorio: escalera de cuatro columnas que entra al verse. Teléfono: carrusel con los escalones.
- * Sin JS: todo desplegado. «Reducir movimiento»: sin rebotes ni transiciones. Fotos: gpt-image-2.5.
+ * Así que es un capítulo por plan (Vende → Controla → Fideliza y Multiplica → Automatiza), cada uno con
+ * su riel y escena pegada: la escalera de los cuatro planes con el paso actual marcado; al bajar, la
+ * foto de ese paso CRECE desde su tarjeta hasta llenar la pantalla (recorte + escala, ver `geo`), entra
+ * el velo y la frase gigante palabra por palabra, el precio y la flecha. Al terminar el riel, abajo sale
+ * «lo que incluye» ese plan — las MISMAS funciones de /planes (data/plans.ts) — y sigue el siguiente paso.
+ *
+ * Con «reducir movimiento» o sin JS: la escalera una vez y cada plan como foto con su frase + lo que
+ * incluye, todo quieto. El scroll se lee con rAF y listener pasivo solo mientras algún capítulo está en
+ * vista; la geometría se mide al cargar y al cambiar el tamaño, nunca en el scroll.
+ * Fotos: gpt-image-2.5 (verticales para el teléfono; en escritorio, la misma escena extendida a lo ancho).
  */
 import { plans } from '../../data/plans';
 
+const F = '/images/fashion-os/';
 const fmt = new Intl.NumberFormat('es-MX');
 const BASE = [
-  { id: 'vende', n: '01', foto: 'paso-vende', alt: 'Una clienta paga con su celular en el mostrador de una boutique', texto: 'Cobra por talla y color en el piso, en línea y en redes, sobre un solo inventario.' },
-  { id: 'controla', n: '02', foto: 'paso-controla', alt: 'Una encargada escanea la etiqueta de una prenda en la bodega, con los racks ordenados por color', texto: 'Inventario por talla y color en todas tus tiendas, conteos desde el celular y compras por curva.' },
-  { id: 'fideliza', n: '03', foto: 'paso-fideliza', alt: 'Una estilista le entrega a una clienta frecuente su prenda envuelta con listón azul', texto: 'Monedero, WhatsApp y campañas que hacen volver a tu clienta cada temporada.' },
-  { id: 'automatiza', n: '04', foto: 'paso-automatiza', alt: 'La dueña sale de su boutique con un café, revisando su celular mientras su marca opera sola', texto: 'Tus agentes de IA operan el día y el MCP de Sacscloud conecta Claude o ChatGPT. Tú solo apruebas.', marca: 'Incluye agentes de IA' },
+  { id: 'vende', n: '01', corto: 'Vende', foto: 'paso-vende', alt: 'Una clienta paga con su celular en el mostrador de una boutique', frase: 'Todo lo que necesitas para multiplicar tus ventas en tu negocio de moda.' },
+  { id: 'controla', n: '02', corto: 'Controla', foto: 'paso-controla', alt: 'Una encargada escanea la etiqueta de una prenda en la bodega, con los racks ordenados por color', frase: 'Todo lo que necesitas para tener cada talla, en cada tienda, bajo control.' },
+  { id: 'fideliza', n: '03', corto: 'Fideliza', foto: 'paso-fideliza', alt: 'Una estilista le entrega a una clienta frecuente su prenda envuelta con listón azul', frase: 'Todo lo que necesitas para que tu clienta vuelva cada temporada.' },
+  { id: 'automatiza', n: '04', corto: 'Automatiza', foto: 'paso-automatiza', alt: 'La dueña sale de su boutique con un café, revisando su celular mientras su marca opera sola', frase: 'Todo lo que necesitas para que tu marca opere en piloto automático.' },
 ];
 const PASOS = BASE.map((b) => {
   const plan = plans.find((x) => x.id === b.id)!;
@@ -46,109 +52,123 @@ const PASOS = BASE.map((b) => {
 });
 ---
 <section class="pp" id="paso-a-paso" aria-labelledby="pp-titulo">
-  <div class="pp-in">
-    <header class="pp-cabeza">
-      <p class="pp-kicker"><i aria-hidden="true"></i>Empieza paso a paso</p>
-      <h2 class="pp-h2" id="pp-titulo">Empieza donde estás.<br /><span>Sube cuando quieras.</span></h2>
-      <div class="pp-lado">
-        <p class="pp-p">Sacs crece contigo: arranca vendiendo, controla tu inventario por talla, haz que tu clienta vuelva y, cuando estés lista, pon tu marca en piloto automático. Cada paso se suma al anterior, sin migrar datos ni cambiar de sistema.</p>
-        <div class="pp-ctas">
-          <a class="pp-cta pp-cta--1" href="/planes" data-evento="pasos_planes">Compara los planes</a>
-          <a class="pp-cta pp-cta--2" href="/prueba-gratis" data-evento="pasos_prueba">Prueba 7 días gratis</a>
-        </div>
+  <header class="pp-cabeza">
+    <p class="pp-kicker"><i aria-hidden="true"></i>Empieza paso a paso</p>
+    <h2 class="pp-h2" id="pp-titulo">Empieza donde estás.<br /><span>Sube cuando quieras.</span></h2>
+    <div class="pp-lado">
+      <p class="pp-p">Sacs crece contigo: arranca vendiendo, controla tu inventario por talla, haz que tu clienta vuelva y, cuando estés lista, pon tu marca en piloto automático. Cada paso se suma al anterior, sin migrar datos ni cambiar de sistema.</p>
+      <div class="pp-ctas">
+        <a class="pp-cta pp-cta--1" href="/planes" data-evento="pasos_planes">Compara los planes</a>
+        <a class="pp-cta pp-cta--2" href="/prueba-gratis" data-evento="pasos_prueba">Prueba 7 días gratis</a>
       </div>
-    </header>
+    </div>
+  </header>
 
-    <ol class="pp-escalera">
-      {PASOS.map((p, k) => (
-        <li class:list={['pp-paso', { 'pp-paso--ia': p.marca }]} style={`--k:${k}`} data-plan={p.id}>
-          <div class="pp-cara">
-            <span class="pp-foto">
-              <img
-                src={`/images/fashion-os/${p.foto}-480.webp`}
-                srcset={`/images/fashion-os/${p.foto}-480.webp 480w, /images/fashion-os/${p.foto}.webp 800w`}
-                sizes="(min-width: 1024px) 22vw, 72vw"
-                alt={p.alt} width="800" height="1200" loading="lazy" decoding="async"
-              />
-              {p.marca && <span class="pp-marca">{p.marca}</span>}
-            </span>
-            <span class="pp-n" aria-hidden="true">{p.n}</span>
-            <h3 class="pp-nombre">{p.nombre}</h3>
-            <p class="pp-texto">{p.texto}</p>
-            <p class="pp-precio">desde <b>{p.precio}</b> /mes por sucursal</p>
-          </div>
+  {PASOS.map((p, k) => (
+    <article class="pp-cap" data-plan={p.id} style={`--k:${k}`} aria-labelledby={`pp-h-${p.id}`}>
+      <div class="pp-riel">
+        <div class="pp-escena">
+          <p class="pp-paso-k" aria-hidden="true"><i></i>Paso {k + 1} de 4</p>
+          <p class="pp-paso-t" aria-hidden="true">{p.n} <span>{p.corto}</span></p>
 
-          <button type="button" class="pp-abre" aria-expanded="false" aria-controls={`pp-mas-${p.id}`}>
-            <span class="pp-flecha" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-            </span>
-            <span class="pp-abre-t"><span class="pp-abre-ver">Mira todo lo que puedes hacer con {p.nombre}</span><span class="pp-abre-cierra">Ocultar lo que incluye</span></span>
-          </button>
+          <ol class="pp-esc" aria-hidden={k > 0 ? 'true' : undefined} aria-label={k === 0 ? 'Los cuatro planes, del primero al último' : undefined}>
+            {PASOS.map((q, j) => (
+              <li class:list={['pp-e', { 'is-actual': j === k, 'is-hecho': j < k }]} style={`--j:${j}`}>
+                <span class="pp-e-foto">
+                  <picture>
+                    <source media="(min-width: 1024px)" srcset={`${F}${q.foto}-ancha-960.webp`} />
+                    <img src={`${F}${q.foto}-480.webp`} alt="" width="480" height="720" loading="lazy" decoding="async" />
+                  </picture>
+                  {j < k && <i class="pp-e-ok" aria-hidden="true">✓</i>}
+                </span>
+                <span class="pp-e-n">{q.n}</span>
+                <span class="pp-e-nombre"><span class="pp-e-largo">{q.nombre}</span><span class="pp-e-corto">{q.corto}</span></span>
+                <span class="pp-e-precio">desde {q.precio}/mes</span>
+              </li>
+            ))}
+          </ol>
 
-          <div class="pp-mas" id={`pp-mas-${p.id}`} role="region" aria-label={`Todo lo que incluye ${p.nombre}`}>
-            <div class="pp-mas-rec">
-              <div class="pp-mas-in">
-                <p class="pp-mas-t"><b class="pp-cuenta" data-n={p.total}>{p.total}</b><span>cosas que haces con {p.nombre}</span></p>
-                {p.hereda && (
-                  <p class="pp-hereda">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-                    Todo lo de {p.hereda}, y además:
-                  </p>
-                )}
-                {p.destacado && (
-                  <div class="pp-mcp">
-                    <span class="pp-mcp-k">{p.destacado.kicker}</span>
-                    <b>{p.destacado.titulo}</b>
-                    <span class="pp-mcp-p">{p.destacado.plataformas.map((x) => <i>{x}</i>)}</span>
-                  </div>
-                )}
-                <ol class="pp-cats">
-                  {p.cats.map((c, j) => (
-                    <li class:list={['pp-cat', { 'is-abierta': j === 0 }]}>
-                      <button type="button" class="pp-cat-b" aria-expanded={j === 0 ? 'true' : 'false'} aria-controls={`pp-${p.id}-c${j}`}>
-                        <i class="pp-punto" aria-hidden="true"></i>
-                        <span class="pp-cat-n">{c.nombre}</span>
-                        <small>{c.items.length}</small>
-                        <svg class="pp-cat-v" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-                      </button>
-                      <div class="pp-cat-mas" id={`pp-${p.id}-c${j}`}>
-                        <div class="pp-cat-rec">
-                          <ul>
-                            {c.items.map((it, q) => (
-                              <li style={`--q:${q}`}>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4.5 12.5 4.5 4.5L19.5 7"/></svg>
-                                <span>{it.t}{it.pronto && <em>pronto</em>}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-                <p class="pp-servicios"><b>Además:</b> {p.servicios.join(' · ')}</p>
-                <div class="pp-mas-ctas">
-                  <a class="pp-empieza" href={p.empieza} data-evento="pasos_empieza" data-plan={p.id}>Empieza con {p.nombre}</a>
-                  <a class="pp-compara" href="/planes" data-evento="pasos_compara" data-plan={p.id}>Compara los 4 planes
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-                  </a>
-                </div>
-              </div>
+          <div class="pp-lienzo">
+            <div class="pp-grande">
+              <picture>
+                <source media="(min-width: 1024px)" srcset={`${F}${p.foto}-ancha-960.webp 960w, ${F}${p.foto}-ancha.webp 1536w`} sizes="100vw" />
+                <img src={`${F}${p.foto}-1024.webp`} srcset={`${F}${p.foto}.webp 800w, ${F}${p.foto}-1024.webp 1024w`} sizes="100vw" alt={p.alt} width="1024" height="1536" loading="lazy" decoding="async" />
+              </picture>
+            </div>
+            <div class="pp-velo" aria-hidden="true"></div>
+            <div class="pp-titular">
+              <p class="pp-t-k">Paso {p.n} · Plan {p.nombre}</p>
+              <h3 class="pp-t-h" id={`pp-h-${p.id}`}>{p.frase.split(' ').map((w, i) => <span class="w" style={`--i:${i}`}>{w} </span>)}</h3>
+              <p class="pp-t-precio">desde <b>{p.precio}</b> /mes por sucursal</p>
+              <a class="pp-t-flecha" href={`#pp-inc-${p.id}`} data-evento="pasos_flecha" data-plan={p.id}>
+                <span class="pp-t-circ" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg></span>
+                Mira lo que incluye
+              </a>
             </div>
           </div>
-        </li>
-      ))}
-    </ol>
-  </div>
+        </div>
+      </div>
+
+      <div class="pp-inc" id={`pp-inc-${p.id}`}>
+        <div class="pp-inc-cabeza">
+          <div>
+            <p class="pp-inc-k">Lo que incluye {p.nombre}</p>
+            <p class="pp-inc-num"><b class="pp-cuenta" data-n={p.total}>{p.total}</b><span>cosas que haces con {p.nombre}</span></p>
+          </div>
+          {p.hereda && (
+            <p class="pp-hereda">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+              Todo lo de {p.hereda}, y además:
+            </p>
+          )}
+        </div>
+        {p.destacado && (
+          <div class="pp-mcp">
+            <span class="pp-mcp-k">{p.destacado.kicker}</span>
+            <b>{p.destacado.titulo}</b>
+            <span class="pp-mcp-t">{p.destacado.texto}</span>
+            <span class="pp-mcp-p">{p.destacado.plataformas.map((x) => <i>{x}</i>)}</span>
+          </div>
+        )}
+        <div class="pp-inc-cats">
+          {p.cats.map((c) => (
+            <section class="pp-inc-cat">
+              <h4><i aria-hidden="true"></i>{c.nombre}<small>{c.items.length}</small></h4>
+              <ul>
+                {c.items.map((it, q) => (
+                  <li style={`--q:${q}`}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4.5 12.5 4.5 4.5L19.5 7"/></svg>
+                    <span>{it.t}{it.pronto && <em>pronto</em>}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+        <div class="pp-inc-pie">
+          <p class="pp-servicios"><b>Además:</b> {p.servicios.join(' · ')}</p>
+          <div class="pp-inc-ctas">
+            <a class="pp-empieza" href={p.empieza} data-evento="pasos_empieza" data-plan={p.id}>Empieza con {p.nombre}</a>
+            <a class="pp-compara" href="/planes" data-evento="pasos_compara" data-plan={p.id}>Compara los 4 planes
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </article>
+  ))}
 </section>
 
 <style>
   .pp {
     --pp-marfil: #F5F3EE; --pp-tinta: #141414; --pp-azul: #4B7BE5; --pp-azul-o: #3A62C4; --pp-azul-b: #4470D8; --pp-azul-t: #E9EFFD;
-    --pp-texto: #45433E; --pp-tenue: #6E6A62; --pp-linea: rgba(20, 20, 20, 0.12); --pp-sube: 30px; --pp-gap: 14px;
-    position: relative; background: var(--pp-marfil); color: var(--pp-tinta); border-top: 1px solid var(--pp-linea); overflow: clip;
+    --pp-texto: #45433E; --pp-tenue: #6E6A62; --pp-linea: rgba(20, 20, 20, 0.12);
+    --pp-gap: 8px; --pp-sube: 18px;
+    position: relative; background: var(--pp-marfil); color: var(--pp-tinta); border-top: 1px solid var(--pp-linea);
   }
-  .pp-in { max-width: 1320px; margin: 0 auto; padding: 76px 16px 84px; }
+
+  /* ── cabecera ── */
+  .pp-cabeza { max-width: 1320px; margin: 0 auto; padding: 76px 16px 12px; }
   .pp-kicker { display: flex; align-items: center; gap: 10px; margin: 0 0 18px; font-family: var(--font-display); font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--pp-azul-o); }
   .pp-kicker i { width: 8px; height: 8px; border-radius: 50%; background: var(--pp-azul); }
   .pp-h2 { margin: 0; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: clamp(40px, 10.4vw, 92px); line-height: 0.94; letter-spacing: -0.02em; text-wrap: balance; }
@@ -160,136 +180,154 @@ const PASOS = BASE.map((b) => {
   .pp-cta--1:hover { background: #2A2A2A; color: #fff; text-decoration: none; transform: translateY(-1px); }
   .pp-cta--2 { border: 1px solid rgba(20, 20, 20, 0.3); color: var(--pp-tinta); }
   .pp-cta--2:hover { border-color: var(--pp-tinta); color: var(--pp-tinta); text-decoration: none; transform: translateY(-1px); }
-  .pp-cta:focus-visible, .pp-abre:focus-visible, .pp-cat-b:focus-visible, .pp-empieza:focus-visible, .pp-compara:focus-visible { outline: 2px solid var(--pp-azul); outline-offset: 3px; }
+  .pp-cta:focus-visible, .pp-t-flecha:focus-visible, .pp-empieza:focus-visible, .pp-compara:focus-visible { outline: 2px solid var(--pp-azul); outline-offset: 3px; }
 
-  /* la escalera: en el teléfono es un carrusel que sube al deslizar */
-  .pp-escalera { display: flex; align-items: flex-start; gap: var(--pp-gap); margin: 44px -16px 0; padding: 0 16px 8px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 16px; list-style: none; scrollbar-width: none; }
-  .pp-escalera::-webkit-scrollbar { display: none; }
-  .pp-paso { position: relative; flex: 0 0 72%; margin-top: calc((3 - var(--k)) * var(--pp-sube)); padding-top: 18px; scroll-snap-align: start; }
+  /* ── Base = quieto (sin JS y «reducir movimiento»): la escalera una vez y cada plan como foto + lo que incluye ── */
+  .pp-escena { position: relative; max-width: 1320px; margin: 0 auto; padding: 0 16px; }
+  .pp-paso-k, .pp-paso-t { display: none; }
+  .pp-cap + .pp-cap .pp-esc { display: none; }
+  .pp-esc { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--pp-gap); align-items: start; margin: 36px 0 0; padding: 0; list-style: none; }
+  .pp-e { position: relative; margin-top: calc((3 - var(--j)) * var(--pp-sube)); padding-top: 12px; }
   /* la línea azul: el borde de arriba de cada escalón y el tramo que sube al siguiente */
-  .pp-paso::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--pp-azul); transform-origin: left; }
-  .pp-paso + .pp-paso::after { content: ''; position: absolute; left: calc(-1 * var(--pp-gap)); top: 0; width: var(--pp-gap); height: calc(var(--pp-sube) + 2px); border-left: 2px solid var(--pp-azul); border-top: 2px solid var(--pp-azul); box-sizing: border-box; }
+  .pp-e::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--pp-azul); }
+  .pp-e + .pp-e::after { content: ''; position: absolute; left: calc(-1 * var(--pp-gap)); top: 0; width: var(--pp-gap); height: calc(var(--pp-sube) + 2px); border-left: 2px solid var(--pp-azul); border-top: 2px solid var(--pp-azul); box-sizing: border-box; }
+  .pp-e-foto { position: relative; display: block; aspect-ratio: 3 / 4; overflow: hidden; border-radius: 3px; background: #E6E2D9; transition: box-shadow 0.4s, opacity 0.4s; }
+  .pp-e-foto img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
+  .pp-e.is-actual .pp-e-foto { box-shadow: 0 0 0 3px var(--pp-marfil), 0 0 0 5px var(--pp-azul); }
+  .pp-e.is-hecho .pp-e-foto { opacity: 0.55; }
+  .pp-e-ok { position: absolute; right: 6px; top: 6px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--pp-azul); color: #fff; font-size: 11px; font-style: normal; font-weight: 700; }
+  .pp-e-n { display: block; margin-top: 10px; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: 20px; line-height: 0.9; letter-spacing: -0.02em; color: var(--pp-azul); }
+  .pp-e-nombre { display: block; margin-top: 4px; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: 13px; line-height: 1.05; color: var(--pp-tinta); }
+  .pp-e-largo, .pp-e-precio { display: none; }
+  .pp-e.is-hecho .pp-e-n, .pp-e.is-hecho .pp-e-nombre { opacity: 0.55; }
 
-  .pp-cara { display: block; transition: opacity 0.35s ease; }
-  .pp.is-js .pp-cara { cursor: pointer; }
-  .pp-foto { position: relative; display: block; aspect-ratio: 3 / 4; overflow: hidden; border-radius: 3px; background: #E6E2D9; }
-  .pp-foto img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
-  .pp-paso:hover .pp-foto img, .pp-paso.is-abierto .pp-foto img { transform: scale(1.04); }
-  .pp-marca { position: absolute; left: 10px; top: 10px; padding: 6px 10px; border-radius: 999px; background: var(--pp-azul-b); color: #fff; font-family: var(--font-display); font-size: 11.5px; font-weight: 700; }
-  .pp-n { display: block; margin-top: 16px; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: 44px; line-height: 0.9; letter-spacing: -0.03em; color: var(--pp-azul); }
-  .pp-nombre { margin: 8px 0 0; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: 26px; line-height: 1; letter-spacing: -0.015em; color: var(--pp-tinta); }
-  .pp-texto { margin: 10px 0 0; font-size: 14px; line-height: 1.5; color: var(--pp-texto); }
-  .pp-precio { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--pp-linea); font-size: 13px; color: var(--pp-tenue); }
-  .pp-precio b { font-family: var(--font-display); font-size: 17px; font-weight: 700; color: var(--pp-tinta); }
-  .pp-paso--ia .pp-precio b { color: var(--pp-azul-o); }
+  /* la foto grande con su frase (en el póster quieto va como bloque; en escena es la pantalla completa) */
+  .pp-lienzo { position: relative; margin-top: 32px; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 3px; background: #1C1B19; color: #fff; }
+  .pp-grande { position: absolute; inset: 0; }
+  .pp-grande img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
+  .pp-velo { position: absolute; inset: 0; background: linear-gradient(to top, rgba(10, 10, 10, 0.78) 0%, rgba(10, 10, 10, 0.5) 38%, rgba(10, 10, 10, 0.08) 72%, rgba(10, 10, 10, 0) 100%); }
+  .pp-titular { position: absolute; left: 20px; right: 20px; bottom: 26px; }
+  .pp-t-k { margin: 0; font-family: var(--font-display); font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255, 255, 255, 0.86); }
+  .pp-t-h { margin: 12px 0 0; max-width: 16ch; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: clamp(32px, 9vw, 112px); line-height: 0.96; letter-spacing: -0.02em; color: #fff; text-wrap: balance; }
+  .pp-t-h .w { display: inline-block; white-space: pre; }
+  .pp-t-precio { margin: 16px 0 0; font-size: 14.5px; color: rgba(255, 255, 255, 0.88); }
+  .pp-t-precio b { font-family: var(--font-display); font-size: 18px; color: #fff; }
+  .pp-t-flecha { display: inline-flex; align-items: center; gap: 12px; margin-top: 20px; font-family: var(--font-display); font-size: 15px; font-weight: 600; color: #fff; text-decoration: none; }
+  .pp-t-flecha:hover { color: #fff; text-decoration: none; }
+  .pp-t-circ { width: 46px; height: 46px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center; background: #fff; color: var(--pp-azul-o); }
 
-  /* la flecha que despliega el escalón: rebota para invitar a tocarla y gira al abrir */
-  .pp-abre { display: none; }
-  .pp.is-js .pp-abre { scroll-margin-top: 92px; display: flex; align-items: center; gap: 12px; width: 100%; margin-top: 14px; padding: 8px 14px 8px 8px; border: 1px solid rgba(75, 123, 229, 0.4); border-radius: 999px; background: #fff; color: var(--pp-azul-o); font-family: var(--font-display); font-size: 13.5px; font-weight: 600; line-height: 1.25; text-align: left; cursor: pointer; transition: background 0.25s, color 0.25s, border-color 0.25s, box-shadow 0.25s; }
-  .pp.is-js .pp-abre:hover, .pp.is-js .pp-paso.is-abierto .pp-abre { background: var(--pp-azul); border-color: var(--pp-azul); color: #fff; }
-  .pp-flecha { flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--pp-azul); color: #fff; transition: transform 0.5s cubic-bezier(0.3, 1.4, 0.5, 1), background 0.25s, color 0.25s; }
-  .pp-abre:hover .pp-flecha, .pp-paso.is-abierto .pp-flecha { background: #fff; color: var(--pp-azul); }
-  .pp-paso.is-abierto .pp-flecha { transform: rotate(180deg); }
-  .pp.is-visible .pp-paso:not(.is-abierto) .pp-flecha svg { animation: ppBota 1.5s ease-in-out infinite; animation-delay: calc(var(--k) * 0.18s); }
-  .pp-abre-cierra { display: none; }
-  .pp-paso.is-abierto .pp-abre-ver { display: none; }
-  .pp-paso.is-abierto .pp-abre-cierra { display: inline; }
-
-  /* el despliegue: la tarjeta crece hacia abajo (filas de grid 0fr → 1fr) */
-  .pp-mas { display: grid; grid-template-rows: 1fr; }
-  .pp.is-js .pp-mas { grid-template-rows: 0fr; transition: grid-template-rows 0.65s cubic-bezier(0.16, 1, 0.3, 1); }
-  .pp.is-js .pp-paso.is-abierto .pp-mas { grid-template-rows: 1fr; }
-  .pp-mas-rec { min-height: 0; overflow: hidden; }
-  .pp-mas-in { margin-top: 12px; padding: 18px 16px 18px; background: #fff; border: 1px solid var(--pp-linea); border-top: 2px solid var(--pp-azul); border-radius: 0 0 6px 6px; }
-  .pp.is-js .pp-mas-in { opacity: 0; transform: translateY(-12px); transition: opacity 0.3s ease, transform 0.55s cubic-bezier(0.16, 1, 0.3, 1); }
-  .pp.is-js .pp-paso.is-abierto .pp-mas-in { opacity: 1; transform: none; transition-delay: 0.1s; }
-  .pp-mas-t { display: flex; align-items: baseline; gap: 10px; margin: 0; font-family: var(--font-display); font-size: 13.5px; font-weight: 600; line-height: 1.25; color: var(--pp-texto); }
-  .pp-mas-t b { font-family: 'Clash Display', var(--font-display); font-size: 40px; font-weight: 700; line-height: 0.85; letter-spacing: -0.03em; color: var(--pp-azul); font-variant-numeric: tabular-nums; }
-  .pp-hereda { display: inline-flex; align-items: center; gap: 6px; margin: 14px 0 0; padding: 6px 11px 6px 9px; border-radius: 999px; background: var(--pp-azul-t); color: var(--pp-azul-o); font-family: var(--font-display); font-size: 12px; font-weight: 600; }
-  .pp-mcp { margin-top: 14px; padding: 13px 14px; border-radius: 10px; background: var(--pp-azul-b); color: #fff; }
-  .pp-mcp-k { display: block; font-family: var(--font-display); font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.85; }
-  .pp-mcp b { display: block; margin-top: 6px; font-family: var(--font-display); font-size: 14.5px; line-height: 1.3; }
-  .pp-mcp-p { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
-  .pp-mcp-p i { padding: 3px 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.18); font-family: var(--font-display); font-size: 11px; font-style: normal; font-weight: 600; }
-
-  /* las categorías sobre el riel azul: cada una se abre como acordeón */
-  .pp-cats { position: relative; margin: 16px 0 0; padding: 0 0 0 20px; list-style: none; }
-  .pp-cats::before { content: ''; position: absolute; left: 4px; top: 16px; bottom: 16px; width: 2px; background: var(--pp-azul); transform-origin: top; }
-  .pp.is-js .pp-cats::before { transform: scaleY(0); transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
-  .pp.is-js .pp-paso.is-abierto .pp-cats::before { transform: none; transition-delay: 0.25s; }
-  .pp-cat + .pp-cat { border-top: 1px solid var(--pp-linea); }
-  .pp-cat-b { position: relative; display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px 0; border: 0; background: none; color: var(--pp-tinta); font-family: var(--font-display); font-size: 14px; font-weight: 600; line-height: 1.25; text-align: left; cursor: pointer; }
-  .pp-cat-b:hover .pp-cat-n { color: var(--pp-azul-o); }
-  .pp-punto { position: absolute; left: -20px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 2px var(--pp-azul); transition: background 0.3s, transform 0.3s; }
-  .pp-cat.is-abierta .pp-punto { background: var(--pp-azul); transform: scale(1.2); }
-  .pp-cat-n { flex: 1; min-width: 0; transition: color 0.2s; }
-  .pp-cat-b small { flex-shrink: 0; min-width: 24px; padding: 2px 7px; border-radius: 999px; background: #F1EFEA; color: var(--pp-tenue); font-family: var(--font-display); font-size: 11px; font-weight: 600; text-align: center; transition: background 0.3s, color 0.3s; }
-  .pp-cat.is-abierta .pp-cat-b small { background: var(--pp-azul-t); color: var(--pp-azul-o); }
-  .pp-cat-v { flex-shrink: 0; color: var(--pp-tenue); transition: transform 0.35s ease, color 0.3s; }
-  .pp-cat.is-abierta .pp-cat-v { transform: rotate(180deg); color: var(--pp-azul-o); }
-  .pp-cat-mas { display: grid; grid-template-rows: 1fr; }
-  .pp.is-js .pp-cat-mas { grid-template-rows: 0fr; transition: grid-template-rows 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
-  .pp.is-js .pp-cat.is-abierta .pp-cat-mas { grid-template-rows: 1fr; }
-  .pp-cat-rec { min-height: 0; overflow: hidden; }
-  .pp-cat-mas ul { display: grid; gap: 9px; margin: 0; padding: 0 0 14px; list-style: none; }
-  .pp-cat-mas li { display: flex; gap: 8px; font-size: 13.5px; line-height: 1.42; color: var(--pp-texto); }
-  .pp-cat-mas li svg { flex-shrink: 0; margin-top: 3px; color: var(--pp-azul); }
-  .pp-cat-mas em { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #F1EFEA; color: var(--pp-tenue); font-family: var(--font-display); font-size: 10.5px; font-style: normal; font-weight: 600; vertical-align: 1px; }
-  .pp.is-js .pp-cat-mas li { opacity: 0; transform: translateX(-8px); transition: opacity 0.3s ease, transform 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
-  .pp.is-js .pp-paso.is-abierto .pp-cat.is-abierta .pp-cat-mas li { opacity: 1; transform: none; transition-delay: calc(0.18s + var(--q) * 0.04s); }
-
-  .pp-servicios { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--pp-linea); font-size: 12.5px; line-height: 1.5; color: var(--pp-tenue); }
+  /* ── lo que incluye: todo a la vista, entra al bajar ── */
+  .pp-inc { max-width: 1320px; margin: 0 auto; padding: 56px 16px 72px; scroll-margin-top: 72px; }
+  .pp-inc-cabeza { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 40px; padding-bottom: 20px; border-bottom: 1px solid var(--pp-linea); }
+  .pp-inc-k { margin: 0; font-family: var(--font-display); font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--pp-azul-o); }
+  .pp-inc-num { display: flex; align-items: baseline; gap: 12px; margin: 10px 0 0; font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--pp-texto); }
+  .pp-inc-num b { font-family: 'Clash Display', var(--font-display); font-size: clamp(56px, 7vw, 96px); font-weight: 700; line-height: 0.8; letter-spacing: -0.035em; color: var(--pp-azul); font-variant-numeric: tabular-nums; }
+  .pp-hereda { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 7px 12px 7px 10px; border-radius: 999px; background: var(--pp-azul-t); color: var(--pp-azul-o); font-family: var(--font-display); font-size: 12.5px; font-weight: 600; }
+  .pp-mcp { display: grid; gap: 6px; margin-top: 24px; padding: 18px 20px; border-radius: 12px; background: var(--pp-azul-b); color: #fff; }
+  .pp-mcp-k { font-family: var(--font-display); font-size: 10.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.85; }
+  .pp-mcp b { font-family: 'Clash Display', var(--font-display); font-size: clamp(20px, 2vw, 28px); line-height: 1.1; }
+  .pp-mcp-t { max-width: 70ch; font-size: 14px; line-height: 1.5; opacity: 0.92; }
+  .pp-mcp-p { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .pp-mcp-p i { padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.18); font-family: var(--font-display); font-size: 11.5px; font-style: normal; font-weight: 600; }
+  .pp-inc-cats { margin-top: 28px; column-gap: 40px; }
+  .pp-inc-cat { break-inside: avoid; margin: 0 0 28px; }
+  .pp-inc-cat h4 { display: flex; align-items: center; gap: 9px; margin: 0 0 12px; font-family: var(--font-display); font-size: 15px; font-weight: 700; line-height: 1.25; color: var(--pp-tinta); }
+  .pp-inc-cat h4 i { width: 9px; height: 9px; flex-shrink: 0; border-radius: 50%; background: var(--pp-azul); }
+  .pp-inc-cat h4 small { padding: 1px 7px; border-radius: 999px; background: var(--pp-azul-t); color: var(--pp-azul-o); font-size: 11px; font-weight: 600; }
+  .pp-inc-cat ul { display: grid; gap: 9px; margin: 0; padding: 0 0 0 18px; list-style: none; border-left: 2px solid var(--pp-azul-t); }
+  .pp-inc-cat li { display: flex; gap: 8px; font-size: 14px; line-height: 1.45; color: var(--pp-texto); }
+  .pp-inc-cat li svg { flex-shrink: 0; margin-top: 3px; color: var(--pp-azul); }
+  .pp-inc-cat em { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #EDEAE3; color: var(--pp-tenue); font-family: var(--font-display); font-size: 10.5px; font-style: normal; font-weight: 600; vertical-align: 1px; }
+  .pp-inc-pie { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px 32px; padding-top: 20px; border-top: 1px solid var(--pp-linea); }
+  .pp-servicios { margin: 0; max-width: 70ch; font-size: 13px; line-height: 1.5; color: var(--pp-tenue); }
   .pp-servicios b { color: var(--pp-tinta); font-weight: 600; }
-  .pp-mas-ctas { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
-  .pp-empieza { display: flex; align-items: center; justify-content: center; min-height: 46px; padding: 0 18px; border-radius: 999px; background: var(--pp-azul-b); color: #fff; font-family: var(--font-display); font-size: 14px; font-weight: 700; text-align: center; text-decoration: none; transition: background 0.2s, transform 0.2s; }
+  .pp-inc-ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; }
+  .pp-empieza { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 26px; border-radius: 999px; background: var(--pp-azul-b); color: #fff; font-family: var(--font-display); font-size: 14.5px; font-weight: 700; text-decoration: none; transition: background 0.2s, transform 0.2s; }
   .pp-empieza:hover { background: var(--pp-azul-o); color: #fff; text-decoration: none; transform: translateY(-1px); }
-  .pp-compara { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--font-display); font-size: 13.5px; font-weight: 600; color: var(--pp-azul-o); text-decoration: none; }
+  .pp-compara { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-display); font-size: 14px; font-weight: 600; color: var(--pp-azul-o); text-decoration: none; }
   .pp-compara:hover { color: var(--pp-azul); text-decoration: none; }
   .pp-compara svg { transition: transform 0.25s; }
   .pp-compara:hover svg { transform: translateX(3px); }
+  /* con JS, cada categoría entra al verse (una sola vez) */
+  .pp.is-js .pp-inc-cat li { opacity: 0; transform: translateY(8px); transition: opacity 0.4s ease, transform 0.55s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--q) * 0.045s); }
+  .pp.is-js .pp-inc-cat.is-visto li { opacity: 1; transform: none; }
+  .pp.is-js .pp-inc-cat h4 { opacity: 0; transform: translateY(10px); transition: opacity 0.4s ease, transform 0.55s cubic-bezier(0.16, 1, 0.3, 1); }
+  .pp.is-js .pp-inc-cat.is-visto h4 { opacity: 1; transform: none; }
 
-  /* con un escalón abierto, los demás se hacen a un lado (vuelven al pasar el mouse) */
-  .pp-escalera.hay-abierto .pp-paso:not(.is-abierto) .pp-cara { opacity: 0.45; }
-  .pp-escalera.hay-abierto .pp-paso:not(.is-abierto):hover .pp-cara { opacity: 1; }
-  .pp-paso.is-abierto::before { height: 3px; }
+  /* ══ Escena: el scroll hace la transformación (teléfono y escritorio, con movimiento permitido) ══ */
+  .pp.is-escena .pp-riel { height: 190vh; }
+  .pp.is-escena .pp-escena { position: sticky; top: 0; height: 100vh; max-width: none; margin: 0; padding: 0; overflow: hidden;
+    --e: 0; --v: 0; --gx: 50vw; --gr: 50vw; --gy: 50vh; --gb: 50vh; --dx: 0px; --dy: 0px; --s0: 0.2; }
+  .pp.is-escena .pp-paso-k { display: flex; align-items: center; gap: 9px; position: absolute; left: 16px; right: 16px; top: 84px; z-index: 2; margin: 0; font-family: var(--font-display); font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--pp-azul-o); opacity: calc(1 - var(--e) * 2); }
+  .pp.is-escena .pp-paso-k i { width: 8px; height: 8px; border-radius: 50%; background: var(--pp-azul); }
+  /* teléfono: el nombre del paso en grande llena el aire de arriba y se va cuando crece la foto */
+  .pp.is-escena .pp-paso-t { display: block; position: absolute; left: 16px; right: 16px; top: 118px; z-index: 2; margin: 0; font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: clamp(48px, 15vw, 88px); line-height: 0.9; letter-spacing: -0.03em; color: var(--pp-azul); opacity: calc(1 - var(--e) * 2.2); }
+  .pp.is-escena .pp-paso-t span { display: block; color: var(--pp-tinta); }
+  .pp.is-escena .pp-cap + .pp-cap .pp-esc { display: grid; }
+  .pp.is-escena .pp-esc { position: absolute; left: 50%; top: 60%; z-index: 1; width: calc(100% - 32px); max-width: 1180px; margin: 0; transform: translate(-50%, -50%); }
+  .pp.is-escena .pp-e:not(.is-actual) { opacity: calc(1 - var(--e) * 1.8); }
+  .pp.is-escena .pp-e.is-actual .pp-e-n, .pp.is-escena .pp-e.is-actual .pp-e-nombre, .pp.is-escena .pp-e.is-actual .pp-e-precio { opacity: calc(1 - var(--e) * 3); }
+  /* la foto crece desde su tarjeta: el recorte se abre y la imagen se acerca a su tamaño de pantalla completa */
+  .pp.is-escena .pp-lienzo { position: absolute; inset: 0; z-index: 3; margin: 0; aspect-ratio: auto; border-radius: 0; background: none; overflow: visible; pointer-events: none; }
+  .pp.is-escena .pp-grande { clip-path: inset(calc(var(--gy) * (1 - var(--e))) calc(var(--gr) * (1 - var(--e))) calc(var(--gb) * (1 - var(--e))) calc(var(--gx) * (1 - var(--e))) round calc(3px * (1 - var(--e)))); }
+  .pp.is-escena .pp-grande img { transform-origin: 50% 50%; transform: translate(calc(var(--dx) * (1 - var(--e))), calc(var(--dy) * (1 - var(--e)))) scale(calc(var(--s0) + (1 - var(--s0)) * var(--e))); }
+  .pp.is-escena .pp-velo { opacity: var(--v); }
+  .pp.is-escena .pp-titular { left: 16px; right: 16px; bottom: max(12vh, 88px); }
+  .pp.is-escena .is-t1 .pp-titular { pointer-events: auto; }
+  .pp.is-escena .pp-t-h .w { opacity: 0; transform: translateY(0.35em); transition: opacity 0.35s ease, transform 0.55s cubic-bezier(0.16, 1, 0.3, 1); }
+  .pp.is-escena .pp-t-h .w.is-on { opacity: 1; transform: none; }
+  .pp.is-escena .pp-t-k, .pp.is-escena .pp-t-precio, .pp.is-escena .pp-t-flecha { opacity: 0; transform: translateY(12px); transition: opacity 0.4s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+  .pp.is-escena .is-t1 .pp-t-k { opacity: 1; transform: none; }
+  .pp.is-escena .is-flecha .pp-t-precio { opacity: 1; transform: none; }
+  .pp.is-escena .is-flecha .pp-t-flecha { opacity: 1; transform: none; transition-delay: 0.12s; }
+  .pp.is-escena .is-flecha .pp-t-circ svg { animation: ppBota 1.4s ease-in-out infinite; }
+  .pp:not(.is-visible) .pp-t-circ svg { animation-play-state: paused; }
 
-  /* entra al verse: los escalones suben uno tras otro y la línea se dibuja */
-  .pp.is-js .pp-paso { opacity: 0; transform: translateY(36px); transition: opacity 0.6s ease, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--k) * 0.12s); }
-  .pp.is-js .pp-paso::before { transform: scaleX(0); transition: transform 0.6s cubic-bezier(0.7, 0, 0.2, 1); transition-delay: calc(0.35s + var(--k) * 0.12s); }
-  .pp.is-visto .pp-paso { opacity: 1; transform: none; }
-  .pp.is-visto .pp-paso::before { transform: none; }
-
-  @keyframes ppBota { 0%, 100% { transform: translateY(-1px); } 50% { transform: translateY(3px); } }
+  @keyframes ppBota { 0%, 100% { transform: translateY(-2px); } 50% { transform: translateY(4px); } }
 
   @media (min-width: 640px) {
-    .pp-in { padding: 96px 32px 104px; }
-    .pp-paso { flex-basis: 42%; }
+    .pp { --pp-gap: 14px; --pp-sube: 28px; }
+    .pp-cabeza { padding: 96px 32px 16px; }
+    .pp-escena, .pp-inc { padding-left: 32px; padding-right: 32px; }
+    .pp-e-n { font-size: 30px; }
+    .pp-e-nombre { font-size: 17px; }
+    .pp-lienzo { aspect-ratio: 16 / 10; }
+    .pp-titular { left: 32px; right: 32px; bottom: 36px; }
+    .pp-inc-cats { columns: 2; }
+    .pp.is-escena .pp-paso-k, .pp.is-escena .pp-paso-t { left: 32px; right: 32px; }
+    .pp.is-escena .pp-esc { width: calc(100% - 64px); }
+    .pp.is-escena .pp-titular { left: 32px; right: 32px; }
   }
   @media (min-width: 1024px) {
-    .pp { --pp-sube: 64px; --pp-gap: clamp(16px, 1.8vw, 28px); }
-    .pp-in { padding: 128px 4vw 136px; }
-    /* el titular a lo ancho en dos renglones; debajo, el texto y los botones en una fila */
+    .pp { --pp-gap: clamp(16px, 1.8vw, 28px); --pp-sube: min(56px, 6vh); }
+    .pp-cabeza { padding: 128px 4vw 24px; }
     .pp-h2 { font-size: clamp(56px, 6vw, 104px); }
+    /* el titular a lo ancho en dos renglones; debajo, el texto y los botones en una fila */
     .pp-lado { display: flex; align-items: flex-end; justify-content: space-between; gap: 5vw; margin-top: 28px; }
     .pp-p { margin-top: 0; }
     .pp-ctas { flex-shrink: 0; margin-top: 0; }
-    .pp-escalera { margin: 72px 0 0; padding: 0; overflow: visible; }
-    .pp-paso { flex: 1 1 0; min-width: 0; }
-    /* el escalón abierto se hace MÁS GRANDE: crece a lo ancho mientras se despliega hacia abajo */
-    /* la entrada escalonada conserva su retraso; el crecer al abrir va sin retraso */
-    .pp.is-js .pp-paso { transition: opacity 0.6s ease, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1), flex-grow 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--k) * 0.12s), calc(var(--k) * 0.12s), 0s; }
-    .pp-escalera.hay-abierto .pp-paso.is-abierto { flex-grow: 2.3; }
-    .pp-paso.is-abierto .pp-mas-in { padding: 22px 24px 22px; }
-    .pp-paso.is-abierto .pp-cat-mas ul { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 22px; }
-    .pp-paso.is-abierto .pp-mas-ctas { flex-direction: row; align-items: center; gap: 18px; }
-    .pp-paso.is-abierto .pp-empieza { padding: 0 26px; }
-    .pp-n { font-size: clamp(44px, 3.8vw, 64px); }
-    .pp-nombre { font-size: clamp(22px, 1.9vw, 30px); }
+    .pp-escena, .pp-inc { padding-left: 4vw; padding-right: 4vw; }
+    .pp-e-largo, .pp-e-precio { display: block; }
+    .pp-e-corto { display: none; }
+    .pp-e-n { margin-top: 14px; font-size: clamp(34px, 3.2vw, 52px); }
+    .pp-e-nombre { margin-top: 6px; font-size: clamp(19px, 1.7vw, 26px); }
+    .pp-e-precio { margin-top: 8px; font-size: 13px; color: var(--pp-tenue); }
+    .pp-inc { padding-top: 88px; padding-bottom: 104px; }
+    .pp-inc-cats { columns: 3; column-gap: 48px; }
+    .pp-titular { left: 4vw; right: 4vw; bottom: 48px; }
+    .pp-t-precio { font-size: 16px; }
+    .pp.is-escena .pp-riel { height: 200vh; }
+    .pp.is-escena .pp-paso-k { left: 4vw; right: 4vw; top: 104px; font-size: 12px; }
+    .pp.is-escena .pp-paso-t { display: none; }
+    /* la escalera cabe en la pantalla: las fotos se limitan por el alto disponible */
+    .pp.is-escena .pp-esc { width: min(1180px, 92vw, calc((100vh - 400px) * 3 + 3 * var(--pp-gap))); top: 55%; }
+    .pp.is-escena .pp-titular { left: 5vw; right: 5vw; bottom: 11vh; }
+  }
+  @media (min-width: 1400px) {
+    .pp-inc-cats { columns: 4; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .pp.is-js .pp-paso, .pp.is-js .pp-paso::before { opacity: 1; transform: none; transition: none; }
-    .pp.is-js .pp-mas, .pp.is-js .pp-mas-in, .pp.is-js .pp-cat-mas, .pp.is-js .pp-cat-mas li, .pp.is-js .pp-cats::before, .pp-flecha { transition: none !important; }
-    .pp-flecha svg { animation: none !important; }
+    .pp.is-js .pp-inc-cat li, .pp.is-js .pp-inc-cat h4 { opacity: 1; transform: none; transition: none; }
   }
 </style>
 
@@ -298,77 +336,136 @@ const PASOS = BASE.map((b) => {
     const sec = document.getElementById('paso-a-paso');
     if (!sec) return;
     sec.classList.add('is-js');
-    const escalera = sec.querySelector<HTMLElement>('.pp-escalera')!;
-    const pasos = Array.from(sec.querySelectorAll<HTMLElement>('.pp-paso'));
-    const quieto = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const mqMovimiento = window.matchMedia('(prefers-reduced-motion: no-preference)');
+    const mqAncho = window.matchMedia('(min-width: 1024px)');
     const ph = (ev: string, props?: Record<string, unknown>) => { try { (window as any).sacsPH?.(ev, props); } catch { /* medir no rompe nada */ } };
-    const panelDe = (li: HTMLElement) => li.querySelector<HTMLElement>('.pp-mas')!;
+    const hitos = new Set<string>();
+    const hito = (k: string, props?: Record<string, unknown>) => { if (!hitos.has(k)) { hitos.add(k); ph(k, props); } };
+    const clamp = (x: number) => Math.min(1, Math.max(0, x));
 
-    // Lo plegado no recibe foco ni lo lee el lector de pantalla (sin JS, todo queda desplegado).
-    pasos.forEach((li) => {
-      panelDe(li).inert = true;
-      li.querySelectorAll<HTMLElement>('.pp-cat:not(.is-abierta) .pp-cat-mas').forEach((m) => { m.inert = true; });
-    });
+    // Todo lo que se toca en cada cuadro se busca UNA vez (regla de rendimiento: nada de querySelector en el scroll).
+    const caps = Array.from(sec.querySelectorAll<HTMLElement>('.pp-cap')).map((el) => ({
+      el,
+      plan: el.dataset.plan || '',
+      riel: el.querySelector<HTMLElement>('.pp-riel')!,
+      esc: el.querySelector<HTMLElement>('.pp-escena')!,
+      foto: el.querySelector<HTMLElement>('.pp-e.is-actual .pp-e-foto')!,
+      palabras: Array.from(el.querySelectorAll<HTMLElement>('.pp-t-h .w')),
+      activa: false, n: -1, fase: -1,
+    }));
+    type Cap = (typeof caps)[number];
+    let escena = false, raf = 0;
 
-    /* el contador de funciones corre de 0 al total al abrir */
+    /* ── geometría: de qué tarjeta crece la foto y cuánto (se mide al cargar/cambiar tamaño, no en el scroll) ── */
+    function geo(c: Cap) {
+      const s = c.esc.getBoundingClientRect();
+      const r = c.foto.getBoundingClientRect();
+      if (!s.width || !r.width) return;
+      // Misma foto, dos encuadres: vertical en el teléfono, la escena ensanchada en escritorio.
+      const [iw, ih] = mqAncho.matches ? [1536, 1024] : [1024, 1536];
+      const cubreEscena = Math.max(s.width / iw, s.height / ih);
+      const cubreTarjeta = Math.max(r.width / iw, r.height / ih);
+      const x = r.left - s.left, y = r.top - s.top;
+      const st = c.esc.style;
+      st.setProperty('--gx', x.toFixed(1) + 'px');
+      st.setProperty('--gy', y.toFixed(1) + 'px');
+      st.setProperty('--gr', (s.width - x - r.width).toFixed(1) + 'px');
+      st.setProperty('--gb', (s.height - y - r.height).toFixed(1) + 'px');
+      st.setProperty('--dx', (x + r.width / 2 - s.width / 2).toFixed(1) + 'px');
+      st.setProperty('--dy', (y + r.height / 2 - s.height / 2).toFixed(1) + 'px');
+      st.setProperty('--s0', (cubreTarjeta / cubreEscena).toFixed(4));
+    }
+    const mideTodo = () => { if (escena) caps.forEach(geo); };
+
+    /* ── cada cuadro: el avance del riel de cada capítulo en vista ── */
+    function cuadro() {
+      raf = 0;
+      const vh = window.innerHeight;
+      for (const c of caps) {
+        if (!c.activa) continue;
+        const r = c.riel.getBoundingClientRect();
+        const total = r.height - vh;
+        const p = total > 0 ? clamp(-r.top / total) : 0;
+        // 0–10 %: la escalera · 10–58 %: la foto crece · 40–60 %: entra el velo · 50–78 %: la frase · 80 %+: precio y flecha
+        const g = clamp((p - 0.1) / 0.48);
+        const e = g < 0.5 ? 4 * g * g * g : 1 - Math.pow(-2 * g + 2, 3) / 2;
+        c.esc.style.setProperty('--e', e.toFixed(4));
+        c.esc.style.setProperty('--v', clamp((p - 0.4) / 0.2).toFixed(3));
+        const n = Math.round(clamp((p - 0.5) / 0.28) * c.palabras.length);
+        if (n !== c.n) { c.n = n; c.palabras.forEach((w, i) => w.classList.toggle('is-on', i < n)); }
+        const fase = p >= 0.8 ? 2 : p >= 0.48 ? 1 : 0;
+        if (fase !== c.fase) {
+          c.fase = fase;
+          c.el.classList.toggle('is-t1', fase >= 1);
+          c.el.classList.toggle('is-flecha', fase >= 2);
+          if (fase === 2) hito('pasos_paso_' + c.plan, { plan: c.plan });
+        }
+      }
+    }
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(cuadro); };
+
+    const ioCap = new IntersectionObserver((es) => {
+      es.forEach((en) => {
+        const c = caps.find((x) => x.riel === en.target);
+        if (c) c.activa = en.isIntersecting;
+      });
+      const alguna = caps.some((c) => c.activa);
+      document.body.classList.toggle('pasos-activo', escena && alguna);   // la barra de WhatsApp no tapa la foto a pantalla completa
+      if (escena && alguna) { window.addEventListener('scroll', onScroll, { passive: true }); onScroll(); }
+      else window.removeEventListener('scroll', onScroll);
+    }, { rootMargin: '0px' });
+
+    function aplicaModo() {
+      escena = mqMovimiento.matches;
+      sec!.classList.toggle('is-escena', escena);
+      caps.forEach((c) => {
+        c.n = -1; c.fase = -1;
+        c.el.classList.remove('is-t1', 'is-flecha');
+        c.palabras.forEach((w) => w.classList.remove('is-on'));
+        ['--e', '--v', '--gx', '--gy', '--gr', '--gb', '--dx', '--dy', '--s0'].forEach((v) => c.esc.style.removeProperty(v));
+      });
+      if (escena) { mideTodo(); onScroll(); }
+      else { window.removeEventListener('scroll', onScroll); document.body.classList.remove('pasos-activo'); }
+    }
+
+    /* ── lo que incluye: cada categoría entra al verse y el contador corre una vez ── */
     function cuenta(el: HTMLElement) {
       const n = +(el.dataset.n || 0);
-      if (quieto.matches) { el.textContent = String(n); return; }
+      if (!mqMovimiento.matches) { el.textContent = String(n); return; }
       const t0 = performance.now();
       const paso = (t: number) => {
-        const f = Math.min(1, (t - t0) / 800);
+        const f = Math.min(1, (t - t0) / 900);
         el.textContent = String(Math.round(n * (1 - Math.pow(1 - f, 3))));
         if (f < 1) requestAnimationFrame(paso);
       };
       el.textContent = '0';
       requestAnimationFrame(paso);
     }
+    const ioInc = new IntersectionObserver((es) => es.forEach((en) => {
+      if (!en.isIntersecting) return;
+      const t = en.target as HTMLElement;
+      if (t.classList.contains('pp-cuenta')) cuenta(t); else t.classList.add('is-visto');
+      ioInc.unobserve(t);
+    }), { threshold: 0.2 });
+    sec.querySelectorAll<HTMLElement>('.pp-inc-cat, .pp-cuenta').forEach((el) => ioInc.observe(el));
 
-    function abre(li: HTMLElement, on: boolean, porUsuario: boolean) {
-      li.classList.toggle('is-abierto', on);
-      li.querySelector('.pp-abre')?.setAttribute('aria-expanded', String(on));
-      panelDe(li).inert = !on;
-      if (on) {
-        pasos.forEach((o) => { if (o !== li && o.classList.contains('is-abierto')) abre(o, false, false); });   // uno a la vez
-        const c = li.querySelector<HTMLElement>('.pp-cuenta');
-        if (c) cuenta(c);
-        if (porUsuario) {
-          ph('pasos_abrir', { plan: li.dataset.plan });
-          // Si el despliegue queda abajo de la pantalla, se acerca para que se vea crecer.
-          window.setTimeout(() => {
-            const b = li.querySelector<HTMLElement>('.pp-abre');
-            if (b && b.getBoundingClientRect().top > window.innerHeight * 0.6) b.scrollIntoView({ behavior: quieto.matches ? 'auto' : 'smooth', block: 'start' });
-          }, 120);
-        }
-      }
-      escalera.classList.toggle('hay-abierto', pasos.some((o) => o.classList.contains('is-abierto')));
-    }
-
-    pasos.forEach((li) => {
-      const toca = () => abre(li, !li.classList.contains('is-abierto'), true);
-      li.querySelector('.pp-abre')?.addEventListener('click', toca);
-      li.querySelector('.pp-cara')?.addEventListener('click', toca);
-      const cats = Array.from(li.querySelectorAll<HTMLElement>('.pp-cat'));
-      cats.forEach((cat) => cat.querySelector('.pp-cat-b')?.addEventListener('click', () => {
-        const on = !cat.classList.contains('is-abierta');
-        cats.forEach((o) => {
-          const ab = o === cat ? on : false;
-          o.classList.toggle('is-abierta', ab);
-          o.querySelector('.pp-cat-b')?.setAttribute('aria-expanded', String(ab));
-          const m = o.querySelector<HTMLElement>('.pp-cat-mas');
-          if (m) m.inert = !ab;
-        });
-        if (on) ph('pasos_categoria', { plan: li.dataset.plan, cat: cat.querySelector('.pp-cat-n')?.textContent });
-      }));
-    });
-
-    // Entra al verse (una vez) y las flechas rebotan solo mientras la sección está en pantalla.
+    // Sección en vista: la flecha rebota solo entonces.
     const io = new IntersectionObserver((es) => {
       const en = es[0].isIntersecting;
       sec.classList.toggle('is-visible', en);
-      if (en && !sec.classList.contains('is-visto')) { sec.classList.add('is-visto'); ph('pasos_ver'); }
-    }, { threshold: 0.12 });
-    io.observe(escalera);
+      if (en) hito('pasos_ver');
+    }, { threshold: 0 });
+    io.observe(sec);
+
+    let rz = 0;
+    window.addEventListener('resize', () => { if (!rz) rz = requestAnimationFrame(() => { rz = 0; mideTodo(); onScroll(); }); }, { passive: true });
+    mqMovimiento.addEventListener('change', aplicaModo);
+    mqAncho.addEventListener('change', () => { mideTodo(); onScroll(); });
+    document.fonts?.ready.then(() => { mideTodo(); onScroll(); });
+    window.addEventListener('load', () => { mideTodo(); onScroll(); });
     sec.querySelectorAll<HTMLElement>('[data-evento]').forEach((a) => a.addEventListener('click', () => ph(a.dataset.evento || '', { plan: a.dataset.plan })));
+
+    aplicaModo();
+    caps.forEach((c) => ioCap.observe(c.riel));
   })();
 </script>
