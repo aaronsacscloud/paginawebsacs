@@ -174,6 +174,20 @@ body{margin:0;padding:0;background:#eef0f4;color:var(--ink);font-family:"DM Sans
 .t-mod{background:var(--verde-a);color:var(--verde-t)}
 .ent .fe{font-size:.71rem;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
 .ent .sc{font-size:.65rem;font-weight:800;color:var(--verde-t);background:var(--verde-a);border-radius:20px;padding:2px 9px;white-space:nowrap}
+/* comentarios del cliente por renglón */
+.coms{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.com{background:var(--tono);border:1px solid var(--borde);border-left:3px solid var(--violeta);border-radius:0 10px 10px 0;padding:8px 12px}
+.com .ctx{display:block;font-size:.84rem;color:var(--ink);white-space:pre-wrap;line-height:1.5}
+.com .cfe{display:block;font-size:.68rem;color:var(--ink-3);margin-top:3px}
+.comentar summary{cursor:pointer;font-size:.76rem;font-weight:700;color:var(--tinta);list-style:none;display:inline-block}
+.comentar summary::-webkit-details-marker{display:none}
+.comentar summary:before{content:"+ "}
+.comentar textarea{width:100%;margin-top:8px;border:1.5px solid var(--borde);border-radius:10px;padding:9px 11px;font:inherit;font-size:.84rem;resize:vertical;min-height:58px}
+.comentar textarea:focus{outline:2px solid var(--violeta);outline-offset:1px}
+.cpie{display:flex;gap:10px;align-items:center;margin-top:6px;flex-wrap:wrap}
+.cerr{font-size:.74rem;color:#C0554E}
+.fcom{font-size:.82rem;color:var(--ink-2);margin-top:6px;white-space:pre-wrap}
+@media print{.comentar{display:none}}
 .ent .acep{font-size:.65rem;font-weight:800;color:#9a6a10;background:#FFF4E5;border:1px solid #f3dfae;border-radius:20px;padding:2px 9px;white-space:nowrap}
 .ent .mod{font-size:.65rem;color:var(--ink-3);margin-top:2px}
 .ent .dd{font-size:.81rem;color:var(--ink-2);line-height:1.68;margin-top:6px;max-width:76ch}

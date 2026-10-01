@@ -16,6 +16,8 @@ import Curso from './_Curso.astro';
 import Lead from './_Lead.astro';
 import Recomendaciones from './_Recomendaciones.astro';
 import Firma from './_Firma.astro';
+import { leerRevision } from '../../lib/crm/reporte-revision';
+import { CON_REVISADO, LEYENDA_FIRMA } from '../../lib/crm/reporte-firma';
 
 export const prerender = false;
 
@@ -33,6 +35,15 @@ if (id && UUID.test(id)) {
   rep = data || null;
 }
 if (!rep) return new Response('Reporte no encontrado', { status: 404 });
+
+/* La REVISIÓN del cliente —revisado por punto, comentarios y firma— vive en la
+   bitácora de `activities` (1-oct-2026, ver reporte-revision.ts). Con
+   `revisados` presente, _Firma y los renglones saben que pueden ofrecer marcar,
+   comentar y firmar. */
+if (CON_REVISADO.includes(rep.tipo) || LEYENDA_FIRMA[rep.tipo]) {
+  const rv = await leerRevision(rep.id);
+  rep = { ...rep, revisados: rv.revisados, firma: rv.firma, comentarios: rv.comentarios };
+}
 
 /* Dos documentos por la misma puerta. Comparten la liga, el folio, el conteo
    de aperturas y el correo; lo único distinto es qué se pinta. Separarlos en

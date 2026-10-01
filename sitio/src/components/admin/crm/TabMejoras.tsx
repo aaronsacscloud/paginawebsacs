@@ -793,6 +793,10 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [], i
    un vistazo, cuatro minutos es que se lo tomó en serio y hay de qué hablar. */
 function SeguimientoReportes({ reportes, flash, recargar }: any) {
   const [busy, setBusy] = useState('');
+  // Qué reporte tiene abierta su bitácora de revisión (1-oct-2026).
+  const [verRev, setVerRev] = useState('');
+  const fechaHora = (d?: string | null) => d
+    ? new Date(d).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
   if (!reportes?.length) return null;
 
   const dias = (d?: string | null) => d == null ? null
@@ -897,6 +901,15 @@ function SeguimientoReportes({ reportes, flash, recargar }: any) {
               </span>
             ) : null}
 
+            {r.comentarios_n > 0 && (
+              <span style={{ fontSize: '0.62rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px', background: '#FFF4E5', color: '#9a6a10', whiteSpace: 'nowrap' }}>
+                {r.comentarios_n === 1 ? '1 comentario' : `${r.comentarios_n} comentarios`}
+              </span>
+            )}
+            {r.revision?.length > 0 && (
+              <button style={{ ...S.btnG, padding: '5px 10px', fontSize: '0.71rem', ...(verRev === r.id ? { background: '#EEECFE', color: '#5B4BD6', borderColor: '#9B8CFA' } : null) }}
+                onClick={() => setVerRev(v => v === r.id ? '' : r.id)}>Revisión</button>
+            )}
             <button style={{ ...S.btnG, padding: '5px 10px', fontSize: '0.71rem' }} onClick={() => copiar(r)}>Copiar liga</button>
             <a style={{ ...S.btnG, padding: '5px 10px', fontSize: '0.71rem', textDecoration: 'none', display: 'inline-block' }}
                href={`/reporte/${r.id}`} target="_blank" rel="noreferrer">Ver</a>
@@ -904,6 +917,29 @@ function SeguimientoReportes({ reportes, flash, recargar }: any) {
                     disabled={busy === r.id} onClick={() => reenviar(r)}>
               {busy === r.id ? 'Enviando…' : enviado ? 'Reenviar' : 'Enviar'}
             </button>
+
+            {/* LA BITÁCORA DE LA REVISIÓN: cuándo marcó cada punto, qué comentó y
+                cuándo firmó, en el orden en que pasó. Es lo que el dueño pidió
+                ver por dentro (1-oct-2026). */}
+            {verRev === r.id && (
+              <div style={{ width: '100%', background: '#fbfaff', border: '1px solid #ede6fb', borderRadius: 10, padding: '10px 12px', marginTop: 2 }}>
+                {r.revision.map((e: any, i: number) => {
+                  const firma = e.tipo === 'reporte_firma', com = e.tipo === 'reporte_comentario';
+                  return (
+                    <div key={i} style={{ display: 'flex', gap: 10, padding: '6px 0', borderTop: i ? '1px solid #f1eff7' : 'none', alignItems: 'baseline' }}>
+                      <span style={{ fontSize: '0.68rem', color: '#8f8d98', width: 108, flex: 'none', fontVariantNumeric: 'tabular-nums' }}>{fechaHora(e.at)}</span>
+                      <span style={{ fontSize: '0.75rem', color: '#333', lineHeight: 1.45, flex: 1, minWidth: 0 }}>
+                        {firma ? <b style={{ color: '#1E8A63' }}>✍ Firmó{e.nombre ? ` · ${e.nombre}` : ''}</b>
+                          : com ? <b style={{ color: '#9a6a10' }}>Comentó</b>
+                          : e.revisado ? <b style={{ color: '#5B4BD6' }}>Revisó</b> : <b style={{ color: '#8f8d98' }}>Desmarcó</b>}
+                        {!firma && e.titulo && <> «{e.titulo}»</>}
+                        {e.texto && <span style={{ display: 'block', color: '#55505f', background: '#fff', border: '1px solid #f0ecf7', borderRadius: 8, padding: '5px 9px', marginTop: 4, whiteSpace: 'pre-wrap' }}>{e.texto}</span>}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         );
       })}

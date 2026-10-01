@@ -30,7 +30,7 @@ const trazo = typeof f?.trazo === 'string' && f.trazo.startsWith('data:image/png
 
     {conRev && (
       <p class="p frev">
-        {f ? 'Revisó' : 'Llevas revisados'} <b id="nrev">{nRev}</b> de {total} {total === 1 ? 'punto' : 'puntos'}.
+        {f ? 'Revisó' : 'Llevas revisados'} <b id="nrev">{nRev}</b> de {`${total} ${total === 1 ? 'punto' : 'puntos'}`}.
         {!f && ' Márcalos arriba conforme los revises; al firmar quedan como estén.'}
       </p>
     )}
@@ -41,6 +41,7 @@ const trazo = typeof f?.trazo === 'string' && f.trazo.startsWith('data:image/png
         <div class="flinea"></div>
         <div class="fnom">{f.nombre}</div>
         <div class="fley">«{f.leyenda}»</div>
+        {f.comentario && <div class="fcom">Comentario: {f.comentario}</div>}
         <div class="fcuando">Firmado electrónicamente el {cuando}</div>
       </div>
     ) : (<>
@@ -53,6 +54,8 @@ const trazo = typeof f?.trazo === 'string' && f.trazo.startsWith('data:image/png
           <span class="fhint" id="fhint">Firma aquí con el dedo o el mouse</span>
           <button type="button" class="btn2 fborra" id="fborra">Borrar</button>
         </div>
+        <label class="flbl" for="fcomentario">Comentario final <span style="font-weight:500;text-transform:none;letter-spacing:0">(opcional)</span></label>
+        <textarea id="fcomentario" class="finp" rows="2" maxlength="1000" placeholder="Si quieres dejarnos algo antes de firmar"></textarea>
         <label class="fchk"><input type="checkbox" id="facepto" /><span>{ley.frase}</span></label>
         <div class="fpie">
           <button type="submit" class="btn fbtn" id="fbtn">Firmar</button>

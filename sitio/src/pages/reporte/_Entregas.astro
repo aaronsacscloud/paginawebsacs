@@ -48,6 +48,10 @@ const revisados: Record<string, string> = rep.revisados || {};
 const firmado = !!rep.firma;
 // Sin la columna todavía (el código llega antes que el SQL), no se ofrece.
 const conRevisado = 'revisados' in rep;
+/* Comentarios del cliente por renglón (1-oct-2026). Se leen de la bitácora de
+   la revisión, igual que los revisados. */
+const comentarios: Record<string, { texto: string; at: string }[]> = rep.comentarios || {};
+const cuandoCom = (d: string) => new Date(d).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' });
 
 /* ── El título, sin la nomenclatura de adentro ──
    Los títulos se capturan como bitácora del consultor: «Bug l Modulo de
@@ -238,6 +242,20 @@ const agrupar = grupos.length > 1;
                     : (hecho ? 'Revisado' : 'Marcar como revisado')}</span>
                 </button>}
               </div>
+              {conRevisado && ((comentarios[k] || []).length > 0 || !firmado) && (
+                <div class="coms" data-k={k}>
+                  {(comentarios[k] || []).map(c => (
+                    <div class="com"><span class="ctx">{c.texto}</span><span class="cfe">Tu comentario · {cuandoCom(c.at)}</span></div>
+                  ))}
+                  {!firmado && (
+                    <details class="comentar">
+                      <summary>Agregar un comentario</summary>
+                      <textarea maxlength="1000" rows="2" aria-label="Tu comentario sobre esta entrega" placeholder="¿Algo que ajustar o que no quedó como esperabas?"></textarea>
+                      <div class="cpie"><button type="button" class="btn2 enviar-com">Enviar comentario</button><span class="cerr" role="alert"></span></div>
+                    </details>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}

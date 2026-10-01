@@ -13,6 +13,7 @@
 // una junta.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { leerRevisiones } from '../../../lib/crm/reporte-revision';
 import { getCurrentUser } from '../../../lib/auth/scope';
 import { reunirLead } from '../../../lib/crm/reporte-hechos';
 import { generarReporteCuenta, type TipoReporteCuenta } from '../../../lib/crm/reporte-generar';
@@ -28,18 +29,33 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (!UUID.test(companyId)) return json({ error: 'Falta la cuenta.' }, 400);
 
   const BASE = 'id, tipo, folio, desde, hasta, estado, enviado_at, enviado_a, vistas, primera_vista_at, ultima_vista_at, reaccion, reaccion_at, created_at, creado_por';
-  /* Si FIRMÓ y cuánto REVISÓ (27-sep-2026). De la firma solo el nombre —el
-     trazo pesa y aquí no se pinta— y del documento solo cuántos puntos trae.
-     Si las columnas todavía no existen (el código llega antes que el SQL), la
-     lista se sirve como antes en vez de tronar. */
-  const consulta = (sel: string) => supabase.from('reportes_trabajo').select(sel)
+  const { data: base, error } = await supabase.from('reportes_trabajo')
+    .select(BASE + ', total_puntos:hechos->total, titulos:hechos->entregas')
     .eq('company_id', companyId).order('created_at', { ascending: false }).limit(30);
-  let { data, error } = await consulta(BASE + ', firmado_at, firma_nombre:firma->>nombre, revisados, total_puntos:hechos->total') as any;
-  if (error && /firmado_at|firma|revisados/i.test(error.message)) ({ data, error } = await consulta(BASE) as any);
   if (error) return json({ error: error.message }, 500);
-  data = (data || []).map((r: any) => {
-    const { revisados, ...resto } = r;
-    return { ...resto, revisados_n: revisados ? Object.keys(revisados).length : 0 };
+
+  /* La REVISIÓN del cliente (1-oct-2026): cuándo marcó cada punto, qué
+     comentó y cuándo firmó. Sale de la bitácora de `activities` (ver
+     reporte-revision.ts), sin el trazo de la firma: aquí no se pinta. */
+  const revs = await leerRevisiones((base || []).map((r: any) => r.id));
+  let data: any[] = (base || []).map((r: any) => {
+    const { titulos, ...resto } = r;
+    const rv = revs[r.id];
+    // El título de cada punto, para que la bitácora diga QUÉ revisó y no «e:3».
+    const tit = (k: string | null) => {
+      if (!k || k === 'general') return k === 'general' ? 'Comentario general' : null;
+      const i = Number(String(k).replace(/^e:/, ''));
+      return Array.isArray(titulos) && titulos[i] ? titulos[i].titulo : null;
+    };
+    return {
+      ...resto,
+      firmado_at: rv?.firma?.at || null,
+      firma_nombre: rv?.firma?.nombre || null,
+      firma_comentario: rv?.firma?.comentario || null,
+      revisados_n: rv ? Object.keys(rv.revisados).length : 0,
+      comentarios_n: rv ? Object.values(rv.comentarios).reduce((a, l) => a + l.length, 0) : 0,
+      revision: (rv?.eventos || []).map(e => ({ ...e, titulo: e.titulo || tit(e.llave) })),
+    };
   });
 
   // Cuánto TIEMPO le dedicó. Es la diferencia entre "lo abrió" y "lo leyó":

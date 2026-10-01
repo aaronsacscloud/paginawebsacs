@@ -113,6 +113,30 @@ $$('.rev').forEach(bt => bt.addEventListener('click', async () => {
   delete bt.dataset.enviando;
 }));
 
+/* ── Comentarios por renglón (1-oct-2026) ──
+   Se pintan al instante con textContent —el texto lo escribió el cliente— y
+   se guardan detrás; si falla, se avisa y el texto se queda en el cuadro. */
+$$('.enviar-com').forEach(bt => bt.addEventListener('click', async () => {
+  const caja = bt.closest('.coms'), det = bt.closest('details'), ta = det.querySelector('textarea'), er = det.querySelector('.cerr');
+  const texto = ta.value.trim();
+  if (texto.length < 2) { er.textContent = 'Escribe tu comentario.'; ta.focus(); return; }
+  er.textContent = ''; bt.disabled = true; bt.textContent = 'Enviando…';
+  try {
+    const r = await fetch(BASE + '/comentario', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reporte_id: REP, llave: caja.dataset.k, texto: texto }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.ok) { er.textContent = j.error || 'No se pudo guardar. Intenta de nuevo.'; }
+    else {
+      const c = document.createElement('div'); c.className = 'com';
+      const t = document.createElement('span'); t.className = 'ctx'; t.textContent = texto;
+      const f = document.createElement('span'); f.className = 'cfe'; f.textContent = 'Tu comentario · ahora';
+      c.append(t, f); caja.insertBefore(c, det);
+      ta.value = ''; det.open = false; aviso('Gracias. Tu consultor ya tiene tu comentario.');
+    }
+  } catch { er.textContent = 'Sin conexión: no se guardó.'; }
+  bt.disabled = false; bt.textContent = 'Enviar comentario';
+}));
+
 /* ── La firma ──
    Un trazo con el dedo o el mouse sobre un canvas. Se dibuja a la densidad de
    la pantalla para que no salga pixeleado, y el recuadro no hace scroll
@@ -164,7 +188,7 @@ if (pad) {
     const trazo = pad.toDataURL('image/png');
     try {
       const r = await fetch(BASE + '/firma', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reporte_id: REP, nombre: nombre, trazo: trazo, acepto: true }) });
+        body: JSON.stringify({ reporte_id: REP, nombre: nombre, trazo: trazo, acepto: true, comentario: ($('#fcomentario') && $('#fcomentario').value) || '' }) });
       const j = await r.json().catch(() => ({}));
       if (!r.ok || !j.ok) { err(j.error || 'No se pudo guardar la firma.'); bt.disabled = false; bt.textContent = 'Firmar'; return; }
       firmado(j.firma, trazo);
@@ -181,7 +205,10 @@ if (pad) {
     const ley = document.createElement('div'); ley.className = 'fley'; ley.textContent = '«' + f.leyenda + '»';
     const cu = document.createElement('div'); cu.className = 'fcuando';
     cu.textContent = 'Firmado electrónicamente el ' + new Date(f.at).toLocaleString('es-MX', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-    caja.append(img, ln, nom, ley, cu);
+    caja.append(img, ln, nom, ley);
+    if (f.comentario) { const fc = document.createElement('div'); fc.className = 'fcom'; fc.textContent = 'Comentario: ' + f.comentario; caja.append(fc); }
+    caja.append(cu);
+    $$('.comentar').forEach(d => d.remove());
     $('#fform').replaceWith(caja);
     const imp = $('.fimpresa'); if (imp) imp.remove();
     $$('.rev').forEach(b => { b.disabled = true; });
