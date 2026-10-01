@@ -14,6 +14,12 @@ export const LEYENDA_FIRMA: Record<string, { titulo: string; frase: string }> = 
     titulo: 'Enterado del trabajo en curso',
     frase: 'Estoy enterado del trabajo en curso de mi cuenta y de sus fechas comprometidas.',
   },
+  // La minuta de reunión (dueño, 1-oct-2026): pasa al formato de los reportes y
+  // el cliente acepta lo acordado, punto por punto y con su firma.
+  minuta: {
+    titulo: 'Conformidad de la minuta',
+    frase: 'Estoy de acuerdo con lo que se revisó y acordó en esta sesión.',
+  },
   // El ejecutivo (dueño, 27-sep-2026): «que está consciente del trabajo que se ha realizado».
   trabajo: {
     titulo: 'Firma de conformidad',
@@ -38,8 +44,10 @@ export function leyendaDe(rep: { tipo?: string; hechos?: any } | null | undefine
 }
 
 /** Los que además se revisan punto por punto. El ejecutivo se firma entero. */
-export const CON_REVISADO = ['entregas', 'curso'];
+export const CON_REVISADO = ['entregas', 'curso', 'minuta'];
 
 /** La llave de un renglón. Estable porque la foto del reporte no cambia. */
 export const llaveEntrega = (indice: number) => `e:${indice}`;
 export const llaveTrabajo = (t: any, indice: number) => `c:${t?.folio || `n${indice}`}`;
+/** En la minuta, la posición del acuerdo: la minuta firmada ya no se edita. */
+export const llaveAcuerdo = (indice: number) => `a:${indice}`;

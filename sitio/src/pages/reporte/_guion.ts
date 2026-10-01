@@ -2,6 +2,10 @@
 // apertura. `REP` lo inyecta la página con define:vars.
 export default `
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+/* La minuta (1-oct-2026) usa este mismo guion con su propia API: revisado y
+   firma van a /api/minuta. La apertura y la reacción son solo de reportes. */
+const BASE = (typeof API_BASE === 'string' && API_BASE) || '/api/reportes';
+const ES_REPORTE = BASE === '/api/reportes';
 const lento = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* pestañas — solo el reporte de TRABAJO las tiene. El de entregas es un
@@ -62,9 +66,9 @@ const t0 = Date.now();
 /* La COPIA que recibe quien mandó el correo trae ?copia=1: abrirla no cuenta
    como apertura del cliente, o el «lo leyó» del CRM mentiría. */
 const INTERNO = new URLSearchParams(location.search).has('copia');
-if (!INTERNO) fetch('/api/reportes/vista', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+if (ES_REPORTE && !INTERNO) fetch('/api/reportes/vista', { method: 'POST', headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ reporte_id: REP, visitor_id: visitor }) }).catch(() => {});
-let cerrado = INTERNO;
+let cerrado = INTERNO || !ES_REPORTE;
 function cerrar() {
   if (cerrado) return; cerrado = true;
   const seg = Math.round((Date.now() - t0) / 1000);
@@ -89,8 +93,9 @@ function pintarRev(bt, si) {
   bt.setAttribute('aria-pressed', si ? 'true' : 'false');
   bt.classList.toggle('on', si);
   // Lo que se entrega para ACEPTACIÓN dice que se acepta, no solo que se vio.
-  const acep = bt.dataset.acep === '1';
-  const t = bt.querySelector('.rt'); if (t) t.textContent = si ? (acep ? 'Revisado y aceptado' : 'Revisado') : (acep ? 'Marcar revisado y aceptado' : 'Marcar como revisado');
+  const acep = bt.dataset.acep === '1', acu = bt.dataset.acuerdo === '1';
+  const t = bt.querySelector('.rt'); if (t) t.textContent = acu ? (si ? 'De acuerdo' : 'Estoy de acuerdo')
+    : si ? (acep ? 'Revisado y aceptado' : 'Revisado') : (acep ? 'Marcar revisado y aceptado' : 'Marcar como revisado');
   const it = bt.closest('.it'); if (it) it.classList.toggle('revisada', si);
   if ($('#nrev')) $('#nrev').textContent = $$('.rev[aria-pressed="true"]').length;
 }
@@ -100,7 +105,7 @@ $$('.rev').forEach(bt => bt.addEventListener('click', async () => {
   pintarRev(bt, si);
   bt.dataset.enviando = '1';
   try {
-    const r = await fetch('/api/reportes/revisado', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    const r = await fetch(BASE + '/revisado', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reporte_id: REP, llave: bt.dataset.k, revisado: si }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok || !j.ok) { pintarRev(bt, !si); aviso(j.error || 'No se pudo guardar. Intenta de nuevo.'); }
@@ -158,7 +163,7 @@ if (pad) {
     const bt = $('#fbtn'); bt.disabled = true; bt.textContent = 'Firmando…';
     const trazo = pad.toDataURL('image/png');
     try {
-      const r = await fetch('/api/reportes/firma', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      const r = await fetch(BASE + '/firma', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reporte_id: REP, nombre: nombre, trazo: trazo, acepto: true }) });
       const j = await r.json().catch(() => ({}));
       if (!r.ok || !j.ok) { err(j.error || 'No se pudo guardar la firma.'); bt.disabled = false; bt.textContent = 'Firmar'; return; }

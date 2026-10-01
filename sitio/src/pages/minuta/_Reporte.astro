@@ -1,0 +1,196 @@
+---
+// La MINUTA con el formato de los reportes de la casa (dueño, 1-oct-2026:
+// «cambia este reporte de minuta a la de los reportes que tenemos para
+// entregas», propuesta A).
+//
+// Misma portada, misma franja de cifras, mismos renglones revisables y la
+// misma firma que Entregas y Trabajo en curso: el cliente que ya firmó uno no
+// tiene que aprender otro documento. Cada ACUERDO se marca «de acuerdo» y al
+// final se firma la conformidad de la minuta.
+//
+// Solo minutas de reunión. El resumen de un lead tiene su propio reporte y
+// sigue en el formato anterior.
+import CSS from '../reporte/_estilos';
+import JS from '../reporte/_guion';
+import Firma from '../reporte/_Firma.astro';
+import { llaveAcuerdo } from '../../lib/crm/reporte-firma';
+import { vinetas } from '../../lib/crm/marca';
+
+const { b, m, cliente, tipo, sesionTxt, folio, fecha, duracion, marca, titulo, sigTitulo, sigResto, cuentaTxt } = Astro.props;
+
+/* La firma y los «de acuerdo» viven en columnas de `bookings` que el código
+   puede estrenar antes que el SQL. Sin ellas la minuta se lee igual y solo no
+   ofrece marcar ni firmar (mismo criterio que los reportes). */
+const conFirma = 'minuta_revisados' in b;
+const rep: any = conFirma
+  ? { id: b.id, tipo: 'minuta', revisados: b.minuta_revisados || {}, firma: b.minuta_firma || null }
+  : { id: b.id, tipo: 'minuta', firma: null };
+const revisados: Record<string, string> = rep.revisados || {};
+const firmado = !!rep.firma;
+
+const reviso = String(m.reviso || '').split(/\r?\n+/).map(x => x.trim()).filter(Boolean);
+const acuerdos = vinetas(m.acuerdos);
+const doCliente = vinetas(m.cliente);
+const doNos = vinetas(m.sacs);
+const hayMinuta = reviso.length || acuerdos.length || doCliente.length || doNos.length || String(m.siguiente || '').trim();
+
+/* Una etiqueta por acuerdo solo cuando el texto la dice sin lugar a duda. Si
+   no, el renglón va sin etiqueta: una etiqueta inventada en un documento que
+   se firma es peor que ninguna. */
+const etiqueta = (t: string) => /sin costo/i.test(t) ? { l: 'sin costo', c: 'sc' }
+  : /personalizaci[oó]n/i.test(t) ? { l: 'personalización', c: 'per' }
+  : /(por verificar|se verificar|verificar[aá]|se revisar[aá]|qued[oó] por|por definir|pendiente de)/i.test(t) ? { l: 'por revisar', c: 'rev' }
+  : null;
+const sinCosto = acuerdos.filter(a => /sin costo/i.test(a)).length;
+---
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{titulo}</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700;9..40,800&display=swap" />
+  <style set:html={CSS}></style>
+  <style>
+    /* Lo propio de la minuta, sobre el sistema de los reportes. */
+    .ac .chip{font-size:.6rem;font-weight:800;border-radius:20px;padding:2px 9px;white-space:nowrap;flex:none}
+    .ac .c-rev{background:var(--ambar-a);color:var(--ambar-t)}
+    .ac .c-per{background:var(--agua);color:var(--tinta)}
+    .ac .c-sc{background:var(--verde-a);color:var(--verde-t)}
+    .ac .tx{font-size:.88rem;color:var(--ink);line-height:1.55;font-weight:500;flex:1;min-width:0}
+    .dos{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:6px}
+    .lado{border:1px solid var(--borde);border-radius:14px;padding:14px 16px;background:#fff;min-width:0}
+    .lado h4{margin:0 0 6px;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--tinta)}
+    .lado.tu h4{color:var(--rosa-t)}
+    .tarea{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid #f4f3f8;font-size:.84rem;color:var(--ink-2);line-height:1.5}
+    .tarea:first-of-type{border-top:none}
+    .tarea i{flex:none;width:7px;height:7px;border-radius:50%;background:var(--violeta);margin-top:8px}
+    .lado.tu .tarea i{background:var(--rosa-s)}
+    .lado .vacio{font-size:.8rem;color:var(--ink-3);padding:6px 0}
+    .avisoM{background:var(--ambar-a);color:var(--ambar-t);font-size:.84rem;padding:14px 34px;line-height:1.6}
+    .graba{margin-top:14px}
+    @media (max-width:640px){.dos{grid-template-columns:1fr}.avisoM{padding:14px 18px}}
+    @media print{.lado{break-inside:avoid}}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <div class="bar"><b>{cliente} · {fecha}</b>
+    <button class="btn" onclick="window.print()">Descargar PDF</button>
+    <a class="btn2" style="text-decoration:none" href={`https://wa.me/?text=${encodeURIComponent(`Minuta de nuestra sesión del ${fecha}: ${Astro.url.href}`)}`} target="_blank" rel="noreferrer">Compartir por WhatsApp</a>
+  </div>
+
+  <div class="doc">
+    <div class="cinta"></div>
+    <div class="hero">
+      <div class="chispas" aria-hidden="true">
+        {[[18,6,16,.34],[13,17,62,.24],[21,34,10,.28],[11,47,72,.2],[16,63,22,.3],[10,74,66,.18],[14,86,40,.26]].map(([s,l,t,o], i) => (
+          <svg width={s} height={s} viewBox="0 0 24 24" style={`left:${l}%;top:${t}%;opacity:${o};animation-delay:${(i * 0.45).toFixed(2)}s`}><path d="M12 1.6c.62 6.6 3.18 9.16 9.78 9.78-6.6.62-9.16 3.18-9.78 9.78-.62-6.6-3.18-9.16-9.78-9.78C8.82 10.76 11.38 8.2 12 1.6z" fill="#D9538E" /></svg>
+        ))}
+      </div>
+      <div class="top">
+        <div><div class="wm">Sacscloud</div><div class="wsub">Minuta de reunión</div></div>
+        <div class="folio"><div class="t">Folio</div><div class="f">{folio}</div></div>
+      </div>
+      <h1>Lo que revisamos y acordamos</h1>
+      <p class="sub">{cliente} · {tipo} · {fecha}{duracion}</p>
+      <div class="sello">
+        <svg width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6c.62 6.6 3.18 9.16 9.78 9.78-6.6.62-9.16 3.18-9.78 9.78-.62-6.6-3.18-9.16-9.78-9.78C8.82 10.76 11.38 8.2 12 1.6z" fill="#D9538E" /></svg>
+        Sembramos relaciones, cosechamos constelaciones
+      </div>
+      <div class="quien">
+        <div><div class="k">Cliente</div><div class="v">{cliente}</div></div>
+        {cuentaTxt && <div><div class="k">Cuenta</div><div class="v">{cuentaTxt}</div></div>}
+        <div><div class="k">Sesión</div><div class="v">{sesionTxt}</div></div>
+        <div><div class="k">Participantes</div><div class="v">{[b.invitee_nombre || cliente, marca.firma || marca.nombre].filter(Boolean).join(' · ')}</div></div>
+      </div>
+    </div>
+
+    <div class="ancla">
+      <div><div class="n" data-n={acuerdos.length}>0</div><div class="l">{acuerdos.length === 1 ? 'acuerdo' : 'acuerdos'}</div></div>
+      <div><div class="n v" data-n={sinCosto}>0</div><div class="l">sin costo adicional</div></div>
+      <div><div class="n" data-n={doCliente.length}>0</div><div class="l">te tocan a ti</div></div>
+      <div><div class="n" data-n={doNos.length}>0</div><div class="l">nos tocan a nosotros</div></div>
+    </div>
+
+    {!hayMinuta && <div class="avisoM">Esta reunión todavía no tiene minuta capturada. En cuanto se documente, esta misma liga la mostrará.</div>}
+
+    <div class="cuerpo">
+      <div class="st"><span class="x">Cómo leer este documento</span><span class="ln"></span></div>
+      <p class="p">
+        {conFirma
+          ? <>Primero, lo que se revisó en la sesión. Después, cada <b>acuerdo</b> en su renglón: márcalo como <b>de acuerdo</b> cuando lo leas. Al final, lo que le toca a cada quien y el siguiente paso. Firma abajo para dejar la minuta aceptada.</>
+          : <>Primero, lo que se revisó en la sesión. Después, cada <b>acuerdo</b> en su renglón. Al final, lo que le toca a cada quien y el siguiente paso.</>}
+      </p>
+
+      {(sigTitulo || sigResto) && (
+        <div class="lila" style="margin-top:16px">
+          <div class="t">Siguiente paso</div>
+          {sigTitulo ? <div class="c">{sigTitulo}</div> : null}
+          {sigResto && <div class="d" style="white-space:pre-wrap">{sigResto}</div>}
+        </div>
+      )}
+
+      {reviso.length > 0 && <>
+        <div class="st" style="margin-top:26px"><span class="x">Qué se revisó</span><span class="ln"></span></div>
+        {reviso.map(p => <p class="p">{p}</p>)}
+      </>}
+
+      {acuerdos.length > 0 && <>
+        <div class="st" style="margin-top:26px"><span class="x">{acuerdos.length === 1 ? 'El acuerdo' : `Los ${acuerdos.length} acuerdos`}</span><span class="ln"></span></div>
+        <div class="ent ac">
+          {acuerdos.map((a, i) => {
+            const k = llaveAcuerdo(i);
+            const hecho = !!revisados[k];
+            const e = etiqueta(a);
+            return (
+              <div class={`it${hecho ? ' revisada' : ''}`}>
+                <div class="enc"><span class="tx">{a}</span>{e && <span class={`chip c-${e.c}`}>{e.l}</span>}</div>
+                {conFirma && (
+                  <div class="pieit">
+                    <button type="button" class={`rev${hecho ? ' on' : ''}`} data-k={k} data-acuerdo="1" aria-pressed={hecho ? 'true' : 'false'} disabled={firmado}>
+                      <span class="rk" aria-hidden="true"></span><span class="rt">{hecho ? 'De acuerdo' : 'Estoy de acuerdo'}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </>}
+
+      {(doCliente.length > 0 || doNos.length > 0) && <>
+        <div class="st" style="margin-top:26px"><span class="x">Compromisos</span><span class="ln"></span></div>
+        <div class="dos">
+          <div class="lado tu"><h4>Lo que te toca</h4>
+            {doCliente.length ? doCliente.map(t => <div class="tarea"><i></i><span>{t}</span></div>)
+              : <div class="vacio">Nada de tu lado en esta sesión.</div>}
+          </div>
+          <div class="lado"><h4>Lo que nos toca</h4>
+            {doNos.length ? doNos.map(t => <div class="tarea"><i></i><span>{t}</span></div>)
+              : <div class="vacio">Nada de nuestro lado en esta sesión.</div>}
+          </div>
+        </div>
+      </>}
+
+      {b.grabacion_url && /^https?:\/\//i.test(String(b.grabacion_url)) && (
+        <div class="graba"><a class="vid" href={b.grabacion_url} target="_blank" rel="noopener noreferrer"><span class="pl">▶</span> Ver la grabación de la sesión</a></div>
+      )}
+
+      <Firma rep={rep} total={acuerdos.length} />
+    </div>
+
+    <div class="pieE">
+      <div class="fw">Sacscloud</div>
+      <p>
+        ¿Algo no quedó como lo platicamos? Contéstanos este mismo documento y lo corregimos.
+        Documento de {marca.nombre}{marca.pie ? ` · ${marca.pie}` : ''}. Folio {folio}.
+      </p>
+    </div>
+  </div>
+</div>
+<script define:vars={{ REP: b.id, API_BASE: '/api/minuta' }} set:html={JS}></script>
+</body>
+</html>

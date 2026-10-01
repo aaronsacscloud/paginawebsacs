@@ -12,6 +12,7 @@ import { supabase } from '../../lib/supabase';
 import { MINUTA_CAMPOS, MINUTA_LEAD_CAMPOS, esMinutaLead } from '../../lib/crm/reuniones';
 import { marcaDe, vinetas, folioMinuta, SELECT_MARCA } from '../../lib/crm/marca';
 import { getCurrentUser } from '../../lib/auth/scope';
+import MinutaReporte from './_Reporte.astro';
 
 export const prerender = false;
 
@@ -38,7 +39,10 @@ const EJEMPLO = {
 
 const { data: bReal } = esEjemplo ? { data: null } : await supabase
   .from('bookings')
-  .select('id, fecha, hora_inicio, hora_fin, minuta, grabacion_url, invitee_nombre, invitee_empresa, host_id, company_id, estado, event_types(nombre, categoria)')
+  /* `*` y no la lista: la firma y los «de acuerdo» de la minuta (1-oct-2026)
+     viven en columnas que el código puede estrenar antes que el SQL. Con la
+     lista, una columna que todavía no existe tumbaría la liga del cliente. */
+  .select('*, event_types(nombre, categoria)')
   .eq('id', id)
   .maybeSingle();
 const b: any = esEjemplo ? EJEMPLO : bReal;
@@ -136,7 +140,16 @@ const sigCorte = sig.split(/\r?\n/)[0].trim();
 const sigTitulo = sigCorte.length <= 90 ? sigCorte : '';
 const sigResto = sigTitulo ? sig.slice(sigCorte.length).trim() : sig;
 const titulo = `${esLead ? 'Descubrimiento' : 'Minuta'} ${tipo} · ${cliente}`;
+const sesionTxt = sesion > 0 ? `${ORD[sesion] || `Sesión ${sesion}`} del acompañamiento` : (hora12(b.hora_inicio) || tipo);
+const cuentaTxt = company?.sacs_account || '';
 ---
+{!esLead ? (
+  /* La minuta de reunión va con el formato de los reportes (propuesta A,
+     dueño 1-oct-2026). El resumen de lead se queda en el formato de abajo. */
+  <MinutaReporte b={b} m={m} cliente={cliente} tipo={tipo} sesionTxt={sesionTxt} folio={folio}
+    fecha={fmtFecha(b.fecha)} duracion={duracion()} marca={marca} titulo={titulo}
+    sigTitulo={sigTitulo} sigResto={sigResto} cuentaTxt={cuentaTxt} />
+) : (
 <html lang="es">
 <head>
   <meta charset="utf-8" />
@@ -383,3 +396,4 @@ const titulo = `${esLead ? 'Descubrimiento' : 'Minuta'} ${tipo} · ${cliente}`;
   </div>
 </body>
 </html>
+)}
