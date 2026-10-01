@@ -826,6 +826,8 @@ export const navLinks: NavLink[] = [
   { label: 'Partners', href: '/partners' },
   { label: 'Planes', href: '/planes' },
   { label: 'Casos de éxito', href: '/casos-de-exito' },
+  // 1-oct-2026 (dueño): pestaña propia para el MCP de Sacscloud.
+  { label: 'MCP', href: '/mcp' },
 ];
 
 export const footerLinks = {

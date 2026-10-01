@@ -1,0 +1,667 @@
+---
+/**
+ * /mcp — «Pregúntale.» El MCP de Sacscloud contado con la línea editorial de la portada Fashion OS
+ * (marfil, tinta, azul Sacs; Clash Display gigante detrás de la foto; folio de revista; bloque azul
+ * con la respuesta). Estructura inspirada en mcp.roivolution.com, con lo que solo Sacs trae:
+ * talla × color, días agotado, motor de nivelación, WhatsApp y producto por foto.
+ *
+ * La dirección MCP de la cuenta se entrega al iniciar sesión en Sacs; aquí solo se publica la de las
+ * herramientas gratuitas (/api/mcp), que no piden cuenta.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { SITIO } from '../data/entidad';
+
+const AGENTES_IA = ['Claude', 'ChatGPT', 'Perplexity', 'Grok'];
+
+const GARANTIAS = [
+  { t: 'Los mismos datos de Sacs', p: 'Exactamente lo que ves en el sistema. No es otra fuente ni una copia que se queda atrás.' },
+  { t: 'Con todas las garantías', p: 'Entras con tu usuario de Sacs y tu información queda tan protegida como dentro del sistema.' },
+  { t: 'La IA más avanzada', p: 'Le preguntas como a un colega que conoce tu marca, y la respuesta llega al instante.' },
+  { t: 'Un conector, cualquier IA', p: 'Todas se conectan con tu misma dirección. Si mañana cambias de IA, no rehaces nada.' },
+  { t: 'Nada que instalar', p: 'Sin archivos que preparar ni reportes que mover. El servidor ya está arriba.' },
+  { t: 'Donde estés', p: 'En la tienda, en la bodega o en una feria: preguntas desde tu celular.' },
+];
+
+const MOMENTOS = [
+  {
+    id: 'temporada', nombre: 'En temporada', foto: 'h16', alt: 'Gerente de tienda revisa el inventario en una tableta mientras su equipo acomoda la mercancía',
+    preguntas: [
+      { q: '¿Qué tallas y colores se me están agotando esta semana porque se aceleró la venta, y cuánta venta llevo perdida?', t: 'Inventario talla × color · días agotado' },
+      { q: '¿Qué traspasos entre sucursales me recomiendas para no reordenar a proveedor? Créalos.', t: 'Nivelación · crea los traspasos' },
+      { q: '¿Dónde tengo sobreinventario? Dame las 20 prendas y sucursales más arriba de su cobertura ideal.', t: 'Cobertura' },
+      { q: '¿Cómo va cada tienda contra su meta del mes y qué vendedora va arriba en ticket promedio?', t: 'Metas y comisiones' },
+    ],
+  },
+  {
+    id: 'compra', nombre: 'Antes de comprar', foto: 'paso-controla-ancha', alt: 'Encargada revisa su celular en una bodega ordenada por color',
+    preguntas: [
+      { q: 'Con lo que vendí la temporada pasada, ¿qué curva de tallas pido para la próxima colección, corrigiendo los días que cada talla estuvo agotada?', t: 'Curva de tallas' },
+      { q: '¿Cómo voy de presupuesto de compra por familia, planeado contra real?', t: 'Compras' },
+      { q: '¿Qué proveedor me entregó tarde o incompleto en los últimos seis meses y cuánto me costó?', t: 'Proveedores · recepción' },
+      { q: 'Reparte la compra de la nueva colección entre mis sucursales y por talla, y arma la orden.', t: 'Distribución · arma la orden' },
+    ],
+  },
+  {
+    id: 'rebajas', nombre: 'Rebajas y saldos', foto: 'h19', alt: 'Mano que revisa la etiqueta de precio de una blusa en el perchero',
+    preguntas: [
+      { q: '¿Qué estilos ya no se van a vender a precio completo antes de fin de temporada? Dame su sell-through.', t: 'Sell-through' },
+      { q: 'Si bajo 20% los estilos con menos de 30% vendido, ¿cuánto margen pierdo y cuánto inventario libero?', t: 'Promociones' },
+      { q: 'Sube 8% la marca Nike en las dos tiendas del centro, sin tocar lo que ya está en promoción.', t: 'Precios · aplicado y registrado' },
+      { q: '¿Qué tengo en consignación en tiendas de terceros, qué se vendió y qué recojo este mes?', t: 'Consignación' },
+    ],
+  },
+  {
+    id: 'clientes', nombre: 'Clientes y WhatsApp', foto: 'h13', alt: 'Clienta sonríe al ver un mensaje en su celular en un café, con su bolsa de compra',
+    preguntas: [
+      { q: '¿Qué clientas compraron vestidos la temporada pasada y no han vuelto? Escríbeles por WhatsApp con la colección nueva en su talla.', t: 'Clientes · WhatsApp' },
+      { q: '¿Qué apartados vencen esta semana y cuánto dinero tengo comprometido en ellos?', t: 'Apartados' },
+      { q: '¿Qué preguntaron más por WhatsApp esta semana que no teníamos en existencia?', t: 'Demanda no atendida' },
+      { q: '¿A qué clientas se les vencen puntos este mes y a quién conviene avisarle hoy?', t: 'Lealtad' },
+    ],
+  },
+  {
+    id: 'catalogo', nombre: 'Catálogo y contenido', foto: 'h07', alt: 'Encargada acomoda prendas nuevas en una tienda luminosa por la mañana',
+    preguntas: [
+      { q: 'Llegó la colección de otoño. Da de alta estas 12 prendas desde las fotos, con sus tallas y colores.', t: 'Producto por foto' },
+      { q: 'Genera la foto con modelo de las prendas nuevas y déjalas listas para la tienda en línea.', t: 'Fotografía con IA' },
+      { q: '¿Qué prendas tienen fotos o descripción incompleta en la tienda en línea?', t: 'Catálogo' },
+      { q: '¿Qué se vende más en TikTok Shop que en tienda física, y en qué tallas?', t: 'Canales' },
+    ],
+  },
+];
+
+const SOLO_SACS = [
+  { t: 'Talla × color desde el origen', p: 'Cada prenda vive como variante con su existencia por sucursal. La IA no ve «Vestido Lino: 40 piezas»; ve qué talla y qué color faltan, y dónde.', tira: 'matriz' },
+  { t: 'Los días agotado, registrados solos', p: 'Sacs sabe desde qué momento cada talla estuvo en cero. La curva de compra no confunde «no se vendió» con «no estuvo».', tira: 'M · Polanco · 5 días agotada · 9 piezas perdidas' },
+  { t: 'Un motor que ya recomienda', p: 'Nivelación, mínimos y máximos y reposición viven dentro de Sacs. La IA lee lo que el motor calcula; no inventa sus cuentas.', tira: '40 piezas · 4 traspasos · 0 a proveedor' },
+  { t: 'De la respuesta a la acción', p: 'Traspasos, apartados, precios y órdenes de compra, con los mismos permisos de la pantalla y cada movimiento en el Kardex.', tira: 'Traspaso T-2291 · creado desde Claude' },
+  { t: 'WhatsApp, también es dato', p: 'Lo que te piden por el Inbox de Sacs se cruza con tu inventario: qué no tenías y a quién darle seguimiento.', tira: '«¿Lo tienen en M?» · 23 veces esta semana' },
+  { t: 'Del producto que llega a la venta', p: 'Le tomas foto a la prenda y Sacs la da de alta con tallas y colores, genera la foto con modelo y la publica en tus canales.', tira: 'Foto · alta · modelo · tienda en línea' },
+];
+
+const IMAGINA = [
+  { t: 'Gráficas que puedes mover', p: 'Venta por talla en barras, líneas o dispersión. Las ajustas y te las llevas.' },
+  { t: 'Tableros en la conversación', p: 'Un panel vivo con filtros, o una página pequeña que tu equipo puede abrir.' },
+  { t: 'Reportes listos para mandar', p: 'Excel, PowerPoint, Word o PDF desde la respuesta. El reporte del lunes deja de ser una mañana.' },
+  { t: 'Tareas que corren solas', p: '«Cada lunes a las 8, dime qué tallas se van a agotar.» Lo pides una vez y te avisa.' },
+  { t: 'Rutinas guardadas', p: 'El cruce que repites cada semana se guarda como proyecto o skill, y todo tu equipo lo reusa.' },
+  { t: 'Con tus otras herramientas', p: 'Tu IA mezcla Sacs con tu correo, tu calendario y tus documentos, y deja el resultado donde va.' },
+];
+
+const SEGURIDAD = [
+  { t: 'Tus permisos, sin excepción', p: 'Cada persona entra con su usuario. Lo que su grupo de permisos no ve en Sacs, tampoco lo ve desde la IA.' },
+  { t: 'Por sucursal', p: 'Un gerente pregunta por su tienda y recibe solo su tienda, igual que en el punto de venta.' },
+  { t: 'Lo sensible no sale', p: 'Llaves del SAT, tokens y datos protegidos quedan fuera del alcance de la IA. Los costos, solo para quien puede verlos.' },
+  { t: 'Todo queda registrado', p: 'Cada cambio lleva nombre y hora, y el inventario solo se mueve por el Kardex. Tus datos no se comparten ni se reutilizan.' },
+];
+
+const PLATAFORMAS = [
+  { id: 'claude', nombre: 'Claude', nota: 'Todos los planes',
+    reqs: ['Disponible en todos los planes de Claude.', 'Necesitas una cuenta de Sacs con acceso a la empresa que quieres consultar.'],
+    pasos: ['Inicia sesión en Sacs y copia tu dirección MCP.', 'En Claude, entra a Ajustes › Conectores.', 'Elige «Agregar conector personalizado».', 'Nómbralo Sacscloud, pega tu dirección y haz clic en Conectar.'] },
+  { id: 'chatgpt', nombre: 'ChatGPT', nota: 'Plan de pago',
+    reqs: ['Requiere un plan de pago. En Business y Enterprise, el administrador debe permitir el modo desarrollador.', 'Se configura en la computadora; después lo usas también en el celular.'],
+    pasos: ['Inicia sesión en Sacs y copia tu dirección MCP.', 'En ChatGPT, activa el modo desarrollador en Ajustes.', 'Ve a Conectores y crea uno nuevo.', 'Nombre: Sacscloud · Dirección: tu dirección MCP · Autenticación: OAuth.', 'Acepta el aviso y crea la conexión.'] },
+  { id: 'perplexity', nombre: 'Perplexity', nota: 'Pro o más',
+    reqs: ['Requiere Pro, Max o Enterprise.', 'Se configura en la computadora; después lo usas en el celular.'],
+    pasos: ['Inicia sesión en Sacs y copia tu dirección MCP.', 'Ve a Ajustes › Conectores › Conector personalizado (remoto).', 'Nombre: Sacscloud · Dirección: tu dirección MCP.', 'En Avanzado: Autenticación OAuth · Transporte Streamable HTTP.'] },
+  { id: 'grok', nombre: 'Grok', nota: 'Plan de pago',
+    reqs: ['Requiere una cuenta de pago de Grok.'],
+    pasos: ['Inicia sesión en Sacs y copia tu dirección MCP.', 'Abre Ajustes › Conectores en Grok.', 'Nuevo conector › Personalizado.', 'Nombre: Sacscloud · pega tu dirección y confirma.'] },
+  { id: 'gemini', nombre: 'Gemini', nota: 'Pronto',
+    reqs: ['La app de Gemini todavía no permite agregar conectores MCP propios.', 'En cuanto lo permita, tu misma dirección de Sacs es todo lo que necesitas.'],
+    pasos: [] },
+];
+
+const GRATIS = [
+  { n: 'Auditor de curva de tallas', p: 'Qué proporción de cada talla comprar, corrigiendo por días agotado.' },
+  { n: 'Qué mover entre tus tiendas', p: 'Qué piezas mover y a dónde para reparar corridas rotas.' },
+  { n: '¿Sacas este estilo a tiempo?', p: 'Si el estilo sale antes de fin de temporada y cuántas piezas sobran.' },
+  { n: 'Margen y markup para moda', p: 'Hasta qué descuento rematas sin vender bajo costo.' },
+  { n: 'Punto de reorden por talla', p: 'Cuándo volver a pedir cada talla, y cuánto.' },
+  { n: 'Costo de maquila por prenda', p: 'Costo real por prenda y precio mínimo de venta.' },
+];
+
+const FAQ = [
+  { q: '¿Con qué IA funciona?', a: 'Con Claude, ChatGPT, Perplexity, Grok y cualquier cliente compatible con MCP. Todas usan tu misma dirección de Sacs. La app de Gemini todavía no permite conectores propios; en cuanto lo haga, funcionará igual.' },
+  { q: '¿Qué información ve la IA?', a: 'La misma que ves en Sacs, y solo la parte que tu usuario tiene permitida. Lo que no puedes ver dentro del sistema tampoco lo ves desde la IA.' },
+  { q: '¿Solo consulta o también opera?', a: 'Opera. Crea traspasos, ajusta precios, aparta prendas y da de alta productos, siempre con tus permisos y con el registro de cada cambio.' },
+  { q: '¿Qué necesito para empezar?', a: 'Iniciar sesión en Sacs, copiar tu dirección MCP y pegarla en los ajustes de tu IA. No hay nada que instalar.' },
+  { q: '¿Cada cuánto se actualiza?', a: 'Al mismo ritmo que Sacs: cada venta, recepción o traspaso se ve en cuanto ocurre. No hay una copia aparte que se quede atrás.' },
+  { q: '¿De dónde salen las cifras?', a: 'De Sacs. Son las mismas del sistema y salen del mismo motor; la IA las lee, no las recalcula. Si una cifra te sorprende, pídele que te explique de dónde sale.' },
+  { q: '¿En qué plan viene?', a: 'El MCP de tu cuenta viene incluido en el plan Automatiza. Las seis herramientas de cálculo para moda son gratuitas y no piden cuenta.' },
+];
+
+const foto = (n: string) => n.startsWith('h')
+  ? { src: `/images/fashion-os/${n}.webp`, srcset: `/images/fashion-os/${n}-480.webp 480w, /images/fashion-os/${n}-960.webp 960w, /images/fashion-os/${n}.webp 1536w` }
+  : { src: `/images/fashion-os/${n}.webp`, srcset: `/images/fashion-os/${n}-960.webp 960w, /images/fashion-os/${n}.webp 1536w` };
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'MCP de Sacscloud',
+  description: 'Conecta tu negocio de moda a Claude, ChatGPT o cualquier IA con el MCP de Sacscloud.',
+  url: `${SITIO}/mcp`,
+  inLanguage: 'es-MX',
+  publisher: { '@type': 'Organization', name: 'Sacs', url: SITIO },
+};
+---
+<BaseLayout
+  title="MCP de Sacscloud · Tu marca de moda, en la IA que ya usas"
+  description="Pregúntale a Claude, ChatGPT o cualquier IA por tus ventas, tu inventario por talla y color, tus sucursales y tus clientas. El MCP de Sacscloud conecta tu operación de moda a tu IA."
+  structuredData={schema}
+  preloadImage="/images/fashion-os/orden-ella.webp"
+>
+<main class="mx">
+
+  <!-- 01 · La pregunta -->
+  <section class="mx-hero" aria-labelledby="mx-h1">
+    <p class="mx-folio" aria-hidden="true">
+      <span>Fashion OS</span><span class="mx-folio-c">N.º 02 — El conector</span><span>21:30 · Ciudad de México</span>
+    </p>
+    <div class="mx-escena">
+      <p class="mx-gigante" aria-hidden="true">Pregúntale</p>
+      <img class="mx-ella" src="/images/fashion-os/orden-ella.webp"
+        srcset="/images/fashion-os/orden-ella-640.webp 640w, /images/fashion-os/orden-ella.webp 1024w"
+        sizes="(min-width: 1024px) 56vh, 70vw" width="1024" height="1536"
+        alt="La dueña de una marca de moda, de traje azul, le pregunta a su IA por su negocio desde el celular"
+        loading="eager" fetchpriority="high" decoding="async" />
+    </div>
+    <div class="mx-voz">
+      <p class="mx-kicker"><i aria-hidden="true"></i>Pregunta a Claude · conectado a Sacscloud</p>
+      <h1 class="mx-frase" id="mx-h1">«¿Qué tengo que <em>reponer hoy</em> <span>en mis tiendas, y me alcanza con la bodega?»</span></h1>
+      <p class="mx-lead">El MCP de Sacscloud conecta tu marca a la IA que ya usas. Le preguntas en español por tus ventas, tu inventario por talla y color, tus sucursales y tus clientas, y te contesta con tus datos reales.</p>
+      <div class="mx-ctas">
+        <a class="mx-btn" href="#conectar">Conectar ahora</a>
+        <a class="mx-link" href="#casos">Ver qué puedes preguntar</a>
+      </div>
+      <p class="mx-ias"><span>Funciona con</span>{AGENTES_IA.map((a) => <b>{a}</b>)}</p>
+    </div>
+  </section>
+
+  <!-- 02 · La respuesta (bloque azul) -->
+  <section class="mx-azul" aria-labelledby="mx-resp">
+    <div class="mx-in">
+      <p class="mx-de"><b>Claude</b> respondió · 21:31 · con datos de Sacs</p>
+      <h2 class="mx-resp-h" id="mx-resp">40 piezas.</h2>
+      <p class="mx-resp-p">Cuatro prendas bajan de una semana y media de cobertura. La bodega alcanza para todas. El vestido Lino Arena en M lleva cinco días agotado en Polanco: ahí estás perdiendo venta hoy.</p>
+      <div class="mx-tabla-w">
+        <table class="mx-tabla">
+          <thead><tr><th>Prenda · talla</th><th>Sucursal</th><th class="n">Cobertura</th><th class="n">Reponer</th></tr></thead>
+          <tbody>
+            <tr><td>Vestido Lino Arena · M</td><td>Polanco</td><td class="n">0.6 sem</td><td class="n">14</td></tr>
+            <tr><td>Jeans Recto Índigo · 28</td><td>Andares</td><td class="n">0.9 sem</td><td class="n">11</td></tr>
+            <tr><td>Blusa Seda Marfil · CH</td><td>Valle</td><td class="n">1.1 sem</td><td class="n">9</td></tr>
+            <tr><td>Saco Tweed Negro · G</td><td>Antea</td><td class="n">1.4 sem</td><td class="n">6</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="mx-acciones" aria-label="Lo que puedes pedir después">
+        <li class="si"><i aria-hidden="true"></i>Crear los traspasos</li>
+        <li><i aria-hidden="true"></i>Verlo por color</li>
+        <li><i aria-hidden="true"></i>Mandarlo al gerente por WhatsApp</li>
+      </ul>
+      <p class="mx-nota">Conversación de ejemplo con una marca ficticia. Las respuestas salen de los datos de tu propia cuenta de Sacs.</p>
+    </div>
+  </section>
+
+  <!-- 03 · Qué es -->
+  <section class="mx-sec mx-que">
+    <div class="mx-in mx-que-g">
+      <div>
+        <p class="mx-eyebrow">Un conector para cualquier IA</p>
+        <h2 class="mx-h2">Sacs habla el idioma de las IA.</h2>
+        <p class="mx-p">MCP (Model Context Protocol) es el estándar con el que Claude, ChatGPT, Grok y otras IA se conectan a los sistemas de una empresa. El MCP de Sacscloud le da a tu IA acceso seguro y ordenado a tu operación de moda: entiende tus prendas, tallas, colores, sucursales y clientas, y te contesta en lenguaje natural.</p>
+        <ol class="mx-flujo" aria-label="Cómo funciona">
+          <li><b>Tú</b><span>preguntas desde tu IA, en la compu o en el celular.</span></li>
+          <li><b>Tu llave</b><span>entras con tu usuario y tus permisos de Sacs.</span></li>
+          <li><b>Sacs</b><span>contesta con tus datos y lo que su motor recomienda.</span></li>
+        </ol>
+      </div>
+      <ul class="mx-garantias">
+        {GARANTIAS.map((g) => <li><h3>{g.t}</h3><p>{g.p}</p></li>)}
+      </ul>
+    </div>
+  </section>
+
+  <!-- 04 · Habla con tu negocio -->
+  <section class="mx-sec mx-casos" id="casos" aria-labelledby="mx-casos-h">
+    <div class="mx-in">
+      <p class="mx-folio mx-folio-sec" aria-hidden="true"><span>Habla con tu negocio</span><span>Una temporada, cinco momentos</span></p>
+      <h2 class="mx-h2 mx-casos-h" id="mx-casos-h">Toda tu marca, en una conversación.</h2>
+      <div class="mx-tabs" role="tablist" aria-label="Momento de la temporada">
+        {MOMENTOS.map((m, k) => (
+          <button type="button" class="mx-tab" role="tab" id={`mx-tab-${m.id}`} aria-controls={`mx-pan-${m.id}`} aria-selected={k === 0 ? 'true' : 'false'} data-tab={m.id}>{m.nombre}</button>
+        ))}
+      </div>
+      {MOMENTOS.map((m, k) => {
+        const f = foto(m.foto);
+        return (
+          <div class="mx-panel" role="tabpanel" id={`mx-pan-${m.id}`} aria-labelledby={`mx-tab-${m.id}`} hidden={k !== 0}>
+            <figure class="mx-panel-foto">
+              <img src={f.src} srcset={f.srcset} sizes="(min-width: 1024px) 38vw, 92vw" width="1536" height="1024" alt={m.alt} loading="lazy" decoding="async" />
+            </figure>
+            <ol class="mx-preguntas">
+              {m.preguntas.map((p) => <li><q>{p.q}</q><span>{p.t}</span></li>)}
+            </ol>
+          </div>
+        );
+      })}
+      <p class="mx-cierre">La conversación no termina en la primera respuesta. Pide el desglose por talla, cambia el periodo, compara otra sucursal o pregunta por qué Sacs recomienda lo que recomienda.</p>
+    </div>
+  </section>
+
+  <!-- 05 · Lo que solo Sacs -->
+  <section class="mx-sec mx-tinta" aria-labelledby="mx-solo-h">
+    <div class="mx-in">
+      <p class="mx-eyebrow">Lo que solo Sacs pone en la conversación</p>
+      <h2 class="mx-h2 mx-solo-h" id="mx-solo-h">Una IA genérica sabe de datos. <span>Sacs sabe de moda.</span></h2>
+      <ul class="mx-solo">
+        {SOLO_SACS.map((s) => (
+          <li>
+            <h3>{s.t}</h3>
+            <p>{s.p}</p>
+            {s.tira === 'matriz' ? (
+              <div class="mx-matriz" aria-label="Ejemplo: existencia por talla en dos sucursales">
+                <span></span><span>XCH</span><span>CH</span><span>M</span><span>G</span><span>XG</span>
+                <span>Polanco</span><b>2</b><b>6</b><b class="cero">0</b><b>5</b><b>1</b>
+                <span>Andares</span><b>4</b><b>8</b><b>9</b><b>2</b><b class="cero">0</b>
+              </div>
+            ) : <p class="mx-tira">{s.tira}</p>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- 06 · Hasta donde llegue tu imaginación -->
+  <section class="mx-imagina" aria-labelledby="mx-imag-h">
+    <figure class="mx-imagina-foto">
+      <img src="/images/fashion-os/paso-automatiza-ancha.webp" srcset="/images/fashion-os/paso-automatiza-ancha-960.webp 960w, /images/fashion-os/paso-automatiza-ancha.webp 1536w" sizes="100vw" width="1536" height="1024" alt="La dueña de la marca camina por la calle revisando en su celular lo que su IA preparó" loading="lazy" decoding="async" />
+      <figcaption>
+        <p class="mx-eyebrow">Hasta donde llegue tu imaginación</p>
+        <h2 class="mx-h2" id="mx-imag-h">Más que una respuesta escrita.</h2>
+      </figcaption>
+    </figure>
+    <div class="mx-in">
+      <ul class="mx-imag">
+        {IMAGINA.map((i) => <li><h3>{i.t}</h3><p>{i.p}</p></li>)}
+      </ul>
+    </div>
+  </section>
+
+  <!-- 07 · Excel -->
+  <section class="mx-sec mx-excel">
+    <div class="mx-in mx-excel-g">
+      <div>
+        <p class="mx-eyebrow">Claude para Excel</p>
+        <h2 class="mx-h2">Y dentro de tu propia hoja.</h2>
+        <p class="mx-p">El complemento de Claude para Excel ve el mismo conector. Tu plantilla se llena con cifras vivas de Sacs, con tus fórmulas intactas y sin exportar nada.</p>
+        <ul class="mx-citas">
+          <li><q>Trae a esta hoja las tallas que se van a agotar esta semana, con su cobertura y las piezas sugeridas.</q></li>
+          <li><q>Llena la columna de venta real con las últimas 13 semanas por sucursal, sin tocar las fórmulas.</q></li>
+          <li><q>Compara el plan de compra de esta hoja contra lo recibido en Sacs y marca las diferencias.</q></li>
+        </ul>
+        <p class="mx-req">Requiere el complemento de Claude de Microsoft AppSource y un plan Pro, Max, Team o Enterprise. Funciona en Excel web, Windows y Mac.</p>
+      </div>
+      <div class="mx-hoja" aria-label="Ejemplo: hoja de seguimiento llenada desde Sacs">
+        <p class="mx-hoja-bar">Seguimiento semanal.xlsx</p>
+        <div class="mx-hoja-w">
+          <table>
+            <thead><tr><th>Sucursal</th><th class="n">Meta</th><th class="n">Real</th><th class="n">%</th></tr></thead>
+            <tbody>
+              <tr><td>Polanco</td><td class="n">480,000</td><td class="n vivo">512,340</td><td class="n">107%</td></tr>
+              <tr><td>Andares</td><td class="n">390,000</td><td class="n vivo">351,900</td><td class="n">90%</td></tr>
+              <tr><td>Valle</td><td class="n">350,000</td><td class="n vivo">366,120</td><td class="n">105%</td></tr>
+              <tr><td>Antea</td><td class="n">300,000</td><td class="n vivo">248,700</td><td class="n">83%</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="mx-hoja-ia"><b>Claude</b> Llené C2:C5 con la venta neta de septiembre. Antea va 17% abajo: le faltaron tallas M en tres estilos.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 08 · Seguridad -->
+  <section class="mx-sec mx-tinta" aria-labelledby="mx-seg-h">
+    <div class="mx-in">
+      <p class="mx-eyebrow">Seguro desde el diseño</p>
+      <h2 class="mx-h2" id="mx-seg-h">Tu información sigue siendo tuya.</h2>
+      <ul class="mx-seg">
+        {SEGURIDAD.map((s) => <li><h3>{s.t}</h3><p>{s.p}</p></li>)}
+      </ul>
+    </div>
+  </section>
+
+  <!-- 09 · Conéctalo -->
+  <section class="mx-sec mx-conecta" id="conectar" aria-labelledby="mx-con-h">
+    <div class="mx-in">
+      <p class="mx-folio mx-folio-sec" aria-hidden="true"><span>Conéctalo</span><span>Un minuto</span></p>
+      <h2 class="mx-h2" id="mx-con-h">Tu dirección MCP te espera en Sacs.</h2>
+      <div class="mx-llave">
+        <div>
+          <p class="mx-llave-t">Tu dirección MCP de Sacscloud</p>
+          <p class="mx-llave-p">Se entrega al iniciar sesión en Sacs, en Configuración › Integraciones › MCP. Es personal: abre solo la información de tu cuenta y respeta tus permisos.</p>
+        </div>
+        <a class="mx-btn mx-btn-claro" href="https://app.sacscloud.com/">Iniciar sesión en Sacs</a>
+      </div>
+
+      <div class="mx-plat-g">
+        <div class="mx-plats" role="tablist" aria-label="Plataforma">
+          {PLATAFORMAS.map((p, k) => (
+            <button type="button" class="mx-plat" role="tab" id={`mx-pt-${p.id}`} aria-controls={`mx-pp-${p.id}`} aria-selected={k === 0 ? 'true' : 'false'} data-plat={p.id}>
+              <span>{p.nombre}</span><small>{p.nota}</small>
+            </button>
+          ))}
+        </div>
+        {PLATAFORMAS.map((p, k) => (
+          <div class="mx-plat-p" role="tabpanel" id={`mx-pp-${p.id}`} aria-labelledby={`mx-pt-${p.id}`} hidden={k !== 0}>
+            <h3>{p.nombre}</h3>
+            <ul class="mx-reqs">{p.reqs.map((r) => <li>{r}</li>)}</ul>
+            {p.pasos.length > 0 && <ol class="mx-pasos">{p.pasos.map((s) => <li>{s}</li>)}</ol>}
+            {p.pasos.length > 0 && <a class="mx-link" href="https://app.sacscloud.com/">Obtener mi dirección MCP</a>}
+          </div>
+        ))}
+      </div>
+
+      <div class="mx-gratis">
+        <div class="mx-gratis-t">
+          <p class="mx-eyebrow">Sin cuenta · gratis</p>
+          <h3>Seis herramientas de cálculo para moda.</h3>
+          <p>No piden cuenta ni llave: tu IA hace las cuentas del retail de moda con los números que tú le das.</p>
+          <p class="mx-url"><code id="mx-url">https://www.sacscloud.com/api/mcp</code><button type="button" id="mx-copiar">Copiar</button></p>
+        </div>
+        <ul class="mx-gratis-l">
+          {GRATIS.map((g) => <li><b>{g.n}</b><span>{g.p}</span></li>)}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 · Preguntas -->
+  <section class="mx-sec mx-faq" aria-labelledby="mx-faq-h">
+    <div class="mx-in mx-faq-g">
+      <div>
+        <p class="mx-eyebrow">Preguntas frecuentes</p>
+        <h2 class="mx-h2" id="mx-faq-h">Lo que te estás preguntando.</h2>
+      </div>
+      <div class="mx-faq-l">
+        {FAQ.map((f, k) => <details open={k === 0}><summary>{f.q}</summary><p>{f.a}</p></details>)}
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 · Cierre -->
+  <section class="mx-final" aria-labelledby="mx-final-h">
+    <div class="mx-in">
+      <p class="mx-de">Tu marca · tu IA · tus datos</p>
+      <h2 class="mx-final-h" id="mx-final-h">Pregúntale lo que quieras.</h2>
+      <div class="mx-ctas">
+        <a class="mx-btn mx-btn-claro" href="#conectar">Conectar ahora</a>
+        <a class="mx-link mx-link-claro" href="/planes">Ver el plan Automatiza</a>
+      </div>
+    </div>
+  </section>
+</main>
+</BaseLayout>
+
+<style>
+  /* Línea editorial de la portada Fashion OS (LaOrden): marfil, tinta, azul Sacs, Clash Display gigante */
+  .mx {
+    --marfil: #F5F3EE; --papel: #FBFAF7; --tinta: #141414; --azul: #4B7BE5; --azul-o: #3A62C4;
+    --gris: #C3BEB4; --tenue: #6E6A62; --linea: rgba(20, 20, 20, 0.12); --linea-c: rgba(255, 255, 255, 0.18);
+    --clash: 'Clash Display', var(--font-display);
+    background: var(--marfil); color: var(--tinta); overflow: clip;
+  }
+  .mx-in { max-width: 1280px; margin: 0 auto; padding-inline: 16px; }
+  .mx-sec { padding-block: 88px; }
+  .mx-eyebrow { margin: 0 0 14px; font-family: var(--font-display); font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--azul-o); }
+  .mx-h2 { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(32px, 4.6vw, 64px); line-height: 1.02; letter-spacing: -0.035em; text-wrap: balance; }
+  .mx-p { margin: 20px 0 0; max-width: 58ch; font-size: 17px; line-height: 1.6; color: #3E3B36; }
+  .mx-folio { display: flex; justify-content: space-between; gap: 12px; margin: 0; padding-bottom: 12px; border-bottom: 1px solid var(--linea); font-family: var(--font-display); font-size: 10.5px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--tenue); }
+  .mx-folio-sec { margin-bottom: 40px; }
+  .mx-btn { display: inline-flex; align-items: center; padding: 15px 26px; border-radius: 999px; background: var(--tinta); color: #fff; font-family: var(--font-display); font-size: 15px; font-weight: 600; text-decoration: none; transition: background 0.25s; }
+  .mx-btn:hover { background: var(--azul-o); color: #fff; text-decoration: none; }
+  .mx-btn-claro { background: #fff; color: var(--tinta); }
+  .mx-btn-claro:hover { background: var(--marfil); color: var(--tinta); }
+  .mx-link { display: inline-flex; font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--tinta); text-decoration: none; border-bottom: 1px solid currentColor; padding-bottom: 3px; }
+  .mx-link:hover { color: var(--azul-o); text-decoration: none; }
+  .mx-link-claro { color: #fff; }
+  .mx-link-claro:hover { color: #fff; opacity: 0.8; }
+  .mx :focus-visible { outline: 2px solid var(--azul); outline-offset: 4px; }
+
+  /* 01 · hero: la palabra gigante va DETRÁS de ella */
+  .mx-hero { position: relative; padding-top: calc(var(--nav-alto, 102px) + 20px); }
+  .mx-hero .mx-folio { padding-inline: 16px; }
+  .mx-folio-c { display: none; }
+  .mx-escena { position: relative; height: min(70svh, 620px); min-height: 430px; isolation: isolate; }
+  .mx-gigante { position: absolute; left: 0; right: 0; top: 4%; z-index: 0; margin: 0; text-align: center; font-family: var(--clash); font-weight: 700; font-size: 14vw; line-height: 0.84; letter-spacing: -0.025em; text-transform: uppercase; white-space: nowrap; user-select: none; }
+  .mx-ella { position: absolute; z-index: 1; bottom: 0; left: 50%; height: 86%; width: auto; max-width: none; transform: translateX(-50%); }
+  .mx-voz { position: relative; z-index: 2; margin: -120px 16px 0; padding: 22px 20px 24px; background: #fff; border-radius: 20px; box-shadow: 0 8px 18px -12px rgba(20, 20, 20, 0.3); }
+  .mx-kicker { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-family: var(--font-display); font-size: 10.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--azul-o); }
+  .mx-kicker i { width: 8px; height: 8px; border-radius: 50%; background: #E5484D; }
+  .mx-frase { margin: 0; font-family: var(--font-display); font-size: clamp(23px, 5.8vw, 40px); font-weight: 600; line-height: 1.14; letter-spacing: -0.03em; text-wrap: pretty; }
+  .mx-frase em { font-style: normal; color: var(--azul); }
+  .mx-frase span { color: var(--gris); }
+  .mx-lead { margin: 18px 0 0; font-size: 16px; line-height: 1.6; color: #3E3B36; max-width: 46ch; }
+  .mx-ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; margin-top: 26px; }
+  .mx-ias { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 26px 0 0; font-family: var(--font-display); font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+  .mx-ias span { color: var(--tenue); font-weight: 500; }
+
+  /* 02 · la respuesta: el bloque azul */
+  .mx-azul { margin-top: 56px; background: var(--azul); color: #fff; padding-block: 72px 80px; }
+  .mx-de { margin: 0 0 18px; font-family: var(--font-display); font-size: 11px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255, 255, 255, 0.82); }
+  .mx-de b { font-family: var(--clash); font-size: 13px; letter-spacing: 0.04em; color: #fff; }
+  .mx-resp-h { margin: 0; font-family: var(--clash); font-weight: 700; font-size: clamp(72px, 17vw, 240px); line-height: 0.86; letter-spacing: -0.035em; }
+  .mx-resp-p { margin: 26px 0 0; max-width: 32ch; font-family: var(--font-display); font-size: clamp(20px, 2.2vw, 30px); font-weight: 500; line-height: 1.25; letter-spacing: -0.02em; }
+  .mx-tabla-w { margin-top: 40px; overflow-x: auto; max-width: 860px; }
+  .mx-tabla { width: 100%; border-collapse: collapse; font-family: var(--font-display); font-variant-numeric: tabular-nums; }
+  .mx-tabla th { text-align: left; padding: 0 16px 12px 0; font-size: 10.5px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.75); border-bottom: 1px solid rgba(255, 255, 255, 0.5); white-space: nowrap; }
+  .mx-tabla td { padding: 14px 16px 14px 0; font-size: 16px; font-weight: 500; border-bottom: 1px solid var(--linea-c); white-space: nowrap; }
+  .mx-tabla .n { text-align: right; }
+  .mx-tabla td.n:last-child { font-family: var(--clash); font-size: 20px; font-weight: 700; }
+  .mx-acciones { display: flex; flex-wrap: wrap; gap: 8px; margin: 34px 0 0; padding: 0; list-style: none; }
+  .mx-acciones li { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px 9px 12px; border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 999px; font-family: var(--font-display); font-size: 13.5px; font-weight: 600; }
+  .mx-acciones i { width: 8px; height: 8px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px currentColor; }
+  .mx-acciones .si { background: #fff; color: var(--azul-o); border-color: #fff; }
+  .mx-acciones .si i { background: #3DDC84; box-shadow: none; }
+  .mx-nota { margin: 26px 0 0; font-size: 13px; color: rgba(255, 255, 255, 0.72); }
+
+  /* 03 · qué es */
+  .mx-que { background: var(--papel); }
+  .mx-que-g { display: grid; gap: 56px; }
+  .mx-flujo { list-style: none; margin: 34px 0 0; padding: 0; border-top: 1px solid var(--linea); }
+  .mx-flujo li { display: grid; grid-template-columns: 110px 1fr; gap: 16px; align-items: baseline; padding: 16px 0; border-bottom: 1px solid var(--linea); font-size: 15px; color: #3E3B36; }
+  .mx-flujo b { font-family: var(--clash); font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.01em; color: var(--tinta); }
+  .mx-garantias { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr; border-top: 1px solid var(--tinta); }
+  .mx-garantias li { padding: 22px 0; border-bottom: 1px solid var(--linea); display: grid; gap: 6px; align-content: start; }
+  .mx-garantias h3, .mx-solo h3, .mx-imag h3, .mx-seg h3 { margin: 0; font-family: var(--font-display); font-size: 19px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+  .mx-garantias p, .mx-imag p { margin: 0; font-size: 15px; line-height: 1.55; color: #4D4A44; }
+
+  /* 04 · casos */
+  .mx-casos-h { max-width: 16ch; }
+  .mx-tabs { display: flex; gap: 26px; margin: 40px 0 34px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--linea); }
+  .mx-tabs::-webkit-scrollbar { display: none; }
+  .mx-tab { flex-shrink: 0; padding: 0 0 14px; border: 0; background: none; cursor: pointer; font-family: var(--font-display); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--tenue); box-shadow: inset 0 -2px 0 transparent; transition: color 0.2s, box-shadow 0.2s; }
+  .mx-tab[aria-selected='true'] { color: var(--tinta); box-shadow: inset 0 -2px 0 var(--azul); }
+  .mx-panel { display: grid; gap: 32px; }
+  .mx-panel[hidden] { display: none; }
+  .mx-panel-foto { margin: 0; border-radius: 4px; overflow: hidden; aspect-ratio: 4 / 3; max-width: 100%; }
+  .mx-panel-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .mx-preguntas { list-style: none; margin: 0; padding: 0; }
+  .mx-preguntas li { display: grid; gap: 10px; padding: 22px 0; border-bottom: 1px solid var(--linea); }
+  .mx-preguntas li:first-child { padding-top: 0; }
+  .mx-preguntas q { quotes: '«' '»'; font-family: var(--font-display); font-size: clamp(19px, 1.9vw, 25px); font-weight: 600; line-height: 1.25; letter-spacing: -0.025em; }
+  .mx-preguntas span { font-family: var(--font-display); font-size: 10.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--azul-o); }
+  .mx-cierre { margin: 48px 0 0; max-width: 46ch; font-family: var(--font-display); font-size: clamp(20px, 2vw, 28px); font-weight: 500; line-height: 1.3; letter-spacing: -0.02em; color: var(--tenue); }
+
+  /* 05 · tinta */
+  .mx-tinta { background: var(--tinta); color: #fff; }
+  .mx-tinta .mx-eyebrow { color: #8FB0F5; }
+  .mx-solo-h { max-width: 18ch; }
+  .mx-solo-h span { color: var(--azul); }
+  .mx-solo { list-style: none; margin: 56px 0 0; padding: 0; display: grid; grid-template-columns: 1fr; border-top: 1px solid var(--linea-c); }
+  .mx-solo li { display: grid; gap: 12px; align-content: start; padding: 28px 0; border-bottom: 1px solid var(--linea-c); }
+  .mx-solo p { margin: 0; font-size: 15px; line-height: 1.6; color: rgba(255, 255, 255, 0.72); }
+  .mx-solo .mx-tira { margin-top: 6px; font-family: var(--font-display); font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #8FB0F5; }
+  .mx-matriz { display: grid; grid-template-columns: auto repeat(5, 1fr); gap: 4px; margin-top: 6px; max-width: 320px; font-family: var(--font-display); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .mx-matriz span { color: rgba(255, 255, 255, 0.55); text-align: center; padding: 4px 6px 4px 0; letter-spacing: 0.06em; }
+  .mx-matriz span:nth-child(6n + 1) { text-align: left; }
+  .mx-matriz b { text-align: center; padding: 5px 0; border-radius: 3px; background: rgba(255, 255, 255, 0.08); font-weight: 600; }
+  .mx-matriz b.cero { background: var(--azul); }
+
+  /* 06 · imagina */
+  .mx-imagina { background: var(--marfil); padding-bottom: 88px; }
+  .mx-imagina-foto { position: relative; margin: 0 0 56px; height: min(78svh, 720px); min-height: 420px; isolation: isolate; overflow: hidden; }
+  .mx-imagina-foto img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 35%; display: block; }
+  .mx-imagina-foto::after { content: ''; position: absolute; inset: 40% 0 0; background: linear-gradient(180deg, transparent, rgba(20, 20, 20, 0.62)); }
+  .mx-imagina-foto figcaption { position: absolute; z-index: 1; left: 16px; right: 16px; bottom: 28px; color: #fff; }
+  .mx-imagina-foto .mx-eyebrow { color: #fff; }
+  .mx-imagina-foto .mx-h2 { color: #fff; max-width: 14ch; }
+  .mx-imag { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr; border-top: 1px solid var(--tinta); }
+  .mx-imag li { display: grid; gap: 8px; align-content: start; padding: 22px 0; border-bottom: 1px solid var(--linea); }
+
+  /* 07 · excel */
+  .mx-excel { background: var(--papel); }
+  .mx-excel-g { display: grid; gap: 48px; align-items: center; }
+  .mx-citas { list-style: none; margin: 30px 0 0; padding: 0; display: grid; gap: 14px; }
+  .mx-citas q { quotes: '«' '»'; display: block; padding-left: 16px; border-left: 2px solid var(--azul); font-family: var(--font-display); font-size: 16px; font-weight: 500; line-height: 1.4; letter-spacing: -0.01em; }
+  .mx-req { margin: 22px 0 0; font-size: 13px; color: var(--tenue); max-width: 52ch; }
+  .mx-hoja { background: #fff; border: 1px solid var(--linea); border-radius: 6px; overflow: hidden; min-width: 0; }
+  .mx-hoja-bar { margin: 0; padding: 11px 16px; background: #1D6F42; color: #fff; font-family: var(--font-display); font-size: 12.5px; font-weight: 600; }
+  .mx-hoja-w { overflow-x: auto; }
+  .mx-hoja table { width: 100%; border-collapse: collapse; font-family: var(--font-display); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .mx-hoja th, .mx-hoja td { padding: 10px 14px; border-bottom: 1px solid #ECEAE5; text-align: left; white-space: nowrap; }
+  .mx-hoja th { font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--tenue); }
+  .mx-hoja .n { text-align: right; }
+  .mx-hoja .vivo { background: #EAF0FD; color: var(--azul-o); font-weight: 600; }
+  .mx-hoja-ia { margin: 0; padding: 16px; font-size: 14px; line-height: 1.5; color: #3E3B36; background: var(--marfil); }
+  .mx-hoja-ia b { display: block; margin-bottom: 4px; font-family: var(--font-display); font-size: 10.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--azul-o); }
+
+  /* 08 · seguridad */
+  .mx-seg { list-style: none; margin: 56px 0 0; padding: 0; display: grid; grid-template-columns: 1fr; column-gap: 0; }
+  .mx-seg li { display: grid; gap: 10px; align-content: start; padding: 24px 0; border-top: 2px solid var(--azul); }
+  .mx-seg p { margin: 0; font-size: 15px; line-height: 1.6; color: rgba(255, 255, 255, 0.72); }
+
+  /* 09 · conéctalo */
+  .mx-llave { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; margin: 40px 0 56px; padding: 30px 24px; background: var(--azul); color: #fff; border-radius: 6px; }
+  .mx-llave > div { flex: 1 1 320px; min-width: 0; }
+  .mx-llave-t { margin: 0; font-family: var(--clash); font-size: clamp(22px, 2.4vw, 32px); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; }
+  .mx-llave-p { margin: 8px 0 0; font-size: 15px; line-height: 1.55; color: rgba(255, 255, 255, 0.88); max-width: 60ch; }
+  .mx-plat-g { display: grid; gap: 28px; }
+  .mx-plats { display: flex; gap: 26px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--linea); }
+  .mx-plats::-webkit-scrollbar { display: none; }
+  .mx-plat { flex-shrink: 0; display: grid; gap: 2px; justify-items: start; padding: 0 0 14px; border: 0; background: none; cursor: pointer; text-align: left; box-shadow: inset 0 -2px 0 transparent; }
+  .mx-plat span { font-family: var(--clash); font-size: 22px; font-weight: 700; text-transform: uppercase; color: var(--gris); transition: color 0.2s; }
+  .mx-plat small { font-family: var(--font-display); font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--tenue); }
+  .mx-plat[aria-selected='true'] { box-shadow: inset 0 -2px 0 var(--azul); }
+  .mx-plat[aria-selected='true'] span { color: var(--tinta); }
+  .mx-plat-p { display: grid; gap: 22px; max-width: 760px; }
+  .mx-plat-p[hidden] { display: none; }
+  .mx-plat-p h3 { margin: 0; font-family: var(--font-display); font-size: 26px; font-weight: 600; letter-spacing: -0.03em; }
+  .mx-reqs { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 15px; color: #4D4A44; }
+  .mx-pasos { list-style: none; margin: 0; padding: 0; counter-reset: p; border-top: 1px solid var(--linea); }
+  .mx-pasos li { counter-increment: p; display: grid; grid-template-columns: 48px 1fr; gap: 12px; align-items: baseline; padding: 16px 0; border-bottom: 1px solid var(--linea); font-size: 16px; line-height: 1.45; }
+  .mx-pasos li::before { content: counter(p, decimal-leading-zero); font-family: var(--clash); font-size: 20px; font-weight: 700; color: var(--azul); }
+  .mx-plat-p .mx-link { justify-self: start; }
+  .mx-gratis { display: grid; gap: 32px; margin-top: 88px; padding-top: 40px; border-top: 1px solid var(--tinta); }
+  .mx-gratis-t h3 { margin: 0; font-family: var(--font-display); font-size: clamp(24px, 2.6vw, 34px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.1; }
+  .mx-gratis-t > p { margin: 14px 0 0; font-size: 15px; line-height: 1.55; color: #4D4A44; max-width: 44ch; }
+  .mx-gratis-t .mx-eyebrow { margin: 0 0 12px; }
+  .mx-gratis-t .mx-url { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 22px; }
+  .mx-url code { font-family: var(--font-display); font-size: 13.5px; font-weight: 500; color: var(--azul-o); overflow-wrap: anywhere; }
+  .mx-url button { padding: 6px 13px; border: 1px solid var(--linea); border-radius: 999px; background: #fff; cursor: pointer; font-family: var(--font-display); font-size: 12px; font-weight: 600; color: var(--tinta); }
+  .mx-gratis-l { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr; }
+  .mx-gratis-l li { display: grid; gap: 4px; padding: 16px 0; border-bottom: 1px solid var(--linea); }
+  .mx-gratis-l b { font-family: var(--font-display); font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+  .mx-gratis-l span { font-size: 14px; color: var(--tenue); }
+
+  /* 10 · faq */
+  .mx-faq { background: var(--papel); }
+  .mx-faq-g { display: grid; gap: 40px; }
+  .mx-faq-l { border-top: 1px solid var(--tinta); }
+  .mx-faq-l details { border-bottom: 1px solid var(--linea); }
+  .mx-faq-l summary { display: flex; justify-content: space-between; gap: 20px; padding: 22px 0; cursor: pointer; list-style: none; font-family: var(--font-display); font-size: 19px; font-weight: 600; letter-spacing: -0.02em; }
+  .mx-faq-l summary::-webkit-details-marker { display: none; }
+  .mx-faq-l summary::after { content: '+'; font-family: var(--clash); font-size: 24px; line-height: 1; color: var(--azul); }
+  .mx-faq-l details[open] summary::after { content: '−'; }
+  .mx-faq-l details p { margin: 0 0 22px; max-width: 62ch; font-size: 16px; line-height: 1.6; color: #4D4A44; }
+
+  /* 11 · cierre */
+  .mx-final { background: var(--azul); color: #fff; padding-block: 96px; }
+  .mx-final-h { margin: 0; font-family: var(--clash); font-weight: 700; font-size: clamp(52px, 11vw, 168px); line-height: 0.88; letter-spacing: -0.035em; text-transform: uppercase; max-width: 10ch; overflow-wrap: anywhere; }
+  .mx-final .mx-ctas { margin-top: 40px; }
+
+  /* los h2/h3 globales del sitio traen color propio: en los bloques oscuros y azules se fija explícito */
+  .mx-azul h2, .mx-final h2, .mx-tinta h2, .mx-tinta h3 { color: #fff; }
+  .mx-tinta .mx-solo-h span { color: var(--azul); }
+
+  /* Tableta */
+  @media (min-width: 640px) {
+    .mx-in { padding-inline: 32px; }
+    .mx-hero .mx-folio { padding-inline: 32px; }
+    .mx-folio-c { display: inline; }
+    .mx-voz { margin: -140px auto 0; width: min(600px, calc(100% - 64px)); padding: 26px 28px 28px; }
+    .mx-garantias { grid-template-columns: 1fr 1fr; column-gap: 32px; }
+    .mx-solo, .mx-imag, .mx-seg { grid-template-columns: 1fr 1fr; column-gap: 40px; }
+    .mx-gratis-l { grid-template-columns: 1fr 1fr; column-gap: 32px; }
+    .mx-imagina-foto figcaption { left: 32px; right: 32px; bottom: 44px; }
+    .mx-llave { padding: 36px 40px; }
+  }
+
+  /* Escritorio: portada de revista */
+  @media (min-width: 1024px) {
+    .mx-sec { padding-block: 120px; }
+    .mx-in { padding-inline: 4vw; max-width: none; }
+    .mx-hero { height: 100vh; min-height: 720px; max-height: 1000px; padding-top: 0; }
+    .mx-hero .mx-folio { position: absolute; top: calc(var(--nav-alto, 102px) + 22px); left: 4vw; right: 4vw; padding: 0 0 12px; z-index: 3; font-size: 11px; }
+    .mx-escena { position: absolute; inset: 0; height: auto; min-height: 0; }
+    .mx-gigante { top: calc(var(--nav-alto, 102px) + 9vh); font-size: min(12.4vw, 30vh); }
+    .mx-ella { left: 62%; height: 88%; }
+    .mx-voz { position: absolute; left: 4vw; bottom: 9vh; width: min(38vw, 580px); margin: 0; padding: 0; background: none; box-shadow: none; }
+    .mx-frase { font-size: clamp(28px, 2.5vw, 42px); }
+    .mx-azul { margin-top: 0; padding-block: 120px; }
+    .mx-azul .mx-in { display: grid; grid-template-columns: 1fr 1fr; column-gap: 6vw; }
+    .mx-azul .mx-de, .mx-azul .mx-resp-h { grid-column: 1 / -1; }
+    .mx-azul .mx-resp-p { grid-column: 1; grid-row: 3; }
+    .mx-azul .mx-tabla-w { grid-column: 2; grid-row: 3 / span 3; margin-top: 30px; }
+    .mx-azul .mx-acciones { grid-column: 1; grid-row: 4; }
+    .mx-azul .mx-nota { grid-column: 1; grid-row: 5; }
+    .mx-que-g { grid-template-columns: 5fr 6fr; column-gap: 7vw; align-items: start; }
+    .mx-panel { grid-template-columns: 5fr 6fr; column-gap: 5vw; align-items: start; }
+    .mx-panel-foto { aspect-ratio: 4 / 5; }
+    .mx-solo, .mx-imag { grid-template-columns: repeat(3, 1fr); column-gap: 48px; }
+    .mx-seg { grid-template-columns: repeat(4, 1fr); column-gap: 40px; }
+    .mx-imagina-foto figcaption { left: 4vw; right: 4vw; bottom: 64px; }
+    .mx-excel-g { grid-template-columns: 1fr 1fr; column-gap: 6vw; }
+    .mx-gratis { grid-template-columns: 4fr 7fr; column-gap: 6vw; }
+    .mx-faq-g { grid-template-columns: 4fr 7fr; column-gap: 6vw; align-items: start; }
+  }
+</style>
+
+<script>
+  (() => {
+    // pestañas: momentos de la temporada y plataformas (los paneles ya vienen en el HTML; solo se alternan)
+    const enlaza = (sel: string, attr: string, panel: (id: string) => string) => {
+      const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>(sel));
+      tabs.forEach((t) => t.addEventListener('click', () => {
+        tabs.forEach((x) => {
+          const on = x === t;
+          x.setAttribute('aria-selected', on ? 'true' : 'false');
+          const p = document.getElementById(panel(x.dataset[attr] || ''));
+          if (p) p.hidden = !on;
+        });
+      }));
+    };
+    enlaza('.mx-tab', 'tab', (id) => `mx-pan-${id}`);
+    enlaza('.mx-plat', 'plat', (id) => `mx-pp-${id}`);
+
+    const btn = document.getElementById('mx-copiar');
+    const code = document.getElementById('mx-url');
+    btn?.addEventListener('click', () => {
+      const ok = () => { btn.textContent = 'Copiada'; setTimeout(() => { btn.textContent = 'Copiar'; }, 1600); };
+      const sel = () => { const r = document.createRange(); r.selectNodeContents(code!); const s = getSelection(); s?.removeAllRanges(); s?.addRange(r); };
+      if (navigator.clipboard) navigator.clipboard.writeText(code?.textContent || '').then(ok, sel); else sel();
+    });
+  })();
+</script>
