@@ -174,6 +174,7 @@ body{margin:0;padding:0;background:#eef0f4;color:var(--ink);font-family:"DM Sans
 .t-mod{background:var(--verde-a);color:var(--verde-t)}
 .ent .fe{font-size:.71rem;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
 .ent .sc{font-size:.65rem;font-weight:800;color:var(--verde-t);background:var(--verde-a);border-radius:20px;padding:2px 9px;white-space:nowrap}
+.ent .acep{font-size:.65rem;font-weight:800;color:#9a6a10;background:#FFF4E5;border:1px solid #f3dfae;border-radius:20px;padding:2px 9px;white-space:nowrap}
 .ent .mod{font-size:.65rem;color:var(--ink-3);margin-top:2px}
 .ent .dd{font-size:.81rem;color:var(--ink-2);line-height:1.68;margin-top:6px;max-width:76ch}
 /* El video y el detalle en el MISMO renglón: son las dos acciones de la

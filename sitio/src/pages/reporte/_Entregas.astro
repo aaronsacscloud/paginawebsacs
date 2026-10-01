@@ -133,7 +133,11 @@ const agrupar = grupos.length > 1;
     <div><div class="wm">Sacscloud</div><div class="wsub">Reporte de entregas</div></div>
     <div class="folio"><div class="t">Folio</div><div class="f">{rep.folio}</div></div>
   </div>
-  <h1>Lo que se entregó en tu cuenta</h1>
+  {/* Con trabajo del taller palomeado para revisión, el documento ya no es
+      solo «lo que se entregó»: también pide aceptar. El título lo dice. */}
+  <h1>{!h.por_aceptar ? 'Lo que se entregó en tu cuenta'
+    : h.por_aceptar === h.total ? 'Listo para tu revisión y aceptación'
+    : 'Tus entregas y lo que está listo para tu aceptación'}</h1>
   <p class="sub">
     {h.cliente} · del {dLarga(rep.desde)} al {dLarga(rep.hasta)}
     {/* Si se pidió por módulo, el documento lo DICE. Sin esta línea, un reporte
@@ -166,6 +170,13 @@ const agrupar = grupos.length > 1;
     trabajo, cuándo quedó{h.con_video > 0 ? ', y —donde lo hay— trae el ' : '.'}
     {h.con_video > 0 && <><b>video</b> donde se ve operando, para que no tengas que buscarlo tú.</>}
   </p>
+  {h.por_aceptar > 0 && (
+    <p class="p" style="margin-top:10px">
+      {h.por_aceptar === 1 ? 'Un renglón dice' : `${h.por_aceptar} renglones dicen`} <b>«Para tu aceptación»</b>: el
+      trabajo está terminado y espera que lo revises en tu cuenta. Márcalo como <b>revisado y aceptado</b> y, al
+      final, firma. Si algo no quedó como esperabas, no lo marques y contéstanos este documento.
+    </p>
+  )}
 
   {h.cortesias > 0 && (
     <div class="lila" style="margin-top:14px">
@@ -203,7 +214,8 @@ const agrupar = grupos.length > 1;
                 <span class="tt">{limpiar(e.titulo, agrupar ? g.modulo : null)}</span>
                 <span class={`tipo t-${t.c}`}>{t.l}</span>
                 {e.cortesia && <span class="sc">sin costo</span>}
-                <span class="fe">{dCorta(e.fecha)}</span>
+                {e.por_aceptar && <span class="acep">Para tu aceptación</span>}
+                <span class="fe">{e.por_aceptar && e.folio ? `${e.folio} · ` : ''}{dCorta(e.fecha)}</span>
               </div>
               {/* El módulo del renglón sobra cuando el documento entero es de
                   ese módulo: el subtítulo ya dijo «solo Reparaciones / taller»
@@ -220,8 +232,10 @@ const agrupar = grupos.length > 1;
                     <div class="mas">{d.resto}</div>
                   </details>
                 )}
-                {conRevisado && <button type="button" class={`rev${hecho ? ' on' : ''}`} data-k={k} aria-pressed={hecho ? 'true' : 'false'} disabled={firmado}>
-                  <span class="rk" aria-hidden="true"></span><span class="rt">{hecho ? 'Revisado' : 'Marcar como revisado'}</span>
+                {conRevisado && <button type="button" class={`rev${hecho ? ' on' : ''}`} data-k={k} data-acep={e.por_aceptar ? '1' : '0'} aria-pressed={hecho ? 'true' : 'false'} disabled={firmado}>
+                  <span class="rk" aria-hidden="true"></span><span class="rt">{e.por_aceptar
+                    ? (hecho ? 'Revisado y aceptado' : 'Marcar revisado y aceptado')
+                    : (hecho ? 'Revisado' : 'Marcar como revisado')}</span>
                 </button>}
               </div>
             </div>

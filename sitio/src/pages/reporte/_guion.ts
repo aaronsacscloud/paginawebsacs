@@ -88,7 +88,9 @@ function aviso(t) {
 function pintarRev(bt, si) {
   bt.setAttribute('aria-pressed', si ? 'true' : 'false');
   bt.classList.toggle('on', si);
-  const t = bt.querySelector('.rt'); if (t) t.textContent = si ? 'Revisado' : 'Marcar como revisado';
+  // Lo que se entrega para ACEPTACIÓN dice que se acepta, no solo que se vio.
+  const acep = bt.dataset.acep === '1';
+  const t = bt.querySelector('.rt'); if (t) t.textContent = si ? (acep ? 'Revisado y aceptado' : 'Revisado') : (acep ? 'Marcar revisado y aceptado' : 'Marcar como revisado');
   const it = bt.closest('.it'); if (it) it.classList.toggle('revisada', si);
   if ($('#nrev')) $('#nrev').textContent = $$('.rev[aria-pressed="true"]').length;
 }

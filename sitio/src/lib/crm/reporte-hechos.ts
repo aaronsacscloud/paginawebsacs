@@ -220,6 +220,21 @@ export async function reunirHechos(companyId: string, desde: string, hasta: stri
   };
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/* Cómo se le dice al cliente la etapa de una orden. Lo usan el reporte de
+   entregas (lo palomeado del taller) y el de trabajo en curso. */
+const ETAPA_CLIENTE: Record<string, { l: string; orden: number }> = {
+  analisis:   { l: 'En análisis', orden: 1 },
+  desarrollo: { l: 'En desarrollo', orden: 2 },
+  pruebas:    { l: 'En pruebas', orden: 3 },
+  lista:      { l: 'Lista, en revisión', orden: 4 },
+  devuelta:   { l: 'En desarrollo', orden: 2 },   // un rebote es asunto interno
+  trabada:    { l: 'En desarrollo', orden: 2 },
+  espera:     { l: 'Esperando un dato tuyo', orden: 5 },
+  recibida:   { l: 'Por arrancar', orden: 6 },
+};
+
 /**
  * Los hechos del REPORTE DE ENTREGAS.
  *
@@ -236,16 +251,46 @@ export async function reunirHechos(companyId: string, desde: string, hasta: stri
  *  Existe porque un reporte de doce entregas repartidas en cinco módulos no
  *  contesta «¿cómo va lo del portal?»: el dueño manda uno POR tema cuando la
  *  conversación con el cliente es sobre un tema. */
-export async function reunirEntregas(companyId: string, desde: string, hasta: string, soloModulos?: string[] | null) {
+/** `seleccion` (dueño, 1-oct-2026): lo que el consultor PALOMEÓ en la ventana de
+ *  entregas. Con ella el documento trae exactamente esos renglones —ni uno más—
+ *  y puede traer también ÓRDENES VIVAS DEL TALLER: lo que ya está listo para que
+ *  el cliente lo revise y lo acepte, aunque todavía no se haya cerrado. Sin
+ *  selección se comporta como siempre: todo lo entregado del periodo. */
+export type SeleccionEntregas = { mejoras?: string[]; ordenes?: string[] } | null;
+
+export async function reunirEntregas(companyId: string, desde: string, hasta: string, soloModulos?: string[] | null, seleccion?: SeleccionEntregas) {
   const { data: co } = await supabase.from('companies')
     .select('id, nombre, nombre_comercial, sacs_account').eq('id', companyId).maybeSingle();
   if (!co) return null;
 
-  const { data: mejoras } = await supabase.from('mejoras')
-    .select('titulo, descripcion, categoria, cortesia, valor, fecha_entrega, modulo, url, visible_cliente, origen')
-    .eq('company_id', companyId).is('archived_at', null).eq('estado', 'entregada')
-    .gte('fecha_entrega', desde).lte('fecha_entrega', hasta)
-    .order('fecha_entrega', { ascending: true });
+  const conSel = !!seleccion && (Array.isArray(seleccion.mejoras) || Array.isArray(seleccion.ordenes));
+  const idsM = conSel ? (seleccion!.mejoras || []).filter(x => UUID_RE.test(String(x))) : [];
+  const idsO = conSel ? (seleccion!.ordenes || []).filter(x => UUID_RE.test(String(x))) : [];
+
+  /* Con selección se piden ESAS mejoras —siempre de esta cuenta y entregadas—,
+     sin volver a recortar por fecha: lo que el consultor ve palomeado es lo que
+     sale, aunque haya movido el periodo después de marcar. */
+  let qm = supabase.from('mejoras')
+    .select('id, titulo, descripcion, categoria, cortesia, valor, fecha_entrega, modulo, url, visible_cliente, origen')
+    .eq('company_id', companyId).is('archived_at', null).eq('estado', 'entregada');
+  qm = conSel ? qm.in('id', idsM.length ? idsM : ['00000000-0000-0000-0000-000000000000'])
+    : qm.gte('fecha_entrega', desde).lte('fecha_entrega', hasta);
+  const { data: mejoras } = await qm.order('fecha_entrega', { ascending: true });
+
+  /* Las órdenes del taller palomeadas. Solo vivas y de esta cuenta: una orden
+     de otro cliente colada en la petición no puede terminar en este documento. */
+  const { data: ordenes } = idsO.length
+    ? await supabase.from('taller_ordenes')
+        .select('id, folio, titulo, tipo, etapa, esperado, problema, modulo, cobro, fecha_prometida, evidencia_url, company_id')
+        .eq('company_id', companyId).is('archived_at', null).neq('etapa', 'entregada').in('id', idsO)
+    : { data: [] as any[] };
+  // El módulo de las órdenes viejas vive en su renglón del cliente.
+  const modDeOrden: Record<string, string> = {};
+  if ((ordenes || []).some((o: any) => !o.modulo)) {
+    const { data: lig } = await supabase.from('taller_orden_mejoras')
+      .select('orden_id, mejoras(modulo)').in('orden_id', (ordenes || []).map((o: any) => o.id));
+    for (const l of lig || []) if ((l as any).mejoras?.modulo) modDeOrden[(l as any).orden_id] = (l as any).mejoras.modulo;
+  }
 
   /* Lo INTERNO no se guarda siquiera en la foto. En el reporte de trabajo se
      filtra al pintar; aquí se filtra al generar, porque este documento no tiene
@@ -256,7 +301,7 @@ export async function reunirEntregas(companyId: string, desde: string, hasta: st
     .filter((m: any) => m.visible_cliente !== false)
     .filter((m: any) => !pedidos.length || pedidos.includes(m.modulo || 'Sin módulo'));
 
-  const entregas = visibles.map((m: any) => ({
+  const entregadas = visibles.map((m: any) => ({
     titulo: m.titulo,
     descripcion: m.descripcion || null,
     categoria: m.categoria || 'otro',
@@ -269,6 +314,27 @@ export async function reunirEntregas(companyId: string, desde: string, hasta: st
     video: /^https?:\/\//i.test(String(m.url || '').trim()) ? String(m.url).trim() : null,
   }));
 
+  /* Lo del taller va DESPUÉS de lo entregado y marcado como «para tu revisión»:
+     el cliente tiene que distinguir lo que ya recibió de lo que se le pide
+     revisar y aceptar. Sin rebotes ni responsables: eso es asunto interno. */
+  const delTaller = (ordenes || [])
+    .map((o: any) => ({ ...o, modulo: o.modulo || modDeOrden[o.id] || null }))
+    .filter((o: any) => !pedidos.length || pedidos.includes(o.modulo || 'Sin módulo'))
+    .map((o: any) => ({
+      titulo: o.titulo,
+      descripcion: o.esperado || o.problema || null,
+      categoria: o.tipo === 'falla' ? 'pendiente' : 'otro',
+      modulo: o.modulo || null,
+      fecha: o.fecha_prometida || new Date().toISOString().slice(0, 10),
+      cortesia: o.cobro === 'cortesia',
+      video: /^https?:\/\//i.test(String(o.evidencia_url || '').trim()) ? String(o.evidencia_url).trim() : null,
+      origen: 'taller',
+      folio: o.folio || null,
+      etapa: (ETAPA_CLIENTE[o.etapa] || { l: 'En desarrollo' }).l,
+      por_aceptar: true,
+    }));
+
+  const entregas: any[] = [...entregadas, ...delTaller];
   const modulos = Array.from(new Set(entregas.map(e => e.modulo).filter(Boolean)));
 
   return {
@@ -279,6 +345,10 @@ export async function reunirEntregas(companyId: string, desde: string, hasta: st
     total: entregas.length,
     con_video: entregas.filter(e => e.video).length,
     cortesias: entregas.filter(e => e.cortesia).length,
+    // Cuántas van para revisión y aceptación (órdenes del taller palomeadas).
+    // Cambia el título, la lectura y la frase que el cliente firma.
+    por_aceptar: delTaller.length,
+    seleccion: conSel,
     modulos,
     // Qué se pidió, para que el documento pueda decirlo: «solo lo de Portal de
     // clientes» no es lo mismo que «no hubo nada más».
@@ -307,16 +377,7 @@ export async function reunirEntregas(companyId: string, desde: string, hasta: st
  * movió la fecha. Se filtra al GENERAR y no al pintar, porque la foto se
  * guarda en un jsonb que alguien puede leer.
  */
-const ETAPA_CLIENTE: Record<string, { l: string; orden: number }> = {
-  analisis:   { l: 'En análisis', orden: 1 },
-  desarrollo: { l: 'En desarrollo', orden: 2 },
-  pruebas:    { l: 'En pruebas', orden: 3 },
-  lista:      { l: 'Lista, en revisión', orden: 4 },
-  devuelta:   { l: 'En desarrollo', orden: 2 },   // un rebote es asunto interno
-  trabada:    { l: 'En desarrollo', orden: 2 },
-  espera:     { l: 'Esperando un dato tuyo', orden: 5 },
-  recibida:   { l: 'Por arrancar', orden: 6 },
-};
+
 
 /* ── EL REPORTE DEL LEAD ────────────────────────────────────────────────────
  * El tercer documento de la casa. Los otros dos le cuentan a un CLIENTE qué se

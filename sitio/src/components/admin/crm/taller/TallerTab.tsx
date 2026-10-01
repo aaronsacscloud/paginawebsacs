@@ -510,6 +510,10 @@ function Lista({ ordenes, entregas = {}, yo, equipo, abrir, filtro, setFiltro, o
      para una cuenta; tener que salirse a la ficha del cliente para mandárselo
      es el paso que hace que no se mande. */
   const [reporte, setReporte] = useState<'' | 'entregas' | 'curso'>('');
+  /* Órdenes que llegan palomeadas al reporte de entregas: las manda el
+     «Mandar en entregas» del renglón o de la selección (dueño, 1-oct-2026). */
+  const [preEnt, setPreEnt] = useState<string[]>([]);
+  const mandarEnEntregas = (ids: string[]) => { setPreEnt(ids); setReporte('entregas'); };
   /* Lo seleccionado, por id. Se vacía al cambiar de cuenta o de pestaña: una
      selección invisible es la forma segura de aplicarle una fecha a algo que
      ya no estás viendo. */
@@ -739,12 +743,12 @@ function Lista({ ordenes, entregas = {}, yo, equipo, abrir, filtro, setFiltro, o
                 mandan al terminar de mirar el proyecto, no antes. */}
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
               <button style={{ ...S.btnG, padding: '6px 12px', fontSize: '0.75rem' }} onClick={() => setReporte('curso')}>Trabajo en curso</button>
-              <button style={{ ...S.btnSec, padding: '6px 12px', fontSize: '0.75rem' }} onClick={() => setReporte('entregas')}>Reporte de entregas</button>
+              <button style={{ ...S.btnSec, padding: '6px 12px', fontSize: '0.75rem' }} onClick={() => mandarEnEntregas([])}>Reporte de entregas</button>
             </div>
           </div>
 
           {reporte === 'entregas' && (
-            <ReporteEntregas companyId={abierto.id} cliente={abierto.l} onCerrar={() => setReporte('')} />
+            <ReporteEntregas key={preEnt.join(',')} companyId={abierto.id} cliente={abierto.l} preseleccion={preEnt} onCerrar={() => setReporte('')} />
           )}
           {reporte === 'curso' && (
             <ReporteCurso companyId={abierto.id} cliente={abierto.l} onCerrar={() => setReporte('')} />
@@ -759,7 +763,8 @@ function Lista({ ordenes, entregas = {}, yo, equipo, abrir, filtro, setFiltro, o
             <BarraLote n={sel.size} ids={[...sel]} companyId={abierto.id}
               modo={dentro === 'entregada' ? 'entregadas' : 'ordenes'}
               giro={abierto.val?.giro} onListo={() => { limpiaSel(); recargar?.(); }}
-              onCancelar={limpiaSel} flash={flash} />
+              onCancelar={limpiaSel} flash={flash}
+              onEntregas={dentro === 'entregada' ? null : () => { mandarEnEntregas([...sel]); limpiaSel(); }} />
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #e5e5e5', marginBottom: 2, overflowX: 'auto' }}>
               {(() => {
@@ -822,7 +827,8 @@ function Lista({ ordenes, entregas = {}, yo, equipo, abrir, filtro, setFiltro, o
             <Renglon key={o.id} o={o} abrir={abrir}
               marcada={sel.has(o.id)} onMarcar={() => marca(o.id)} verCasilla={sel.size > 0}
               meta={meta[o.id]} reuniones={reuniones}
-              acciones={<MenuFila onEditar={() => abrir(o.id)} onSeleccionar={() => marca(o.id)} onEliminar={() => quitar(o)} />} />
+              acciones={<MenuFila onEditar={() => abrir(o.id)} onSeleccionar={() => marca(o.id)} onEliminar={() => quitar(o)}
+                onEntregas={() => mandarEnEntregas([o.id])} />} />
           ))}
         </div>
       ) : (
@@ -974,7 +980,7 @@ function RenglonEntregado({ e, cuenta, reuniones, abriendo, onEditar, marcada, o
 /* `modo="entregadas"`: la misma barra sobre lo ya entregado. Los ids son de
    los renglones del cliente —casi todo lo entregado no tiene orden— y no va la
    fecha: la prometida ya no dice nada de algo que se entregó. */
-function BarraLote({ n, ids, companyId, giro, onListo, onCancelar, flash, modo = 'ordenes' }: any) {
+function BarraLote({ n, ids, companyId, giro, onListo, onCancelar, flash, modo = 'ordenes', onEntregas }: any) {
   const entregadas = modo === 'entregadas';
   const [abierto, setAbierto] = useState('');     // 'fecha' | 'junta' | 'modulo' | 'cobro'
   const [juntas, setJuntas] = useState<any[]>([]);
@@ -1137,7 +1143,14 @@ function BarraLote({ n, ids, companyId, giro, onListo, onCancelar, flash, modo =
         )}
       </div>
 
-      <button style={{ ...bt, border: 'none', background: 'none', opacity: .8, marginLeft: 'auto' }} onClick={onCancelar}>
+      {/* Lo seleccionado, directo al reporte de entregas para que el cliente
+          lo revise y lo acepte. */}
+      {onEntregas && (
+        <button style={{ ...bt, marginLeft: 'auto', background: P.verde, color: '#fff', border: 'none', fontWeight: 800 }} onClick={onEntregas}>
+          Mandar en entregas
+        </button>
+      )}
+      <button style={{ ...bt, border: 'none', background: 'none', opacity: .8, marginLeft: onEntregas ? 0 : 'auto' }} onClick={onCancelar}>
         Quitar selección
       </button>
     </div>
@@ -1222,7 +1235,7 @@ function Dato({ children, falta, tono, titulo, ancho = 150 }: any) {
    «Seleccionar varios» marca esa fila y deja las casillas a la vista: la
    casilla que asoma al pasar el ratón no la descubre quien no sabe que existe,
    y el menú es el primer lugar donde se busca. */
-function MenuFila({ onEditar, onEliminar, onSeleccionar }: any) {
+function MenuFila({ onEditar, onEliminar, onSeleccionar, onEntregas }: any) {
   const [abierto, setAbierto] = useState(false);
   const caja = useRef<HTMLDivElement>(null);
 
@@ -1263,6 +1276,12 @@ function MenuFila({ onEditar, onEliminar, onSeleccionar }: any) {
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f7f6fb'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}
               onClick={() => { setAbierto(false); onSeleccionar(); }}>Seleccionar varios</button>
+          )}
+          {onEntregas && (
+            <button role="menuitem" style={{ ...item, color: P.verdeTinta }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = P.verdeAgua; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}
+              onClick={() => { setAbierto(false); onEntregas(); }}>Mandar en entregas</button>
           )}
           <button role="menuitem" style={{ ...item, color: P.rojoTinta }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = P.rojoAgua; }}

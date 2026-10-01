@@ -10,7 +10,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { notificar } from '../../../lib/crm/notificaciones';
-import { LEYENDA_FIRMA } from '../../../lib/crm/reporte-firma';
+import { leyendaDe } from '../../../lib/crm/reporte-firma';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -35,7 +35,7 @@ export const POST: APIRoute = async ({ request }) => {
     .select('id, tipo, folio, company_id, firmado_at, hechos').eq('id', id).maybeSingle();
   if (error) return json({ ok: false, error: faltaSql(error.message) ? 'Todavía no se puede firmar: falta activarlo en el sistema.' : 'No se pudo guardar la firma.' }, 503);
   if (!rep) return json({ ok: false, error: 'Ese reporte ya no existe.' }, 404);
-  const ley = LEYENDA_FIRMA[rep.tipo];
+  const ley = leyendaDe(rep);
   if (!ley) return json({ ok: false, error: 'Este documento no se firma.' }, 400);
   if (rep.firmado_at) return json({ ok: false, error: 'Este reporte ya está firmado.' }, 409);
 

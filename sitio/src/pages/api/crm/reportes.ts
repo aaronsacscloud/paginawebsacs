@@ -107,8 +107,15 @@ export const POST: APIRoute = async ({ request }) => {
   if (desde > hasta) return json({ error: 'El periodo está al revés.' }, 400);
 
   const modulos = Array.isArray(b?.modulos) ? b.modulos.map(String).slice(0, 40) : null;
+  /* Lo palomeado en la ventana de entregas. Se acota el tamaño: es una lista
+     de ids que viaja del navegador y termina en un `in (...)`. */
+  const sel = b?.seleccion && typeof b.seleccion === 'object' ? {
+    mejoras: Array.isArray(b.seleccion.mejoras) ? b.seleccion.mejoras.map(String).slice(0, 300) : [],
+    ordenes: Array.isArray(b.seleccion.ordenes) ? b.seleccion.ordenes.map(String).slice(0, 300) : [],
+  } : null;
   const r = await generarReporteCuenta({
     tipo: tipo as TipoReporteCuenta, companyId, desde, hasta, modulos,
+    seleccion: tipo === 'entregas' ? sel : null,
     narrativa: b?.narrativa || null, creadoPor: (user as any)?.email || (user as any)?.nombre || null,
   });
   if ('error' in r) return json({ error: r.error }, r.status);

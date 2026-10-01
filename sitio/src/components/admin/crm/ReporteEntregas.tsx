@@ -28,9 +28,43 @@ const S = {
   btnG: { padding: '7px 13px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.76rem', fontWeight: 600, cursor: 'pointer', background: '#fff', color: '#444', fontFamily: 'inherit' } as const,
   input: { padding: '7px 10px', border: '1.5px solid #e4dffb', borderRadius: 9, fontSize: '0.77rem', outline: 'none', background: '#fdfcff', fontFamily: 'inherit' } as const,
   chip: { fontSize: '0.6rem', fontWeight: 800, borderRadius: 20, padding: '2px 8px', whiteSpace: 'nowrap' as const },
+  grupo: { fontSize: '0.7rem', fontWeight: 800, color: '#241d43', marginTop: 12, marginBottom: 2 } as const,
+  grupoC: { fontWeight: 600, color: '#a5a2af', marginLeft: 4 } as const,
+  vacio: { fontSize: '0.75rem', color: '#a5a2af', padding: '6px 0 4px' } as const,
 };
 
-export default function ReporteEntregas({ companyId, cliente, onCerrar }: any) {
+/** Un renglón que se palomea: entra o no entra al documento. */
+function Fila({ on, onClick, chip, chipColor, titulo, modulo, folio, derecha }: any) {
+  return (
+    <div onClick={onClick} role="checkbox" aria-checked={on} style={{
+      display: 'flex', gap: 9, alignItems: 'center', padding: '8px 8px', borderBottom: '1px solid #f7f6fa',
+      cursor: 'pointer', borderRadius: 8, background: on ? '#faf8ff' : '#fff', opacity: on ? 1 : .62,
+    }}>
+      <span style={{
+        width: 16, height: 16, borderRadius: 5, flex: 'none', border: on ? 'none' : '1.5px solid #cfc9e6',
+        background: on ? '#9B8CFA' : '#fff', color: '#fff', fontSize: 11, fontWeight: 800,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>{on ? '✓' : ''}</span>
+      <span style={{ ...S.chip, background: chipColor ? chipColor[0] : '#EEECFE', color: chipColor ? chipColor[1] : '#5B4BD6', textTransform: 'uppercase', letterSpacing: '.04em' }}>{chip}</span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ fontSize: '0.79rem', fontWeight: 700, color: '#241d43', lineHeight: 1.35 }}>{titulo}</span>
+        {(modulo || folio) && <span style={{ display: 'block', fontSize: '0.67rem', color: '#a5a2af' }}>{[folio, modulo].filter(Boolean).join(' · ')}</span>}
+      </span>
+      <span style={{ display: 'flex', gap: 6, alignItems: 'center', flex: 'none' }}>{derecha}</span>
+    </div>
+  );
+}
+
+/* La etapa de una orden como se le dice al cliente (misma tabla que el
+   reporte de trabajo en curso). */
+const ETAPA_L: Record<string, string> = {
+  recibida: 'por arrancar', analisis: 'en análisis', desarrollo: 'en desarrollo', pruebas: 'en pruebas',
+  devuelta: 'en desarrollo', trabada: 'en desarrollo', espera: 'esperando al cliente', lista: 'lista para revisión',
+};
+
+/* `preseleccion`: órdenes del taller que llegan ya palomeadas (las abre el
+   «Mandar en entregas» del renglón del taller). */
+export default function ReporteEntregas({ companyId, cliente, onCerrar, preseleccion }: any) {
   const hoy = new Date();
   const [desde, setDesde] = useState(iso(new Date(hoy.getFullYear(), hoy.getMonth(), 1)));
   const [hasta, setHasta] = useState(iso(hoy));
@@ -45,10 +79,39 @@ export default function ReporteEntregas({ companyId, cliente, onCerrar }: any) {
   const [todas, setTodas] = useState<any[]>([]);
   const [modulos, setModulos] = useState<string[]>([]);   // vacío = todo
 
+  /* LO DEL TALLER (dueño, 1-oct-2026): «que pueda mostrar esto en entregas y
+     filtrar lo que quiero mandar». Las órdenes vivas de la cuenta entran a la
+     ventana para que el cliente las revise y las ACEPTE en el mismo documento
+     donde firma lo entregado. Se piden al mismo endpoint que la pestaña del
+     taller, acotado a esta cuenta. */
+  const [ordenes, setOrdenes] = useState<any[]>([]);
+  const [cargando, setCargando] = useState(true);
+  /* Qué va en el documento. Lo entregado del periodo entra por defecto (se
+     guarda lo que se QUITA); lo del taller no, salvo lo que ya está «lista»
+     o llegó preseleccionado (se guarda lo que se AGREGA). Así, mover las fechas
+     no desmarca nada que el consultor ya decidió. */
+  const [fuera, setFuera] = useState<Set<string>>(new Set());
+  const [dentro, setDentro] = useState<Set<string>>(new Set());
+
   useEffect(() => {
     let vivo = true;
-    fetch('/api/crm/mejoras?company_id=' + companyId).then(r => r.json())
-      .then(j => { if (vivo) setTodas(j?.data || []); }).catch(() => {});
+    setCargando(true);
+    Promise.all([
+      fetch('/api/crm/mejoras?company_id=' + companyId).then(r => r.json()).catch(() => null),
+      fetch('/api/crm/taller?company_id=' + companyId).then(r => r.json()).catch(() => null),
+    ]).then(([jm, jt]) => {
+      if (!vivo) return;
+      setTodas(jm?.data || []);
+      const meta = jt?.meta || {};
+      const vivas = (jt?.ordenes || [])
+        .filter((o: any) => o.etapa !== 'entregada' && !o.archived_at && (!o.company_id || o.company_id === companyId))
+        .map((o: any) => ({ ...o, modulo: o.modulo || meta[o.id]?.modulo || null }));
+      setOrdenes(vivas);
+      const pre = new Set<string>((preseleccion || []).map((x: string) => 'o:' + x));
+      for (const o of vivas) if (o.etapa === 'lista') pre.add('o:' + o.id);
+      setDentro(pre);
+      setCargando(false);
+    });
     return () => { vivo = false; };
   }, [companyId]);
 
@@ -58,9 +121,25 @@ export default function ReporteEntregas({ companyId, cliente, onCerrar }: any) {
 
   const porModulo = useMemo(() => {
     const a: Record<string, number> = {};
-    for (const m of enPeriodo) a[m.modulo || 'Sin módulo'] = (a[m.modulo || 'Sin módulo'] || 0) + 1;
+    for (const m of [...enPeriodo, ...ordenes]) a[m.modulo || 'Sin módulo'] = (a[m.modulo || 'Sin módulo'] || 0) + 1;
     return Object.entries(a).sort((x, y) => y[1] - x[1]);
-  }, [enPeriodo]);
+  }, [enPeriodo, ordenes]);
+
+  const enModulo = (m: any) => !modulos.length || modulos.includes(m.modulo || 'Sin módulo');
+  const listaE = enPeriodo.filter(enModulo);
+  const listaO = ordenes.filter(enModulo);
+  const va = (k: string) => (k.startsWith('o:') ? dentro.has(k) : !fuera.has(k));
+  const alternar = (k: string) => {
+    if (k.startsWith('o:')) setDentro(p => { const n = new Set(p); n.has(k) ? n.delete(k) : n.add(k); return n; });
+    else setFuera(p => { const n = new Set(p); n.has(k) ? n.delete(k) : n.add(k); return n; });
+  };
+  const marcarTodo = (si: boolean) => {
+    setFuera(si ? new Set() : new Set(listaE.map((m: any) => 'm:' + m.id)));
+    setDentro(si ? new Set(listaO.map((o: any) => 'o:' + o.id)) : new Set());
+  };
+  const vanE = listaE.filter((m: any) => va('m:' + m.id));
+  const vanO = listaO.filter((o: any) => va('o:' + o.id));
+  const nVan = vanE.length + vanO.length;
 
   const toggleModulo = (k: string) =>
     setModulos(p => (p.includes(k) ? p.filter(x => x !== k) : [...p, k]));
@@ -70,10 +149,15 @@ export default function ReporteEntregas({ companyId, cliente, onCerrar }: any) {
   const preset = (d: Date, hs: Date) => { setDesde(iso(d)); setHasta(iso(hs)); };
 
   async function generar() {
+    if (!nVan) { setError('Palomea al menos un renglón para mandar.'); return; }
     setBusy('generando'); setError(''); setAviso(''); setRep(null);
     const r = await fetch('/api/crm/reportes', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ company_id: companyId, desde, hasta, tipo: 'entregas', modulos }),
+      body: JSON.stringify({
+        company_id: companyId, desde, hasta, tipo: 'entregas', modulos,
+        // Exactamente lo palomeado: el documento no agrega ni quita nada.
+        seleccion: { mejoras: vanE.map((m: any) => m.id), ordenes: vanO.map((o: any) => o.id) },
+      }),
     }).then(x => x.json()).catch(() => null);
     setBusy('');
     if (!r || r.error) { setError(r?.error || 'No se pudo generar.'); return; }
@@ -102,13 +186,13 @@ export default function ReporteEntregas({ companyId, cliente, onCerrar }: any) {
   return (
     <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(20,18,32,.45)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div onClick={e => e.stopPropagation()} role="dialog" aria-label="Reporte de entregas" style={{
-        background: '#fff', borderRadius: 14, width: 'min(680px, 100%)', maxHeight: '88vh',
+        background: '#fff', borderRadius: 14, width: 'min(760px, 100%)', maxHeight: '88vh',
         display: 'flex', flexDirection: 'column', boxShadow: '0 22px 54px rgba(20,15,50,.25)',
       }}>
         <div style={{ padding: '16px 18px 12px', borderBottom: '1px solid #f1eff7' }}>
           <div style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-.015em' }}>Reporte de entregas</div>
           <div style={{ fontSize: '0.76rem', color: '#8a8590', marginTop: 2 }}>
-            {cliente} · lo entregado en el periodo, con el video de cada mejora.
+            {cliente} · lo entregado en el periodo y lo del taller listo para que el cliente lo revise, lo acepte y firme.
           </div>
         </div>
 
@@ -120,7 +204,7 @@ export default function ReporteEntregas({ companyId, cliente, onCerrar }: any) {
           <button style={S.btnG} onClick={() => preset(new Date(hoy.getFullYear(), hoy.getMonth() - 2, 1), hoy)}>Trimestre</button>
           <button style={S.btnG} onClick={() => preset(new Date(hoy.getFullYear(), 0, 1), hoy)}>Este año</button>
           <button style={{ ...S.btn, marginLeft: 'auto' }} onClick={generar} disabled={!!busy}>
-            {busy === 'generando' ? 'Generando…' : 'Generar'}
+            {busy === 'generando' ? 'Generando…' : nVan ? `Generar con ${nVan}` : 'Generar'}
           </button>
         </div>
 
@@ -156,11 +240,45 @@ export default function ReporteEntregas({ companyId, cliente, onCerrar }: any) {
             <div style={{ marginTop: 12, background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 8, padding: '9px 11px', fontSize: '0.77rem', color: '#C0554E', lineHeight: 1.5 }}>{error}</div>
           )}
 
-          {!rep && !busy && !error && (
-            <div style={{ padding: '26px 0', color: '#9c99a6', fontSize: '0.82rem', lineHeight: 1.65 }}>
-              Elige el periodo y dale a Generar. Salen las mejoras <b>entregadas</b> en esas fechas que
-              estén marcadas como «se le puede mostrar al cliente», cada una con su tipo, su fecha y —si
-              le pegaste la liga— su video.
+          {!rep && busy !== 'generando' && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                <span style={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#9c99a6' }}>Qué va en el reporte</span>
+                <span style={{ fontSize: '0.72rem', color: '#5B4BD6', fontWeight: 700 }}>{nVan} de {listaE.length + listaO.length}</span>
+                <button onClick={() => marcarTodo(true)} style={{ ...S.btnG, padding: '3px 9px', fontSize: '0.69rem', marginLeft: 'auto' }}>Todo</button>
+                <button onClick={() => marcarTodo(false)} style={{ ...S.btnG, padding: '3px 9px', fontSize: '0.69rem' }}>Nada</button>
+              </div>
+              {cargando && <div style={{ padding: '18px 0', color: '#9c99a6', fontSize: '0.8rem' }}>Juntando lo entregado y lo del taller…</div>}
+
+              {!cargando && (<>
+                <div style={S.grupo}>Entregado en el periodo <span style={S.grupoC}>{listaE.length}</span></div>
+                {!listaE.length && <div style={S.vacio}>Nada entregado entre esas fechas{modulos.length ? ' en esos módulos' : ''}.</div>}
+                {listaE.map((m: any) => (
+                  <Fila key={m.id} on={va('m:' + m.id)} onClick={() => alternar('m:' + m.id)}
+                    chip={TIPO_L[m.categoria] || 'mejora'} titulo={m.titulo} modulo={m.modulo}
+                    derecha={<>{m.cortesia && <span style={{ ...S.chip, background: '#EAF8F2', color: '#1E8A63' }}>sin costo</span>}
+                      <span style={{ fontSize: '0.7rem', color: '#a5a2af' }}>{fmtDate(m.fecha_entrega)}</span></>} />
+                ))}
+
+                <div style={S.grupo}>Del taller · para revisión y aceptación <span style={S.grupoC}>{listaO.length}</span></div>
+                {!listaO.length && <div style={S.vacio}>No hay órdenes vivas en el taller{modulos.length ? ' en esos módulos' : ''}.</div>}
+                {listaO.map((o: any) => {
+                  const tarde = o.fecha_prometida && o.fecha_prometida < iso(hoy);
+                  return (
+                    <Fila key={o.id} on={va('o:' + o.id)} onClick={() => alternar('o:' + o.id)}
+                      chip={o.tipo === 'falla' ? 'falla' : 'mejora'} chipColor={o.tipo === 'falla' ? ['#FEF0EF', '#C0554E'] : null}
+                      titulo={o.titulo} modulo={o.modulo} folio={o.folio}
+                      derecha={<>
+                        <span style={{ ...S.chip, background: o.etapa === 'lista' ? '#EAF8F2' : '#f4f3f7', color: o.etapa === 'lista' ? '#1E8A63' : '#77737f' }}>{ETAPA_L[o.etapa] || o.etapa}</span>
+                        {o.fecha_prometida && <span style={{ fontSize: '0.7rem', color: tarde ? '#C0554E' : '#a5a2af', fontWeight: tarde ? 700 : 400 }}>{fmtDate(o.fecha_prometida)}</span>}
+                      </>} />
+                  );
+                })}
+                <div style={{ marginTop: 10, fontSize: '0.72rem', color: '#9c99a6', lineHeight: 1.55 }}>
+                  Lo del taller sale en el documento como <b>«Para tu aceptación»</b>: el cliente lo marca como
+                  revisado y aceptado y firma al final. Lo que esté «lista para revisión» ya viene palomeado.
+                </div>
+              </>)}
             </div>
           )}
           {busy === 'generando' && <div style={{ padding: '26px 0', color: '#9c99a6', fontSize: '0.85rem' }}>Juntando las entregas…</div>}
@@ -201,6 +319,7 @@ export default function ReporteEntregas({ companyId, cliente, onCerrar }: any) {
                     <span style={{ fontSize: '0.8rem', fontWeight: 700, flex: 1, minWidth: 180, lineHeight: 1.4 }}>{e.titulo}</span>
                     <span style={{ ...S.chip, background: '#EEECFE', color: '#5B4BD6' }}>{TIPO_L[e.categoria] || 'mejora'}</span>
                     {e.cortesia && <span style={{ ...S.chip, background: '#EAF8F2', color: '#1E8A63' }}>sin costo</span>}
+                    {e.por_aceptar && <span style={{ ...S.chip, background: '#FFF4E5', color: '#9a6a10' }}>para aceptación</span>}
                     <span style={{ fontSize: '0.7rem', color: '#a5a2af', whiteSpace: 'nowrap' }}>{fmtDate(e.fecha)}</span>
                     {e.video
                       ? <a href={e.video} target="_blank" rel="noreferrer" style={{ ...S.chip, background: '#EEECFE', color: '#5B4BD6', textDecoration: 'none' }}>▶ video</a>

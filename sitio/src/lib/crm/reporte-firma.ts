@@ -21,6 +21,22 @@ export const LEYENDA_FIRMA: Record<string, { titulo: string; frase: string }> = 
   },
 };
 
+/** La frase que se firma EN ESTE reporte. Un reporte de entregas que trae
+ *  trabajo del taller para revisión (dueño, 1-oct-2026) no se firma como
+ *  «recibí»: se firma como aceptación, que es lo que se le está pidiendo. La
+ *  usan la página que la pinta y el API que la guarda, para que lo firmado sea
+ *  exactamente lo que se leyó. */
+export function leyendaDe(rep: { tipo?: string; hechos?: any } | null | undefined) {
+  if (!rep?.tipo) return null;
+  if (rep.tipo === 'entregas' && Number(rep.hechos?.por_aceptar || 0) > 0) {
+    return {
+      titulo: 'Revisión y aceptación',
+      frase: 'Recibí las entregas de este reporte, las revisé y las acepto.',
+    };
+  }
+  return LEYENDA_FIRMA[rep.tipo] || null;
+}
+
 /** Los que además se revisan punto por punto. El ejecutivo se firma entero. */
 export const CON_REVISADO = ['entregas', 'curso'];
 

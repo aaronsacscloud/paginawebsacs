@@ -8,13 +8,13 @@
 //
 // En papel, sin firmar, se imprime la línea para firmar a mano: el PDF que se
 // lleva a una junta también tiene que poder firmarse.
-import { LEYENDA_FIRMA, CON_REVISADO } from '../../lib/crm/reporte-firma';
+import { leyendaDe, CON_REVISADO } from '../../lib/crm/reporte-firma';
 const { rep, total = 0 } = Astro.props;
 
 /* Sin la columna (el código llegó antes que el SQL) no se ofrece firmar: un
    formulario que va a fallar es peor que no tenerlo. */
 const activo = !!rep && 'revisados' in rep;
-const ley = activo ? LEYENDA_FIRMA[rep.tipo] : null;
+const ley = activo ? leyendaDe(rep) : null;
 const f = rep.firma || null;
 const conRev = CON_REVISADO.includes(rep.tipo) && total > 0;
 const nRev = Object.keys(rep.revisados || {}).length;
