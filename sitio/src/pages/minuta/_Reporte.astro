@@ -26,6 +26,10 @@ const rep: any = conFirma
   ? { id: b.id, tipo: 'minuta', revisados: b.minuta_revisados || {}, firma: b.minuta_firma || null }
   : { id: b.id, tipo: 'minuta', firma: null };
 const revisados: Record<string, string> = rep.revisados || {};
+/* ?crm=1: la vista previa dentro del CRM. Se ve igual que la del cliente pero
+   sin su barra de botones (el CRM trae los suyos) y sin poder marcar ni
+   firmar: el consultor no acepta por el cliente. */
+const vistaCrm = Astro.url.searchParams.has('crm');
 const firmado = !!rep.firma;
 
 const reviso = String(m.reviso || '').split(/\r?\n+/).map(x => x.trim()).filter(Boolean);
@@ -77,7 +81,7 @@ const sinCosto = acuerdos.filter(a => /sin costo/i.test(a)).length;
 </head>
 <body>
 <div class="shell">
-  <div class="bar"><b>{cliente} · {fecha}</b>
+  <div class="bar" style={vistaCrm ? 'display:none' : undefined}><b>{cliente} · {fecha}</b>
     <button class="btn" onclick="window.print()">Descargar PDF</button>
     <a class="btn2" style="text-decoration:none" href={`https://wa.me/?text=${encodeURIComponent(`Minuta de nuestra sesión del ${fecha}: ${Astro.url.href}`)}`} target="_blank" rel="noreferrer">Compartir por WhatsApp</a>
   </div>
@@ -150,7 +154,7 @@ const sinCosto = acuerdos.filter(a => /sin costo/i.test(a)).length;
                 <div class="enc"><span class="tx">{a}</span>{e && <span class={`chip c-${e.c}`}>{e.l}</span>}</div>
                 {conFirma && (
                   <div class="pieit">
-                    <button type="button" class={`rev${hecho ? ' on' : ''}`} data-k={k} data-acuerdo="1" aria-pressed={hecho ? 'true' : 'false'} disabled={firmado}>
+                    <button type="button" class={`rev${hecho ? ' on' : ''}`} data-k={k} data-acuerdo="1" aria-pressed={hecho ? 'true' : 'false'} disabled={firmado || vistaCrm}>
                       <span class="rk" aria-hidden="true"></span><span class="rt">{hecho ? 'De acuerdo' : 'Estoy de acuerdo'}</span>
                     </button>
                   </div>
@@ -179,7 +183,7 @@ const sinCosto = acuerdos.filter(a => /sin costo/i.test(a)).length;
         <div class="graba"><a class="vid" href={b.grabacion_url} target="_blank" rel="noopener noreferrer"><span class="pl">▶</span> Ver la grabación de la sesión</a></div>
       )}
 
-      <Firma rep={rep} total={acuerdos.length} />
+      <div inert={vistaCrm ? true : undefined}><Firma rep={rep} total={acuerdos.length} /></div>
     </div>
 
     <div class="pieE">

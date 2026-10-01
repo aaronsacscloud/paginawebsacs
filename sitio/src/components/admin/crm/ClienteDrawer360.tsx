@@ -3962,10 +3962,16 @@ function MinutaReunion({ reunion, companyId, soloLectura, onCerrar, onListo }: a
   // se bloquea: una minuta a medio llenar que no se guarda se pierde entera.
   const sinFecha = propuestas.filter((_, i) => marcadas[i] && destinos[i] === 'taller' && !campos[i]?.fecha_prometida).length;
 
+  /* «Ver minuta» enseña EL DOCUMENTO que recibe el cliente (formato de los
+     reportes, 1-oct-2026), no los campos sueltos: lo que se revisa aquí tiene
+     que ser exactamente lo que se manda. Va en modo CRM: sin la barra de
+     botones del documento y sin poder marcar ni firmar por el cliente. */
+  const verDoc = !!soloLectura && minutaLlena(reunion.minuta);
+
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onCerrar(); }}
       style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 960, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: 560, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: verDoc ? 'min(960px, 96vw)' : 560, maxHeight: '90vh', height: verDoc ? '90vh' : undefined, display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '14px 17px', background: '#faf8ff', borderBottom: '1px solid #e6ddfa', borderRadius: '14px 14px 0 0', display: 'flex', alignItems: 'baseline', gap: 9 }}>
           <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, flex: 1 }}>
             {soloLectura ? 'Minuta' : 'Documentar la reunión'}
@@ -3974,7 +3980,11 @@ function MinutaReunion({ reunion, companyId, soloLectura, onCerrar, onListo }: a
           <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#9c99a6', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
         </div>
 
-        <div style={{ padding: '13px 17px', overflowY: 'auto', flex: 1 }}>
+        {verDoc && (
+          <iframe src={`/minuta/${reunion.id}?crm=1`} title="Minuta como la ve el cliente"
+            style={{ flex: 1, width: '100%', border: 'none', background: '#eef0f4' }} />
+        )}
+        {!verDoc && <div style={{ padding: '13px 17px', overflowY: 'auto', flex: 1 }}>
           {!soloLectura && (
             <div style={{ background: '#f7f4ff', border: '1.5px solid #e4dffb', borderRadius: 10, padding: '11px 12px', marginBottom: 13 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: pegando ? 7 : 0 }}>
@@ -4128,7 +4138,7 @@ function MinutaReunion({ reunion, companyId, soloLectura, onCerrar, onListo }: a
               De esta junta ya salieron {yaCreadas.length} mejora(s): {yaCreadas.map((y: any) => y.titulo).join(' · ')}
             </div>
           )}
-        </div>
+        </div>}
 
         <div style={{ padding: '12px 17px 15px', borderTop: '1px solid #f1eff7', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           {!soloLectura && (
