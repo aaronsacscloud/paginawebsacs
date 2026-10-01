@@ -377,7 +377,10 @@ export default function PagosTab() {
   // motivo aquí, se le persigue por teléfono cuando lo que hay que hacer es
   // pedirle otra tarjeta. Se toma el rebote más reciente de esa suscripción.
   const rechazos: any[] = mp?.rechazos || [];
-  const rechazoDe = (subscription_id: string) => rechazos
+  // Sin suscripción no hay rechazo que buscar: un renglón de COTIZACIÓN trae
+  // subscription_id null y empataba con cualquier rechazo de MP sin licencia
+  // (Vende Tu Closet salía con «Fondos insuficientes» que no eran suyos).
+  const rechazoDe = (subscription_id: string | null) => !subscription_id ? null : rechazos
     .filter(r => r.subscription_id === subscription_id)
     .sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)))[0] || null;
   const sinIdentificar: any[] = mp?.sin_identificar || [];
@@ -405,7 +408,15 @@ export default function PagosTab() {
     setTimeout(() => setToast(''), 6000);
   };
 
-  const abonar = (subscription_id: string) => { setPagoPrefill({ subscription_id }); setShowPago(true); };
+  /* «Abonar» sabe de dónde viene la deuda (1-oct-2026). Un renglón de
+     COTIZACIÓN (parcialidad de un trabajo único) se abona a ESA cotización;
+     antes abría el registro de suscripción y pedía elegir una licencia que no
+     tenía nada que ver con el cobro. */
+  const [abonoCot, setAbonoCot] = useState<any>(null);
+  const abonar = (c: any) => {
+    if (c?.quote_id && !c?.subscription_id) { setAbonoCot(c); return; }
+    setPagoPrefill({ subscription_id: c?.subscription_id }); setShowPago(true);
+  };
 
   if (loading && !summary) return <Cargando texto="Cargando pagos…" />;
 
@@ -451,7 +462,7 @@ export default function PagosTab() {
             {vencidas.map((v: any) => {
               const tel = String(v.whatsapp || v.telefono || '').replace(/[^\d+]/g, '');
               return (
-                <div key={'v' + v.subscription_id} className="m-row" onClick={() => abonar(v.subscription_id)}>
+                <div key={'v' + (v.subscription_id || v.quote_id + v.vencida_desde)} className="m-row" onClick={() => abonar(v)}>
                   <div className="m-tx">
                     <div className="m-n1">
                       {cased(v.empresa)}
@@ -475,7 +486,7 @@ export default function PagosTab() {
             })}
             {proxOrden.length > 0 && <div className="m-sec">Próximas</div>}
             {proxOrden.map((c: any) => (
-              <div key={'p' + c.subscription_id} className="m-row" onClick={() => abonar(c.subscription_id)}>
+              <div key={'p' + (c.subscription_id || c.quote_id + c.fecha)} className="m-row" onClick={() => abonar(c)}>
                 <div className="m-tx">
                   <div className="m-n1">{cased(c.empresa)}</div>
                   <div className="m-n2">{c.plan || '—'}</div>
@@ -622,7 +633,7 @@ export default function PagosTab() {
         ) : isMobile ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {vencidasVis.map((v: any) => (
-              <div key={'v' + v.subscription_id} style={{ border: '1px solid #f0e0e0', borderRadius: 10, padding: 12, background: '#fffafa' }}>
+              <div key={'v' + (v.subscription_id || v.quote_id + v.vencida_desde)} style={{ border: '1px solid #f0e0e0', borderRadius: 10, padding: 12, background: '#fffafa' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                   <span style={moraBadge(v.dias_vencida)}>Vencido {v.dias_vencida}d</span>
                   <span style={{ marginLeft: 'auto', fontWeight: 800, fontSize: '1rem' }}>{fmt(v.monto)}</span>
@@ -634,13 +645,13 @@ export default function PagosTab() {
                   <div style={{ fontSize: '0.72rem', color: '#b93333', marginTop: 4 }}>🔁 Mercado Pago no pudo cobrarle: {r.motivo || 'tarjeta rechazada'}</div>
                 ) : null; })()}
                 <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                  <button onClick={() => abonar(v.subscription_id)} style={{ ...S.btnSmall, flex: 1, minHeight: 44, background: '#2AB5A0', color: '#fff', border: 'none' }}>Abonar</button>
+                  <button onClick={() => abonar(v)} style={{ ...S.btnSmall, flex: 1, minHeight: 44, background: '#2AB5A0', color: '#fff', border: 'none' }}>Abonar</button>
                   <BotonAccionesCobro cobro={v} onAbrir={setMenuCobro} />
                 </div>
               </div>
             ))}
             {proximosVis.map((c: any) => (
-              <div key={'p' + c.subscription_id} style={{ border: '1px solid #eef0f4', borderRadius: 10, padding: 12 }}>
+              <div key={'p' + (c.subscription_id || c.quote_id + c.fecha)} style={{ border: '1px solid #eef0f4', borderRadius: 10, padding: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                   <span style={{ background: '#eef4ff', color: '#2563eb', padding: '2px 8px', borderRadius: 6, fontWeight: 700, fontSize: 11 }}>Próximo</span>
                   <span style={{ marginLeft: 'auto', fontWeight: 800, fontSize: '1rem' }}>{fmt(c.monto)}</span>
@@ -649,7 +660,7 @@ export default function PagosTab() {
                 <div style={{ fontSize: '0.75rem', color: '#999' }}>{c.plan} · {c.ciclo}{c.cuenta && c.cuenta !== c.empresa ? ` · ${c.cuenta}` : ''} · {fmtDate(c.fecha)}</div>
                 <TelefonoCobro cobro={c} onFicha={setDrawerCompany} />
                 <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                  <button onClick={() => abonar(c.subscription_id)} style={{ ...S.btnSmall, flex: 1, minHeight: 44, background: '#eef7f5', color: '#2AB5A0', border: '1px solid #cdeae4' }}>Abonar</button>
+                  <button onClick={() => abonar(c)} style={{ ...S.btnSmall, flex: 1, minHeight: 44, background: '#eef7f5', color: '#2AB5A0', border: '1px solid #cdeae4' }}>Abonar</button>
                   <BotonAccionesCobro cobro={c} onAbrir={setMenuCobro} />
                 </div>
               </div>
@@ -661,7 +672,7 @@ export default function PagosTab() {
             <thead><tr>{['Estado', 'Empresa', 'Concepto', 'Vence', 'Monto', ''].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
             <tbody>
               {vencidasVis.map((v: any) => (
-                <tr key={'v' + v.subscription_id}>
+                <tr key={'v' + (v.subscription_id || v.quote_id + v.vencida_desde)}>
                   <td style={S.td}><span style={moraBadge(v.dias_vencida)}>Vencido {v.dias_vencida}d</span></td>
                   <td style={S.td}>{v.empresa}{v.cuenta && v.cuenta !== v.empresa ? <div style={{ fontSize: '0.7rem', color: '#999' }}>{v.cuenta}</div> : null}
                     <TelefonoCobro cobro={v} onFicha={setDrawerCompany} /></td>
@@ -673,13 +684,13 @@ export default function PagosTab() {
                   <td style={{ ...S.td, color: '#b93333' }}>{fmtDate(v.vencida_desde)}</td>
                   <td style={{ ...S.td, fontWeight: 700 }}>{fmt(v.monto)}</td>
                   <td style={S.td}><div style={{ display: 'flex', gap: 6 }}>
-                    <button onClick={() => abonar(v.subscription_id)} style={{ ...S.btnSmall, background: '#2AB5A0', color: '#fff', border: 'none' }}>Abonar</button>
+                    <button onClick={() => abonar(v)} style={{ ...S.btnSmall, background: '#2AB5A0', color: '#fff', border: 'none' }}>Abonar</button>
                     <BotonAccionesCobro cobro={v} onAbrir={setMenuCobro} />
                   </div></td>
                 </tr>
               ))}
               {proximosVis.map((c: any) => (
-                <tr key={'p' + c.subscription_id}>
+                <tr key={'p' + (c.subscription_id || c.quote_id + c.fecha)}>
                   <td style={S.td}><span style={{ background: '#eef4ff', color: '#2563eb', padding: '2px 8px', borderRadius: 6, fontWeight: 700, fontSize: 11 }}>Próximo</span></td>
                   <td style={S.td}>{c.empresa}{c.cuenta && c.cuenta !== c.empresa ? <div style={{ fontSize: '0.7rem', color: '#999' }}>{c.cuenta}</div> : null}
                     <TelefonoCobro cobro={c} onFicha={setDrawerCompany} /></td>
@@ -687,7 +698,7 @@ export default function PagosTab() {
                   <td style={S.td}>{fmtDate(c.fecha)}</td>
                   <td style={{ ...S.td, fontWeight: 700 }}>{fmt(c.monto)}</td>
                   <td style={S.td}><div style={{ display: 'flex', gap: 6 }}>
-                    <button onClick={() => abonar(c.subscription_id)} style={{ ...S.btnSmall, background: '#eef7f5', color: '#2AB5A0', border: '1px solid #cdeae4' }}>Abonar</button>
+                    <button onClick={() => abonar(c)} style={{ ...S.btnSmall, background: '#eef7f5', color: '#2AB5A0', border: '1px solid #cdeae4' }}>Abonar</button>
                     <BotonAccionesCobro cobro={c} onAbrir={setMenuCobro} />
                   </div></td>
                 </tr>
@@ -1041,7 +1052,7 @@ export default function PagosTab() {
               }, wa ? 'Con el aviso de vencimiento' : 'El contacto no tiene WhatsApp', !c.subscription_id || !wa)}
               {item('Link de pago', () => linkPago(c.subscription_id, c.monto), 'Genera un link para cobrarle')}
               <div style={{ height: 1, background: '#f2f0f7', margin: '4px 8px' }} />
-              {item('Registrar pago', () => abonar(c.subscription_id), 'Lo mismo que "Abonar"')}
+              {item('Registrar pago', () => abonar(c), 'Lo mismo que "Abonar"')}
               {item('Registrar gestión', () => setGestionPago({
                 es_cobro: true, subscription_id: c.subscription_id, company_id: compId,
                 monto: c.monto, fecha: vence, empresa: cliente,
@@ -1056,6 +1067,7 @@ export default function PagosTab() {
         onListo={(m) => { setToast(m); setTimeout(() => setToast(''), 4000); }} />}
 
       </>)}
+      {abonoCot && <AbonarCotizacion cobro={abonoCot} onClose={() => setAbonoCot(null)} onDone={() => { setAbonoCot(null); loadAll(); }} />}
       {showPago && <RegistrarPagoModal subs={subs as any} prefill={pagoPrefill} onClose={() => { setShowPago(false); setPagoPrefill(null); }} onDone={() => { setShowPago(false); setPagoPrefill(null); loadAll(); }} />}
       {waCobranza && <PanelCobranzaWA tipo={waCobranza} onCerrar={() => setWaCobranza(null)} onListo={() => loadBase()} />}
       {drawerCompany && <ClienteDrawer360 companyId={drawerCompany} onClose={() => setDrawerCompany(null)} onChanged={loadAll} />}
@@ -1063,3 +1075,84 @@ export default function PagosTab() {
     </div>
   );
 }
+
+/* ─────────── Abonar a una cotización ───────────
+ * Para los renglones de «Por cobrar» que salen de una cotización (anticipo,
+ * parcialidad, liquidación): el pago se registra como ABONO de esa
+ * cotización —/api/revenue/quotes/pagos, el mismo que usa la ficha de la
+ * cotización— con el monto de la parcialidad ya sugerido. No toca
+ * suscripciones ni ARR: es un trabajo de pago único. La cotización pasa a
+ * pagada sola cuando los abonos cubren el total. */
+function AbonarCotizacion({ cobro, onClose, onDone }: any) {
+  const [monto, setMonto] = useState(String(Math.round(Number(cobro.monto || 0) * 100) / 100));
+  const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
+  const [metodo, setMetodo] = useState('transferencia');
+  const [referencia, setReferencia] = useState('');
+  const [nota, setNota] = useState('');
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState('');
+  const total = Number(cobro.quote_total || 0), abonado = Number(cobro.quote_abonado || 0);
+  const saldo = Math.max(0, total - abonado);
+  const money = (n: number) => '$' + Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  async function guardar() {
+    const m = parseFloat(monto);
+    if (!(m > 0)) { setError('El monto tiene que ser mayor a cero.'); return; }
+    if (total > 0 && m > saldo + 0.01) { setError(`Es más de lo que falta por pagar de la cotización (${money(saldo)}).`); return; }
+    setError(''); setGuardando(true);
+    const r = await fetch('/api/revenue/quotes/pagos', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quote_id: cobro.quote_id, fecha, monto: m, metodo, referencia: referencia.trim() || null, nota: nota.trim() || cobro.plan || null }),
+    }).then(x => x.json()).catch(() => ({ error: 'Error de red al registrar el abono.' }));
+    setGuardando(false);
+    if (!r || r.error) { setError(r?.error || 'No se pudo registrar el abono.'); return; }
+    onDone();
+  }
+
+  const L = { fontSize: '0.78rem', fontWeight: 700, color: '#555', marginBottom: 5 } as const;
+  const I = { border: '1px solid #dcdce2', borderRadius: 9, padding: '10px 12px', fontSize: '0.88rem', width: '100%', fontFamily: 'inherit', background: '#fff', boxSizing: 'border-box' as const };
+  return (
+    <div onClick={() => !guardando && onClose()} style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} role="dialog" aria-label="Abonar a la cotización"
+        style={{ background: '#fff', borderRadius: 16, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: 'min(520px, 100%)', maxHeight: '92vh', overflowY: 'auto', padding: '22px 24px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800 }}>Abonar a la cotización</div>
+            <div style={{ fontSize: '0.8rem', color: '#777', marginTop: 3 }}>{cobro.nombre_comercial || cobro.empresa}</div>
+          </div>
+          <button onClick={onClose} aria-label="Cerrar" style={{ border: 'none', background: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#888' }}>✕</button>
+        </div>
+
+        <div style={{ background: '#f7f4ff', border: '1px solid #e4dbfb', borderRadius: 11, padding: '11px 13px', marginTop: 14 }}>
+          <div style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#5B4BD6' }}>Se abona a</div>
+          <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#241d43', marginTop: 3 }}>{cobro.plan}</div>
+          {total > 0 && (
+            <div style={{ fontSize: '0.76rem', color: '#5b4a91', marginTop: 4 }}>
+              Cotización {money(total)} · abonado {money(abonado)} · falta {money(saldo)}
+            </div>
+          )}
+          <div style={{ fontSize: '0.72rem', color: '#8a80c8', marginTop: 4 }}>Pago único: no cambia suscripciones ni ARR.</div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14 }}>
+          <div><div style={L}>Monto (MXN)</div><input type="number" value={monto} onChange={e => setMonto(e.target.value)} style={I} /></div>
+          <div><div style={L}>Fecha</div><input type="date" value={fecha} onChange={e => setFecha(e.target.value)} style={I} /></div>
+          <div><div style={L}>Método</div>
+            <select value={metodo} onChange={e => setMetodo(e.target.value)} style={I}>
+              {[['transferencia', 'Transferencia'], ['efectivo', 'Efectivo'], ['tarjeta', 'Tarjeta'], ['oxxo', 'OXXO'], ['mercadopago', 'Mercado Pago'], ['stripe', 'Stripe'], ['otro', 'Otro']].map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            </select></div>
+          <div><div style={L}>Referencia</div><input value={referencia} onChange={e => setReferencia(e.target.value)} placeholder="SPEI, folio…" style={I} /></div>
+        </div>
+        <div style={{ marginTop: 12 }}><div style={L}>Nota</div>
+          <textarea value={nota} onChange={e => setNota(e.target.value)} rows={2} placeholder={cobro.plan || ''} style={{ ...I, resize: 'vertical' }} /></div>
+
+        {error && <div style={{ marginTop: 10, color: '#C0554E', fontSize: '0.82rem' }}>{error}</div>}
+        <button onClick={guardar} disabled={guardando}
+          style={{ marginTop: 16, width: '100%', background: '#1E8A63', color: '#fff', border: 'none', borderRadius: 10, padding: '12px', fontSize: '0.92rem', fontWeight: 800, cursor: guardando ? 'wait' : 'pointer', opacity: guardando ? .6 : 1 }}>
+          {guardando ? 'Registrando…' : 'Registrar abono a la cotización'}
+        </button>
+      </div>
+    </div>
+  );
+}
+

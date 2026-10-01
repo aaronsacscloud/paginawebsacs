@@ -33,7 +33,7 @@ const _GET: APIRoute = async () => {
        lo sabía. Recuperación sí las veía, porque lee `planDeCotizacion`; aquí
        se lee la misma función para que las dos digan lo mismo. */
     supabase.from('quotes')
-      .select('id, numero, notas, company_id, companies(id, nombre, nombre_comercial, sacs_account, contacts(nombre, whatsapp, telefono))')
+      .select('id, numero, total, notas, company_id, companies(id, nombre, nombre_comercial, sacs_account, contacts(nombre, whatsapp, telefono))')
       .in('estado', ['accepted', 'sent', 'paid', 'expired']).limit(500),
     supabase.from('payments').select('quote_id, monto').not('quote_id', 'is', null).neq('estado', 'reembolsado'),
   ]);
@@ -180,6 +180,9 @@ const _GET: APIRoute = async () => {
     const ct = co.contacts?.[0] || {};
     const baseCot = {
       subscription_id: null, quote_id: q.id, tipo: 'parcialidad',
+      /* Lo que el modal de «Abonar» necesita para registrar el pago EN la
+         cotización —y no pedir una suscripción que no existe— (1-oct-2026). */
+      quote_numero: q.numero || null, quote_total: Number(q.total || 0), quote_abonado: r2(abonadoCot[q.id] || 0),
       ciclo: 'parcialidad', estado: 'pendiente_pago',
       empresa: co.nombre_comercial || co.nombre || '—',
       cuenta: co.sacs_account || co.nombre || null, sacs_account: co.sacs_account || null,
