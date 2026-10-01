@@ -2,6 +2,7 @@
 import ProductLayout from '../../layouts/ProductLayout.astro';
 import FinalCTA from '../../components/FinalCTA.astro';
 import PremiumTemplates from '../../components/squarespace/PremiumTemplates.astro';
+import ProbadorVirtual from '../../components/squarespace/ProbadorVirtual.astro';
 import KeyPointsRow from '../../components/squarespace/KeyPointsRow.astro';
 import ZoomTypo from '../../components/ZoomTypo.astro';
 import BentoGrid from '../../components/squarespace/BentoGrid.astro';
@@ -872,6 +873,9 @@ const storeTestimonials = [
     subtitle="Plantillas pensadas para marcas de moda — ropa, calzado, sportswear y trajes de baño. Editor visual sobre una base que ya está afinada para vender."
     templates={premiumTemplates}
   />
+
+  <!-- Especializado en moda (1-oct-2026): el probador virtual, paso a paso y a pantalla completa -->
+  <ProbadorVirtual />
 
   <ZoomTypo
     text="Tu negocio no para,"
