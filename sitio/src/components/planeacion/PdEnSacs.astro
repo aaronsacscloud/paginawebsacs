@@ -1,0 +1,306 @@
+---
+/**
+ * «Así se ve en Sacs» (2-oct-2026, pedido del dueño: «agrega una sección completa donde el usuario vea cómo se ve
+ * realmente en Sacs, súper interactiva y moderna»). Un recorrido guiado por las pantallas REALES del módulo Demand
+ * Planning: en escritorio, una ventana con la captura que se desplaza y resalta la zona de cada paso; en el teléfono,
+ * un marco de celular que se desliza. Avanza solo mientras está en pantalla y se detiene en cuanto el visitante toca.
+ * «Ver la pantalla completa» abre la captura entera para explorarla.
+ *
+ * Capturas: sistema local (sacs3) con la red Polanco Boutique — demo ficticia con fotos gpt-image —, sin la red de
+ * MAJA (es un prospecto: nada suyo en la web) y con un proveedor ficticio. Script: scripts/planeacion-capturas/.
+ * Forecasting no sale: en el sistema todavía dice «en construcción» (nota al pie).
+ */
+const D = '/images/planeacion/sacs/';
+const PANTALLAS: Record<string, { h: number; ch: number; t: string; alt: string }> = {
+  resumen: { h: 1760, ch: 3791, t: 'Gestor de reglas · Resumen', alt: 'Pantalla Gestor de reglas de Sacs: la configuración al 86 %, las preguntas pendientes del diccionario y cómo decide Sacs cuando a una tienda le falta mercancía' },
+  reglas: { h: 1400, ch: 3791, t: 'Gestor de reglas · Reglas', alt: 'Pantalla de reglas de Sacs: cada regla de compra con su número y su modo Automático, Te pregunta o Apagada' },
+  temporadas: { h: 1300, ch: 3791, t: 'Temporadas', alt: 'Pantalla Temporadas de Sacs: una tarjeta por temporada o evento con el paso en que va' },
+  mesa: { h: 1400, ch: 2591, t: 'Temporadas · Mesa de la nivelación', alt: 'Mesa de una nivelación en Sacs: modelos, piezas, costo y curvas rotas, y cada modelo con su curva de tallas para aprobar' },
+};
+// zona a resaltar (x0, y0, x1, y1 en px de la captura de 1440) y cuánto se desplaza la ventana (ty, px)
+const PASOS = [
+  { p: 'resumen', ty: 132, r: [336, 280, 1032, 984], t: 'Tu diccionario, al 86 %', d: 'Sacs dice qué le falta saber de tu catálogo y te lo pregunta con un clic.' },
+  { p: 'resumen', ty: 750, r: [336, 1008, 1402, 1491], t: 'Cómo decide cuando falta mercancía', d: 'Primero espera lo que viene; luego traspasa, resurte del CEDIS y, al final, compra.' },
+  { p: 'reglas', ty: 316, r: [336, 384, 1402, 1248], t: 'Cada regla, en una línea', d: 'Automático, Te pregunta o Apagada. El número lo pones tú.' },
+  { p: 'temporadas', ty: 252, r: [336, 365, 1402, 1139], t: 'Una tarjeta por temporada', d: 'Buen Fin, Navidad, Reyes: cada una con el paso en que va.' },
+  { p: 'mesa', ty: 0, r: [326, 243, 1411, 376], t: 'La nivelación, en cifras', d: 'Modelos, piezas, costo y curvas rotas: de 14 a 0.' },
+  { p: 'mesa', ty: 364, r: [326, 480, 1411, 1248], t: 'Apruebas modelo por modelo', d: 'Con la curva de tallas de la red y de cada grupo de tiendas.' },
+];
+const pct = (n: number) => +(n).toFixed(3);
+const CALC = PASOS.map((s, i) => {
+  const h = PANTALLAS[s.p].h, [x0, y0, x1, y1] = s.r, M = 10;
+  return { i, p: s.p, ty: pct((s.ty / h) * 100), l: pct(((x0 - M) / 1440) * 100), tp: pct(((y0 - M) / h) * 100), w: pct(((x1 - x0 + 2 * M) / 1440) * 100), hh: pct(((y1 - y0 + 2 * M) / h) * 100) };
+});
+const primero = (p: string) => CALC.find((c) => c.p === p)!;
+const dos = (n: number) => String(n).padStart(2, '0');
+const PALABRA = Array.from({ length: 4 }, () => 'EN SACS').join(' · ');
+---
+<section class="pda ens pd-azul" id="pd-ensacs" aria-labelledby="pd-ensacs-h" data-pasos={JSON.stringify(CALC)}>
+  <div class="pda-fondo" aria-hidden="true"><span>{PALABRA}</span><span>{PALABRA}</span></div>
+  <header class="pda-cab">
+    <p class="pda-k">En Sacs · Demand Planning</p>
+    <h2 class="pda-h" id="pd-ensacs-h">Así se ve en Sacs.</h2>
+    <p class="pda-fecha">Las pantallas reales del módulo, con una boutique de ejemplo. Toca un paso o deja que corra solo.</p>
+  </header>
+
+  <div class="ens-grid">
+    <ol class="ens-pasos" aria-label="Recorrido por el módulo">
+      {PASOS.map((s, i) => (
+        <li class:list={['ens-paso', { 'is-on': i === 0 }]} data-i={i}>
+          <button type="button" class="ens-paso-b" data-ens-paso={i} aria-current={i === 0 ? 'step' : undefined}>
+            <span class="ens-n">{dos(i + 1)}</span>
+            <span class="ens-txt">
+              <span class="ens-donde">{PANTALLAS[s.p].t}</span>
+              <span class="ens-t">{s.t}</span>
+              <span class="ens-d">{s.d}</span>
+            </span>
+          </button>
+          <span class="ens-avance" aria-hidden="true"><i></i></span>
+        </li>
+      ))}
+    </ol>
+
+    <div class="ens-escena">
+      <!-- escritorio: la ventana con la captura -->
+      <figure class="ens-ventana">
+        <div class="ens-barra" aria-hidden="true"><i></i><i></i><i></i><span>sacs · Demand Planning · <b data-ens-pantalla>{PANTALLAS.resumen.t}</b></span></div>
+        <div class="ens-vista">
+          {Object.entries(PANTALLAS).map(([id, pa]) => {
+            const c = primero(id);
+            return (
+              <div class:list={['ens-lienzo', { 'is-on': id === 'resumen' }]} data-pantalla={id} style={`--ty:${c.ty}`}>
+                <img src={`${D}${id}.webp`} width="1440" height={pa.h} alt={pa.alt} loading="lazy" decoding="async" />
+                <span class="ens-foco" data-n={c.i + 1} style={`left:${c.l}%;top:${c.tp}%;width:${c.w}%;height:${c.hh}%`}></span>
+              </div>
+            );
+          })}
+        </div>
+        <figcaption class="sr-only" aria-live="polite" data-ens-vivo>{PASOS[0].t}: {PASOS[0].d}</figcaption>
+      </figure>
+
+      <!-- teléfono: el marco con un recorte por paso -->
+      <div class="ens-tel" data-ens-tel>
+        <div class="ens-tel-vista">
+          {PASOS.map((s, i) => <img class:list={[{ 'is-on': i === 0 }]} src={`${D}cel-${i + 1}.webp`} width="780" height="1520" alt={PANTALLAS[s.p].alt} loading="lazy" decoding="async" data-i={i} />)}
+        </div>
+      </div>
+      <div class="ens-pie-tel" aria-hidden="true">
+        <p class="ens-tel-n"><b data-ens-n>01</b> / {dos(PASOS.length)}</p>
+        <p class="ens-tel-t" data-ens-t>{PASOS[0].t}</p>
+        <p class="ens-tel-d" data-ens-d>{PASOS[0].d}</p>
+      </div>
+
+      <div class="ens-ctl">
+        <div class="ens-flechas">
+          <button type="button" class="ens-flecha" data-ens-mueve="-1" aria-label="Paso anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg></button>
+          <button type="button" class="ens-flecha" data-ens-mueve="1" aria-label="Paso siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+        <button type="button" class="ens-completa" data-ens-completa>Ver la pantalla completa
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+        </button>
+      </div>
+
+      <dialog class="ens-dlg" id="ens-dlg" aria-labelledby="ens-dlg-t">
+        <div class="ens-dlg-cab">
+          <p class="ens-dlg-t" id="ens-dlg-t" data-ens-dlg-t>{PANTALLAS.resumen.t}</p>
+          <button type="button" class="ens-dlg-x" data-ens-cierra aria-label="Cerrar la pantalla completa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        </div>
+        <div class="ens-dlg-cuerpo"><img alt="" width="1440" height="3791" decoding="async" data-ens-dlg-img /></div>
+      </dialog>
+    </div>
+  </div>
+
+  <p class="pda-nota">Capturas del módulo Demand Planning de Sacs (octubre de 2026) con una boutique de ejemplo. Forecasting, su segunda sección, está en construcción y no sale en el recorrido.</p>
+
+</section>
+
+<style>
+  .ens-grid { display: grid; gap: 36px; margin-top: 56px; }
+
+  /* ── los pasos: renglones entre filetes, el activo con su descripción y su avance ── */
+  .ens-pasos { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--pd-filete); }
+  .ens-paso { position: relative; border-bottom: 1px solid var(--pd-filete); }
+  .ens-paso-b { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; width: 100%; padding: 18px 0 20px; border: 0; background: none; color: #fff; text-align: left; font: inherit; cursor: pointer; }
+  .ens-paso-b:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+  .ens-n { font: 700 24px/1 var(--pd-clash); color: #fff; opacity: 0.55; transition: opacity 0.3s; }
+  .ens-txt { display: grid; gap: 6px; min-width: 0; }
+  .ens-donde { font: 600 10.5px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: #fff; }
+  .ens-t { font: 700 19px/1.25 var(--font-display); letter-spacing: -0.01em; color: #fff; }
+  .ens-d { display: none; font: 500 15px/1.5 var(--font-body); color: #fff; max-width: 34ch; }
+  .ens-paso-b:hover .ens-t { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
+  .ens-paso.is-on .ens-n { opacity: 1; }
+  .ens-paso.is-on .ens-d { display: block; }
+  .ens-avance { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; overflow: hidden; }
+  .ens-avance i { display: block; width: 100%; height: 100%; background: #fff; transform: scaleX(0); transform-origin: 0 50%; }
+  .ens.is-corre .ens-paso.is-on .ens-avance i { animation: ensAvance var(--ens-dur, 6.5s) linear forwards; }
+  .ens.is-quieto .ens-paso.is-on .ens-avance i { transform: scaleX(1); }
+  @keyframes ensAvance { to { transform: scaleX(1); } }
+
+  /* ── la ventana (escritorio): la captura real, que se desplaza y resalta la zona del paso ── */
+  .ens-ventana { display: none; margin: 0; border-radius: 12px; overflow: hidden; background: #F4F5F9; box-shadow: 0 50px 90px -50px rgba(4, 12, 48, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.25); }
+  .ens-barra { display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 14px; background: #E9ECF2; border-bottom: 1px solid #DCE0E8; }
+  .ens-barra i { width: 10px; height: 10px; border-radius: 50%; background: #CDD2DC; }
+  .ens-barra span { margin-left: 10px; font: 500 12px/1 var(--font-body); color: #5B6270; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ens-barra b { font-weight: 600; color: #20242C; }
+  .ens-vista { position: relative; aspect-ratio: 1440 / 1000; overflow: hidden; background: #F7F8FB; cursor: zoom-in; }
+  .ens-lienzo { position: absolute; left: 0; right: 0; top: 0; opacity: 0; visibility: hidden; transform: translateY(calc(var(--ty) * -1%)); transition: transform 0.95s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s ease, visibility 0s linear 0.5s; }
+  .ens-lienzo.is-on { opacity: 1; visibility: visible; transition: transform 0.95s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s ease, visibility 0s; }
+  .ens-lienzo img { display: block; width: 100%; height: auto; max-width: none; }
+  /* el foco: aclara su zona y oscurece lo demás; el número del paso en la esquina */
+  .ens-foco { position: absolute; border-radius: 10px; box-shadow: 0 0 0 2px #4B7BE5, 0 0 0 200vmax rgba(10, 22, 72, 0.32); pointer-events: none; transition: left 0.75s cubic-bezier(0.22, 1, 0.36, 1), top 0.75s cubic-bezier(0.22, 1, 0.36, 1), width 0.75s cubic-bezier(0.22, 1, 0.36, 1), height 0.75s cubic-bezier(0.22, 1, 0.36, 1); }
+  .ens-foco::before { content: attr(data-n); position: absolute; left: -15px; top: -15px; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #4B7BE5; color: #fff; font: 700 14px/1 var(--pd-clash); box-shadow: 0 0 0 3px #fff; }
+
+  /* ── el teléfono ── */
+  .ens-tel { position: relative; width: min(320px, 82vw); margin: 0 auto; padding: 9px; border-radius: 38px; background: #0E0E10; box-shadow: 0 40px 70px -40px rgba(4, 12, 48, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.12); touch-action: pan-y; }
+  .ens-tel-vista { position: relative; aspect-ratio: 390 / 760; border-radius: 30px; overflow: hidden; background: #fff; }
+  .ens-tel-vista img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; max-width: none; opacity: 0; transition: opacity 0.45s ease; }
+  .ens-tel-vista img.is-on { opacity: 1; }
+  .ens-pie-tel { margin: 22px auto 0; max-width: 34ch; text-align: center; }
+  .ens-pie-tel p { margin: 0; }
+  .ens-tel-n { font: 600 12px/1.3 var(--font-display); letter-spacing: 0.16em; color: #fff; }
+  .ens-tel-n b { font: 700 14px/1 var(--pd-clash); }
+  .ens-tel-t { margin-top: 8px !important; font: 700 21px/1.2 var(--font-display); letter-spacing: -0.01em; color: #fff; }
+  .ens-tel-d { margin-top: 6px !important; font: 500 15px/1.5 var(--font-body); color: #fff; }
+
+  /* ── controles ── */
+  .ens-ctl { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 22px; }
+  .ens-flechas { display: flex; gap: 8px; }
+  .ens-flecha { display: grid; place-items: center; width: 46px; height: 46px; border: 1.5px solid rgba(255, 255, 255, 0.7); border-radius: 50%; background: none; color: #fff; cursor: pointer; transition: background 0.2s, color 0.2s; }
+  .ens-flecha svg { width: 18px; height: 18px; max-width: none; }
+  .ens-flecha:hover { background: #fff; color: #2F55C4; }
+  .ens-flecha:focus-visible, .ens-completa:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+  .ens-completa { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 0 2px; border: 0; border-bottom: 1.5px solid #fff; background: none; color: #fff; font: 700 15px/1 var(--font-display); cursor: pointer; }
+  .ens-completa svg { width: 16px; height: 16px; max-width: none; }
+  .ens-completa:hover { opacity: 0.8; }
+
+  /* ── la pantalla completa ── */
+  .ens-dlg { width: min(1180px, 96vw); max-width: none; height: 92vh; max-height: none; margin: auto; padding: 0; border: 0; border-radius: 14px; background: #F4F5F9; color: #1A1A1A; overflow: hidden; }
+  .ens-dlg::backdrop { background: rgba(10, 22, 72, 0.72); }
+  .ens-dlg[open] { display: flex; flex-direction: column; }
+  .ens-dlg-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px 10px 20px; background: #E9ECF2; border-bottom: 1px solid #DCE0E8; }
+  .ens-dlg-t { margin: 0; font: 600 13px/1.3 var(--font-display); color: #20242C; }
+  .ens-dlg-x { display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: none; color: #20242C; cursor: pointer; }
+  .ens-dlg-x svg { width: 20px; height: 20px; max-width: none; }
+  .ens-dlg-x:hover { background: #DCE0E8; }
+  .ens-dlg-cuerpo { flex: 1; overflow: auto; overscroll-behavior: contain; }
+  .ens-dlg-cuerpo img { display: block; width: 100%; height: auto; max-width: none; }
+
+  /* teléfono y tableta: el marco del celular con su texto debajo; la lista de pasos se esconde */
+  @media (max-width: 1023px) {
+    .ens-pasos { display: none; }
+    .ens-ctl { justify-content: center; gap: 22px; }
+    .ens-completa { display: none; }
+  }
+  /* escritorio: la lista a la izquierda y la ventana a la derecha */
+  @media (min-width: 1024px) {
+    .ens-grid { grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.6fr); gap: 56px; align-items: start; }
+    .ens-ventana { display: block; }
+    .ens-tel, .ens-pie-tel { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ens *, .ens *::before { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<script>
+  import { ph } from '../../scripts/planeacion/estado';
+
+  (() => {
+    const sec = document.getElementById('pd-ensacs');
+    if (!sec) return;
+    type Paso = { i: number; p: string; ty: number; l: number; tp: number; w: number; hh: number };
+    const P: Paso[] = JSON.parse(sec.dataset.pasos || '[]');
+    if (!P.length) return;
+    const N = P.length, DUR = 6500;
+    const items = Array.from(sec.querySelectorAll<HTMLElement>('.ens-paso'));
+    const botones = Array.from(sec.querySelectorAll<HTMLButtonElement>('[data-ens-paso]'));
+    const lienzos = new Map(Array.from(sec.querySelectorAll<HTMLElement>('.ens-lienzo')).map((el) => [el.dataset.pantalla!, el]));
+    const telImgs = Array.from(sec.querySelectorAll<HTMLImageElement>('.ens-tel-vista img'));
+    const pantallaT = sec.querySelector<HTMLElement>('[data-ens-pantalla]');
+    const vivo = sec.querySelector<HTMLElement>('[data-ens-vivo]');
+    const telN = sec.querySelector<HTMLElement>('[data-ens-n]'), telT = sec.querySelector<HTMLElement>('[data-ens-t]'), telD = sec.querySelector<HTMLElement>('[data-ens-d]');
+    const titulos = botones.map((b) => ({ t: b.querySelector('.ens-t')?.textContent || '', d: b.querySelector('.ens-d')?.textContent || '', donde: b.querySelector('.ens-donde')?.textContent || '' }));
+    const mqMov = window.matchMedia('(prefers-reduced-motion: no-preference)');
+    let actual = 0, timer = 0, enVista = false, tocado = -1e9;   // «nunca tocado» (con 0, los primeros 10 s de la página contaban como toque)
+
+    function ir(i: number, via: 'auto' | 'clic' | 'flecha' | 'deslizar' | 'teclado') {
+      actual = (i + N) % N;
+      const s = P[actual];
+      items.forEach((li, k) => li.classList.toggle('is-on', k === actual));
+      botones.forEach((b, k) => { if (k === actual) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+      lienzos.forEach((el, id) => el.classList.toggle('is-on', id === s.p));
+      const lz = lienzos.get(s.p);
+      if (lz) {
+        lz.style.setProperty('--ty', String(s.ty));
+        const foco = lz.querySelector<HTMLElement>('.ens-foco');
+        if (foco) { foco.style.left = s.l + '%'; foco.style.top = s.tp + '%'; foco.style.width = s.w + '%'; foco.style.height = s.hh + '%'; foco.dataset.n = String(actual + 1); }
+      }
+      telImgs.forEach((im, k) => im.classList.toggle('is-on', k === actual));
+      const tx = titulos[actual];
+      if (pantallaT) pantallaT.textContent = tx.donde;
+      if (vivo && via !== 'auto') vivo.textContent = `${tx.t}: ${tx.d}`;
+      if (telN) telN.textContent = String(actual + 1).padStart(2, '0');
+      if (telT) telT.textContent = tx.t;
+      if (telD) telD.textContent = tx.d;
+      // reinicia la barrita de avance del paso
+      sec!.classList.remove('is-corre');
+      requestAnimationFrame(() => requestAnimationFrame(() => { if (corriendo()) sec!.classList.add('is-corre'); }));
+      if (via !== 'auto') ph('planeacion_ensacs_paso', { paso: actual + 1, via });
+      programa();
+    }
+
+    /* avanza solo mientras se ve, la pestaña está activa y nadie ha tocado en los últimos 10 s */
+    const corriendo = () => mqMov.matches && enVista && !document.hidden && performance.now() - tocado > 10000;
+    function programa() {
+      clearTimeout(timer); timer = 0;
+      sec!.classList.toggle('is-quieto', !mqMov.matches);
+      if (!corriendo()) { sec!.classList.remove('is-corre'); return; }
+      timer = window.setTimeout(() => ir(actual + 1, 'auto'), DUR);
+    }
+    const toque = () => { tocado = performance.now(); sec!.classList.remove('is-corre'); clearTimeout(timer); timer = window.setTimeout(programa, 10100); };
+
+    botones.forEach((b, k) => b.addEventListener('click', () => { toque(); ir(k, 'clic'); }));
+    sec.querySelectorAll<HTMLElement>('[data-ens-mueve]').forEach((b) => b.addEventListener('click', () => { toque(); ir(actual + Number(b.dataset.ensMueve), 'flecha'); }));
+    sec.addEventListener('keydown', (e) => {
+      if ((e.target as HTMLElement).closest('dialog')) return;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); toque(); ir(actual + (e.key === 'ArrowRight' ? 1 : -1), 'teclado'); }
+    });
+    sec.querySelector('.ens-ventana')?.addEventListener('pointerenter', toque, { passive: true });
+
+    /* deslizar en el teléfono */
+    const tel = sec.querySelector<HTMLElement>('[data-ens-tel]');
+    let x0 = 0, y0 = 0;
+    tel?.addEventListener('pointerdown', (e) => { x0 = e.clientX; y0 = e.clientY; toque(); }, { passive: true });
+    tel?.addEventListener('pointerup', (e) => {
+      const dx = e.clientX - x0, dy = e.clientY - y0;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) ir(actual + (dx < 0 ? 1 : -1), 'deslizar');
+    }, { passive: true });
+
+    /* la pantalla completa */
+    const dlg = sec.querySelector<HTMLDialogElement>('#ens-dlg');
+    const dlgImg = sec.querySelector<HTMLImageElement>('[data-ens-dlg-img]'), dlgT = sec.querySelector<HTMLElement>('[data-ens-dlg-t]');
+    const ALTOS: Record<string, number> = { resumen: 3791, reglas: 3791, temporadas: 3791, mesa: 2591 };
+    function abre() {
+      if (!dlg || !dlgImg) return;
+      toque();
+      const s = P[actual];
+      dlgImg.src = `/images/planeacion/sacs/${s.p}-completa.webp`;
+      dlgImg.height = ALTOS[s.p] || 3791;
+      dlgImg.alt = lienzos.get(s.p)?.querySelector('img')?.alt || '';
+      if (dlgT) dlgT.textContent = titulos[actual].donde;
+      if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
+      ph('planeacion_ensacs_completa', { pantalla: s.p });
+    }
+    sec.querySelector('[data-ens-completa]')?.addEventListener('click', abre);
+    sec.querySelector('.ens-vista')?.addEventListener('click', abre);
+    sec.querySelector('[data-ens-cierra]')?.addEventListener('click', () => dlg?.close());
+    dlg?.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+
+    /* solo corre en pantalla y con la pestaña visible (y limpia su temporizador al ocultarse) */
+    new IntersectionObserver((es) => { enVista = es[0].isIntersecting; programa(); if (enVista && corriendo()) sec.classList.add('is-corre'); }, { threshold: 0.35 }).observe(sec.querySelector('.ens-escena') || sec);
+    document.addEventListener('visibilitychange', programa);
+    mqMov.addEventListener('change', programa);
+    sec.style.setProperty('--ens-dur', DUR + 'ms');
+    programa();
+  })();
+</script>
