@@ -83,6 +83,8 @@ export interface ModuloExtra {
 
 export interface NavLink {
   label: string;
+  /** Etiqueta corta para escritorio angosto (el nombre completo queda como nombre accesible). */
+  corto?: string;
   href: string;
   children?: NavSubItem[];
   pillars?: NavPillar[];
@@ -815,6 +817,8 @@ export const navLinks: NavLink[] = [
       },
     ],
   },
+  // 2-oct-2026 (dueño): «Planeación de demanda» en el menú principal: es lo que buscan las marcas grandes.
+  { label: 'Planeación de demanda', corto: 'Planeación', href: '/producto/planeacion-de-demanda' },
   {
     label: 'Giros de negocio',
     href: '/giros',

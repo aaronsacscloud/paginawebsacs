@@ -77,8 +77,9 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
           <a
             href={getLocalizedUrl(link.href, locale)}
             class:list={['nav-link', { active: currentPath.startsWith(link.href) && link.href !== '/' }]}
+            aria-label={link.corto ? link.label : undefined}
           >
-            {link.label}
+            {link.corto ? <><span class="nav-l-largo">{link.label}</span><span class="nav-l-corto">{link.corto}</span></> : link.label}
             {(link.pillars || link.sectors || link.temporada) && (
               <svg class="nav-chevron" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true">
                 <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -532,6 +533,17 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     color: var(--color-text-primary);
     text-decoration: none;
     background: rgba(0, 0, 0, 0.04);
+  }
+
+  /* 2-oct-2026: con «Planeación de demanda» en el menú, el header no cabía a 1280–1440 px. En escritorio angosto
+     los enlaces se compactan y esa pestaña usa su etiqueta corta (el nombre completo queda en aria-label). */
+  .nav-l-corto { display: none; }
+  @media (min-width: 1024px) and (max-width: 1599px) {
+    .nav-link { padding: 8px 9px; font-size: 0.875rem; }
+  }
+  @media (min-width: 1024px) and (max-width: 1439px) {
+    .nav-l-largo { display: none; }
+    .nav-l-corto { display: inline; }
   }
 
   .nav-link.active {
