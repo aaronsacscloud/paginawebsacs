@@ -36,6 +36,38 @@ const cases = [
     highlights: [],
   },
   {
+    slug: 'sthela',
+    estilo: 'moda-claro',
+    brand: 'Sthela & Co.',
+    logo: '/images/sthela-logo.webp',
+    tag: 'Moda femenina · Fabricante y mayorista',
+    tagline: 'Un vestido para cada ocasión.',
+    desc: 'Sthela & Co. es una marca jalisciense de moda femenina que diseña sus propias colecciones cada año: ropa casual, vestidos de fiesta, zapatos y accesorios. Vende al público en sus boutiques y en línea, y por mayoreo a otras boutiques del país, que cada edición la buscan en Intermoda. Al frente, sus dueñas: fashion icons que presentan la colección ellas mismas.',
+    hechos: [
+      { num: 'Diseño propio', label: 'colecciones nuevas cada año' },
+      { num: 'Intermoda', label: 'fabricante y mayorista cada edición' },
+      { num: 'Menudeo + mayoreo', label: 'al público y a otras boutiques' },
+      { num: '2 boutiques', label: 'en Zapopan y Guadalajara' },
+    ],
+    points: [
+      { k: 'El diseño', t: 'Su propia colección, cada temporada.', d: 'Del cardigan y la blusa camisera al pantalón de vestir y el blazer oversized: todo combina, en los tonos de la temporada.' },
+      { k: 'El mayoreo', t: 'La pasarela de las boutiques.', d: 'En Intermoda, boutiques de todo el país eligen sus muestrarios y hacen pedido directo con la marca.' },
+      { k: 'Las boutiques', t: 'Para cada ocasión, en persona.', d: 'De la ropa casual al vestido de fiesta, con zapatos y accesorios para cerrar el look.' },
+      { k: 'En línea', t: 'La tienda que nunca cierra.', d: 'sthela.com, Instagram y Facebook, con las mismas colecciones que en tienda.' },
+    ],
+    sucursales: [
+      { zona: 'Zapopan', nombre: 'Los Cubos', dir: 'Av. Ignacio L. Vallarta 4825' },
+      { zona: 'Guadalajara', nombre: 'Providencia', dir: 'Rubén Darío 1356, local 17' },
+    ],
+    videos: [
+      { src: '/videos/sthela-intermoda-coleccion.mp4', poster: '/videos/sthela-intermoda-coleccion-poster.webp', cap: 'La colección en Intermoda' },
+      { src: '/videos/sthela-vestido-loop.mp4', poster: '/videos/sthela-vestido-loop-poster.webp', cap: 'Vestido de noche', loop: true },
+      { src: '/videos/sthela-intermoda-equipo.mp4', poster: '/videos/sthela-intermoda-equipo-poster.webp', cap: 'El equipo, cierre de edición' },
+    ],
+    web: 'https://sthela.com',
+    stats: [], quote: '', author: '', highlights: [], image: '',
+  },
+  {
     slug: 'la-bella-pandita',
     brand: 'La Bella Pandita',
     tagline: 'De 1 tienda en Querétaro a 42 sucursales en todo México.',
@@ -109,7 +141,57 @@ const cases = [
 </section>
 
 <!-- Cases -->
-{cases.map((c, idx) => c.featured ? (
+{cases.map((c, idx) => c.estilo === 'moda-claro' ? (
+  <section class="ce-claro" id={c.slug}>
+    <div class="ce-claro-inner">
+      <div class="ce-claro-head">
+        <span class="ce-claro-tag">{c.tag}</span>
+        <h2 class="ce-claro-brand"><img src={c.logo} alt={c.brand} width="1070" height="120" loading="lazy" /></h2>
+        <p class="ce-claro-tagline">{c.tagline}</p>
+      </div>
+      <div class="ce-claro-reels">
+        {c.videos?.map((v) => (
+          <figure class={`ce-reel ${v.loop ? 'ce-reel--main' : ''}`}>
+            {v.loop ? (
+              <video autoplay muted loop playsinline preload="metadata" poster={v.poster} width="540" height="960"><source src={v.src} type="video/mp4" /></video>
+            ) : (
+              <video controls playsinline preload="none" poster={v.poster} width="540" height="960"><source src={v.src} type="video/mp4" /></video>
+            )}
+            <figcaption>{v.cap}</figcaption>
+          </figure>
+        ))}
+      </div>
+      <div class="ce-claro-body">
+        <p class="ce-claro-desc">{c.desc}</p>
+        <div class="ce-claro-hechos">
+          {c.hechos?.map((h) => (
+            <div class="ce-claro-hecho"><span class="ce-claro-hecho-num">{h.num}</span><span class="ce-claro-hecho-label">{h.label}</span></div>
+          ))}
+        </div>
+      </div>
+      <div class="ce-claro-points">
+        {c.points?.map((pt, i) => (
+          <div class="ce-claro-point">
+            <span class="ce-claro-point-k">{String(i + 1).padStart(2, '0')} · {pt.k}</span>
+            <h3>{pt.t}</h3>
+            <p>{pt.d}</p>
+          </div>
+        ))}
+      </div>
+      <div class="ce-claro-foot">
+        <div class="ce-claro-sucs">
+          {c.sucursales?.map((sc) => (
+            <div class="ce-claro-suc"><span class="ce-claro-suc-zona">{sc.zona}</span><strong>{sc.nombre}</strong><span>{sc.dir}</span></div>
+          ))}
+        </div>
+        <a href={c.web} target="_blank" rel="noopener" class="ce-claro-link">
+          Conoce sthela.com
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+) : c.featured ? (
   <section class="ce-feat" id={c.slug}>
     <div class="ce-feat-inner">
       <div class="ce-feat-visual">
@@ -453,6 +535,56 @@ const cases = [
     .ce-feat-points { grid-template-columns: 1fr; }
     .ce-feat-img-b { border-width: 4px; }
     .ce-feat-link { width: 100%; justify-content: center; }
+  }
+
+
+  /* ── Sthela & Co.: moda en claro, con degradado rosa · morado · un toque naranja ── */
+  .ce-claro { position: relative; overflow: hidden; padding: clamp(64px, 8vw, 110px) 0; background:
+      radial-gradient(ellipse 55% 45% at 8% 10%, rgba(236, 72, 153, 0.16), transparent 70%),
+      radial-gradient(ellipse 50% 45% at 92% 30%, rgba(147, 51, 234, 0.14), transparent 70%),
+      radial-gradient(ellipse 45% 35% at 60% 100%, rgba(251, 146, 60, 0.08), transparent 70%),
+      #fff; }
+  .ce-claro-inner { max-width: 1200px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px); }
+  .ce-claro-head { text-align: center; max-width: 720px; margin: 0 auto; }
+  .ce-claro-tag { display: inline-block; font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; background: linear-gradient(90deg, #DB2777, #9333EA 75%, #F97316); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .ce-claro-brand { margin: 22px 0 14px; line-height: 0; }
+  .ce-claro-brand img { display: block; width: min(440px, 80%); height: auto; margin: 0 auto; }
+  .ce-claro-tagline { font-family: var(--font-display); font-size: clamp(1.5rem, 3vw, 2.25rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; color: var(--color-text-primary); margin: 0; }
+  .ce-claro-reels { display: grid; grid-template-columns: 1fr 1.25fr 1fr; gap: clamp(12px, 2vw, 24px); align-items: center; max-width: 920px; margin: clamp(36px, 5vw, 56px) auto 0; }
+  .ce-reel { margin: 0; }
+  .ce-reel video { display: block; width: 100%; height: auto; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 18px; background: #f3e8ff; box-shadow: 0 10px 30px rgba(147, 51, 234, 0.14); }
+  .ce-reel--main video { box-shadow: 0 16px 40px rgba(219, 39, 119, 0.2); }
+  .ce-reel figcaption { font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--color-text-tertiary); text-align: center; margin-top: 10px; }
+  .ce-claro-body { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(28px, 5vw, 64px); align-items: center; margin-top: clamp(40px, 5vw, 64px); }
+  .ce-claro-desc { font-family: var(--font-body); font-size: 17px; line-height: 1.75; color: var(--color-text-secondary); margin: 0; }
+  .ce-claro-hechos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .ce-claro-hecho { background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(147, 51, 234, 0.14); border-radius: 14px; padding: 16px; }
+  .ce-claro-hecho-num { display: block; font-family: var(--font-display); font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; color: var(--color-text-primary); }
+  .ce-claro-hecho-label { display: block; font-family: var(--font-body); font-size: 12px; line-height: 1.4; color: var(--color-text-tertiary); margin-top: 4px; }
+  .ce-claro-points { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: clamp(44px, 6vw, 64px); }
+  .ce-claro-point { border-top: 2px solid transparent; border-image: linear-gradient(90deg, #DB2777, #9333EA 80%, #F97316) 1; padding-top: 18px; }
+  .ce-claro-point-k { font-family: var(--font-body); font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #A21CAF; }
+  .ce-claro-point h3 { font-family: var(--font-display); font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.25; color: var(--color-text-primary); margin: 10px 0 8px; }
+  .ce-claro-point p { font-family: var(--font-body); font-size: 14px; line-height: 1.6; color: var(--color-text-secondary); margin: 0; }
+  .ce-claro-foot { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: clamp(40px, 5vw, 56px); padding-top: 28px; border-top: 1px solid rgba(0, 0, 0, 0.08); }
+  .ce-claro-sucs { display: flex; gap: clamp(20px, 4vw, 48px); flex-wrap: wrap; }
+  .ce-claro-suc { display: flex; flex-direction: column; gap: 2px; font-family: var(--font-body); font-size: 14px; color: var(--color-text-secondary); }
+  .ce-claro-suc strong { font-family: var(--font-display); font-size: 1.05rem; color: var(--color-text-primary); }
+  .ce-claro-suc-zona { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #DB2777; }
+  .ce-claro-link { flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; color: #fff; font-family: var(--font-body); font-size: 15px; font-weight: 700; padding: 14px 26px; border-radius: 100px; text-decoration: none; background: linear-gradient(90deg, #DB2777, #9333EA); transition: gap 0.2s ease; }
+  .ce-claro-link:hover { gap: 12px; text-decoration: none; }
+  @media (max-width: 900px) {
+    .ce-claro-body { grid-template-columns: 1fr; }
+    .ce-claro-points { grid-template-columns: repeat(2, 1fr); }
+    .ce-claro-foot { flex-direction: column; align-items: flex-start; }
+  }
+  @media (max-width: 560px) {
+    .ce-claro-reels { grid-template-columns: repeat(3, 72%); overflow-x: auto; scroll-snap-type: x mandatory; margin-left: -16px; margin-right: -16px; padding: 0 16px 8px; align-items: start; }
+    .ce-reel { scroll-snap-align: center; }
+    .ce-reel--main { order: -1; }
+    .ce-reel video, .ce-reel--main video { box-shadow: 0 4px 12px rgba(147, 51, 234, 0.12); }
+    .ce-claro-points { grid-template-columns: 1fr; }
+    .ce-claro-link { width: 100%; justify-content: center; }
   }
 
   /* CTA */
