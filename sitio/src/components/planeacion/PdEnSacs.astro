@@ -8,8 +8,12 @@
  *
  * Capturas: sistema local (sacs3) con la red Polanco Boutique — demo ficticia con fotos gpt-image —, sin la red de
  * MAJA (es un prospecto: nada suyo en la web) y con un proveedor ficticio. Script: scripts/planeacion-capturas/.
- * Forecasting no sale: cuando se tomaron, en el sistema todavía decía «en construcción». El 2-oct-2026 entró (DP3) y la
- * nota al pie dejó de decir que está en construcción; sus capturas quedan pendientes.
+ * Forecasting (DP3, 2-oct-2026): cinco pasos en «Planea» — la temporada con sus fechas y su corte, el pronóstico por
+ * semana, los modelos nuevos con sus parecidos, la compra por proveedor y el primer reparto — sobre la captura de
+ * Navidad 2026 de Polanco Boutique (scripts/planeacion-capturas/captura-forecasting.cjs, solo lectura). SIN captura de
+ * celular: la vista de teléfono de app.sacscloud.com está descontinuada (regla del dueño, 2-oct-2026), así que en el
+ * teléfono esos pasos cambian el marco del celular por una ventana con el recorte de escritorio (rec-fc-*.webp), en la
+ * misma celda para que la altura no brinque.
  * Mismo día, del dueño: «faltan partes del proceso, cómo se ve el resurtido y todo eso» → nueve pasos en tres fases:
  * Configura (reglas) · Planea (temporadas) · Resurte (tus nivelaciones, la Mesa, talla × tienda y lo que se crea al
  * aprobar: el traspaso y el borrador de compra). En la lista de nivelaciones se quitó la de MAJA (con sus totales).
@@ -18,16 +22,26 @@ const D = '/images/planeacion/sacs/';
 const PANTALLAS: Record<string, { h: number; ch: number; t: string; alt: string }> = {
   resumen: { h: 1760, ch: 3791, t: 'Gestor de reglas · Resumen', alt: 'Pantalla Gestor de reglas de Sacs: la configuración al 86 %, las preguntas pendientes del diccionario y cómo decide Sacs cuando a una tienda le falta mercancía' },
   reglas: { h: 1400, ch: 3791, t: 'Gestor de reglas · Reglas', alt: 'Pantalla de reglas de Sacs: cada regla de compra con su número y su modo Automático, Te pregunta o Apagada' },
+  forecasting: { h: 4880, ch: 4880, t: 'Forecasting', alt: 'Pantalla Forecasting de Sacs: la Navidad con sus fechas por regla, el pronóstico por semana contra el año anterior, los modelos nuevos con sus parecidos, la compra por proveedor con su corte y el primer reparto' },
   temporadas: { h: 1300, ch: 3791, t: 'Temporadas', alt: 'Pantalla Temporadas de Sacs: una tarjeta por temporada o evento con el paso en que va' },
   nivelaciones: { h: 1000, ch: 1000, t: 'En temporada · Tus nivelaciones', alt: 'Lista de nivelaciones en Sacs: cada resurtido con su tipo, su estado, sus modelos, piezas y costo' },
   mesa: { h: 1400, ch: 2591, t: 'En temporada · Mesa de la nivelación', alt: 'Mesa de una nivelación en Sacs: modelos, piezas, costo y curvas rotas, y cada modelo con su curva de tallas para aprobar' },
   talla: { h: 1200, ch: 1200, t: 'Mesa · Talla × tienda', alt: 'Detalle de un modelo en Sacs: cada tienda y cada talla con lo que hay, lo que vende por semana y lo que le llega del CEDIS; el porqué y los documentos que se crean' },
 };
-// zona a resaltar (x0, y0, x1, y1 en px de la captura de 1440) y cuánto se desplaza la ventana (ty, px)
-const PASOS = [
+// alto de cada recorte del teléfono (1080 de ancho) para reservar su lugar
+const RECORTES: Record<string, number> = { 'fc-temporada': 389, 'fc-pronostico': 456, 'fc-modelos': 541, 'fc-compra': 603, 'fc-reparto': 420 };
+// zona a resaltar (x0, y0, x1, y1 en px de la captura de 1440) y cuánto se desplaza la ventana (ty, px).
+// En el teléfono: `cel` = captura de celular (las de antes) o `rec` = recorte de escritorio (los de Forecasting).
+type PasoEns = { fase: string; p: string; cel?: string; rec?: string; ty: number; r: number[]; t: string; d: string };
+const PASOS: PasoEns[] = [
   { fase: 'Configura', p: 'resumen', cel: 'resumen', ty: 132, r: [336, 280, 1032, 984], t: 'Tu diccionario, al 86 %', d: 'Sacs dice qué le falta saber de tu catálogo y te lo pregunta con un clic.' },
   { fase: 'Configura', p: 'resumen', cel: 'escalera', ty: 750, r: [336, 1008, 1402, 1491], t: 'Cómo decide cuando falta mercancía', d: 'Primero espera lo que viene; luego traspasa, resurte del CEDIS y, al final, compra.' },
   { fase: 'Configura', p: 'reglas', cel: 'reglas', ty: 316, r: [336, 384, 1402, 1248], t: 'Cada regla, en una línea', d: 'Automático, Te pregunta o Apagada. El número lo pones tú.' },
+  { fase: 'Planea', p: 'forecasting', rec: 'fc-temporada', ty: 196, r: [336, 276, 1400, 644], t: 'La temporada, con sus fechas y su corte', d: 'Navidad, del 1 al 24 de diciembre: cuánto vas a vender y cuándo vence el primer pedido.' },
+  { fase: 'Planea', p: 'forecasting', rec: 'fc-pronostico', ty: 1655, r: [337, 1735, 1399, 2170], t: 'El pronóstico, semana por semana', d: 'Contra la Navidad pasada, con su rango probable y el pico marcado.' },
+  { fase: 'Planea', p: 'forecasting', rec: 'fc-modelos', ty: 2255, r: [337, 2335, 1399, 2855], t: 'Los modelos nuevos, con sus parecidos', d: 'Cada modelo sin historia se compara con los de su familia, y te dice con cuáles.' },
+  { fase: 'Planea', p: 'forecasting', rec: 'fc-compra', ty: 3350, r: [337, 3430, 1399, 4012], t: 'La compra, proveedor por proveedor', d: 'Con su corte, cuándo llega al CEDIS, piezas, costo y quién la aprueba.' },
+  { fase: 'Planea', p: 'forecasting', rec: 'fc-reparto', ty: 3880, r: [337, 4312, 1399, 4710], t: 'El primer reparto, y apruebas el plan', d: 'Qué sale a cada tienda y qué se queda en el CEDIS. Al aprobar, las órdenes nacen en borrador.' },
   { fase: 'Planea', p: 'temporadas', cel: 'temporadas', ty: 252, r: [336, 365, 1402, 1139], t: 'Una tarjeta por temporada', d: 'Buen Fin, Navidad, Reyes: cada una con el paso en que va.' },
   { fase: 'Resurte', p: 'nivelaciones', cel: 'nivelaciones', ty: 0, r: [328, 293, 1408, 864], t: 'Cada resurtido, con su estado', d: 'Reposición de la semana o preparar un evento: lo que mueve y si ya lo aprobaste.' },
   { fase: 'Resurte', p: 'mesa', cel: 'cifras', ty: 0, r: [326, 243, 1411, 376], t: 'La nivelación, en cifras', d: 'Modelos, piezas, costo y curvas rotas: de 14 a 0.' },
@@ -38,7 +52,7 @@ const PASOS = [
 const pct = (n: number) => +(n).toFixed(3);
 const CALC = PASOS.map((s, i) => {
   const h = PANTALLAS[s.p].h, [x0, y0, x1, y1] = s.r, M = 10;
-  return { i, p: s.p, fase: s.fase, ty: pct((s.ty / h) * 100), l: pct(((x0 - M) / 1440) * 100), tp: pct(((y0 - M) / h) * 100), w: pct(((x1 - x0 + 2 * M) / 1440) * 100), hh: pct(((y1 - y0 + 2 * M) / h) * 100) };
+  return { i, p: s.p, fase: s.fase, rec: s.rec ? 1 : 0, ty: pct((s.ty / h) * 100), l: pct(((x0 - M) / 1440) * 100), tp: pct(((y0 - M) / h) * 100), w: pct(((x1 - x0 + 2 * M) / 1440) * 100), hh: pct(((y1 - y0 + 2 * M) / h) * 100) };
 });
 const primero = (p: string) => CALC.find((c) => c.p === p)!;
 const dos = (n: number) => String(n).padStart(2, '0');
@@ -87,10 +101,19 @@ const PALABRA = Array.from({ length: 4 }, () => 'EN SACS').join(' · ');
         <figcaption class="sr-only" aria-live="polite" data-ens-vivo>{PASOS[0].t}: {PASOS[0].d}</figcaption>
       </figure>
 
-      <!-- teléfono: el marco con un recorte por paso -->
-      <div class="ens-tel" data-ens-tel>
-        <div class="ens-tel-vista">
-          {PASOS.map((s, i) => <img class:list={[{ 'is-on': i === 0 }]} src={`${D}cel-${s.cel}.webp`} width="780" height="1520" alt={PANTALLAS[s.p].alt} loading="lazy" decoding="async" data-i={i} />)}
+      <!-- teléfono: el marco del celular (pasos con captura de celular) y la ventana con el recorte de escritorio (pasos de
+           Forecasting), en la misma celda: al pasar de uno a otro se cruzan sin que la altura brinque -->
+      <div class="ens-movil" data-ens-tel>
+        <div class="ens-tel">
+          <div class="ens-tel-vista">
+            {PASOS.map((s, i) => s.cel && <img class:list={[{ 'is-on': i === 0 }]} src={`${D}cel-${s.cel}.webp`} width="780" height="1520" alt={PANTALLAS[s.p].alt} loading="lazy" decoding="async" data-i={i} />)}
+          </div>
+        </div>
+        <div class="ens-rec">
+          <div class="ens-barra" aria-hidden="true"><i></i><i></i><i></i><span>sacs · Demand Planning · <b>Forecasting</b></span></div>
+          <div class="ens-rec-vista">
+            {PASOS.map((s, i) => s.rec && <img src={`${D}rec-${s.rec}.webp`} width="1080" height={RECORTES[s.rec]} alt={`${PANTALLAS[s.p].t}: ${s.t}`} loading="lazy" decoding="async" data-i={i} />)}
+          </div>
         </div>
       </div>
       <div class="ens-pie-tel" aria-hidden="true">
@@ -119,7 +142,7 @@ const PALABRA = Array.from({ length: 4 }, () => 'EN SACS').join(' · ');
     </div>
   </div>
 
-  <p class="pda-nota">Capturas del módulo Demand Planning de Sacs (octubre de 2026) con una boutique de ejemplo. Forecasting, su segunda sección, todavía no sale en este recorrido.</p>
+  <p class="pda-nota">Capturas del módulo Demand Planning de Sacs (octubre de 2026) con una boutique de ejemplo.</p>
 
 </section>
 
@@ -163,8 +186,19 @@ const PALABRA = Array.from({ length: 4 }, () => 'EN SACS').join(' · ');
   .ens-foco { position: absolute; border-radius: 10px; box-shadow: 0 0 0 2px #4B7BE5, 0 0 0 200vmax rgba(10, 22, 72, 0.32); pointer-events: none; transition: left 0.75s cubic-bezier(0.22, 1, 0.36, 1), top 0.75s cubic-bezier(0.22, 1, 0.36, 1), width 0.75s cubic-bezier(0.22, 1, 0.36, 1), height 0.75s cubic-bezier(0.22, 1, 0.36, 1); }
   .ens-foco::before { content: attr(data-n); position: absolute; left: -15px; top: -15px; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #4B7BE5; color: #fff; font: 700 14px/1 var(--pd-clash); box-shadow: 0 0 0 3px #fff; }
 
-  /* ── el teléfono ── */
-  .ens-tel { position: relative; width: min(320px, 82vw); margin: 0 auto; padding: 9px; border-radius: 38px; background: #0E0E10; box-shadow: 0 40px 70px -40px rgba(4, 12, 48, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.12); touch-action: pan-y; }
+  /* ── el teléfono, y la ventana de los pasos sin captura de celular, en la misma celda ── */
+  .ens-movil { display: grid; place-items: center; touch-action: pan-y; }
+  .ens-movil > * { grid-area: 1 / 1; }
+  .ens-tel, .ens-rec { transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 0.45s; }
+  .ens-tel { position: relative; width: min(320px, 82vw); margin: 0 auto; padding: 9px; border-radius: 38px; background: #0E0E10; box-shadow: 0 40px 70px -40px rgba(4, 12, 48, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
+  .ens-rec { width: min(420px, 92vw); border-radius: 12px; overflow: hidden; background: #F4F5F9; box-shadow: 0 40px 70px -40px rgba(4, 12, 48, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.25); opacity: 0; visibility: hidden; transform: scale(0.96); }
+  .ens-rec .ens-barra { height: 28px; padding: 0 12px; }
+  .ens-rec .ens-barra i { width: 8px; height: 8px; }
+  .ens-rec-vista { display: grid; background: #fff; }
+  .ens-rec-vista img { grid-area: 1 / 1; align-self: start; display: block; width: 100%; height: auto; max-width: none; opacity: 0; transition: opacity 0.45s ease; }
+  .ens-rec-vista img.is-on { opacity: 1; }
+  .ens.is-rec .ens-rec { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+  .ens.is-rec .ens-tel { opacity: 0; visibility: hidden; transform: scale(0.96); }
   .ens-tel-vista { position: relative; aspect-ratio: 390 / 760; border-radius: 30px; overflow: hidden; background: #fff; }
   .ens-tel-vista img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; max-width: none; opacity: 0; transition: opacity 0.45s ease; }
   .ens-tel-vista img.is-on { opacity: 1; }
@@ -209,7 +243,7 @@ const PALABRA = Array.from({ length: 4 }, () => 'EN SACS').join(' · ');
     .ens-grid { grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.6fr); gap: 56px; align-items: start; }
     .ens-ventana { display: block; }
     .ens-escena { position: sticky; top: 24px; }
-    .ens-tel, .ens-pie-tel { display: none; }
+    .ens-movil, .ens-pie-tel { display: none; }
   }
   @media (prefers-reduced-motion: reduce) {
     .ens *, .ens *::before { transition: none !important; animation: none !important; }
@@ -222,7 +256,7 @@ const PALABRA = Array.from({ length: 4 }, () => 'EN SACS').join(' · ');
   (() => {
     const sec = document.getElementById('pd-ensacs');
     if (!sec) return;
-    type Paso = { i: number; p: string; fase: string; ty: number; l: number; tp: number; w: number; hh: number };
+    type Paso = { i: number; p: string; fase: string; rec: number; ty: number; l: number; tp: number; w: number; hh: number };
     const P: Paso[] = JSON.parse(sec.dataset.pasos || '[]');
     if (!P.length) return;
     const N = P.length, DUR = 6500;
@@ -230,6 +264,7 @@ const PALABRA = Array.from({ length: 4 }, () => 'EN SACS').join(' · ');
     const botones = Array.from(sec.querySelectorAll<HTMLButtonElement>('[data-ens-paso]'));
     const lienzos = new Map(Array.from(sec.querySelectorAll<HTMLElement>('.ens-lienzo')).map((el) => [el.dataset.pantalla!, el]));
     const telImgs = Array.from(sec.querySelectorAll<HTMLImageElement>('.ens-tel-vista img'));
+    const recImgs = Array.from(sec.querySelectorAll<HTMLImageElement>('.ens-rec-vista img'));
     const pantallaT = sec.querySelector<HTMLElement>('[data-ens-pantalla]');
     const vivo = sec.querySelector<HTMLElement>('[data-ens-vivo]');
     const telN = sec.querySelector<HTMLElement>('[data-ens-n]'), telT = sec.querySelector<HTMLElement>('[data-ens-t]'), telD = sec.querySelector<HTMLElement>('[data-ens-d]'), telF = sec.querySelector<HTMLElement>('[data-ens-fase]');
@@ -249,7 +284,9 @@ const PALABRA = Array.from({ length: 4 }, () => 'EN SACS').join(' · ');
         const foco = lz.querySelector<HTMLElement>('.ens-foco');
         if (foco) { foco.style.left = s.l + '%'; foco.style.top = s.tp + '%'; foco.style.width = s.w + '%'; foco.style.height = s.hh + '%'; foco.dataset.n = String(actual + 1); }
       }
-      telImgs.forEach((im, k) => im.classList.toggle('is-on', k === actual));
+      // en el teléfono: el celular o la ventana del recorte (cada uno conserva su última imagen mientras se desvanece)
+      sec!.classList.toggle('is-rec', !!s.rec);
+      (s.rec ? recImgs : telImgs).forEach((im) => im.classList.toggle('is-on', Number(im.dataset.i) === actual));
       const tx = titulos[actual];
       if (pantallaT) pantallaT.textContent = tx.donde;
       if (vivo && via !== 'auto') vivo.textContent = `${tx.t}: ${tx.d}`;
