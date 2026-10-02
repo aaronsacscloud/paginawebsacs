@@ -290,7 +290,7 @@ const activePillar = pillars.find((p) => p.id === currentPillar)!;
     });
   }
 
-  // Hide main nav when scrolling down, show when scrolling up
+  // Main nav only at the very top of product pages; the section subnav is the only sticky header
   const mainNav = document.getElementById('nav');
   const subnav = document.getElementById('product-subnav');
   let lastScrollY = 0;
@@ -299,8 +299,12 @@ const activePillar = pillars.find((p) => p.id === currentPillar)!;
 
   function updateNavVisibility() {
     const scrollY = window.scrollY;
-    const shouldHide = scrollY > 120 && scrollY > lastScrollY;
-    const shouldShow = scrollY < lastScrollY || scrollY <= 71;
+    // En las páginas de producto el menú principal solo se ve hasta arriba: en cuanto bajas se
+    // esconde y ya no regresa al subir (pedido del dueño, 02-oct-2026: «cortaba la pantalla»).
+    // Lo único pegado arriba es el header de la sección.
+    const tope = mainNav ? mainNav.getBoundingClientRect().height : 71;
+    const shouldHide = scrollY > tope;
+    const shouldShow = scrollY <= tope;
 
     if (shouldHide && !navHidden) {
       mainNav?.style.setProperty('transform', 'translateY(-100%)');
