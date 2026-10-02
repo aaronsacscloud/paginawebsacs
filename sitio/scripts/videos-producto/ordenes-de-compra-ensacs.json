@@ -1,0 +1,95 @@
+{
+ "modulo": "Órdenes de compra",
+ "nota": "Capturas de las órdenes de compra y recepciones de Sacs (octubre de 2026) con una boutique de ejemplo.",
+ "pantallas": [
+  {
+   "id": "lista",
+   "img": "/images/producto/ordenes-de-compra/lista.webp",
+   "h": 1300,
+   "t": "Recepción de productos",
+   "alt": "Lista de órdenes de compra y recepciones en Sacs con proveedor, total y estado"
+  },
+  {
+   "id": "orden",
+   "img": "/images/producto/ordenes-de-compra/orden.webp",
+   "h": 1300,
+   "t": "Orden de compra",
+   "alt": "Orden de compra en Sacs: ordenado contra recibido por prenda y el flujo de la orden"
+  },
+  {
+   "id": "recepcion",
+   "img": "/images/producto/ordenes-de-compra/recepcion.webp",
+   "h": 1500,
+   "t": "Recepción",
+   "alt": "Recepción completada en Sacs: prendas recibidas con cantidad, costo y descuento"
+  }
+ ],
+ "pasos": [
+  {
+   "p": "lista",
+   "r": [
+    0,
+    0,
+    1440,
+    1300
+   ],
+   "t": "Cada orden con su proveedor y estado",
+   "d": "Órdenes enviadas, recepciones completadas y borradores, en una lista."
+  },
+  {
+   "p": "orden",
+   "r": [
+    950,
+    123,
+    1310,
+    373
+   ],
+   "t": "El total de la orden, al día",
+   "d": "Productos, piezas, subtotal e impuestos de lo que pediste."
+  },
+  {
+   "p": "orden",
+   "r": [
+    153,
+    385,
+    909,
+    463
+   ],
+   "t": "Ordenado contra recibido",
+   "d": "Cuántas piezas pediste, cuántas llegaron y la diferencia, prenda por prenda."
+  },
+  {
+   "p": "orden",
+   "r": [
+    0,
+    295,
+    200,
+    770
+   ],
+   "t": "De la orden al pago",
+   "d": "Productos, envío, recepción y factura y pago: sabes en qué paso va."
+  },
+  {
+   "p": "recepcion",
+   "r": [
+    982,
+    124,
+    1342,
+    320
+   ],
+   "t": "La recepción, cerrada",
+   "d": "Piezas, productos y costo de lo que entró al almacén."
+  },
+  {
+   "p": "recepcion",
+   "r": [
+    162,
+    124,
+    964,
+    1789
+   ],
+   "t": "Cada prenda que entró, con su costo",
+   "d": "Cantidad, costo con impuesto y descuento por línea."
+  }
+ ]
+}

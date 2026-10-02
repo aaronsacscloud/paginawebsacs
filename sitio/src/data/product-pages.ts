@@ -3527,7 +3527,7 @@ export const pageContent: Record<string, any> = {
         "color": "#4a6aa8",
         "quote": "Antes los cajeros prometían productos que en realidad ya se habían vendido en otra tienda. Con el inventario único vemos la misma foto en caja, CEDIS y sitio. Bajaron los reclamos por pedidos incumplidos.",
         "name": "Tomás Ibáñez",
-        "business": "Ferretería Los Andes",
+        "business": "Los Andes · Calzado",
         "location": "Chile"
       },
       {
@@ -3537,7 +3537,7 @@ export const pageContent: Record<string, any> = {
         "color": "#5a8a5f",
         "quote": "Manejamos productos con caducidad y antes perdíamos mercancía por no verla a tiempo. Ahora Sacs nos alerta 60 días antes — alcanzamos a rotar o a promocionar lo que está por vencer.",
         "name": "Mariela Quispe",
-        "business": "Natural Market",
+        "business": "Natural · Moda sustentable",
         "location": "Perú"
       }
     ],
@@ -4429,7 +4429,7 @@ export const pageContent: Record<string, any> = {
         "color": "#5a8a5f",
         "quote": "Configuramos un lote mínimo de 8 piezas para que los traspasos pagaran la logística. Antes mandábamos una blusa por mensajería y el costo se comía el margen. Ahora solo se propone cuando vale la pena mover.",
         "name": "Emiliano Sosa",
-        "business": "Almacenes Litoral",
+        "business": "Litoral · Moda playa",
         "location": "Uruguay"
       }
     ],
@@ -4473,33 +4473,145 @@ export const pageContent: Record<string, any> = {
     ]
   },
   "ordenes-de-compra": {
+    "enSacs": {
+      "modulo": "Órdenes de compra",
+      "nota": "Capturas de las órdenes de compra y recepciones de Sacs (octubre de 2026) con una boutique de ejemplo.",
+      "pantallas": [
+        {
+          "id": "lista",
+          "img": "/images/producto/ordenes-de-compra/lista.webp",
+          "h": 1300,
+          "t": "Recepción de productos",
+          "alt": "Lista de órdenes de compra y recepciones en Sacs con proveedor, total y estado"
+        },
+        {
+          "id": "orden",
+          "img": "/images/producto/ordenes-de-compra/orden.webp",
+          "h": 1300,
+          "t": "Orden de compra",
+          "alt": "Orden de compra en Sacs: ordenado contra recibido por prenda y el flujo de la orden"
+        },
+        {
+          "id": "recepcion",
+          "img": "/images/producto/ordenes-de-compra/recepcion.webp",
+          "h": 1500,
+          "t": "Recepción",
+          "alt": "Recepción completada en Sacs: prendas recibidas con cantidad, costo y descuento"
+        }
+      ],
+      "pasos": [
+        {
+          "p": "lista",
+          "r": [
+            40,
+            120,
+            1400,
+            900
+          ],
+          "t": "Cada orden con su proveedor y estado",
+          "d": "Órdenes enviadas, recepciones completadas y borradores, en una lista.",
+          "rz": [
+            760,
+            120,
+            1400,
+            600
+          ]
+        },
+        {
+          "p": "orden",
+          "r": [
+            950,
+            123,
+            1310,
+            373
+          ],
+          "t": "El total de la orden, al día",
+          "d": "Productos, piezas, subtotal e impuestos de lo que pediste."
+        },
+        {
+          "p": "orden",
+          "r": [
+            135,
+            382,
+            905,
+            650
+          ],
+          "t": "Ordenado contra recibido",
+          "d": "Cuántas piezas pediste, cuántas llegaron y la diferencia, prenda por prenda."
+        },
+        {
+          "p": "orden",
+          "r": [
+            950,
+            385,
+            1310,
+            620
+          ],
+          "t": "De la orden al pago",
+          "d": "Productos, envío, recepción y factura y pago: sabes en qué paso va."
+        },
+        {
+          "p": "recepcion",
+          "r": [
+            964,
+            122,
+            1314,
+            313
+          ],
+          "t": "La recepción, cerrada",
+          "d": "Piezas, productos y costo de lo que entró al almacén."
+        },
+        {
+          "p": "recepcion",
+          "r": [
+            162,
+            124,
+            964,
+            800
+          ],
+          "t": "Cada prenda que entró, con su costo",
+          "d": "Cantidad, costo con impuesto y descuento por línea.",
+          "rz": [
+            162,
+            180,
+            700,
+            500
+          ]
+        }
+      ]
+    },
     "hero": {
       "eyebrow": "Sacs Órdenes de Compra",
-      "title": "Pide bien. Recibe contra lo que pediste. Paga solo lo que llegó.",
-      "subtitle": "Genera órdenes de compra con los términos de cada proveedor, manda el PDF con tu marca por correo, recibe capturando lo que de verdad llegó y concilia la factura a 3 vías contra la orden y la recepción. Se acaba el \"pedí 100, llegaron 87 y me cobraron 100\".",
+      "title": "Pide bien. Recibe contra lo que pediste. Paga lo que llegó.",
+      "subtitle": "Cada orden de compra con su proveedor, sus prendas y su total. Al recibir capturas lo que de verdad llegó: Sacs te muestra ordenado contra recibido, la diferencia por prenda y en qué paso va la orden, hasta la factura y el pago.",
       "image": "/images/ordenes-de-compra-sistema.webp",
-      "imageAlt": "Módulo de ordenes de compra en Sacs"
+      "imageAlt": "Orden de compra de moda en Sacs con ordenado contra recibido",
+      "video": {
+        "mp4": "/videos/ordenes-hero.mp4",
+        "webm": "/videos/ordenes-hero.webm"
+      },
+      "videoPoster": "/videos/ordenes-hero-poster.webp"
     },
     "features": [
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 4h16v16H4z\"/><path d=\"M4 10h16M10 4v16\"/></svg>",
-        "title": "OC con los términos de cada proveedor",
-        "description": "Eliges el proveedor y Sacs precarga sus condiciones: contado, crédito o parcialidades, días de crédito y si la cuenta por pagar nace al enviar o al recibir. Ajustas solo para esa orden y listo."
+        "title": "Sugerencia desde la venta",
+        "description": "La cantidad parte de lo que vendiste y de lo que ya viene en camino."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6L9 17l-5-5\"/></svg>",
-        "title": "Envía el PDF con tu marca por correo",
-        "description": "Al enviar la orden, Sacs genera el PDF con tu logo y datos y se lo manda por email al proveedor — o lo descargas para tu canal. La cuenta por pagar queda preparada en automático, ligada a Gastos."
+        "title": "Orden con tus condiciones",
+        "description": "Proveedor, almacén, condiciones de pago y fecha de entrega en cada orden."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"2\"/><path d=\"M2 10h20M7 15h4\"/></svg>",
-        "title": "Recepción contra orden, con lote y caducidad",
-        "description": "Capturas lo que llegó por línea y ves la diferencia contra lo ordenado al instante. Solo lo recibido entra a inventario, al último costo, con su lote y caducidad. Si mandaron otra variante, la cambias antes de recibir."
+        "title": "Recibe contra lo pedido",
+        "description": "Ordenado, recibido y diferencia por prenda antes de confirmar."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M19 8v6M22 11h-6\"/></svg>",
-        "title": "Conciliación 3 vías de la factura",
-        "description": "Arrastras el XML/CFDI (o una foto, con OCR) y Sacs lo cruza contra la orden y la recepción: alerta RFC, total, IVA, retenciones y, por línea, precio, cantidad o faltantes. Verificas ante el SAT y pagas conciliado."
+        "title": "Del pedido al pago",
+        "description": "Productos, envío, recepción y factura y pago: sabes en qué paso va."
       }
     ],
     "showcaseTitle": "La compra deja de ser una caja negra.",
@@ -4515,7 +4627,21 @@ export const pageContent: Record<string, any> = {
         },
         "featured": true,
         "variant": "oc-suggestion-draft",
-        "cardSize": "lg"
+        "cardSize": "lg",
+        "bullets": [
+          {
+            "label": "Venta de las últimas semanas",
+            "detail": "La cantidad parte de lo que se vendió de cada prenda."
+          },
+          {
+            "label": "Lo que ya viene en camino",
+            "detail": "Las órdenes enviadas cuentan para no pedir doble."
+          },
+          {
+            "label": "Tú ajustas y envías",
+            "detail": "La propuesta es un borrador hasta que la apruebas."
+          }
+        ]
       },
       {
         "title": "Orden al proveedor, con tus términos y tus precios.",
@@ -4524,20 +4650,48 @@ export const pageContent: Record<string, any> = {
         "imageAlt": "Orden de compra en PDF con marca de la tienda",
         "link": null,
         "featured": true,
-        "variant": "oc-pdf-brand"
+        "variant": "oc-pdf-brand",
+        "bullets": [
+          {
+            "label": "Proveedor y almacén",
+            "detail": "Cada orden dice a quién se le pide y a dónde llega."
+          },
+          {
+            "label": "Condiciones y entrega",
+            "detail": "Contado o crédito, fecha de entrega y cuándo nace la cuenta por pagar."
+          },
+          {
+            "label": "PDF e impresión",
+            "detail": "La orden sale lista para mandar al proveedor."
+          }
+        ]
       },
       {
-        "title": "Recibe escaneando. Detecta diferencias antes de firmar.",
-        "description": "Cuando llega la mercancía, escaneas las cajas contra la OC en el celular. Si faltan piezas, sobraron o cambiaron el modelo, Sacs lo marca al momento. Das entrada solo a lo correcto y abres una nota de reclamo al proveedor por lo que falta.",
+        "title": "Recibe contra lo que pediste.",
+        "description": "Al llegar la mercancía capturas lo que de verdad llegó, prenda por prenda. Sacs te muestra ordenado contra recibido y la diferencia antes de confirmar la recepción, y los días de crédito corren desde la fecha real de llegada.",
         "image": "/images/ordenes-de-compra-recepcion.webp",
         "imageAlt": "Empleado recibiendo mercancía con celular escaneando contra orden de compra",
         "link": null,
         "featured": true,
-        "variant": "oc-receive-scan"
+        "variant": "oc-receive-scan",
+        "bullets": [
+          {
+            "label": "Ordenado contra recibido",
+            "detail": "Cuántas piezas pediste, cuántas llegaron y la diferencia."
+          },
+          {
+            "label": "Prenda por prenda",
+            "detail": "Collares, pendientes, pantalones: cada línea con su cantidad."
+          },
+          {
+            "label": "Fecha real de llegada",
+            "detail": "Los días de crédito corren desde que llegó la mercancía."
+          }
+        ]
       },
       {
-        "title": "Concilia factura contra lo que recibiste.",
-        "description": "La factura del proveedor se cruza contra la OC y la recepción. Si el precio cambió sin avisar, si cobraron una pieza que no llegó, si el impuesto está mal — Sacs te lo señala. Pagas conciliado, no por confianza. La integración directa con portales de facturación del proveedor está en el roadmap.",
+        "title": "De la orden al pago, en una línea.",
+        "description": "Cada orden avanza por productos, envío, recepción y factura y pago. Las recepciones guardan el costo con impuesto y el descuento de cada línea, y si llegó menos, el gasto lo marca prenda por prenda.",
         "image": "/images/ordenes-de-compra-conciliacion.webp",
         "imageAlt": "Pantalla de conciliación de factura contra orden de compra en Sacs",
         "link": {
@@ -4546,14 +4700,28 @@ export const pageContent: Record<string, any> = {
         },
         "featured": true,
         "variant": "oc-reconcile-3way",
-        "cardSize": "lg"
+        "cardSize": "lg",
+        "bullets": [
+          {
+            "label": "De la orden al pago",
+            "detail": "Productos, envío, recepción y factura y pago, en una línea de tiempo."
+          },
+          {
+            "label": "Recepciones con costo",
+            "detail": "Cada recepción con su costo con impuesto y descuento por línea."
+          },
+          {
+            "label": "Faltantes al gasto",
+            "detail": "Si llegó menos, el gasto lo marca prenda por prenda."
+          }
+        ]
       }
     ],
     "testimonial": {
       "quote": "Durante años pagábamos lo que el proveedor facturaba y ya. Al implementar recepción con escaneo detectamos que un proveedor nos cobraba piezas que no llegaban — un porcentaje del total del año. Ese ahorro solo pagó el sistema.",
       "name": "Patricia Alcántara",
       "role": "Directora de Compras",
-      "company": "Hogar Integral",
+      "company": "Atelier Alcántara",
       "stat": "SIEMPRE",
       "statLabel": "cruzamos factura contra OC — no pagamos de más"
     },
@@ -4689,7 +4857,7 @@ export const pageContent: Record<string, any> = {
         "color": "#b47a3a",
         "quote": "Detectamos que un proveedor nos cobraba piezas que no llegaban — un porcentaje del total anual. Ese ahorro solo pagó el sistema. La recepción escaneada contra orden fue lo que cambió el juego.",
         "name": "Patricia Alcántara",
-        "business": "Hogar Integral",
+        "business": "Atelier Alcántara · Moda mujer",
         "location": "República Dominicana"
       },
       {
@@ -4699,7 +4867,7 @@ export const pageContent: Record<string, any> = {
         "color": "#4a6aa8",
         "quote": "Antes la compra era una hoja de Excel que alguien mandaba por email y nadie sabía si había llegado. Ahora la OC está numerada, el proveedor la recibe por sistema y el estado lo vemos todos. Se acabaron las llamadas \"oye, ¿llegó o no llegó?\".",
         "name": "Héctor Márquez",
-        "business": "Ferretería Márquez Norte",
+        "business": "Márquez Denim · Mezclilla",
         "location": "Panamá"
       },
       {
@@ -4709,7 +4877,7 @@ export const pageContent: Record<string, any> = {
         "color": "#5a8a5f",
         "quote": "Trabajar con decenas de proveedores diferentes era caos puro. Ahora cada uno con su ficha, sus términos y su historial. Las juntas de negociación anuales ya no son \"feeling\", son con datos del sistema.",
         "name": "Carolina Espinoza",
-        "business": "Casa Montes",
+        "business": "Casa Montes · Calzado y bolsas",
         "location": "Chile"
       }
     ],
@@ -4724,7 +4892,7 @@ export const pageContent: Record<string, any> = {
       },
       {
         "question": "¿Cómo se maneja la recepción parcial?",
-        "answer": "Escaneas lo que llegó y la OC queda abierta con saldo pendiente. Cuando llega la siguiente entrega, escaneas contra la misma OC. Puedes cerrarla manualmente si ya no esperas el resto."
+        "answer": "Capturas lo que llegó por prenda y Sacs te muestra la diferencia contra lo ordenado. Si el proveedor ya no enviará el resto, cierras la recepción con faltante y la cuenta por pagar se genera por el monto que elijas."
       },
       {
         "question": "¿Qué pasa si el proveedor me cobra un precio distinto al acordado?",
@@ -4753,12 +4921,138 @@ export const pageContent: Record<string, any> = {
     ]
   },
   "gastos": {
+    "enSacs": {
+      "modulo": "Gastos",
+      "nota": "Capturas del módulo de Gastos de Sacs (octubre de 2026) con una boutique de ejemplo.",
+      "pantallas": [
+        {
+          "id": "lista",
+          "img": "/images/producto/gastos/lista.webp",
+          "h": 1138,
+          "t": "Gastos",
+          "alt": "Lista de gastos en Sacs con proveedor, vencimiento, concepto y categoría"
+        },
+        {
+          "id": "analisis",
+          "img": "/images/producto/gastos/analisis.webp",
+          "h": 952,
+          "t": "Dashboard de análisis",
+          "alt": "Análisis de gastos en Sacs: gasto contra ventas por mes, a dónde se va el dinero y a quién le pagas más"
+        },
+        {
+          "id": "flujo",
+          "img": "/images/producto/gastos/flujo.webp",
+          "h": 1486,
+          "t": "Flujo proyectado",
+          "alt": "Flujo proyectado de gastos en Sacs: vencido, por pagar en 30 días, carga por semana y compromisos"
+        },
+        {
+          "id": "detalle",
+          "img": "/images/producto/gastos/detalle.webp",
+          "h": 1082,
+          "t": "Gasto",
+          "alt": "Detalle de un gasto en Sacs: cronograma de pagos, recepción de mercancía con faltantes e importe"
+        }
+      ],
+      "pasos": [
+        {
+          "p": "lista",
+          "r": [
+            80,
+            300,
+            1410,
+            900
+          ],
+          "t": "Cada gasto con su categoría",
+          "d": "Compras, servicios, renta, nómina e insumos, con proveedor y vencimiento.",
+          "rz": [
+            600,
+            300,
+            1300,
+            700
+          ]
+        },
+        {
+          "p": "analisis",
+          "r": [
+            129,
+            261,
+            1375,
+            540
+          ],
+          "t": "Tu gasto contra tus ventas",
+          "d": "Los últimos seis meses lado a lado, con el porcentaje que se va en gasto.",
+          "rz": [
+            129,
+            261,
+            760,
+            540
+          ]
+        },
+        {
+          "p": "analisis",
+          "r": [
+            129,
+            710,
+            744,
+            949
+          ],
+          "t": "A dónde se va el dinero",
+          "d": "Nómina, servicios, renta, compras: cuánto y en cuántos gastos."
+        },
+        {
+          "p": "flujo",
+          "r": [
+            129,
+            142,
+            1375,
+            520
+          ],
+          "t": "Lo que viene, semana por semana",
+          "d": "Vencido, por pagar en 30 días y la semana más pesada del mes.",
+          "rz": [
+            129,
+            142,
+            760,
+            520
+          ]
+        },
+        {
+          "p": "flujo",
+          "r": [
+            129,
+            558,
+            1375,
+            684
+          ],
+          "t": "Gastos recurrentes",
+          "d": "La renta y la nómina se proyectan solas; las pausas con un clic.",
+          "rz": [
+            129,
+            558,
+            760,
+            684
+          ]
+        },
+        {
+          "p": "detalle",
+          "r": [
+            178,
+            384,
+            884,
+            828
+          ],
+          "t": "La compra, contra lo que llegó",
+          "d": "Si la recepción vino con faltante, el gasto lo marca prenda por prenda."
+        }
+      ]
+    },
     "hero": {
       "eyebrow": "Sacs Gastos",
-      "title": "Tus gastos, capturados solos. Tu dinero, bajo control.",
-      "subtitle": "Sube el XML o una foto del ticket y Sacs llena el gasto por ti. Sin duplicados, con recordatorio de lo que viene (renta, luz, nómina) y el flujo de caja proyectado a 30 días. Tu contador recibe todo ordenado y tu utilidad deja de ser un misterio.",
+      "title": "Tus gastos ordenados, contra tus ventas y lo que viene.",
+      "subtitle": "Cada gasto con su categoría y su proveedor, cuánto se va de tus ventas mes a mes, a dónde se va el dinero y el flujo proyectado semana por semana. La renta y la nómina se proyectan solas.",
       "image": "/images/gastos-sistema-lista.webp",
-      "imageAlt": "Módulo de Gastos de Sacs: total por pagar, filtros y tabla de gastos por estado",
+      "imageAlt": "Análisis de gastos de una boutique en Sacs",
       "video": {
         "mp4": "/videos/gastos-hero.mp4",
         "webm": "/videos/gastos-hero.webm"
@@ -4768,40 +5062,54 @@ export const pageContent: Record<string, any> = {
     "features": [
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z\"/><path d=\"M14 2v6h6\"/><path d=\"M9 13l2 2 4-4\"/></svg>",
-        "title": "Lo captura por ti (XML o foto)",
-        "description": "Sube el XML del CFDI o una foto del ticket y la IA llena concepto, proveedor, monto, fecha e impuestos. Te marca campo por campo qué tan segura está — si algo no se ve claro, lo confirmas tú. Nunca inventa montos."
+        "title": "Cada gasto con categoría",
+        "description": "Compras, servicios, renta, nómina e insumos, con proveedor y vencimiento."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 12l2 2 4-4\"/><circle cx=\"12\" cy=\"12\" r=\"9\"/></svg>",
-        "title": "Nunca pagas dos veces",
-        "description": "Reconoce la factura por su folio fiscal (UUID) y bloquea el duplicado antes de registrarlo. También te avisa si un gasto se parece sospechosamente a otro reciente."
+        "title": "Gasto contra ventas",
+        "description": "Qué parte de lo que vendes se va en gasto, mes a mes."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 12a9 9 0 1015-6.7L21 8\"/><path d=\"M21 3v5h-5\"/></svg>",
-        "title": "Los gastos fijos, en automático",
-        "description": "Renta, luz, internet, nómina, suscripciones: configúralos una vez y Sacs los crea solos antes de que venzan. Dejas de \"acordarte\" de pagar."
+        "title": "Flujo proyectado",
+        "description": "Lo vencido, lo que viene en 30 días y la semana más pesada."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l3-3 3 3 5-5\"/></svg>",
-        "title": "Ve lo que viene a 30 días",
-        "description": "El flujo proyectado te muestra cuánto vas a pagar esta semana y las próximas — gastos pendientes, parcialidades y recurrentes — para que el dinero nunca te agarre por sorpresa."
+        "title": "Ligado a tus compras",
+        "description": "El gasto de una orden muestra si la mercancía llegó completa."
       }
     ],
     "showcaseTitle": "El dinero sale. Que salga con nombre y apellido.",
     "blocks": [
       {
-        "title": "Captura en 30 segundos. Desde el celular o la caja.",
-        "description": "El gerente saca el celular, toma foto del ticket, elige sucursal, categoría y método de pago. Listo. El gasto queda en bitácora con usuario, fecha, hora y sucursal — sin Excel, sin WhatsApp del dueño, sin \"te lo paso luego\".",
+        "title": "Cada gasto en su lugar, con su proveedor.",
+        "description": "Cada gasto con folio, proveedor, fecha de vencimiento, concepto y categoría. Filtras pagados, pendientes, por aprobar y sin factura, y lo bajas a Excel.",
         "image": "/images/gastos-captura.webp",
         "imageAlt": "Gerente capturando gasto con foto de ticket desde celular en Sacs",
         "link": null,
         "featured": true,
         "variant": "expense-capture",
-        "cardSize": "sm"
+        "cardSize": "sm",
+        "bullets": [
+          {
+            "label": "Folio y proveedor",
+            "detail": "Cada gasto con quién, cuándo vence y por qué concepto."
+          },
+          {
+            "label": "Pendientes y pagados",
+            "detail": "Filtra pagados, pendientes, por aprobar y sin factura."
+          },
+          {
+            "label": "Excel en un clic",
+            "detail": "Lo que ves en la lista sale tal cual a Excel."
+          }
+        ]
       },
       {
-        "title": "Cada gasto en su cajón. Cada cajón en su reporte.",
-        "description": "Renta, luz, agua, papel, limpieza, nómina, marketing. Organizas con las categorías que uses o las que tu contador pida. Al cerrar el mes, el reporte de gastos por categoría ya está — no se arma con ticket por ticket en una hoja.",
+        "title": "A dónde se va el dinero.",
+        "description": "El análisis junta nómina, servicios, renta, compras e insumos, te dice a quién le pagas más y compara tu gasto contra tus ventas mes a mes.",
         "image": "/images/gastos-categorias.webp",
         "imageAlt": "Pantalla de categorías de gastos en Sacs con jerarquía",
         "link": {
@@ -4809,7 +5117,21 @@ export const pageContent: Record<string, any> = {
           "href": "/producto/reportes-y-analitica"
         },
         "featured": true,
-        "variant": "expense-categories-tree"
+        "variant": "expense-categories-tree",
+        "bullets": [
+          {
+            "label": "A dónde se va el dinero",
+            "detail": "Nómina, servicios, renta, compras e insumos, en barras."
+          },
+          {
+            "label": "A quién le pagas más",
+            "detail": "Los proveedores que más pesan en el periodo."
+          },
+          {
+            "label": "Gasto contra ventas",
+            "detail": "Qué porcentaje de lo vendido se va en gasto, mes a mes."
+          }
+        ]
       },
       {
         "title": "Por sucursal, por categoría, por periodo.",
@@ -4819,7 +5141,21 @@ export const pageContent: Record<string, any> = {
         "link": null,
         "featured": true,
         "variant": "expense-filters-report",
-        "cardSize": "lg"
+        "cardSize": "lg",
+        "bullets": [
+          {
+            "label": "Vencido sin pagar",
+            "detail": "Lo que ya se pasó, en pesos y compromisos."
+          },
+          {
+            "label": "Carga por semana",
+            "detail": "Qué semana del mes es la más pesada."
+          },
+          {
+            "label": "Gastos recurrentes",
+            "detail": "Renta y nómina se proyectan solas; se pausan con un clic."
+          }
+        ]
       },
       {
         "title": "Autorización antes del pago, no después.",
@@ -4831,14 +5167,28 @@ export const pageContent: Record<string, any> = {
           "href": "/producto/cuentas-por-pagar"
         },
         "featured": true,
-        "variant": "expense-approval-pin"
+        "variant": "expense-approval-pin",
+        "bullets": [
+          {
+            "label": "Cronograma de pagos",
+            "detail": "Pago único o en cuotas, con el próximo pago marcado."
+          },
+          {
+            "label": "Recepción ligada",
+            "detail": "Si la compra llegó con faltante, el gasto lo muestra."
+          },
+          {
+            "label": "Estado del gasto",
+            "detail": "Registrado y pagado, con su comprobante."
+          }
+        ]
       }
     ],
     "testimonial": {
       "quote": "Antes el cierre de mes eran dos días enteros cuadrando tickets con los gerentes por WhatsApp. \"¿Qué fue esto?\" \"No me acuerdo.\" Ahora cada gasto lo capturan ellos con foto al momento. Cuando llega fin de mes, el reporte ya está — yo solo reviso.",
       "name": "Patricia Nieves",
       "role": "Directora de Finanzas",
-      "company": "Joyería Milán Nieves",
+      "company": "Boutique Milán Nieves",
       "stat": "2 días",
       "statLabel": "menos en el cierre contable mensual"
     },
@@ -4974,7 +5324,7 @@ export const pageContent: Record<string, any> = {
         "color": "#b47a3a",
         "quote": "Antes el cierre de mes eran dos días enteros cuadrando tickets con los gerentes por WhatsApp. \"¿Qué fue esto?\" \"No me acuerdo.\" Ahora cada gasto lo capturan ellos con foto al momento. Cuando llega fin de mes, el reporte ya está — yo solo reviso.",
         "name": "Patricia Nieves",
-        "business": "Joyería Milán Nieves",
+        "business": "Boutique Milán Nieves · Moda mujer",
         "location": "República Dominicana"
       },
       {
@@ -4984,7 +5334,7 @@ export const pageContent: Record<string, any> = {
         "color": "#4a6aa8",
         "quote": "Detectamos un patrón raro de gastos de limpieza que crecía sin razón. El reporte comparativo nos dio la evidencia para abrir la investigación — un proveedor inflaba facturas. Sin el sistema, nadie lo notaba.",
         "name": "Rodrigo Iturbe",
-        "business": "Florerías Mistral",
+        "business": "Mistral · Ropa casual",
         "location": "México"
       },
       {
@@ -4994,7 +5344,7 @@ export const pageContent: Record<string, any> = {
         "color": "#5a8a5f",
         "quote": "Tenía tres Excel distintos por sucursal y cada dueña de tienda lo llenaba como quería. Ahora todos usan las mismas categorías, todos suben el comprobante y yo veo un reporte consolidado. Mi contador dejó de odiarme.",
         "name": "Valentina Posse",
-        "business": "Floristería Naranja Viva",
+        "business": "Naranja Viva · Accesorios",
         "location": "Argentina"
       }
     ],
@@ -5038,50 +5388,182 @@ export const pageContent: Record<string, any> = {
     ]
   },
   "cuentas-por-pagar": {
+    "enSacs": {
+      "modulo": "Cuentas por pagar",
+      "nota": "Capturas del módulo de Cuentas por pagar de Sacs (octubre de 2026) con una boutique de ejemplo.",
+      "pantallas": [
+        {
+          "id": "lista",
+          "img": "/images/producto/cuentas-por-pagar/lista.webp",
+          "h": 1250,
+          "t": "Cuentas por pagar",
+          "alt": "Lista de cuentas por pagar en Sacs con vencimiento, saldo pendiente y estado"
+        },
+        {
+          "id": "agrupada",
+          "img": "/images/producto/cuentas-por-pagar/agrupada.webp",
+          "h": 1150,
+          "t": "Vista agrupada",
+          "alt": "Cuentas por pagar agrupadas por proveedor en Sacs con próximo vencimiento y total"
+        },
+        {
+          "id": "cuenta",
+          "img": "/images/producto/cuentas-por-pagar/cuenta.webp",
+          "h": 1300,
+          "t": "Cuenta",
+          "alt": "Detalle de una cuenta por pagar en Sacs: aviso de vencida, saldo pendiente y registrar pago"
+        }
+      ],
+      "pasos": [
+        {
+          "p": "lista",
+          "r": [
+            350,
+            38,
+            740,
+            88
+          ],
+          "t": "Lo vencido, siempre a la vista",
+          "d": "Cuánto debes vencido y lo que vence en los próximos siete días.",
+          "rz": [
+            300,
+            38,
+            760,
+            88
+          ]
+        },
+        {
+          "p": "lista",
+          "r": [
+            40,
+            330,
+            1410,
+            900
+          ],
+          "t": "Cada cuenta con su saldo y estado",
+          "d": "Pagada, vencida o pendiente, ordenada por lo más urgente.",
+          "rz": [
+            40,
+            330,
+            760,
+            700
+          ]
+        },
+        {
+          "p": "agrupada",
+          "r": [
+            40,
+            380,
+            1410,
+            960
+          ],
+          "t": "Agrupado por proveedor",
+          "d": "Cuántas cuentas tienes con cada uno, el próximo vencimiento y el total.",
+          "rz": [
+            40,
+            380,
+            760,
+            700
+          ]
+        },
+        {
+          "p": "cuenta",
+          "r": [
+            178,
+            166,
+            884,
+            237
+          ],
+          "t": "Cuánto lleva vencida cada cuenta",
+          "d": "Los días de atraso, a la vista, para hablar con el proveedor a tiempo."
+        },
+        {
+          "p": "cuenta",
+          "r": [
+            940,
+            85,
+            1290,
+            280
+          ],
+          "t": "Pagas desde la cuenta",
+          "d": "Saldo, total de la factura y «Registrar pago» en el mismo lugar."
+        },
+        {
+          "p": "cuenta",
+          "r": [
+            178,
+            642,
+            884,
+            839
+          ],
+          "t": "La factura, ligada",
+          "d": "Fecha de factura y de vencimiento, desglose de importes e historial de pagos."
+        }
+      ]
+    },
     "hero": {
       "eyebrow": "Sacs Cuentas por Pagar",
       "title": "Sabes a quién le debes, cuánto y cuándo vence.",
-      "subtitle": "Tus pagos a proveedores y gastos programados en una sola pantalla: saldo vivo por beneficiario, vencimientos en calendario y pagos parciales o totales que bajan el saldo al instante. Dejas de enterarte de una factura vencida cuando te marcan.",
+      "subtitle": "Lo vencido siempre a la vista, cada cuenta con su saldo y su estado, agrupado por proveedor y con el pago desde la misma cuenta. Dejas de enterarte de una factura vencida cuando te marca el proveedor.",
       "image": "/images/cuentas-por-pagar-sistema.webp",
-      "imageAlt": "Módulo de cuentas por pagar en Sacs"
+      "imageAlt": "Cuentas por pagar de una marca de moda en Sacs",
+      "video": {
+        "mp4": "/videos/cxp-hero.mp4",
+        "webm": "/videos/cxp-hero.webm"
+      },
+      "videoPoster": "/videos/cxp-hero-poster.webp"
     },
     "features": [
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 4h16v16H4z\"/><path d=\"M4 8h16M8 4v16\"/></svg>",
-        "title": "Tablero de lo que urge",
-        "description": "Total por pagar, lo que vence esta semana y lo que ya está vencido, arriba y a la vista. Filtras por vencido o por vencer con un clic y atacas primero lo que aprieta."
+        "title": "Vencido a la vista",
+        "description": "El total vencido y lo que vence en los próximos siete días, arriba."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3h18v18H3z\"/><path d=\"M7 7h10M7 11h10M7 15h6\"/></svg>",
-        "title": "Pagos parciales o totales",
-        "description": "Registras un abono o liquidas completo. Eliges método (transferencia, efectivo, cheque o tarjeta), pones referencia y comprobante, y el saldo pendiente baja en automático."
+        "title": "Saldo por cuenta",
+        "description": "Cada cuenta con su vencimiento, saldo pendiente y estado."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"2\"/><path d=\"M2 10h20\"/><path d=\"M7 15l3 3 7-7\"/></svg>",
-        "title": "Cronograma de parcialidades",
-        "description": "Una cuenta a cuotas lleva su propio calendario de pagos. Cada parcialidad se marca pagada por separado y el sistema recalcula el saldo y el estado de la cuenta sin que cuadres nada a mano."
+        "title": "Agrupado por proveedor",
+        "description": "Cuántas cuentas, próximo vencimiento y total por proveedor."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
-        "title": "Sale de la caja correcta",
-        "description": "Si usas Cuentas de Efectivo, eliges de qué cuenta sale el dinero (banco, caja chica) o lo descuentas del corte. El movimiento queda registrado en la caja, no en un Excel aparte."
+        "title": "Pago desde la cuenta",
+        "description": "Registrar pago junto al saldo, con su historial."
       }
     ],
     "showcaseTitle": "Tus cuentas con proveedores, ordenadas.",
     "blocks": [
       {
         "title": "Cada proveedor, su propio estado de cuenta.",
-        "description": "Capturas la factura al recibirla, el sistema la suma al saldo del proveedor. Cuando pagas, aplicas el complemento a una o varias facturas. En cualquier momento abres el estado de cuenta: facturas abiertas, pagos aplicados, saldo actual — sin Excel, sin llamar al proveedor para preguntar.",
+        "description": "Capturas la factura al recibirla, el sistema la suma al saldo del proveedor. Cuando pagas, registras el pago en la cuenta y el saldo baja al instante. En cualquier momento abres el estado de cuenta: facturas abiertas, pagos aplicados, saldo actual — sin Excel, sin llamar al proveedor para preguntar.",
         "image": "/images/cuentas-por-pagar-estado.webp",
         "imageAlt": "Estado de cuenta de proveedor en Sacs con facturas y pagos",
         "link": null,
         "featured": true,
         "variant": "ap-supplier-statement",
-        "cardSize": "lg"
+        "cardSize": "lg",
+        "bullets": [
+          {
+            "label": "Agrupado por proveedor",
+            "detail": "Cuántas cuentas, próximo vencimiento y total de cada uno."
+          },
+          {
+            "label": "Saldo vivo",
+            "detail": "Cada pago baja el saldo al instante."
+          },
+          {
+            "label": "Más urgente primero",
+            "detail": "La lista se ordena por lo que vence antes."
+          }
+        ]
       },
       {
-        "title": "Complementos de pago con referencia cruzada.",
-        "description": "Pagas con una transferencia y el monto cubre tres facturas distintas del mismo proveedor. Sacs te deja aplicar el pago a las facturas específicas — cada una queda con su complemento, cada complemento con su factura. Tu contador agradece, tu SAT también.",
+        "title": "Pagas desde la cuenta.",
+        "description": "Abres la cuenta y ves cuántos días lleva vencida, el saldo pendiente y el total de la factura. «Registrar pago» está ahí mismo, y cada pago queda en el historial de la cuenta.",
         "image": "/images/cuentas-por-pagar-complemento.webp",
         "imageAlt": "Aplicación de complemento de pago a múltiples facturas en Sacs",
         "link": {
@@ -5089,11 +5571,25 @@ export const pageContent: Record<string, any> = {
           "href": "/producto/control-financiero"
         },
         "featured": true,
-        "variant": "ap-payment-split"
+        "variant": "ap-payment-split",
+        "bullets": [
+          {
+            "label": "Pagas desde la cuenta",
+            "detail": "«Registrar pago» junto al saldo pendiente."
+          },
+          {
+            "label": "Pagos parciales",
+            "detail": "Abonas lo que puedes y el saldo se ajusta."
+          },
+          {
+            "label": "Factura ligada",
+            "detail": "Folio fiscal, fecha de factura y de vencimiento."
+          }
+        ]
       },
       {
-        "title": "Devuelves, el proveedor acredita, Sacs aplica.",
-        "description": "Llegó mercancía con defecto. Devuelves, el proveedor emite la nota de crédito, tú la capturas contra la factura original. El saldo baja automáticamente. Cuando pagues, pagas el neto — no tienes que pelear meses después \"oye, ¿me acreditaste aquello?\".",
+        "title": "Agrupado por proveedor.",
+        "description": "La vista agrupada te dice cuántas cuentas tienes con cada proveedor, cuándo vence la próxima y cuánto suman, para decidir a quién pagar primero.",
         "image": "/images/cuentas-por-pagar-nota-credito.webp",
         "imageAlt": "Aplicación de nota de crédito de proveedor en Sacs",
         "link": {
@@ -5101,7 +5597,21 @@ export const pageContent: Record<string, any> = {
           "href": "/producto/ordenes-de-compra"
         },
         "featured": true,
-        "variant": "invoice-credit"
+        "variant": "ap-grouped",
+        "bullets": [
+          {
+            "label": "Cuentas por proveedor",
+            "detail": "Cuántas le debes a cada uno, de un vistazo."
+          },
+          {
+            "label": "Próximo vencimiento",
+            "detail": "La fecha que sigue con cada proveedor."
+          },
+          {
+            "label": "Historial completo",
+            "detail": "Actividad y conversación en cada cuenta."
+          }
+        ]
       },
       {
         "title": "Calendario de vencimientos. Sin sorpresas.",
@@ -5111,14 +5621,28 @@ export const pageContent: Record<string, any> = {
         "link": null,
         "featured": true,
         "variant": "ap-due-calendar",
-        "cardSize": "lg"
+        "cardSize": "lg",
+        "bullets": [
+          {
+            "label": "Vencido a la vista",
+            "detail": "El total vencido y los próximos siete días, arriba."
+          },
+          {
+            "label": "Días de atraso",
+            "detail": "Cada cuenta vencida dice hace cuántos días."
+          },
+          {
+            "label": "Calendario",
+            "detail": "Los vencimientos del mes en un calendario."
+          }
+        ]
       }
     ],
     "testimonial": {
       "quote": "Dejamos de perder descuentos por pronto pago porque alguna factura se nos escapaba. Sacs me avisa tres días antes — y la recurrencia de \"se me olvidó\" se volvió cero.",
       "name": "Esteban Corcuera",
       "role": "Administrador",
-      "company": "Ferretería del Bajío",
+      "company": "Corcuera Sastrería",
       "stat": "Cero",
       "statLabel": "facturas olvidadas que costaban descuentos por pronto pago"
     },
@@ -5254,7 +5778,7 @@ export const pageContent: Record<string, any> = {
         "color": "#b47a3a",
         "quote": "Dejamos de perder descuentos por pronto pago porque alguna factura se nos escapaba. Sacs me avisa tres días antes — y la recurrencia de \"se me olvidó\" se volvió cero.",
         "name": "Esteban Corcuera",
-        "business": "Ferretería del Bajío",
+        "business": "Corcuera Sastrería · Moda hombre",
         "location": "México"
       },
       {
@@ -5264,7 +5788,7 @@ export const pageContent: Record<string, any> = {
         "color": "#4a6aa8",
         "quote": "Un proveedor nos cobró dos veces la misma factura. Antes ni nos enterábamos. Ahora el sistema no deja capturar el mismo folio dos veces y me avisa si aplico un pago que ya estaba pagado. Recuperamos miles de pesos.",
         "name": "Rosario Devoto",
-        "business": "Vinos La Vendimia",
+        "business": "La Vendimia · Ropa de temporada",
         "location": "Argentina"
       },
       {
@@ -5274,7 +5798,7 @@ export const pageContent: Record<string, any> = {
         "color": "#5a8a5f",
         "quote": "Las notas de crédito eran un desastre. El proveedor mandaba devolución, pasaban dos meses y yo seguía pagando el total. En Sacs la aplico el mismo día, el saldo queda neto y la próxima transferencia ya sale correcta.",
         "name": "Hernando Bazán",
-        "business": "Ferretería Andes Bazán",
+        "business": "Andes · Calzado",
         "location": "Bolivia"
       }
     ],
@@ -5318,54 +5842,218 @@ export const pageContent: Record<string, any> = {
     ]
   },
   "reportes-y-analitica": {
+    "enSacs": {
+      "modulo": "Reportes",
+      "nota": "Capturas de los reportes de Sacs (octubre de 2026) con una boutique de ejemplo.",
+      "pantallas": [
+        {
+          "id": "hub",
+          "img": "/images/producto/reportes-y-analitica/hub.webp",
+          "h": 1500,
+          "t": "Tus reportes a un clic",
+          "alt": "Centro de reportes de Sacs: preguntas frecuentes y reportes por área"
+        },
+        {
+          "id": "categoria",
+          "img": "/images/producto/reportes-y-analitica/categoria.webp",
+          "h": 1500,
+          "t": "Ventas por talla",
+          "alt": "Ventas por talla en Sacs de los últimos 7 días"
+        },
+        {
+          "id": "producto",
+          "img": "/images/producto/reportes-y-analitica/producto.webp",
+          "h": 1300,
+          "t": "Ventas por producto",
+          "alt": "Reporte de ventas por prenda en Sacs con foto, SKU, fecha y vendedor"
+        }
+      ],
+      "pasos": [
+        {
+          "p": "hub",
+          "r": [
+            624,
+            52,
+            1384,
+            171
+          ],
+          "t": "Pregunta en tus palabras",
+          "d": "Faltantes de caja, quién me debe, qué no se vende: un clic y abre el reporte.",
+          "rz": [
+            624,
+            52,
+            1384,
+            171
+          ]
+        },
+        {
+          "p": "hub",
+          "r": [
+            120,
+            304,
+            1384,
+            587
+          ],
+          "t": "Tus reportes de siempre, a un clic",
+          "d": "Ventas por vendedor, análisis de ventas, ventas por prenda y cortes de caja.",
+          "rz": [
+            120,
+            304,
+            800,
+            587
+          ]
+        },
+        {
+          "p": "categoria",
+          "r": [
+            105,
+            116,
+            1399,
+            262
+          ],
+          "t": "Arma el reporte en cuatro pasos",
+          "d": "Sucursal, cómo agrupar, qué medir y el periodo. Agrupa por categoría, talla, color u ocasión.",
+          "rz": [
+            105,
+            116,
+            800,
+            262
+          ]
+        },
+        {
+          "p": "categoria",
+          "r": [
+            105,
+            350,
+            1400,
+            920
+          ],
+          "t": "Qué talla vende más, día por día",
+          "d": "La venta de cada talla en cada día del periodo, para pedir la curva correcta.",
+          "rz": [
+            105,
+            350,
+            800,
+            700
+          ]
+        },
+        {
+          "p": "producto",
+          "r": [
+            96,
+            170,
+            1438,
+            1050
+          ],
+          "t": "Cada prenda vendida",
+          "d": "Foto, SKU, fecha, origen y vendedor de cada línea vendida.",
+          "rz": [
+            96,
+            170,
+            800,
+            700
+          ]
+        },
+        {
+          "p": "producto",
+          "r": [
+            1090,
+            6,
+            1432,
+            66
+          ],
+          "t": "A Excel con el mismo corte",
+          "d": "Lo que ves en pantalla sale a Excel con los mismos filtros.",
+          "rz": [
+            1050,
+            10,
+            1440,
+            62
+          ]
+        }
+      ]
+    },
     "hero": {
       "eyebrow": "Sacs Reportes y Analítica",
-      "title": "Todos los reportes de tu negocio, en una sola pantalla.",
-      "subtitle": "Un hub con tus reportes agrupados por área —ventas, cobros, clientes, inventario, caja— y un reporte de ventas con filtros por sucursal, vendedor y periodo — hasta la talla más vendida y la que se agotó — que se exporta a Excel con el mismo corte que ves. Sin pedirle el reporte al contador.",
+      "title": "Todos los reportes de tu marca, en una sola pantalla.",
+      "subtitle": "Un centro de reportes donde preguntas en tus palabras —faltantes de caja, quién me debe, qué no se vende— y un reporte de ventas que agrupas por categoría, talla, color, ocasión o vendedor, día por día, y bajas a Excel con el mismo corte.",
       "image": "/images/reportes-y-analitica-sistema.webp",
-      "imageAlt": "Módulo de reportes y analitica en Sacs"
+      "imageAlt": "Reporte de ventas por categoría de prenda en Sacs",
+      "video": {
+        "mp4": "/videos/reportes-hero.mp4",
+        "webm": "/videos/reportes-hero.webm"
+      },
+      "videoPoster": "/videos/reportes-hero-poster.webp"
     },
     "features": [
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l4-4 4 4 5-5\"/></svg>",
-        "title": "Hub de reportes por categoría",
-        "description": "Una pantalla 'Reportes' con buscador y tus reportes agrupados en Punto de Venta, Ventas, Cobros, Clientes, Inventario, Campañas de Impulso y más. Cada tarjeta abre el reporte real con un clic."
+        "title": "Pregunta en tus palabras",
+        "description": "«Qué no se vende» o «quién me debe» abre el reporte correcto."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M9 9h6M9 13h6M9 17h3\"/></svg>",
-        "title": "Reporte de ventas con filtros y chips",
-        "description": "Filtra por sucursal, vendedor, fecha o periodo desde un panel lateral. Los filtros activos quedan visibles como chips, ordenas por cualquier columna y ves importe, descuentos, impuestos, costo y ganancia."
+        "title": "Agrupa por talla o color",
+        "description": "Categoría, talla, color, ocasión, estilo o vendedor."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/></svg>",
-        "title": "Exporta a Excel tal cual lo ves",
-        "description": "Bajas el reporte a Excel (.xlsx) con los mismos filtros y columnas de la pantalla. Sacs cuenta los registros antes y descarga por bloques para que el archivo salga completo."
+        "title": "Cada prenda vendida",
+        "description": "Foto, SKU, fecha y vendedor de cada línea."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h9\"/><path d=\"M18 14v7M15 17l3-3 3 3\"/></svg>",
-        "title": "Dashboard con KPIs en vivo",
-        "description": "El tablero te muestra ventas, ticket promedio, productos más vendidos, transacciones recientes y comparativos con gráficas. El pulso del negocio antes de sentarte en la oficina."
+        "title": "Excel con el mismo corte",
+        "description": "Los mismos filtros y totales que ves en pantalla."
       }
     ],
     "showcaseTitle": "Deja de administrar con intuición.",
     "blocks": [
       {
-        "title": "Un tablero con los números que sí importan.",
-        "description": "Ventas del día, comparativo con ayer y con el mismo día del mes pasado, ticket promedio, productos más vendidos, sucursal que lidera. Lo abres antes de sentarte en la oficina y ya sabes cómo va el negocio — sin pedirle el corte al gerente por WhatsApp.",
+        "title": "Tus reportes, a un clic.",
+        "description": "Accesos rápidos a los reportes que usas cada semana —ventas por vendedor, análisis de ventas, ventas por prenda, cortes de caja— y un buscador donde escribes lo que quieres saber: faltantes de caja, quién me debe, qué no se vende.",
         "image": "/images/reportes-y-analitica-dashboard.webp",
         "imageAlt": "Dashboard de KPIs en vivo en Sacs con ventas por sucursal",
         "link": null,
         "featured": true,
-        "variant": "control-central"
+        "variant": "control-central",
+        "bullets": [
+          {
+            "label": "Accesos rápidos",
+            "detail": "Ventas por vendedor, análisis de ventas, ventas por prenda y cortes de caja."
+          },
+          {
+            "label": "Pregunta en tus palabras",
+            "detail": "«Qué no se vende» o «quién me debe» abre el reporte correcto."
+          },
+          {
+            "label": "Por área",
+            "detail": "Punto de venta, ventas, cobros, clientes, inventario y campañas."
+          }
+        ]
       },
       {
-        "title": "Filtra, cruza, contesta. En segundos.",
-        "description": "Abres el reporte de ventas, filtras por sucursal Polanco, categoría \"Calzado\", vendedor María y mes pasado. La respuesta aparece al instante. Quieres cambiar a trimestre y compararla con Ana: dos clics. No esperas 20 minutos a que una consulta corra.",
+        "title": "Agrupa como piensas en moda.",
+        "description": "El reporte de ventas se arma en cuatro pasos: sucursal, cómo agrupar, qué medir y el periodo. Agrupa por categoría, talla, color, ocasión, estilo o vendedor y ve cada día del periodo.",
         "image": "/images/reportes-y-analitica-filtros.webp",
         "imageAlt": "Reporte de ventas con filtros cruzados en Sacs",
         "link": null,
         "featured": true,
-        "variant": "report-filter-cross"
+        "variant": "report-filter-cross",
+        "bullets": [
+          {
+            "label": "Agrupa como piensas en moda",
+            "detail": "Categoría, marca, talla, color, ocasión, estilo o vendedor."
+          },
+          {
+            "label": "Día, semana o mes",
+            "detail": "El periodo se elige con atajos: hoy, ayer, últimos 7 días, este mes."
+          },
+          {
+            "label": "Compara periodos",
+            "detail": "Contra la semana o el mes anterior, en la misma tabla."
+          }
+        ]
       },
       {
         "title": "Inventario, clientes, gastos — la operación completa.",
@@ -5378,7 +6066,21 @@ export const pageContent: Record<string, any> = {
         },
         "featured": true,
         "variant": "report-modules-grid",
-        "cardSize": "lg"
+        "cardSize": "lg",
+        "bullets": [
+          {
+            "label": "Cada prenda vendida",
+            "detail": "Foto, SKU, fecha, origen y vendedor de cada línea."
+          },
+          {
+            "label": "Cortes de caja",
+            "detail": "Cada corte con su efectivo esperado contra contado."
+          },
+          {
+            "label": "Inventario y clientes",
+            "detail": "Existencias, resurtido, lealtad y cuentas por cobrar."
+          }
+        ]
       },
       {
         "title": "Exporta con el mismo corte que ves.",
@@ -5391,14 +6093,28 @@ export const pageContent: Record<string, any> = {
         },
         "featured": true,
         "variant": "report-export-preview",
-        "cardSize": "sm"
+        "cardSize": "sm",
+        "bullets": [
+          {
+            "label": "Mismo corte",
+            "detail": "Excel con los mismos filtros, totales y desglose que ves."
+          },
+          {
+            "label": "Sin rearmar nada",
+            "detail": "Tu contador recibe el archivo listo."
+          },
+          {
+            "label": "Columnas a tu medida",
+            "detail": "Elige qué columnas ver y exportar."
+          }
+        ]
       }
     ],
     "testimonial": {
       "quote": "Le pedía a mi administradora el reporte del mes y me lo mandaba el día 10. Ahora lo veo yo, todos los días, y ya tomé decisiones antes de que ella cerrara. En dos meses detectamos una sucursal que vendía bien pero perdía plata por devoluciones — la rescatamos.",
       "name": "Federico Aristizábal",
       "role": "CEO",
-      "company": "Muebles Querétaro",
+      "company": "Aristizábal Moda",
       "stat": "Al minuto",
       "statLabel": "dejas de esperar el reporte del mes 10 para reaccionar"
     },
@@ -5534,7 +6250,7 @@ export const pageContent: Record<string, any> = {
         "color": "#b47a3a",
         "quote": "Le pedía a mi administradora el reporte del mes y me lo mandaba el día 10. Ahora lo veo yo, todos los días, y ya tomé decisiones antes de que ella cerrara. En dos meses detectamos una sucursal que vendía bien pero perdía plata por devoluciones — la rescatamos.",
         "name": "Federico Aristizábal",
-        "business": "Muebles Querétaro",
+        "business": "Aristizábal · Moda hombre",
         "location": "México"
       },
       {
@@ -5554,7 +6270,7 @@ export const pageContent: Record<string, any> = {
         "color": "#5a8a5f",
         "quote": "Lo que más me gustó es que lo que veo en pantalla lo bajo a Excel con los mismos cortes. Mi contador dejó de pedirme \"el otro reporte con otros filtros\" porque ahora los hago yo mismo en 20 segundos.",
         "name": "Julián Escobar",
-        "business": "Ferreterías Huilo",
+        "business": "Huilo · Calzado",
         "location": "Colombia"
       }
     ],

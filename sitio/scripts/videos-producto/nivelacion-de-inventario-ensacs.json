@@ -1,0 +1,107 @@
+{
+ "modulo": "Nivelación de inventario",
+ "nota": "Capturas del módulo de Nivelación de Sacs (octubre de 2026) con una boutique de ejemplo.",
+ "pantallas": [
+  {
+   "id": "tablero",
+   "img": "/images/producto/nivelacion-de-inventario/tablero.webp",
+   "h": 1170,
+   "t": "Tablero del analista",
+   "alt": "Tablero de nivelación de Sacs: dinero parado, mercancía dormida y veredictos ordenados por dinero en juego"
+  },
+  {
+   "id": "nivelaciones",
+   "img": "/images/producto/nivelacion-de-inventario/nivelaciones.webp",
+   "h": 803,
+   "t": "Nivelaciones",
+   "alt": "Lista de nivelaciones en Sacs con folio, origen, destinos y estado"
+  },
+  {
+   "id": "reglas",
+   "img": "/images/producto/nivelacion-de-inventario/reglas.webp",
+   "h": 1700,
+   "t": "Nivelación de moda · Gestor de reglas",
+   "alt": "Gestor de reglas de moda en Sacs: temporadas, configuración al 92 % y preguntas pendientes"
+  }
+ ],
+ "pasos": [
+  {
+   "p": "tablero",
+   "r": [
+    162,
+    69,
+    1342,
+    160
+   ],
+   "t": "Tu analista amanece con el resumen",
+   "d": "Cada madrugada calcula qué se te acaba y cuánta venta está en juego."
+  },
+  {
+   "p": "tablero",
+   "r": [
+    162,
+    174,
+    1342,
+    431
+   ],
+   "t": "El dinero que no se mueve",
+   "d": "Mercancía parada donde no se vende y lotes dormidos, en pesos.",
+   "rz": [
+    162,
+    174,
+    760,
+    300
+   ]
+  },
+  {
+   "p": "tablero",
+   "r": [
+    160,
+    480,
+    1342,
+    1080
+   ],
+   "t": "Cada tarjeta, una decisión",
+   "d": "Liquidar, rebajar, resurtir o traspasar, ordenado por dinero en juego.",
+   "rz": [
+    160,
+    480,
+    560,
+    780
+   ]
+  },
+  {
+   "p": "nivelaciones",
+   "r": [
+    89,
+    401,
+    1415,
+    772
+   ],
+   "t": "Cada nivelación con folio y estado",
+   "d": "De la bodega a varias tiendas: pendiente, en progreso o completada."
+  },
+  {
+   "p": "reglas",
+   "r": [
+    359,
+    301,
+    1009,
+    371
+   ],
+   "t": "Tu configuración de moda, al 92 %",
+   "d": "Sacs te dice qué falta saber de tu catálogo y te lo pregunta."
+  },
+  {
+   "p": "reglas",
+   "r": [
+    98,
+    236,
+    281,
+    554
+   ],
+   "t": "El calendario de moda manda",
+   "d": "Buen Fin, Navidad, Reyes y cada temporada con sus fechas."
+  }
+ ]
+}

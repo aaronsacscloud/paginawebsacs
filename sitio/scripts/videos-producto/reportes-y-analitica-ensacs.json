@@ -1,0 +1,95 @@
+{
+ "modulo": "Reportes",
+ "nota": "Capturas de los reportes de Sacs (octubre de 2026) con una boutique de ejemplo.",
+ "pantallas": [
+  {
+   "id": "hub",
+   "img": "/images/producto/reportes-y-analitica/hub.webp",
+   "h": 1500,
+   "t": "Tus reportes a un clic",
+   "alt": "Centro de reportes de Sacs: preguntas frecuentes y reportes por área"
+  },
+  {
+   "id": "categoria",
+   "img": "/images/producto/reportes-y-analitica/categoria.webp",
+   "h": 1500,
+   "t": "Ventas por talla",
+   "alt": "Ventas por talla en Sacs de los últimos 7 días"
+  },
+  {
+   "id": "producto",
+   "img": "/images/producto/reportes-y-analitica/producto.webp",
+   "h": 1300,
+   "t": "Ventas por producto",
+   "alt": "Reporte de ventas por prenda en Sacs con foto, SKU, fecha y vendedor"
+  }
+ ],
+ "pasos": [
+  {
+   "p": "hub",
+   "r": [
+    624,
+    52,
+    1384,
+    171
+   ],
+   "t": "Pregunta en tus palabras",
+   "d": "Faltantes de caja, quién me debe, qué no se vende: un clic y abre el reporte."
+  },
+  {
+   "p": "hub",
+   "r": [
+    120,
+    304,
+    1384,
+    587
+   ],
+   "t": "Tus reportes de siempre, a un clic",
+   "d": "Análisis de inventario, cortes de caja, análisis de ventas y vendedores."
+  },
+  {
+   "p": "categoria",
+   "r": [
+    105,
+    116,
+    1399,
+    202
+   ],
+   "t": "Arma el reporte en cuatro pasos",
+   "d": "Sucursal, cómo agrupar, qué medir y el periodo. Y lo comparas."
+  },
+  {
+   "p": "categoria",
+   "r": [
+    105,
+    314,
+    2639,
+    413
+   ],
+   "t": "Día por día, con su ganancia",
+   "d": "Piezas, ventas, impuestos, costo y ganancia de cada día del periodo."
+  },
+  {
+   "p": "categoria",
+   "r": [
+    105,
+    202,
+    1399,
+    264
+   ],
+   "t": "Qué categoría vende más",
+   "d": "Agrupa por categoría, marca, talla, color, ocasión o estilo."
+  },
+  {
+   "p": "producto",
+   "r": [
+    96,
+    135,
+    1707,
+    1610
+   ],
+   "t": "Cada prenda vendida",
+   "d": "Foto, SKU, fecha, origen y vendedor de cada línea; a Excel con un clic."
+  }
+ ]
+}

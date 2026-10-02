@@ -15,11 +15,11 @@ const fs = require('fs'), path = require('path'), { execSync } = require('child_
     if (pa.altoFijo) await p.setViewportSize({ width: 1440, height: pa.altoFijo });
     await pa.abrir(r, { prep, sleep });
     if (pa.dice) await r.esperaTexto(pa.dice, 120000);
-    await prep.menuColapsado(r); await prep.ocultarFlotantes(r); for (const a of (cfg.avisos || [])) await prep.ocultarAviso(r, a); await sleep(1500);
+    await prep.menuColapsado(r); await prep.ocultarFlotantes(r); for (const a of (cfg.avisos || [])) await prep.ocultarAviso(r, a); for (const t of (cfg.ocultar || [])) await prep.ocultarTexto(r, t); await sleep(1500);
     const h = pa.altoFijo || Math.min(Math.max((await alto()) + 24, 900), pa.maxAlto || 3800);
     if (!pa.altoFijo) { await p.setViewportSize({ width: 1440, height: h }); await sleep(3500); }
     if (pa.dice) await r.esperaTexto(pa.dice, 120000).catch(() => console.log('⚠ no reapareció', pa.dice)); await sleep(1500);
-    await prep.ocultarFlotantes(r); for (const a of (cfg.avisos || [])) await prep.ocultarAviso(r, a); await sleep(800);
+    await prep.ocultarFlotantes(r); for (const a of (cfg.avisos || [])) await prep.ocultarAviso(r, a); for (const t of (cfg.ocultar || [])) await prep.ocultarTexto(r, t); await sleep(800);
     const png = path.join(OUT, pa.id + '.png');
     const shot = await p.screenshot({ type: 'png', clip: { x: 0, y: 0, width: 1440, height: h, scale: 1 } }).catch(() => p.screenshot({ type: 'png' }));
     fs.writeFileSync(png, shot);

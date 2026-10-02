@@ -3,7 +3,7 @@
   if (window.__scrub) return; window.__scrub = true;
   const NOMBRES = ['MARIANA LÓPEZ RÍOS','SOFÍA HERNÁNDEZ CRUZ','DANIELA TORRES VEGA','REGINA DÍAZ ORTEGA','FERNANDA CASTILLO PAZ','REGINA MORALES LUNA','ANDREA GUZMÁN REYES','CAMILA ORTIZ NAVA','LUCÍA MENDOZA ROJAS','PAULINA AGUILAR MEZA','XIMENA VARGAS LEÓN','RENATA SALAZAR DÍAZ','BOUTIQUE ALMA S.A. DE C.V.','TIENDAS LUNA MODA S.A. DE C.V.','NATALIA FLORES IBARRA','ISABELA CRUZ MÁRQUEZ'];
   const FIJOS = Object.assign({}, window.__SCRUB_FIJOS || {}); // pares real→ficticio: fijos.local.json (fuera de git)
-  const mapa = new Map(Object.entries(FIJOS)); const FAKES = new Set(Object.values(FIJOS)); const SUBS = Object.keys(FIJOS).filter(k => k.length >= 8).sort((a,b)=>b.length-a.length);
+  const mapa = new Map(Object.entries(FIJOS)); const FAKES = new Set(Object.values(FIJOS)); const SUBS = Object.keys(FIJOS).filter(k => k.length >= 8 || /^[A-Z][a-z]{3,}$/.test(k) || /^[A-Z]{3,}$/.test(k)).sort((a,b)=>b.length-a.length);
   const LIBRES = new Set(['LOMA850312AB1','PUBLICO EN GENERAL','PÚBLICO EN GENERAL','XAXX010101000','XEXX010101000']);
   let n = 0;
   const h = s => { let x = 0; for (const c of s) x = (x * 31 + c.charCodeAt(0)) >>> 0; return x; };
@@ -19,6 +19,7 @@
   function fixText(node){
     let t = node.textContent; const orig = t; const tr = t.trim(); if (!tr) return;
     if (FAKES.has(tr)) return;
+    t = t.replace(/\b[0-9a-f]{24}\b/g, '').replace(/sucursal_\d+_[a-z0-9]+/gi, '');
     for (const k of SUBS) if (t.includes(k)) { t = t.split(k).join(FIJOS[k]); }
     if (t !== orig) { node.textContent = t; return; }
     if (mapa.has(tr)) { t = t.replace(tr, mapa.get(tr)); }

@@ -1,0 +1,95 @@
+{
+ "modulo": "Cuentas por pagar",
+ "nota": "Capturas del módulo de Cuentas por pagar de Sacs (octubre de 2026) con una boutique de ejemplo.",
+ "pantallas": [
+  {
+   "id": "lista",
+   "img": "/images/producto/cuentas-por-pagar/lista.webp",
+   "h": 1250,
+   "t": "Cuentas por pagar",
+   "alt": "Lista de cuentas por pagar en Sacs con vencimiento, saldo pendiente y estado"
+  },
+  {
+   "id": "agrupada",
+   "img": "/images/producto/cuentas-por-pagar/agrupada.webp",
+   "h": 1150,
+   "t": "Vista agrupada",
+   "alt": "Cuentas por pagar agrupadas por proveedor en Sacs con próximo vencimiento y total"
+  },
+  {
+   "id": "cuenta",
+   "img": "/images/producto/cuentas-por-pagar/cuenta.webp",
+   "h": 1300,
+   "t": "Cuenta",
+   "alt": "Detalle de una cuenta por pagar en Sacs: aviso de vencida, saldo pendiente y registrar pago"
+  }
+ ],
+ "pasos": [
+  {
+   "p": "lista",
+   "r": [
+    363,
+    47,
+    724,
+    77
+   ],
+   "t": "Lo vencido, siempre a la vista",
+   "d": "Cuánto debes vencido y lo que vence en los próximos siete días."
+  },
+  {
+   "p": "lista",
+   "r": [
+    97,
+    338,
+    1407,
+    2551
+   ],
+   "t": "Cada cuenta con su saldo y estado",
+   "d": "Pagada, vencida o pendiente, ordenada por lo más urgente."
+  },
+  {
+   "p": "agrupada",
+   "r": [
+    97,
+    393,
+    1407,
+    448
+   ],
+   "t": "Agrupado por proveedor",
+   "d": "Cuántas cuentas tienes con cada uno, el próximo vencimiento y el total."
+  },
+  {
+   "p": "cuenta",
+   "r": [
+    178,
+    166,
+    884,
+    237
+   ],
+   "t": "Cuánto lleva vencida cada cuenta",
+   "d": "Los días de atraso, a la vista, para hablar con el proveedor a tiempo."
+  },
+  {
+   "p": "cuenta",
+   "r": [
+    97,
+    338,
+    1407,
+    2551
+   ],
+   "t": "Pagas desde la cuenta",
+   "d": "Saldo, total de la factura y «Registrar pago» en el mismo lugar."
+  },
+  {
+   "p": "cuenta",
+   "r": [
+    178,
+    642,
+    884,
+    839
+   ],
+   "t": "La factura, ligada",
+   "d": "Fecha de factura y de vencimiento, desglose de importes e historial de pagos."
+  }
+ ]
+}

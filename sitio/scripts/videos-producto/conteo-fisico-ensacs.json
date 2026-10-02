@@ -1,0 +1,95 @@
+{
+ "modulo": "Conteo físico",
+ "nota": "Capturas del módulo Conteo físico de Sacs (octubre de 2026) con una boutique de ejemplo.",
+ "pantallas": [
+  {
+   "id": "lista",
+   "img": "/images/producto/conteo-fisico/lista.webp",
+   "h": 1300,
+   "t": "Conteo físico",
+   "alt": "Lista de conteos físicos en Sacs con su estado"
+  },
+  {
+   "id": "resumen",
+   "img": "/images/producto/conteo-fisico/resumen.webp",
+   "h": 1500,
+   "t": "Resumen de conteo",
+   "alt": "Resumen de un conteo en Sacs: cada prenda con su foto, existencia, contado y diferencia en piezas y en pesos"
+  },
+  {
+   "id": "analisis",
+   "img": "/images/producto/conteo-fisico/analisis.webp",
+   "h": 3600,
+   "t": "Análisis de conteos",
+   "alt": "Análisis de conteos en Sacs: faltante, exactitud, tendencia por mes, faltante por categoría y prendas reincidentes"
+  }
+ ],
+ "pasos": [
+  {
+   "p": "lista",
+   "r": [
+    89,
+    203,
+    1417,
+    1518
+   ],
+   "t": "Todos tus conteos, con su estado",
+   "d": "Pendientes y completados, por tienda y almacén. Exporta la lista a Excel."
+  },
+  {
+   "p": "resumen",
+   "r": [
+    88,
+    128,
+    1416,
+    195
+   ],
+   "t": "Lo que no cuadra, en piezas y en pesos",
+   "d": "Un clic y te quedas solo con las prendas con diferencia: −21 piezas, −$17,650."
+  },
+  {
+   "p": "resumen",
+   "r": [
+    89,
+    250,
+    1415,
+    311
+   ],
+   "t": "Cada prenda con su foto, talla y color",
+   "d": "Existencia del sistema contra lo contado, y lo que vale cada diferencia."
+  },
+  {
+   "p": "analisis",
+   "r": [
+    120,
+    183,
+    1384,
+    283
+   ],
+   "t": "Cuánto pierdes, de un vistazo",
+   "d": "Faltante, sobrantes y exactitud de todos tus conteos del periodo."
+  },
+  {
+   "p": "analisis",
+   "r": [
+    758,
+    663,
+    1384,
+    1036
+   ],
+   "t": "Dónde se va el dinero",
+   "d": "Pantalones, camisetas, bufandas: el faltante por categoría y por tienda."
+  },
+  {
+   "p": "analisis",
+   "r": [
+    80,
+    80,
+    1360,
+    600
+   ],
+   "t": "Las prendas que faltan una y otra vez",
+   "d": "Con un clic armas un conteo parcial solo con ellas."
+  }
+ ]
+}
