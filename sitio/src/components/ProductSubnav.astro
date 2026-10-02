@@ -48,7 +48,8 @@ const activePillar = pillars.find((p) => p.id === currentPillar)!;
 <style>
   .product-subnav {
     position: sticky;
-    top: 71px;
+    /* la altura real del menú principal la fija el script (cambia con la barra superior y el ancho) */
+    top: var(--psn-top, 71px);
     z-index: 999;
     background: #fff;
     border-top: 1px solid rgba(0, 0, 0, 0.06);
@@ -317,6 +318,15 @@ const activePillar = pillars.find((p) => p.id === currentPillar)!;
   if (mainNav) {
     mainNav.style.transition = 'transform 0.3s ease';
   }
+
+  // El subnav se pega justo debajo del menú principal, mida lo que mida (antes 71px fijos: si el
+  // menú crecía, tapaba la mitad de este segundo header).
+  function fijarTope() {
+    if (mainNav && subnav) subnav.style.setProperty('--psn-top', Math.round(mainNav.getBoundingClientRect().height) + 'px');
+  }
+  fijarTope();
+  if (mainNav && 'ResizeObserver' in window) new ResizeObserver(fijarTope).observe(mainNav);
+  window.addEventListener('resize', fijarTope, { passive: true });
 
   window.addEventListener('scroll', () => {
     if (!subnavTicking) {
