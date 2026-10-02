@@ -8,7 +8,7 @@ const { abrir } = require('./rec.cjs'); const prep = require('./prep.cjs');
   const [tx,ty] = await r.punto('Timbradas'); await r.toque(tx,ty,{clic:false});
   await r.transicion(async()=>{ await p.mouse.click(tx,ty); await p.waitForTimeout(2500); }, 'TIMBRADO');
   await prep.ocultarFlotantes(r); await r.quieto(0.7);
-  const fila = await p.evaluate(()=>{ let best=null; const walk=root=>{ root.querySelectorAll('*').forEach(el=>{ if(el.shadowRoot) walk(el.shadowRoot); if(el.classList&&el.classList.contains('cliente-nombre')){ const b=el.getBoundingClientRect(); if(b.width>0&&(!best||b.y<best[1])) best=[b.x+b.width/2,b.y+b.height/2]; } }); }; walk(document); return best; });
+  const fila = await r.punto('I-6359'); // factura con 3 conceptos (la más nueva puede ser de otro giro)
   await r.toque(fila[0], fila[1], {clic:false});
   r.st.vis = 0;
   await r.transicion(async()=>{ await p.mouse.click(fila[0], fila[1]); await p.waitForTimeout(2000); }, 'Jeans wide leg', { extra: 2500 });

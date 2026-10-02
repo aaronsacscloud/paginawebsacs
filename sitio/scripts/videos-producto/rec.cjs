@@ -5,13 +5,14 @@
 // cada cuadro es un screenshot a 2x; el tiempo del video lo define el guion, no el reloj.
 const { chromium } = require('/home/aaron/.claude/skills/crear-video-cliente/node_modules/playwright-core');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
-const D = __dirname, B = 'http://localhost:8081/lavidaesparadisfrutar/mibellapandita/', FPS = 30;
+const CUENTA = process.env.CUENTA || 'mibellapandita';
+const D = __dirname, B = `http://localhost:8081/lavidaesparadisfrutar/${CUENTA}/`, FPS = 30;
 const TOUCH = `(()=>{ if(document.getElementById('__t'))return; const t=document.createElement('div'); t.id='__t';
  t.style.cssText='position:fixed;left:0;top:0;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:rgba(40,40,45,.20);border:2px solid rgba(255,255,255,.9);box-shadow:0 2px 10px rgba(0,0,0,.20);pointer-events:none;z-index:2147483647;opacity:0;transition:none;';
  document.documentElement.appendChild(t); })()`;
 const ease = x => x < .5 ? 4*x*x*x : 1 - Math.pow(-2*x + 2, 3) / 2;
 async function abrir(vw, vh){
-  const ctx = await chromium.launchPersistentContext(D+'/perfil', { executablePath: process.env.HOME+'/.cache/ms-playwright/chromium-1234/chrome-linux64/chrome', args:['--no-sandbox','--hide-scrollbars'], viewport:{width:vw,height:vh}, deviceScaleFactor:2 });
+  const ctx = await chromium.launchPersistentContext(D+'/perfil-'+CUENTA, { executablePath: process.env.HOME+'/.cache/ms-playwright/chromium-1234/chrome-linux64/chrome', args:['--no-sandbox','--hide-scrollbars'], viewport:{width:vw,height:vh}, deviceScaleFactor:2 });
   const fijos = fs.existsSync(D+'/fijos.local.json') ? fs.readFileSync(D+'/fijos.local.json','utf8') : '{}';
   await ctx.addInitScript(`window.__SCRUB_FIJOS = ${fijos};`);
   await ctx.addInitScript({ path: D+'/scrub.js' });
@@ -24,17 +25,23 @@ async function abrir(vw, vh){
     async hayTexto(texto){ return p.evaluate(t=>{ let ok=false; const walk=root=>root.querySelectorAll('*').forEach(el=>{ if(ok) return; if(el.shadowRoot) walk(el.shadowRoot); for(const c of el.childNodes){ if(c.nodeType===3 && c.textContent.toLowerCase().includes(t.toLowerCase())){ const b=el.getBoundingClientRect(); if(b.width>0) ok=true; } } }); walk(document); return ok; }, texto); },
     async esperaTexto(texto, max=150000){ const t0=Date.now(); while(Date.now()-t0<max){ if(await api.hayTexto(texto)) { await p.waitForTimeout(1500); return; } await p.waitForTimeout(400); } await p.screenshot({path:D+'/fail-espera.png'}); throw new Error('No apareció «'+texto+'»'); },
     // primer uso del perfil: inicia sesión con U / P del entorno (nunca escribir credenciales aquí)
-    async login(){ await p.waitForTimeout(4000); if (!(await p.$('input[type="password"]'))) return;
+    async login(texto){ let hay=false;
+      for (let i=0;i<30 && !hay;i++){
+        const ent = await p.locator('text=Entrar ahora').locator('visible=true').count().catch(()=>0);
+        if (ent) { await p.locator('text=Entrar ahora').locator('visible=true').first().click().catch(()=>{}); await p.waitForTimeout(3000); continue; }
+        hay = (await p.locator('input[type="password"]').locator('visible=true').count().catch(()=>0)) > 0;
+        if (!hay) { if (p.url().includes('/lavidaesparadisfrutar/') && texto && i>2 && await api.hayTexto(texto).catch(()=>false)) return; await p.waitForTimeout(1000); } }
+      if (!hay) return;
       if (!process.env.U || !process.env.P) throw new Error('Perfil sin sesión: corre con U=<correo> P=<contraseña>');
-      const e = await p.$('input[type="email"]') || await p.$('input[type="text"]'); await e.fill(process.env.U);
-      await (await p.$('input[type="password"]')).fill(process.env.P); await p.keyboard.press('Enter');
-      await p.waitForURL('**/lavidaesparadisfrutar/**', { timeout: 90000 }); await p.waitForTimeout(5000);
-      if (await p.$('text=Entrar ahora')) await p.click('text=Entrar ahora'); },
-    async go(u, texto){ await p.goto(B+u, { waitUntil:'domcontentloaded' }); await api.login(); if (p.url().indexOf(u.split('/')[0]) < 0) await p.goto(B+u, { waitUntil:'domcontentloaded' }); if (texto) await api.esperaTexto(texto); else await p.waitForTimeout(9000); await p.evaluate(TOUCH); },
+      await p.locator('input[type="email"], input[type="text"]').locator('visible=true').first().fill(process.env.U);
+      await p.locator('input[type="password"]').locator('visible=true').first().fill(process.env.P); await p.keyboard.press('Enter');
+      for (let i=0;i<60;i++){ if (p.url().includes('/lavidaesparadisfrutar/')) break; const ent = await p.$('text=Entrar ahora').catch(()=>null); if (ent) { await ent.click().catch(()=>{}); } await p.waitForTimeout(1000); }
+      await p.waitForURL('**/lavidaesparadisfrutar/**', { timeout: 60000 }); await p.waitForTimeout(4000); },
+    async go(u, texto){ await p.goto(B+u, { waitUntil:'domcontentloaded' }); await api.login(texto); if (p.url().indexOf(u.split('/')[0]) < 0) await p.goto(B+u, { waitUntil:'domcontentloaded' }); if (texto) await api.esperaTexto(texto); else await p.waitForTimeout(9000); await p.evaluate(TOUCH); },
     async punto(texto, { xmin=0, xmax=1e9, ymin=0, ymax=1e9, n=0 } = {}){
       const r = await p.evaluate(([texto,xmin,xmax,ymin,ymax])=>{ const ex=[], pre=[]; const walk=root=>root.querySelectorAll('*').forEach(el=>{ if(el.shadowRoot) walk(el.shadowRoot);
-        const own=[...el.childNodes].filter(c=>c.nodeType===3).map(c=>c.textContent).join('').trim(); if(!own) return; const b=el.getBoundingClientRect(); const cx=b.x+b.width/2, cy=b.y+b.height/2; if(!(b.width>0&&cx>=xmin&&cx<=xmax&&cy>=ymin&&cy<=ymax)) return;
-        if(own===texto) ex.push([cx,cy]); else if(own.startsWith(texto) && own.length < texto.length+8) pre.push([cx,cy]); }); walk(document); return ex.length?ex:pre; },[texto,xmin,xmax,ymin,ymax]);
+        const own=[...el.childNodes].filter(c=>c.nodeType===3).map(c=>c.textContent).join('').replace(/\s+/g,' ').trim(); if(!own) return; const b=el.getBoundingClientRect(); const cx=b.x+b.width/2, cy=b.y+b.height/2; if(!(b.width>0&&cx>=xmin&&cx<=xmax&&cy>=ymin&&cy<=ymax)) return;
+        const o2=own.toLowerCase(), t2=texto.toLowerCase(); if(o2===t2) ex.push([cx,cy]); else if(o2.startsWith(t2) && own.length < texto.length+8) pre.push([cx,cy]); }); walk(document); return ex.length?ex:pre; },[texto,xmin,xmax,ymin,ymax]);
       if (!r[n]) { await p.screenshot({ path: D+'/fail-'+texto.replace(/\W+/g,'_')+'.png' }); throw new Error('No encontré «'+texto+'»'); } return r[n]; },
     async cursor(){ await p.evaluate(([x,y,v,e])=>{ const t=document.getElementById('__t'); if(!t) return; const z=parseFloat(document.documentElement.style.zoom)||1; t.style.opacity=v; t.style.transform=`translate(${x/z}px,${y/z}px) scale(${e/z})`; t.style.background = e<1 ? 'rgba(40,40,45,.36)' : 'rgba(40,40,45,.20)'; },[st.x,st.y,st.vis,st.esc]); },
     async cuadro(frames=1){ await api.cursor(); const f = path.join(st.dir, String(st.n++).padStart(5,'0')+'.jpg'); await shot(f); st.lista.push([f, frames/FPS]); return f; },

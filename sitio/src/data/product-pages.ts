@@ -3133,31 +3133,36 @@ export const pageContent: Record<string, any> = {
   "inventario-omnicanal": {
     "hero": {
       "eyebrow": "Sacs Inventario Omnicanal",
-      "title": "Tu inventario de toda la red, leído en 10 análisis listos para decidir.",
-      "subtitle": "El Tablero de Inventario consolida existencias, costos y ventas de cada sucursal y almacén en una sola pantalla. Elige el análisis que necesitas — ABC, rotación, puntos de reorden, valorización — filtra por ubicación y expórtalo a Excel cuando tu contador lo pida. En moda, con la lectura por talla y color: qué combinación se vende y cuál se quedó.",
+      "title": "Todo tu inventario de moda, por talla, color y tienda.",
+      "subtitle": "Cada prenda con sus variantes de talla y color, lo que hay en cada tienda y en la bodega, y los traspasos entre ellas con su estado. Sacs te avisa qué se va a acabar antes de que se acabe.",
       "image": "/images/inventario-omnicanal-sistema.webp",
-      "imageAlt": "Módulo de inventario omnicanal en Sacs"
+      "imageAlt": "Catálogo de productos de moda con variantes por talla y color en Sacs",
+      "video": {
+        "mp4": "/videos/inventario-hero.mp4",
+        "webm": "/videos/inventario-hero.webm"
+      },
+      "videoPoster": "/videos/inventario-hero-poster.webp"
     },
     "features": [
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>",
-        "title": "Consolidado por sucursal y almacén",
-        "description": "Filtra por sucursal o almacén, o consolida toda la red en modo por-producto. Cada ubicación trae su propio stock y costo, y lo ves en la misma tabla — sin cruzar archivos."
+        "title": "Talla y color por tienda",
+        "description": "Cada variante con su existencia en cada tienda y en la bodega, en la misma pantalla."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83\"/></svg>",
-        "title": "10 análisis en un clic",
-        "description": "Selecciona el tipo de reporte en cards visuales: ABC/Pareto, Rotación, Productos Obsoletos, Mermas, Valorización contable, Puntos de Reorden, Anomalías, Dashboard, Resumen y Rendimiento."
+        "title": "Catálogo con fotos y variantes",
+        "description": "Cada prenda con su foto, sus variantes y lo que hay en existencia, disponible y apartado."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z\"/><path d=\"M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12\"/></svg>",
-        "title": "Puntos de reorden con sugerencia",
-        "description": "El reporte de reorden calcula stock de seguridad y cantidad sugerida por SKU contra tu existencia actual, para que repongas antes del quiebre y no compres de más."
+        "title": "Traspasos con estado",
+        "description": "De la bodega a la tienda con folio: por enviar, enviado, recibido completo o parcial."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l4-4 4 4 5-5\"/></svg>",
-        "title": "Valorización y exportación",
-        "description": "Compara el valor de tu inventario por costo PPP y FIFO para tu reporte contable, ordena por cualquier columna y descarga todo a Excel o PDF."
+        "title": "Alertas antes del quiebre",
+        "description": "Qué básicos se acaban esta semana y qué traspasos salvan la venta."
       }
     ],
     "showcaseTitle": "Tu inventario es uno. Aunque tengas 30 sucursales.",
@@ -3170,7 +3175,21 @@ export const pageContent: Record<string, any> = {
         "link": null,
         "featured": true,
         "variant": "inv-global-matrix",
-        "cardSize": "lg"
+        "cardSize": "lg",
+        "bullets": [
+          {
+            "label": "Talla y color por tienda",
+            "detail": "Cada variante con su existencia en cada tienda y en la bodega."
+          },
+          {
+            "label": "Bitácora de cada movimiento",
+            "detail": "Venta, devolución o ajuste: quién, cuándo y por qué."
+          },
+          {
+            "label": "Prenda, variantes y stock juntos",
+            "detail": "El catálogo muestra la foto, sus tallas y colores y lo disponible."
+          }
+        ]
       },
       {
         "title": "Cada canal descuenta del mismo pozo.",
@@ -3182,7 +3201,21 @@ export const pageContent: Record<string, any> = {
           "href": "/producto/tienda-en-linea"
         },
         "featured": true,
-        "variant": "online-catalog"
+        "variant": "online-catalog",
+        "bullets": [
+          {
+            "label": "Un solo inventario",
+            "detail": "Punto de venta, tienda en línea y WhatsApp descuentan del mismo stock."
+          },
+          {
+            "label": "Agotado al instante",
+            "detail": "La última pieza vendida en tienda se marca agotada en línea."
+          },
+          {
+            "label": "Sin ventas que no puedes cumplir",
+            "detail": "Nadie vende una talla que ya no existe."
+          }
+        ]
       },
       {
         "title": "Reservado, en tránsito, vendido — todo rastreado.",
@@ -3194,19 +3227,47 @@ export const pageContent: Record<string, any> = {
           "href": "/producto/apartados-y-pedidos"
         },
         "featured": true,
-        "variant": "inv-states"
+        "variant": "inv-states",
+        "bullets": [
+          {
+            "label": "Apartados reservados",
+            "detail": "Lo apartado sale del disponible y no se vende dos veces."
+          },
+          {
+            "label": "Traspasos con folio",
+            "detail": "Por enviar, enviado y recibido, con responsable y fecha."
+          },
+          {
+            "label": "Diferencias a la vista",
+            "detail": "Si llega menos de lo enviado, la diferencia queda abierta."
+          }
+        ]
       },
       {
         "title": "Alertas que te avisan antes del quiebre.",
-        "description": "Configura mínimos por sucursal y por SKU. Cuando un artículo clave cae bajo el piso, Sacs manda email a quien compra y propone una sugerencia de reposición basada en la venta de las últimas semanas. La nivelación avanzada entre sucursales está en el roadmap.",
+        "description": "Configura mínimos por sucursal y por SKU. Cuando un artículo clave cae bajo el piso, Sacs manda email a quien compra y propone una sugerencia de reposición basada en la venta de las últimas semanas. Y la nivelación entre tiendas te propone qué mover y de dónde, antes de pedirle más al proveedor.",
         "image": "/images/inventario-omnicanal-alertas.webp",
         "imageAlt": "Pantalla de alertas de mínimos y caducidad en Sacs",
         "link": {
-          "label": "Ver órdenes de compra",
-          "href": "/producto/ordenes-de-compra"
+          "label": "Ver nivelación entre tiendas",
+          "href": "/producto/nivelacion-de-inventario"
         },
         "featured": true,
-        "variant": "inv-low-stock-alert"
+        "variant": "inv-low-stock-alert",
+        "bullets": [
+          {
+            "label": "Básicos que se acaban",
+            "detail": "Te avisa qué se agota esta semana y cuánta venta está en juego."
+          },
+          {
+            "label": "Dinero parado",
+            "detail": "Ve qué mercancía no se vende en la tienda donde está."
+          },
+          {
+            "label": "Traspasos que salvan venta",
+            "detail": "Mueve las piezas a la tienda que las va a vender."
+          }
+        ]
       }
     ],
     "testimonial": {
@@ -3221,9 +3282,9 @@ export const pageContent: Record<string, any> = {
     "interruptStrike": "vive en 14 lugares al mismo tiempo.",
     "showcaseTabs": [
       {
-        "label": "Elige el análisis",
-        "title": "10 reportes, un solo tablero.",
-        "description": "Cards visuales para ABC/Pareto, Rotación, Obsoletos, Mermas, Valorización (PPP/FIFO), Puntos de Reorden, Anomalías, Dashboard General, Resumen y Rendimiento. Cambias de análisis sin salir de la pantalla.",
+        "label": "Talla y color",
+        "title": "Cada talla y cada color, con su existencia.",
+        "description": "Activa «Desglosar variantes» y el catálogo muestra cada combinación de talla y color con su existencia, lo disponible y lo apartado. Filtra por tienda, temporada, ocasión o familia de color.",
         "image": "/images/inventario-omnicanal-tab-config.webp",
         "imageAlt": "Configurador de reporte de inventario: tipo de análisis, criterio, clasificación, agrupar por y período en Sacs",
         "link": null,
@@ -3258,54 +3319,20 @@ export const pageContent: Record<string, any> = {
             "title": "Notas por SKU",
             "description": "Agregas notas visibles al equipo: \"no reponer\", \"discontinuado\", \"pedido especial\". Quedan junto al artículo y ayudan a decisiones de compra."
           }
-        ]
+        ],
+        "video": {
+          "mp4": "/videos/tab-inventario-variantes.mp4",
+          "webm": "/videos/tab-inventario-variantes.webm",
+          "poster": "/videos/tab-inventario-variantes-poster.webp",
+          "aspectRatio": "1372 / 720"
+        }
       },
       {
-        "label": "Filtra y consolida",
-        "title": "Toda la red, o solo una sucursal.",
-        "description": "Filtra por sucursal y almacén, alterna entre vista por-sucursal y por-producto consolidado, aplica filtros numéricos y de texto avanzados y ordena por la columna que te importe (stock, costo, valor, rotación).",
+        "label": "Traspasos con estado",
+        "title": "De la bodega a la tienda, sin perder una pieza.",
+        "description": "Cada traspaso con su folio, origen, destino, prendas y estado: por enviar, enviado, recibido completo o parcial. El inventario de origen y destino se ajusta en el momento correcto.",
         "image": "/images/inventario-omnicanal-tab-filtros.webp",
         "imageAlt": "Modal de filtros avanzados del dashboard de inventario en Sacs",
-        "link": null,
-        "details": [
-          {
-            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 21V10l9-7 9 7v11\"/><path d=\"M9 21v-8h6v8\"/></svg>",
-            "title": "Vista por tienda",
-            "description": "El gerente entra con su usuario y Sacs filtra todo a su sucursal. No ve el resto de la red si no se lo autorizaste."
-          },
-          {
-            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M9 9h6M9 13h6M9 17h3\"/></svg>",
-            "title": "Mínimos por ubicación",
-            "description": "Cada tienda tiene sus mínimos — Polanco vende más talla 6 que Santa Fe, así que los pisos de reposición son distintos. Los configuras por sucursal."
-          },
-          {
-            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z\"/></svg>",
-            "title": "Solicitar traspaso",
-            "description": "El gerente ve que le falta el modelo 417 y solicita traspaso desde la sucursal que tiene excedente. La solicitud queda abierta para aprobación."
-          },
-          {
-            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6L9 17l-5-5\"/></svg>",
-            "title": "Recepción contra traspaso",
-            "description": "Cuando llega el paquete, el gerente escanea y confirma las piezas recibidas. Si falta alguna, Sacs abre la diferencia para investigar."
-          },
-          {
-            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
-            "title": "Bitácora de movimientos",
-            "description": "Cada entrada, salida, ajuste y traspaso queda registrado con usuario, fecha y motivo. Se consulta por SKU o por rango de fechas."
-          },
-          {
-            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M19 8v6M22 11h-6\"/></svg>",
-            "title": "Permisos por rol",
-            "description": "Cajero, gerente, gerente regional, dirección — cada uno ve lo que le corresponde. El ajuste manual requiere PIN del nivel autorizado."
-          }
-        ]
-      },
-      {
-        "label": "Reorden y exporta",
-        "title": "Repón a tiempo y entrega el reporte.",
-        "description": "El reporte de Puntos de Reorden te da stock de seguridad y cantidad sugerida por SKU; la Valorización compara costo PPP vs FIFO. Todo se exporta a Excel y PDF para compras y contabilidad.",
-        "image": "/images/inventario-omnicanal-tab-reporte.webp",
-        "imageAlt": "Reporte de análisis ABC de inventario con tabla de productos por sucursal en Sacs",
         "link": null,
         "details": [
           {
@@ -3338,7 +3365,62 @@ export const pageContent: Record<string, any> = {
             "title": "Consulta desde el POS",
             "description": "El cajero busca un producto agotado y el POS le muestra en qué otras sucursales hay existencia — para proponer apartado con traspaso al cliente."
           }
-        ]
+        ],
+        "video": {
+          "mp4": "/videos/tab-inventario-traspasos.mp4",
+          "webm": "/videos/tab-inventario-traspasos.webm",
+          "poster": "/videos/tab-inventario-traspasos-poster.webp",
+          "aspectRatio": "1372 / 720"
+        }
+      },
+      {
+        "label": "Alertas antes del quiebre",
+        "title": "Qué se va a acabar y de dónde traerlo.",
+        "description": "Cada mañana el tablero calcula qué básicos se agotan esta semana, cuánto dinero está parado donde no se vende y qué traspasos salvan venta. Nada se mueve sin que tú lo decidas.",
+        "image": "/images/inventario-omnicanal-tab-reporte.webp",
+        "imageAlt": "Reporte de análisis ABC de inventario con tabla de productos por sucursal en Sacs",
+        "link": {
+          "label": "Ver nivelación entre tiendas",
+          "href": "/producto/nivelacion-de-inventario"
+        },
+        "details": [
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 21V10l9-7 9 7v11\"/><path d=\"M9 21v-8h6v8\"/></svg>",
+            "title": "Vista por tienda",
+            "description": "El gerente entra con su usuario y Sacs filtra todo a su sucursal. No ve el resto de la red si no se lo autorizaste."
+          },
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M9 9h6M9 13h6M9 17h3\"/></svg>",
+            "title": "Mínimos por ubicación",
+            "description": "Cada tienda tiene sus mínimos — Polanco vende más talla 6 que Santa Fe, así que los pisos de reposición son distintos. Los configuras por sucursal."
+          },
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z\"/></svg>",
+            "title": "Solicitar traspaso",
+            "description": "El gerente ve que le falta el modelo 417 y solicita traspaso desde la sucursal que tiene excedente. La solicitud queda abierta para aprobación."
+          },
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6L9 17l-5-5\"/></svg>",
+            "title": "Recepción contra traspaso",
+            "description": "Cuando llega el paquete, el gerente escanea y confirma las piezas recibidas. Si falta alguna, Sacs abre la diferencia para investigar."
+          },
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
+            "title": "Bitácora de movimientos",
+            "description": "Cada entrada, salida, ajuste y traspaso queda registrado con usuario, fecha y motivo. Se consulta por SKU o por rango de fechas."
+          },
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M19 8v6M22 11h-6\"/></svg>",
+            "title": "Permisos por rol",
+            "description": "Cajero, gerente, gerente regional, dirección — cada uno ve lo que le corresponde. El ajuste manual requiere PIN del nivel autorizado."
+          }
+        ],
+        "video": {
+          "mp4": "/videos/tab-inventario-alertas.mp4",
+          "webm": "/videos/tab-inventario-alertas.webm",
+          "poster": "/videos/tab-inventario-alertas-poster.webp",
+          "aspectRatio": "1372 / 720"
+        }
       }
     ],
     "testimonials": [
