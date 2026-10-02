@@ -359,10 +359,10 @@ export const pageContent: Record<string, any> = {
             "partial",
             "partial",
             "partial",
-            "none",
             "partial",
-            "none",
-            "none"
+            "partial",
+            "partial",
+            "partial"
           ],
           "note": "En Sacs los tres canales viven en una base — sin sincronización, sin \"versión online distinta\"."
         },
@@ -373,10 +373,10 @@ export const pageContent: Record<string, any> = {
             "none",
             "none",
             "full",
-            "none",
             "partial",
             "partial",
             "partial",
+            "full",
             "partial",
             "none",
             "none"
@@ -390,9 +390,9 @@ export const pageContent: Record<string, any> = {
             "none",
             "none",
             "full",
+            "partial",
             "none",
-            "none",
-            "none",
+            "partial",
             "full",
             "full",
             "full",
@@ -407,7 +407,7 @@ export const pageContent: Record<string, any> = {
             "none",
             "none",
             "nd",
-            "none",
+            "partial",
             "none",
             "none",
             "partial",
@@ -428,8 +428,8 @@ export const pageContent: Record<string, any> = {
             "partial",
             "full",
             "full",
-            "full",
-            "full",
+            "partial",
+            "partial",
             "partial"
           ],
           "note": "Endless aisle: si no hay aquí, te dice dónde sí y agenda el traspaso."
@@ -445,8 +445,8 @@ export const pageContent: Record<string, any> = {
             "none",
             "none",
             "full",
-            "full",
-            "full",
+            "partial",
+            "partial",
             "full"
           ],
           "note": "Pagas un fee mensual fijo. La pasarela cobra su % aparte, no Sacs."
@@ -459,7 +459,7 @@ export const pageContent: Record<string, any> = {
             "full",
             "full",
             "partial",
-            "partial",
+            "none",
             "partial",
             "full",
             "full",
@@ -477,7 +477,7 @@ export const pageContent: Record<string, any> = {
             "partial",
             "partial",
             "partial",
-            "none",
+            "partial",
             "none",
             "partial",
             "none",
@@ -486,7 +486,7 @@ export const pageContent: Record<string, any> = {
           "note": "AXO responde con tu inventario y ventas reales, sin entrenamiento manual."
         }
       ],
-      "nota": "Analyticalways y Celes son plataformas de planeación que se conectan a tu ERP, no puntos de venta. Lo de ellas y lo de Sizes and Colors sale de sus sitios públicos, consultados el 2 de octubre de 2026."
+      "nota": "Cada columna se revisó contra las páginas públicas de cada empresa el 2 de octubre de 2026. Analyticalways y Celes son plataformas de planeación que se conectan a tu ERP, no puntos de venta, y Square no se vende en México: lo que trae en Estados Unidos va como parcial."
     },
     "faqs": [
       {
@@ -828,11 +828,11 @@ export const pageContent: Record<string, any> = {
             "full",
             "partial",
             "partial",
+            "full",
+            "full",
             "partial",
             "partial",
-            "partial",
-            "none",
-            "none"
+            "partial"
           ]
         },
         {
@@ -846,7 +846,7 @@ export const pageContent: Record<string, any> = {
             "none",
             "none",
             "none",
-            "none",
+            "partial",
             "partial",
             "none",
             "none"
@@ -861,12 +861,12 @@ export const pageContent: Record<string, any> = {
             "nd",
             "full",
             "partial",
-            "none",
+            "partial",
             "full",
             "partial",
             "partial",
-            "partial",
-            "none"
+            "none",
+            "partial"
           ]
         },
         {
@@ -896,11 +896,11 @@ export const pageContent: Record<string, any> = {
             "partial",
             "full",
             "partial",
-            "full",
             "partial",
-            "partial",
-            "partial",
-            "partial"
+            "none",
+            "none",
+            "none",
+            "none"
           ]
         },
         {
@@ -913,10 +913,10 @@ export const pageContent: Record<string, any> = {
             "full",
             "partial",
             "partial",
+            "full",
+            "full",
             "partial",
             "partial",
-            "partial",
-            "none",
             "none"
           ]
         },
@@ -928,12 +928,12 @@ export const pageContent: Record<string, any> = {
             "none",
             "none",
             "partial",
-            "none",
-            "none",
+            "partial",
+            "partial",
+            "full",
             "partial",
             "partial",
             "partial",
-            "none",
             "none"
           ]
         },
@@ -948,7 +948,7 @@ export const pageContent: Record<string, any> = {
             "partial",
             "partial",
             "partial",
-            "none",
+            "partial",
             "partial",
             "none",
             "none"
@@ -963,16 +963,16 @@ export const pageContent: Record<string, any> = {
             "partial",
             "nd",
             "partial",
-            "none",
             "partial",
-            "none",
             "partial",
-            "none",
-            "partial"
+            "partial",
+            "nd",
+            "partial",
+            "nd"
           ]
         }
       ],
-      "nota": "Analyticalways y Celes son plataformas de planeación que se conectan a tu ERP, no puntos de venta. Lo de ellas y lo de Sizes and Colors sale de sus sitios públicos, consultados el 2 de octubre de 2026."
+      "nota": "Cada columna se revisó contra las páginas públicas de cada empresa el 2 de octubre de 2026. Analyticalways y Celes son plataformas de planeación que se conectan a tu ERP, no puntos de venta, y Square no se vende en México: lo que trae en Estados Unidos va como parcial."
     },
     "testimonials": [
       {
@@ -1392,13 +1392,13 @@ export const pageContent: Record<string, any> = {
             "none",
             "none",
             "full",
-            "none",
             "partial",
             "partial",
             "full",
             "partial",
             "partial",
-            "none"
+            "partial",
+            "partial"
           ],
           "note": "En Sacs el anticipo se cobra y el stock se reserva en la misma operación — sin reportes paralelos."
         },
@@ -1409,13 +1409,13 @@ export const pageContent: Record<string, any> = {
             "none",
             "none",
             "partial",
-            "none",
-            "none",
+            "partial",
+            "partial",
+            "full",
             "partial",
             "partial",
             "partial",
-            "partial",
-            "none"
+            "partial"
           ],
           "note": "Apartó en Polanco y abona en Santa Fe — Sacs reconoce al cliente y consolida el saldo al segundo."
         },
@@ -1427,12 +1427,12 @@ export const pageContent: Record<string, any> = {
             "none",
             "nd",
             "partial",
+            "partial",
+            "partial",
             "none",
             "partial",
-            "none",
             "partial",
-            "partial",
-            "none"
+            "partial"
           ],
           "note": "Sacs te avisa al cliente 3 días antes y el día del vencimiento — sin llamadas manuales."
         },
@@ -1462,11 +1462,11 @@ export const pageContent: Record<string, any> = {
             "partial",
             "partial",
             "none",
+            "full",
             "partial",
             "partial",
             "partial",
-            "partial",
-            "none"
+            "partial"
           ],
           "note": "Endless aisle real: aparta en Polanco la pieza que está en Santa Fe y Sacs programa el traspaso."
         },
@@ -1477,13 +1477,13 @@ export const pageContent: Record<string, any> = {
             "none",
             "none",
             "nd",
+            "partial",
             "none",
-            "none",
+            "full",
             "partial",
             "partial",
             "partial",
-            "partial",
-            "none"
+            "partial"
           ],
           "note": "El apartado vive ligado a la OC. Cuando entra el producto al inventario, el aviso al cliente queda listo."
         },
@@ -1497,8 +1497,8 @@ export const pageContent: Record<string, any> = {
             "partial",
             "partial",
             "partial",
-            "full",
-            "full",
+            "partial",
+            "partial",
             "partial",
             "partial"
           ],
@@ -1516,8 +1516,8 @@ export const pageContent: Record<string, any> = {
             "none",
             "partial",
             "partial",
-            "none",
-            "none"
+            "partial",
+            "partial"
           ],
           "note": "Retención total, % de penalización o saldo a crédito — Sacs aplica la regla automáticamente."
         },
@@ -1528,12 +1528,12 @@ export const pageContent: Record<string, any> = {
             "none",
             "none",
             "partial",
-            "none",
-            "none",
             "partial",
             "partial",
             "partial",
+            "partial",
             "none",
+            "partial",
             "none"
           ],
           "note": "Define quién gana la comisión: el que apartó, el que cobró el saldo, o split — Sacs respeta la regla."
@@ -1545,18 +1545,18 @@ export const pageContent: Record<string, any> = {
             "none",
             "none",
             "partial",
-            "none",
-            "none",
-            "partial",
-            "full",
             "partial",
             "partial",
-            "none"
+            "partial",
+            "partial",
+            "partial",
+            "partial",
+            "partial"
           ],
           "note": "Los apartados son pasivo, no venta. Sacs los muestra aparte para que el cierre del mes no los confunda."
         }
       ],
-      "nota": "Analyticalways y Celes son plataformas de planeación que se conectan a tu ERP, no puntos de venta. Lo de ellas y lo de Sizes and Colors sale de sus sitios públicos, consultados el 2 de octubre de 2026."
+      "nota": "Cada columna se revisó contra las páginas públicas de cada empresa el 2 de octubre de 2026. Analyticalways y Celes son plataformas de planeación que se conectan a tu ERP, no puntos de venta, y Square no se vende en México: lo que trae en Estados Unidos va como parcial."
     },
     "faqs": [
       {
@@ -1944,13 +1944,13 @@ export const pageContent: Record<string, any> = {
             "none",
             "none",
             "partial",
-            "full",
             "partial",
             "partial",
-            "none",
             "partial",
-            "none",
-            "none"
+            "partial",
+            "partial",
+            "partial",
+            "partial"
           ],
           "note": "En Sacs los cinco canales viven en un solo catálogo — sin sincronización vía CSV ni \"versión de redes\" desactualizada."
         },
@@ -1964,10 +1964,10 @@ export const pageContent: Record<string, any> = {
             "full",
             "partial",
             "partial",
-            "none",
             "partial",
-            "none",
-            "none"
+            "partial",
+            "partial",
+            "partial"
           ],
           "note": "Vendiste en TikTok Shop, el POS lo sabe al segundo — sin sobreventa, sin \"ya no tenemos\" después del cobro."
         },
@@ -1981,10 +1981,10 @@ export const pageContent: Record<string, any> = {
             "partial",
             "none",
             "none",
-            "none",
+            "partial",
             "partial",
             "none",
-            "none"
+            "nd"
           ],
           "note": "AXO arma carrito y cobra dentro del chat — sin chatbot rentado por separado ni link de pago externo."
         },
@@ -1999,9 +1999,9 @@ export const pageContent: Record<string, any> = {
             "none",
             "none",
             "none",
+            "partial",
             "none",
-            "none",
-            "none"
+            "nd"
           ],
           "note": "AXO entiende intención, responde con catálogo en vivo y manda link de pago — sin que tú toques el celular."
         },
@@ -2034,7 +2034,7 @@ export const pageContent: Record<string, any> = {
             "none",
             "partial",
             "partial",
-            "partial",
+            "none",
             "partial"
           ],
           "note": "El cliente pide factura por WhatsApp, AXO timbra el CFDI y se lo manda al mismo chat — sin portal externo."
@@ -2046,12 +2046,12 @@ export const pageContent: Record<string, any> = {
             "none",
             "none",
             "nd",
-            "full",
-            "none",
             "partial",
             "none",
             "partial",
             "none",
+            "none",
+            "partial",
             "none"
           ],
           "note": "Lo que cobra cada canal queda desglosado en Sacs — para que el cierre del mes no enrede comisión con utilidad."
@@ -2086,7 +2086,7 @@ export const pageContent: Record<string, any> = {
             "none",
             "partial",
             "none",
-            "none"
+            "nd"
           ],
           "note": "Cada marca tiene su propio AXO con saludo, tono y emojis distintos — y su propio RFC para facturar."
         },
@@ -2100,15 +2100,15 @@ export const pageContent: Record<string, any> = {
             "partial",
             "none",
             "partial",
-            "none",
             "partial",
-            "none",
+            "partial",
+            "partial",
             "partial"
           ],
           "note": "Atribución real por publicación y conversación — para saber qué contenido convierte y qué no."
         }
       ],
-      "nota": "Analyticalways y Celes son plataformas de planeación que se conectan a tu ERP, no puntos de venta. Lo de ellas y lo de Sizes and Colors sale de sus sitios públicos, consultados el 2 de octubre de 2026."
+      "nota": "Cada columna se revisó contra las páginas públicas de cada empresa el 2 de octubre de 2026. Analyticalways y Celes son plataformas de planeación que se conectan a tu ERP, no puntos de venta, y Square no se vende en México: lo que trae en Estados Unidos va como parcial."
     },
     "faqs": [
       {
