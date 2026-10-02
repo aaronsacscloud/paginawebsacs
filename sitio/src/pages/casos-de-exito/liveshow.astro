@@ -13,8 +13,8 @@ import CasoEnlaces from '../../components/CasoEnlaces.astro';
 const articleSchema = {
   '@context': 'https://schema.org',
   '@type': 'Article',
-  headline: 'Cómo Liveshow Merchandising opera 100+ puntos de venta simultáneos en conciertos de Shakira, Metallica, Karol G y Lady Gaga con SACS',
-  description: 'Cómo Liveshow pasó de perder 20% de ventas por caídas de sistema a procesar 150,000 transacciones sin errores en una temporada.',
+  headline: 'Live Shows Merchandising: el recuerdo que te llevas del concierto, vendido al ritmo de un estadio lleno con SACS',
+  description: 'Desde 2007, Live Shows Merchandising es líder en mercancía oficial de conciertos en América Latina. Así opera 100+ puntos de venta simultáneos —cada uno, una sucursal que no para de vender— con SACS.',
   about: { '@id': PRODUCTO_ID },
   author: { '@id': ENTIDAD_ID },
   review: {
@@ -24,203 +24,224 @@ const articleSchema = {
       '@type': 'Person',
       name: 'Mariana López',
       jobTitle: 'Directora de Operaciones',
-      worksFor: { '@type': 'Organization', name: 'Liveshow Merchandising' },
+      worksFor: { '@type': 'Organization', name: 'Live Shows Merchandising' },
     },
     itemReviewed: { '@id': PRODUCTO_ID },
   },
 };
 
-const structuredData = [articleSchema, breadcrumbCaso('Liveshow Merchandising')];
+const structuredData = [articleSchema, breadcrumbCaso('Live Shows Merchandising')];
+
+const eventos = ['Conciertos', 'Festivales', 'Eventos especiales', 'Eventos deportivos', 'Obras de teatro', 'Musicales', 'Eventos culturales', 'Exhibiciones'];
+const productos = ['Playeras', 'Chamarras', 'Sudaderas', 'Prendas de corte especial', 'Paliacates', 'Muñequeras', 'Llaveros', 'Pins', 'Posters', 'Tour books', 'Tazas', 'Cilindros'];
+const recintos = ['Arenas', 'Estadios', 'Teatros', 'Foros', 'Parques de diversiones', 'Explanadas públicas'];
+const paises = ['México', 'Costa Rica', 'Perú', 'Colombia', 'Argentina', 'Chile', 'Brasil', 'Estados Unidos'];
 ---
 
 <BaseLayout
-  title="Liveshow Merchandising — Caso de éxito SACS"
-  description="Cómo Liveshow Merchandising opera 100+ puntos de venta simultáneos en conciertos de Shakira, Metallica, Karol G y Lady Gaga con SACS."
+  title="Live Shows Merchandising — Caso de éxito SACS"
+  description="Desde 2007, Live Shows Merchandising es líder en mercancía oficial de conciertos en América Latina. Así vende con SACS a ritmo de estadio: 100+ puntos de venta, cada uno una sucursal que no para."
   structuredData={structuredData}
+  preloadImage="/videos/ls-estadio-loop-poster.webp"
 >
 
-<!-- Back link -->
-<div class="cs-back-wrap">
-  <a href="/casos-de-exito" class="cs-back">&larr; Todos los casos de éxito</a>
-</div>
-
-<!-- Hero split -->
-<section class="cs-hero">
-  <div class="cs-hero-left">
-    <span class="cs-tag" style="background:#C42A74;color:#fff;">Merchandising</span>
-    <h1 class="cs-hero-title">Liveshow Merchandising</h1>
-    <p class="cs-hero-subtitle">Cómo Liveshow pasó de perder 20% de ventas por caídas de sistema a procesar 150,000 transacciones sin errores en una temporada.</p>
+<!-- Hero: el estadio de fondo, el negocio al frente -->
+<section class="ls-hero">
+  <div class="ls-hero-media" aria-hidden="true">
+    <video class="ls-hero-video" autoplay muted loop playsinline preload="metadata" poster="/videos/ls-estadio-loop-poster.webp" width="720" height="1280">
+      <source src="/videos/ls-estadio-loop.mp4" type="video/mp4" />
+    </video>
   </div>
-  <div class="cs-hero-right">
-    <img src="/images/case-shakira-merch.webp" alt="Stand de merchandising Liveshow en concierto" width="800" height="600" loading="eager" fetchpriority="high" class="cs-hero-img" />
+  <div class="ls-hero-text">
+    <a href="/casos-de-exito" class="ls-back">&larr; Todos los casos de éxito</a>
+    <span class="ls-tag">Merchandising de espectáculos · desde 2007</span>
+    <h1 class="ls-hero-title">Live Shows Merchandising</h1>
+    <p class="ls-hero-lead">Nadie sale de un concierto con «una playera». Sale con el recuerdo del artista que lo hizo cantar a todo pulmón. Live Shows lleva diecinueve años haciendo ese recuerdo —y vendiéndolo al ritmo de un estadio lleno, donde todo pasa en segundos.</p>
   </div>
 </section>
 
-<!-- Stats Bar -->
-<section class="cs-stats-bar">
-  <div class="cs-stats-inner">
-    <div class="cs-stat">
-      <span class="cs-stat-num">150K+</span>
-      <span class="cs-stat-label">transacciones sin errores</span>
-    </div>
-    <div class="cs-stat">
-      <span class="cs-stat-num">100+</span>
-      <span class="cs-stat-label">puntos de venta simultáneos</span>
-    </div>
-    <div class="cs-stat">
-      <span class="cs-stat-num">+75%</span>
-      <span class="cs-stat-label">ventas más rápidas</span>
-    </div>
-    <div class="cs-stat">
-      <span class="cs-stat-num">4/min</span>
-      <span class="cs-stat-label">ventas en hora pico</span>
-    </div>
+<!-- Cifras -->
+<section class="ls-stats" aria-label="Live Shows en cifras">
+  <div class="ls-stats-inner">
+    <div class="ls-stat"><span class="ls-stat-num">2007</span><span class="ls-stat-label">operando en el espectáculo</span></div>
+    <div class="ls-stat"><span class="ls-stat-num">8</span><span class="ls-stat-label">países con oficina operativa</span></div>
+    <div class="ls-stat"><span class="ls-stat-num">100+</span><span class="ls-stat-label">puntos de venta simultáneos</span></div>
+    <div class="ls-stat"><span class="ls-stat-num">150K+</span><span class="ls-stat-label">transacciones sin error por temporada</span></div>
   </div>
 </section>
 
-<!-- El cliente -->
-<section class="cs-section">
-  <div class="cs-section-inner">
-    <h2 class="cs-section-title">El cliente: Liveshow Merchandising</h2>
-    <p>Liveshow produce y comercializa mercancía oficial de los artistas más grandes del mundo en México y Latinoamérica. Su operación requiere desplegar más de 100 puntos de venta simultáneos en festivales con más de 75,000 asistentes, donde cada minuto de inactividad del sistema representa miles de pesos en ventas perdidas.</p>
+<!-- Lo humano: el merch es moda y es memoria -->
+<section class="ls-sec">
+  <div class="ls-split">
+    <div class="ls-split-text">
+      <span class="ls-eyebrow">La moda que se vuelve recuerdo</span>
+      <h2 class="ls-title">Te pones la playera y vuelves a esa noche.</h2>
+      <p>Hay quien hace fila desde la mañana. Quien se viste como su artista, con encajes, botas y moños, solo para estar cerca. Para ellos la mercancía oficial no es un souvenir: es la prenda que se ponen años después y que les regresa la canción, el grito y la gente con la que estaban.</p>
+      <p>Por eso Live Shows la trata como lo que es: <strong>moda</strong>. Diseño propio, cortes especiales, tallas, ediciones limitadas por ciudad y por fecha. Una prenda hecha para llevarse puesta el recuerdo de quien te inspira.</p>
+    </div>
+    <div class="ls-mosaic">
+      <img src="/images/ls-fans-sacrifice.webp" alt="Fans vestidas como su artista posan en la tienda de The Sacrifice Tour" width="1200" height="900" loading="lazy" class="ls-mosaic-a" />
+      <img src="/images/ls-fila-fans.webp" alt="Fila de fans afuera del estadio antes del concierto" width="899" height="677" loading="lazy" class="ls-mosaic-b" />
+    </div>
   </div>
+  <p class="ls-bigquote">«Nadie se lleva una playera.<br />Se lleva la noche.»</p>
 </section>
 
-<!-- Photo grid -->
-<section class="cs-photo-grid">
-  <div class="cs-photo-grid-inner">
-    <img src="/images/ls-merch-stand.webp" alt="Stand de merchandising en concierto" width="800" height="600" loading="lazy" class="cs-photo cs-photo--wide" />
-    <img src="/images/ls-olivia-popup.webp" alt="Pop-up store Olivia Rodrigo" width="800" height="600" loading="lazy" class="cs-photo" />
-    <img src="/images/ls-venue-sales.webp" alt="Ventas en venue" width="800" height="600" loading="lazy" class="cs-photo" />
+<!-- El negocio: quién es Live Shows -->
+<section class="ls-sec ls-sec--alt">
+  <div class="ls-inner">
+    <span class="ls-eyebrow">El negocio</span>
+    <h2 class="ls-title">Los líderes del merch oficial en América Latina.</h2>
+    <p class="ls-lead">Live Shows Merchandising empezó en 2007 y hoy fabrica y vende la mercancía de licencias internacionales y nacionales, con las exigencias de calidad que cada licencia pide. Su propio equipo de diseñadores conceptualiza, diseña y desarrolla cada producto según el proyecto, y viste también el punto de venta: cada stand lleva el branding de su gira.</p>
   </div>
-</section>
-
-<!-- El Desafío -->
-<section class="cs-section cs-section--alt">
-  <div class="cs-section-inner">
-    <h2 class="cs-section-title">El reto: procesos lentos, sistemas frágiles y ventas perdidas</h2>
-    <div class="cs-challenges">
-      <div class="cs-challenge-card">
-        <span class="cs-challenge-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
-        <h3 class="cs-challenge-title">20% de ventas perdidas</h3>
-        <p>En un concierto de Metallica, el sistema anterior colapsó y Liveshow perdió el 20% de sus ventas en solo dos horas.</p>
+  <div class="ls-biz">
+    <figure class="ls-biz-photo">
+      <img src="/images/ls-stand-sacrifice.webp" alt="Stand oficial de The Sacrifice Tour con playeras, sudaderas y la lista de precios" width="1200" height="900" loading="lazy" />
+      <figcaption>Stand oficial de The Sacrifice Tour: diseño de prenda y branding del punto de venta, hechos por la casa.</figcaption>
+    </figure>
+    <div class="ls-biz-cards">
+      <div class="ls-card">
+        <h3>Dónde venden</h3>
+        <div class="ls-chips">{eventos.map((e) => <span class="ls-chip">{e}</span>)}</div>
       </div>
-      <div class="cs-challenge-card">
-        <span class="cs-challenge-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M1 1l5 5m0 0l-1 10 4-4 4 4 -1-10m-6 0h6"/><path d="M8.5 8.5a5 5 0 017 0M5.6 5.6a9 9 0 0112.8 0"/></svg></span>
-        <h3 class="cs-challenge-title">Sin modo offline</h3>
-        <p>Dependencia total de la red. Cuando la conectividad fallaba, los módulos de venta quedaban incomunicados.</p>
+      <div class="ls-card">
+        <h3>Qué fabrican</h3>
+        <div class="ls-chips">{productos.map((p) => <span class="ls-chip">{p}</span>)}<span class="ls-chip ls-chip--muted">y mucho más</span></div>
       </div>
-      <div class="cs-challenge-card">
-        <span class="cs-challenge-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
-        <h3 class="cs-challenge-title">12+ horas de auditoría</h3>
-        <p>Procesos de auditoría manual diarios que requerían más de 12 horas y generaban inconsistencias.</p>
+      <div class="ls-card">
+        <h3>En qué recintos</h3>
+        <div class="ls-chips">{recintos.map((r) => <span class="ls-chip">{r}</span>)}</div>
+      </div>
+      <div class="ls-card">
+        <h3>Oficinas operativas</h3>
+        <div class="ls-chips">{paises.map((p) => <span class="ls-chip ls-chip--pais">{p}</span>)}</div>
+        <p class="ls-card-note">Cubren la operación de venta en toda América Latina, en recintos abiertos o cerrados.</p>
       </div>
     </div>
-    <blockquote class="cs-quote" style="margin-top:40px;">
-      <p>"En un concierto llegamos a perder el 20% de nuestras ventas en solo dos horas porque el sistema cayó."</p>
-      <cite>— Mariana López, Directora de Operaciones</cite>
+  </div>
+</section>
+
+<!-- La escala: cada caja es una sucursal -->
+<section class="ls-dark">
+  <div class="ls-inner">
+    <span class="ls-eyebrow ls-eyebrow--dark">El ritmo</span>
+    <h2 class="ls-title ls-title--dark">Cada caja es una sucursal que no para de vender.</h2>
+    <p class="ls-lead ls-lead--dark">Un estadio lleno no es una tienda: son decenas de tiendas abiertas al mismo tiempo, durante unas cuantas horas, con una fila que no se acaba hasta que se apagan las luces. Entre todos los módulos caen varias ventas <strong>por segundo</strong>, y cada módulo lleva su propio inventario, su propio dinero y su propio corte.</p>
+  </div>
+  <div class="ls-grid-wrap" aria-hidden="true">
+    <div class="ls-grid" id="ls-grid"></div>
+    <p class="ls-grid-cap">Cada punto, un módulo de venta. Cada destello, un cobro.</p>
+  </div>
+  <div class="ls-inner">
+    <div class="ls-pillars">
+      <div class="ls-pillar">
+        <span class="ls-pillar-k">Ritmo</span>
+        <h3>La fila no espera.</h3>
+        <p>El cobro tiene que salir en segundos, con tarjeta o en efectivo, y la siguiente venta ya está en el mostrador. En hora pico, cada módulo vende varias veces por minuto.</p>
+      </div>
+      <div class="ls-pillar">
+        <span class="ls-pillar-k">Seguridad</span>
+        <h3>Ni una venta se pierde.</h3>
+        <p>Si la señal del estadio se cae, la caja sigue cobrando: la venta queda guardada y sube sola cuando vuelve la conexión. Cada cobro queda a nombre de su módulo y de su vendedor.</p>
+      </div>
+      <div class="ls-pillar">
+        <span class="ls-pillar-k">Control</span>
+        <h3>Cien sucursales, un solo tablero.</h3>
+        <p>Desde un solo lugar se ve qué se vende, dónde y a qué hora, y qué talla se está acabando en qué módulo, antes de que se acabe.</p>
+      </div>
+    </div>
+    <blockquote class="ls-quote">
+      <p>«En un concierto llegamos a perder el 20% de nuestras ventas en solo dos horas porque el sistema cayó.»</p>
+      <cite>Mariana López, Directora de Operaciones · Live Shows Merchandising</cite>
     </blockquote>
+    <p class="ls-after">Eso era antes. Con SACS: <strong>0%</strong> de ventas perdidas por caídas de sistema y <strong>150,000</strong> transacciones sin error en una temporada.</p>
   </div>
 </section>
 
-<!-- La Solución -->
-<section class="cs-section">
-  <div class="cs-section-inner">
-    <h2 class="cs-section-title">Una solución de venta a prueba de cualquier imprevisto</h2>
-    <p>SACS se configuró como el sistema central de operaciones para todos los eventos de Liveshow, con una arquitectura pensada para alta demanda y conectividad intermitente.</p>
-    <ul class="cs-highlights">
-      <li><strong>Modo offline:</strong> Cada punto de venta opera de forma autónoma sin conexión a internet. Las transacciones se sincronizan automáticamente cuando se restablece la conectividad, sin perder ni un solo registro.</li>
-      <li><strong>Transferencias de inventario en tiempo real:</strong> Los módulos de venta pueden solicitar y recibir mercancía de otros módulos o del almacén central durante el evento, con trazabilidad completa.</li>
-      <li><strong>Alertas automáticas de picos de venta:</strong> El sistema detecta cuando un producto se está agotando en un módulo específico y notifica al equipo de logística para reabastecerlo antes de que se termine.</li>
-      <li><strong>Panel de tendencias en vivo:</strong> Dashboards en tiempo real que muestran los productos más vendidos, los módulos con mayor actividad y las tendencias de venta por hora.</li>
-      <li><strong>Operación omnicanal:</strong> Puntos de venta físicos, pop-ups temporales y tienda online unificados en un solo inventario.</li>
-    </ul>
+<!-- El sistema: un evento dentro de SACS -->
+<section class="ls-sec">
+  <div class="ls-inner">
+    <span class="ls-eyebrow">Lo que manejan en SACS</span>
+    <h2 class="ls-title">Un evento, de principio a fin, dentro del sistema.</h2>
+    <p class="ls-lead">SACS es el sistema central de cada evento de Live Shows, pensado para alta demanda y señal intermitente. Así se ve una fecha dentro del sistema:</p>
+    <ol class="ls-flow">
+      <li class="ls-step">
+        <span class="ls-step-k">Antes</span>
+        <h3>La gira entra al sistema</h3>
+        <ul>
+          <li>El catálogo de la gira con sus diseños, tallas y precios del evento.</li>
+          <li>El inventario se reparte desde el almacén a cada módulo de venta.</li>
+          <li>Cada módulo opera como una sucursal, con su equipo y su caja.</li>
+        </ul>
+      </li>
+      <li class="ls-step">
+        <span class="ls-step-k">Durante</span>
+        <h3>Se vende sin parar</h3>
+        <ul>
+          <li><strong>Modo offline:</strong> se cobra sin internet y todo se sincroniza solo, sin perder un registro.</li>
+          <li><strong>Traspasos en tiempo real:</strong> un módulo pide mercancía a otro o al almacén central, con trazabilidad completa.</li>
+          <li><strong>Alertas de agotado:</strong> el sistema avisa a logística cuando un producto se acaba en un módulo, para resurtir a tiempo.</li>
+          <li><strong>Tablero en vivo:</strong> lo más vendido, los módulos con más movimiento y la venta por hora.</li>
+        </ul>
+      </li>
+      <li class="ls-step">
+        <span class="ls-step-k">Después</span>
+        <h3>El cierre cuadra</h3>
+        <ul>
+          <li>Corte por módulo y por vendedor, en lugar de las más de 12 horas de auditoría manual de antes.</li>
+          <li>98% de precisión de inventario por evento.</li>
+          <li>Puntos físicos, pop-ups y tienda en línea en un mismo inventario.</li>
+        </ul>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- Las personas -->
+<section class="ls-sec ls-sec--alt">
+  <div class="ls-people">
+    <div class="ls-people-text">
+      <span class="ls-eyebrow">Las personas</span>
+      <h2 class="ls-title">Detrás de cada stand hay un equipo.</h2>
+      <p>Diseñadores que convierten una gira en una colección. Vendedores que atienden una fila de miles con una sonrisa y entregan la bolsa en segundos. Gente de logística que corre entre módulos para que la talla que buscas siga ahí.</p>
+      <p>La tecnología se nota cuando falla. El trabajo de SACS es que no se note: que el equipo de Live Shows pueda mirar a la persona de enfrente y no a la pantalla.</p>
+      <img src="/images/ls-mr-merch-equipo.webp" alt="Equipo de Mr Merch entregando bolsas a fans en el mostrador" width="1200" height="904" loading="lazy" class="ls-people-img" />
+    </div>
+    <figure class="ls-fan">
+      <video controls playsinline preload="none" poster="/videos/ls-mr-merch-fan-poster.webp" width="720" height="1280" class="ls-fan-video">
+        <source src="/videos/ls-mr-merch-fan.mp4" type="video/mp4" />
+        <track kind="subtitles" src="/videos/ls-mr-merch-fan.es.vtt" srclang="es" label="Español" default />
+      </video>
+      <figcaption>Así se vive del otro lado del mostrador: una fan de Ghost recorre Mr Merch en la Ciudad de México y presume la edición limitada de la fecha.</figcaption>
+    </figure>
   </div>
 </section>
 
 <!-- Caso destacado: Olivia Rodrigo -->
-<section class="cs-section cs-section--alt">
-  <div class="cs-section-inner">
-    <h2 class="cs-section-title">Caso destacado: Olivia Rodrigo en el Foro Sol</h2>
-    <p>En el pop-up store del concierto de Olivia Rodrigo en el Foro Sol, Liveshow desplegó un operativo con tablets 4G, inventario pre-asignado desde el ERP e integración en tiempo real con la tienda online.</p>
-    <div class="cs-results-grid cs-results-grid--3">
-      <div class="cs-result">
-        <span class="cs-result-num">3,800</span>
-        <span class="cs-result-label">transacciones físicas en 8 horas</span>
-      </div>
-      <div class="cs-result">
-        <span class="cs-result-num">1,200</span>
-        <span class="cs-result-label">pedidos online con recogida inmediata</span>
-      </div>
-      <div class="cs-result">
-        <span class="cs-result-num">+15%</span>
-        <span class="cs-result-label">aumento en ticket promedio</span>
-      </div>
+<section class="ls-sec">
+  <div class="ls-inner">
+    <span class="ls-eyebrow">Caso destacado</span>
+    <h2 class="ls-title">Olivia Rodrigo en el Foro Sol.</h2>
+    <p class="ls-lead">En el pop-up del concierto, Live Shows desplegó tablets 4G, inventario pre-asignado desde el ERP e integración en tiempo real con la tienda en línea.</p>
+    <div class="ls-results">
+      <div class="ls-result"><span class="ls-result-num">3,800</span><span class="ls-result-label">transacciones físicas en 8 horas</span></div>
+      <div class="ls-result"><span class="ls-result-num">1,200</span><span class="ls-result-label">pedidos en línea con recogida inmediata</span></div>
+      <div class="ls-result"><span class="ls-result-num">+15%</span><span class="ls-result-label">en ticket promedio</span></div>
     </div>
   </div>
 </section>
 
-<!-- Resultados -->
-<section class="cs-section">
-  <div class="cs-section-inner">
-    <h2 class="cs-section-title">Resultados tangibles</h2>
-    <div class="cs-results-grid cs-results-grid--3">
-      <div class="cs-result">
-        <span class="cs-result-num">150,000</span>
-        <span class="cs-result-label">transacciones sin errores por temporada</span>
-      </div>
-      <div class="cs-result">
-        <span class="cs-result-num">4/min</span>
-        <span class="cs-result-label">ventas en hora pico por módulo</span>
-      </div>
-      <div class="cs-result">
-        <span class="cs-result-num">98%</span>
-        <span class="cs-result-label">precisión de inventario por evento</span>
-      </div>
-      <div class="cs-result">
-        <span class="cs-result-num">+75%</span>
-        <span class="cs-result-label">más rápido en ventas</span>
-      </div>
-      <div class="cs-result">
-        <span class="cs-result-num">+10%</span>
-        <span class="cs-result-label">aumento en ticket promedio</span>
-      </div>
-      <div class="cs-result">
-        <span class="cs-result-num">0%</span>
-        <span class="cs-result-label">ventas perdidas por caídas de sistema</span>
-      </div>
+<!-- Artistas y recintos -->
+<section class="ls-sec ls-sec--alt">
+  <div class="ls-inner">
+    <span class="ls-eyebrow">En el escenario</span>
+    <h2 class="ls-title">Artistas que venden su merch con SACS.</h2>
+    <div class="ls-artists">
+      {['Metallica', 'Shakira', 'Karol G', 'Lady Gaga', 'Iron Maiden', 'Melanie Martinez', 'Ghost', 'Olivia Rodrigo', 'Blink-182', 'Katy Perry', 'Elton John', 'Enjambre'].map((a) => <span class="ls-artist">{a}</span>)}
     </div>
-  </div>
-</section>
-
-<!-- Venues -->
-<section class="cs-section cs-section--alt">
-  <div class="cs-section-inner">
-    <h2 class="cs-section-title">Clientes globales, operaciones impecables</h2>
-    <p>Liveshow opera con SACS en los venues más exigentes de Latinoamérica:</p>
-    <div class="cs-venues">
-      <span class="cs-venue">Estadio Azteca, CDMX</span>
-      <span class="cs-venue">Foro Sol, CDMX</span>
-      <span class="cs-venue">Palacio de los Deportes, CDMX</span>
-      <span class="cs-venue">Movistar Arena, Buenos Aires</span>
-      <span class="cs-venue">Allianz Parque, São Paulo</span>
-    </div>
-  </div>
-</section>
-
-<!-- Artists -->
-<section class="cs-section">
-  <div class="cs-section-inner">
-    <h2 class="cs-section-title">Artistas que operan con SACS</h2>
-    <div class="cs-artists">
-      <span class="cs-artist">Metallica</span>
-      <span class="cs-artist">Shakira</span>
-      <span class="cs-artist">Karol G</span>
-      <span class="cs-artist">Blink-182</span>
-      <span class="cs-artist">Lady Gaga</span>
-      <span class="cs-artist">Katy Perry</span>
-      <span class="cs-artist">Olivia Rodrigo</span>
-      <span class="cs-artist">Elton John</span>
+    <h3 class="ls-subtitle">En los recintos más exigentes de Latinoamérica</h3>
+    <div class="ls-chips">
+      {['Estadio GNP Seguros, CDMX', 'Estadio Azteca, CDMX', 'Palacio de los Deportes, CDMX', 'Movistar Arena, Buenos Aires', 'Allianz Parque, São Paulo'].map((v) => <span class="ls-chip">{v}</span>)}
     </div>
   </div>
 </section>
@@ -228,7 +249,7 @@ const structuredData = [articleSchema, breadcrumbCaso('Liveshow Merchandising')]
 <CasoEnlaces
   giroHref="/giros/merchandising-eventos"
   giroNombre="merchandising de eventos"
-  giroAncla="Liveshow despliega pop-ups y módulos de venta en conciertos y festivales: así resuelve Sacs el punto de venta sin internet y los traspasos entre módulos de un evento en vivo."
+  giroAncla="Live Shows despliega pop-ups y módulos de venta en conciertos y festivales: así resuelve Sacs el punto de venta sin internet y los traspasos entre módulos de un evento en vivo."
   funciones={[
     { slug: 'punto-de-venta', ancla: 'El modo offline que sincroniza cada transacción cuando vuelve la conexión, sin perder un registro.' },
     { slug: 'nivelacion-de-inventario', ancla: 'Las transferencias de inventario en tiempo real entre módulos durante el evento.' },
@@ -237,110 +258,188 @@ const structuredData = [articleSchema, breadcrumbCaso('Liveshow Merchandising')]
 />
 
 <!-- CTA -->
-<section class="cs-cta">
-  <div class="cs-cta-inner">
-    <h2 class="cs-cta-title">De partner tecnológico a socio estratégico.</h2>
-    <p class="cs-cta-subtitle">Agenda una reunión con nuestros expertos asesores.</p>
-    <div class="cs-cta-actions">
-      <a href="/prueba-gratis" class="cs-cta-btn cs-cta-btn--primary">Empieza gratis</a>
-      <a href="/contacto" class="cs-cta-btn cs-cta-btn--secondary">Agenda una demo</a>
+<section class="ls-cta">
+  <div class="ls-cta-inner">
+    <h2 class="ls-cta-title">¿Tu operación también se mide en segundos?</h2>
+    <p class="ls-cta-sub">Platiquemos de tu próximo evento, tu gira o tu temporada.</p>
+    <div class="ls-cta-actions">
+      <a href="/contacto" class="ls-btn ls-btn--primary">Agenda una demo</a>
+      <a href="/prueba-gratis" class="ls-btn ls-btn--ghost">Empieza gratis</a>
     </div>
   </div>
 </section>
 
 </BaseLayout>
 
+<script>
+  // Rejilla de módulos: cada punto es un punto de venta; se ilumina al azar
+  // como si cobrara. Solo corre mientras está en pantalla y la pestaña visible.
+  const grid = document.getElementById('ls-grid');
+  if (grid) {
+    const n = window.matchMedia('(max-width: 768px)').matches ? 60 : 120;
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < n; i++) frag.appendChild(document.createElement('span'));
+    grid.appendChild(frag);
+    const dots = Array.from(grid.children) as HTMLElement[];
+    const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let timer: number | undefined;
+    let visible = false;
+    const tick = () => {
+      for (let k = 0; k < 4; k++) {
+        const d = dots[Math.floor(Math.random() * dots.length)];
+        d.classList.remove('on');
+        requestAnimationFrame(() => requestAnimationFrame(() => d.classList.add('on')));
+      }
+    };
+    const start = () => { if (!timer && visible && !document.hidden && !quieto) timer = window.setInterval(tick, 260); };
+    const stop = () => { if (timer) { clearInterval(timer); timer = undefined; } };
+    new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? start() : stop(); }).observe(grid);
+    document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+  }
+</script>
+
 <style>
-  .cs-back-wrap { max-width: 900px; margin: 0 auto; padding: 24px 24px 0; }
-  .cs-back { font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--color-text-tertiary); text-decoration: none; transition: color 0.2s ease; }
-  .cs-back:hover { color: var(--color-text-primary); }
+  /* ── Hero ── */
+  .ls-hero { position: relative; display: grid; grid-template-columns: 1.1fr 0.9fr; min-height: 620px; background: #0b0a10; color: #fff; }
+  .ls-hero-text { order: 0; display: flex; flex-direction: column; justify-content: center; padding: clamp(48px, 6vw, 96px) clamp(24px, 5vw, 72px); max-width: 680px; margin-left: auto; }
+  .ls-hero-media { order: 1; position: relative; overflow: hidden; }
+  .ls-hero-media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, #0b0a10 0%, rgba(11,10,16,0) 35%); }
+  .ls-hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .ls-back { font-family: var(--font-body); font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.55); text-decoration: none; margin-bottom: 28px; }
+  .ls-back:hover { color: #fff; }
+  .ls-tag { display: inline-block; width: fit-content; padding: 6px 14px; border-radius: 6px; background: #C42A74; color: #fff; font-family: var(--font-body); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 18px; }
+  .ls-hero-title { font-family: var(--font-display); font-size: clamp(2.6rem, 5.5vw, 4.5rem); font-weight: 800; letter-spacing: -0.04em; line-height: 1.02; margin: 0 0 20px; color: #fff; }
+  .ls-hero-lead { font-family: var(--font-body); font-size: clamp(1.05rem, 1.5vw, 1.2rem); line-height: 1.65; color: rgba(255,255,255,0.72); margin: 0; max-width: 520px; }
 
-  /* ── Hero split ── */
-  .cs-hero { display: grid; grid-template-columns: 1fr 1fr; min-height: 480px; background: #0f0f1a; }
-  .cs-hero-left { display: flex; flex-direction: column; justify-content: center; padding: clamp(48px, 6vw, 80px) clamp(24px, 5vw, 64px); max-width: 640px; margin-left: auto; }
-  .cs-hero-right { position: relative; overflow: hidden; }
-  .cs-hero-img { width: 100%; height: 100%; object-fit: cover; }
-  .cs-tag { display: inline-block; padding: 6px 14px; border-radius: 6px; font-family: var(--font-body); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; width: fit-content; }
-  .cs-hero-title { font-family: var(--font-display); font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 800; color: #fff; letter-spacing: -0.04em; line-height: 1.05; margin: 0 0 16px; }
-  .cs-hero-subtitle { font-family: var(--font-body); font-size: clamp(1rem, 1.5vw, 1.125rem); color: rgba(255,255,255,0.6); line-height: 1.6; margin: 0; max-width: 480px; }
+  /* ── Cifras ── */
+  .ls-stats { background: #1A1A1A; }
+  .ls-stats-inner { max-width: 1040px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
+  .ls-stat { padding: 32px 20px; text-align: center; border-right: 1px solid rgba(255,255,255,0.08); }
+  .ls-stat:last-child { border-right: none; }
+  .ls-stat-num { display: block; font-family: var(--font-display); font-size: clamp(1.6rem, 3vw, 2.4rem); font-weight: 800; color: #fff; letter-spacing: -0.03em; line-height: 1; }
+  .ls-stat-label { display: block; margin-top: 6px; font-family: var(--font-body); font-size: 13px; color: rgba(255,255,255,0.55); }
 
-  /* ── Stats Bar ── */
-  .cs-stats-bar { background: #1A1A1A; }
-  .cs-stats-inner { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
-  .cs-stat { padding: 32px 24px; text-align: center; border-right: 1px solid rgba(255,255,255,0.08); }
-  .cs-stat:last-child { border-right: none; }
-  .cs-stat-num { font-family: var(--font-display); font-size: clamp(1.5rem, 3vw, 2.25rem); font-weight: 800; color: #fff; letter-spacing: -0.03em; display: block; line-height: 1; }
-  .cs-stat-label { font-family: var(--font-body); font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 6px; display: block; }
+  /* ── Secciones ── */
+  .ls-sec { padding: clamp(64px, 8vw, 110px) 24px; background: #fff; }
+  .ls-sec--alt { background: var(--color-bg-primary); }
+  .ls-inner { max-width: 860px; margin: 0 auto; }
+  .ls-eyebrow { display: block; font-family: var(--font-display); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: #A3205F; margin-bottom: 14px; }
+  .ls-eyebrow--dark { color: #FF7AB6; }
+  .ls-title { font-family: var(--font-display); font-size: clamp(1.9rem, 3.8vw, 2.9rem); font-weight: 800; color: var(--color-text-primary); letter-spacing: -0.035em; line-height: 1.08; margin: 0 0 22px; }
+  .ls-title--dark { color: #fff; }
+  .ls-lead, .ls-split-text p, .ls-people-text p { font-family: var(--font-body); font-size: 17px; line-height: 1.7; color: var(--color-text-secondary); margin: 0 0 16px; }
+  .ls-lead--dark { color: rgba(255,255,255,0.72); }
+  .ls-lead strong, .ls-split-text strong { color: var(--color-text-primary); }
+  .ls-lead--dark strong { color: #fff; }
+  .ls-subtitle { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: var(--color-text-primary); margin: 40px 0 0; letter-spacing: -0.02em; }
 
-  /* ── Sections ── */
-  .cs-section { padding: clamp(60px, 8vw, 100px) 24px; background: #fff; }
-  .cs-section--alt { background: var(--color-bg-primary); }
-  .cs-section-inner { max-width: 800px; margin: 0 auto; }
-  .cs-section-title { font-family: var(--font-display); font-size: clamp(1.75rem, 3.5vw, 2.5rem); font-weight: 800; color: var(--color-text-primary); letter-spacing: -0.03em; line-height: 1.1; margin: 0 0 24px; }
-  .cs-section-inner > p { font-family: var(--font-body); font-size: 16px; color: var(--color-text-secondary); line-height: 1.7; margin: 0 0 16px; }
+  /* ── Moda / recuerdo ── */
+  .ls-split { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.1fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
+  .ls-mosaic { position: relative; padding-bottom: 18%; }
+  .ls-mosaic img { display: block; border-radius: 18px; object-fit: cover; }
+  .ls-mosaic-a { width: 86%; height: auto; aspect-ratio: 4 / 3; }
+  .ls-mosaic-b { position: absolute; right: 0; bottom: 0; width: 52%; height: auto; aspect-ratio: 4 / 3; border: 6px solid #fff; box-shadow: 0 12px 30px rgba(0,0,0,0.18); }
+  .ls-bigquote { max-width: 1120px; margin: clamp(56px, 7vw, 88px) auto 0; text-align: center; font-family: var(--font-display); font-size: clamp(2rem, 5vw, 3.6rem); font-weight: 800; letter-spacing: -0.04em; line-height: 1.08; color: #C42A74; }
 
-  /* ── Photo Grid ── */
-  .cs-photo-grid { background: #fff; padding: 0 24px; }
-  .cs-photo-grid-inner { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 8px; }
-  .cs-photo { width: 100%; height: 320px; object-fit: cover; border-radius: var(--radius-lg); }
+  /* ── Negocio ── */
+  .ls-biz { max-width: 1120px; margin: 40px auto 0; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+  .ls-biz-photo { margin: 0; }
+  .ls-biz-photo img { width: 100%; height: auto; border-radius: 18px; display: block; }
+  .ls-biz-photo figcaption { font-family: var(--font-body); font-size: 13px; color: var(--color-text-tertiary); margin-top: 10px; line-height: 1.5; }
+  .ls-biz-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .ls-card { background: #fff; border: 1px solid var(--color-bg-secondary); border-radius: 16px; padding: 20px; }
+  .ls-card h3 { font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: var(--color-text-primary); margin: 0 0 12px; letter-spacing: -0.01em; }
+  .ls-card-note { font-family: var(--font-body); font-size: 13px; color: var(--color-text-tertiary); line-height: 1.5; margin: 12px 0 0; }
+  .ls-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .ls-sec .ls-inner > .ls-chips { margin-top: 16px; gap: 10px; }
+  .ls-chip { font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--color-text-secondary); background: var(--color-bg-primary); padding: 6px 12px; border-radius: 100px; }
+  .ls-sec--alt .ls-inner > .ls-chips .ls-chip { background: #fff; border: 1px solid var(--color-bg-secondary); }
+  .ls-chip--muted { background: transparent; color: var(--color-text-tertiary); }
+  .ls-chip--pais { background: #FBE7F0; color: #8A1B50; }
 
-  /* ── Challenge Cards ── */
-  .cs-challenges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 32px; }
-  .cs-challenge-card { background: #fff; border-radius: var(--radius-lg); padding: 28px 24px; border: 1px solid var(--color-bg-secondary); }
-  .cs-challenge-icon { display: block; margin-bottom: 12px; line-height: 0; }
-  .cs-challenge-title { font-family: var(--font-display); font-size: 1.125rem; font-weight: 800; color: var(--color-text-primary); letter-spacing: -0.02em; margin: 0 0 8px; }
-  .cs-challenge-card p { font-family: var(--font-body); font-size: 14px; color: var(--color-text-secondary); line-height: 1.6; margin: 0; }
+  /* ── Escala (oscuro) ── */
+  .ls-dark { padding: clamp(64px, 8vw, 110px) 24px; background: #0b0a10; color: #fff; }
+  .ls-grid-wrap { max-width: 980px; margin: 40px auto 48px; }
+  .ls-grid { display: grid; grid-template-columns: repeat(20, 1fr); gap: 10px; }
+  .ls-grid :global(span) { aspect-ratio: 1; border-radius: 50%; background: rgba(255,255,255,0.12); }
+  .ls-grid :global(span.on) { animation: ls-cobro 1.2s ease-out; }
+  @keyframes ls-cobro {
+    0% { background: #FF4FA0; box-shadow: 0 0 10px #FF4FA0; }
+    100% { background: rgba(255,255,255,0.12); box-shadow: 0 0 0 transparent; }
+  }
+  .ls-grid-cap { font-family: var(--font-body); font-size: 13px; color: rgba(255,255,255,0.5); text-align: center; margin: 16px 0 0; }
+  .ls-pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .ls-pillar { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 24px 22px; }
+  .ls-pillar-k { font-family: var(--font-body); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #FF7AB6; }
+  .ls-pillar h3 { font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; color: #fff; margin: 8px 0 8px; letter-spacing: -0.02em; }
+  .ls-pillar p { font-family: var(--font-body); font-size: 15px; line-height: 1.6; color: rgba(255,255,255,0.68); margin: 0; }
+  .ls-quote { margin: 48px 0 0; padding-left: 24px; border-left: 4px solid #C42A74; }
+  .ls-quote p { font-family: var(--font-body); font-size: clamp(1.15rem, 1.8vw, 1.4rem); font-style: italic; line-height: 1.55; color: #fff; margin: 0 0 10px; }
+  .ls-quote cite { font-family: var(--font-body); font-size: 14px; font-style: normal; font-weight: 600; color: rgba(255,255,255,0.55); }
+  .ls-after { font-family: var(--font-body); font-size: 17px; line-height: 1.6; color: rgba(255,255,255,0.72); margin: 24px 0 0; }
+  .ls-after strong { color: #fff; }
 
-  /* ── Highlights ── */
-  .cs-highlights { list-style: none; padding: 0; margin: 24px 0 0; display: flex; flex-direction: column; gap: 16px; }
-  .cs-highlights li { font-family: var(--font-body); font-size: 16px; color: var(--color-text-secondary); line-height: 1.65; padding-left: 28px; position: relative; }
-  .cs-highlights li::before { content: '\2713'; position: absolute; left: 0; color: var(--color-secondary-texto); font-weight: 700; font-size: 16px; }
-  .cs-highlights li strong { color: var(--color-text-primary); font-weight: 700; }
+  /* ── Flujo en SACS ── */
+  .ls-flow { list-style: none; padding: 0; margin: 32px 0 0; display: grid; gap: 16px; }
+  .ls-step { position: relative; background: var(--color-bg-primary); border-radius: 18px; padding: 24px; }
+  .ls-step-k { display: inline-block; font-family: var(--font-body); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #fff; background: #1A1A1A; padding: 4px 10px; border-radius: 100px; }
+  .ls-step h3 { font-family: var(--font-display); font-size: 1.3rem; font-weight: 800; color: var(--color-text-primary); margin: 12px 0 10px; letter-spacing: -0.02em; }
+  .ls-step ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+  .ls-step li { font-family: var(--font-body); font-size: 15px; line-height: 1.6; color: var(--color-text-secondary); padding-left: 22px; position: relative; }
+  .ls-step li::before { content: '\2713'; position: absolute; left: 0; color: var(--color-secondary-texto); font-weight: 700; }
+  .ls-step li strong { color: var(--color-text-primary); }
 
-  /* ── Quote ── */
-  .cs-quote { border-left: 4px solid var(--color-primary); padding-left: 28px; margin: 0; }
-  .cs-quote p { font-family: var(--font-body); font-size: clamp(1.1rem, 1.5vw, 1.3rem); font-style: italic; color: var(--color-text-secondary); line-height: 1.6; margin: 0 0 12px; }
-  .cs-quote cite { font-family: var(--font-body); font-size: 14px; font-style: normal; font-weight: 600; color: var(--color-text-tertiary); }
+  /* ── Personas ── */
+  .ls-people { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: 1.2fr 0.8fr; gap: clamp(32px, 5vw, 64px); align-items: start; }
+  .ls-people-img { width: 100%; height: auto; border-radius: 18px; display: block; margin-top: 16px; }
+  .ls-fan { margin: 0; position: sticky; top: 96px; }
+  .ls-fan-video { width: 100%; height: auto; aspect-ratio: 9 / 16; border-radius: 18px; background: #000; display: block; }
+  .ls-fan figcaption { font-family: var(--font-body); font-size: 13px; line-height: 1.5; color: var(--color-text-tertiary); margin-top: 10px; }
 
-  /* ── Results Grid ── */
-  .cs-results-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 32px; }
-  .cs-results-grid--3 { grid-template-columns: repeat(3, 1fr); }
-  .cs-result { background: var(--color-bg-primary); border-radius: var(--radius-lg); padding: 28px 24px; text-align: center; }
-  .cs-result-num { font-family: var(--font-display); font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 800; color: var(--color-primary-texto); letter-spacing: -0.03em; display: block; line-height: 1; margin-bottom: 8px; }
-  .cs-result-label { font-family: var(--font-body); font-size: 13px; color: var(--color-text-secondary); line-height: 1.4; display: block; }
-  .cs-section--alt .cs-result { background: #fff; }
+  /* ── Resultados ── */
+  .ls-results { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 28px; }
+  .ls-result { background: var(--color-bg-primary); border-radius: 16px; padding: 26px 20px; text-align: center; }
+  .ls-result-num { display: block; font-family: var(--font-display); font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800; color: var(--color-primary-texto); letter-spacing: -0.03em; line-height: 1; margin-bottom: 8px; }
+  .ls-result-label { display: block; font-family: var(--font-body); font-size: 13px; line-height: 1.4; color: var(--color-text-secondary); }
 
-  /* ── Venues ── */
-  .cs-venues { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
-  .cs-venue { font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--color-text-secondary); background: #fff; padding: 10px 20px; border-radius: 100px; border: 1px solid var(--color-bg-secondary); }
-
-  /* ── Artists ── */
-  .cs-artists { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
-  .cs-artist { font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--color-text-secondary); background: var(--color-bg-secondary); padding: 10px 20px; border-radius: 100px; }
+  /* ── Artistas ── */
+  .ls-artists { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+  .ls-artist { font-family: var(--font-display); font-size: 15px; font-weight: 800; color: #fff; background: #1A1A1A; padding: 10px 18px; border-radius: 100px; letter-spacing: -0.01em; }
 
   /* ── CTA ── */
-  .cs-cta { padding: clamp(80px, 10vw, 140px) 0; background: var(--color-text-primary); text-align: center; }
-  .cs-cta-inner { max-width: 600px; margin: 0 auto; padding: 0 24px; }
-  .cs-cta-title { font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: #fff; letter-spacing: -0.03em; margin: 0 0 12px; line-height: 1.1; }
-  .cs-cta-subtitle { font-family: var(--font-body); font-size: 1.1rem; color: rgba(255,255,255,0.6); margin: 0 0 32px; }
-  .cs-cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-  .cs-cta-btn { font-family: var(--font-body); font-size: 15px; font-weight: 700; padding: 14px 32px; border-radius: 100px; text-decoration: none; transition: transform 0.2s ease; }
-  .cs-cta-btn:hover { transform: translateY(-2px); text-decoration: none; }
-  .cs-cta-btn--primary { background: #fff; color: var(--color-text-primary); }
-  .cs-cta-btn--secondary { background: transparent; color: #fff; border: 1.5px solid rgba(255,255,255,0.3); }
+  .ls-cta { padding: clamp(80px, 10vw, 140px) 24px; background: #0b0a10; text-align: center; }
+  .ls-cta-inner { max-width: 640px; margin: 0 auto; }
+  .ls-cta-title { font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: #fff; letter-spacing: -0.03em; line-height: 1.1; margin: 0 0 12px; }
+  .ls-cta-sub { font-family: var(--font-body); font-size: 1.1rem; color: rgba(255,255,255,0.62); margin: 0 0 32px; }
+  .ls-cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .ls-btn { font-family: var(--font-body); font-size: 15px; font-weight: 700; padding: 14px 32px; border-radius: 100px; text-decoration: none; transition: transform 0.2s ease; }
+  .ls-btn:hover { transform: translateY(-2px); text-decoration: none; }
+  .ls-btn--primary { background: #fff; color: #1A1A1A; }
+  .ls-btn--ghost { color: #fff; border: 1.5px solid rgba(255,255,255,0.3); }
 
-  /* ── Mobile ── */
+  /* ── Móvil ── */
+  @media (max-width: 900px) {
+    .ls-biz { grid-template-columns: 1fr; }
+    .ls-people { grid-template-columns: 1fr; }
+    .ls-fan { position: static; max-width: 380px; width: 100%; margin: 0 auto; }
+  }
   @media (max-width: 768px) {
-    .cs-hero { grid-template-columns: 1fr; }
-    .cs-hero-left { order: 1; padding: 40px 24px; }
-    .cs-hero-right { order: 0; height: 280px; }
-    .cs-stats-inner { grid-template-columns: repeat(2, 1fr); }
-    .cs-stat { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.08); padding: 24px 16px; }
-    .cs-stat:nth-child(odd) { border-right: 1px solid rgba(255,255,255,0.08); }
-    .cs-stat:nth-child(3), .cs-stat:nth-child(4) { border-bottom: none; }
-    .cs-photo-grid-inner { grid-template-columns: 1fr; gap: 8px; }
-    .cs-photo { height: 220px; }
-    .cs-challenges { grid-template-columns: 1fr; gap: 12px; }
-    .cs-results-grid, .cs-results-grid--3 { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .ls-hero { grid-template-columns: 1fr; min-height: 0; }
+    .ls-hero-media { order: 0; height: 52vh; min-height: 300px; }
+    .ls-hero-media::after { background: linear-gradient(0deg, #0b0a10 0%, rgba(11,10,16,0) 40%); }
+    .ls-hero-text { order: 1; padding: 8px 16px 44px; margin: 0; }
+    .ls-back { position: absolute; top: 16px; left: 16px; z-index: 1; color: #fff; background: rgba(0,0,0,0.55); padding: 6px 12px; border-radius: 100px; font-size: 13px; }
+    .ls-stats-inner { grid-template-columns: repeat(2, 1fr); }
+    .ls-stat { padding: 22px 12px; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .ls-stat:nth-child(odd) { border-right: 1px solid rgba(255,255,255,0.08); }
+    .ls-stat:nth-child(n+3) { border-bottom: none; }
+    .ls-sec, .ls-dark { padding-left: 16px; padding-right: 16px; }
+    .ls-split { grid-template-columns: 1fr; }
+    .ls-mosaic-b { box-shadow: 0 4px 10px rgba(0,0,0,0.15); border-width: 4px; }
+    .ls-biz-cards { grid-template-columns: 1fr; }
+    .ls-grid { grid-template-columns: repeat(12, 1fr); gap: 8px; }
+    .ls-pillars { grid-template-columns: 1fr; }
+    .ls-results { grid-template-columns: 1fr; }
+    .ls-step { padding: 20px 18px; }
   }
 </style>
