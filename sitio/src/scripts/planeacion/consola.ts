@@ -8,8 +8,8 @@
  * Con «reducir movimiento» no se anima nada: cada acto queda en su estado final (póster), pero las tarjetas se abren
  * y se envían igual. Sin JS, el HTML ya es el póster.
  */
-import { estado, escucha, avisa, ph, phUnaVez, activa } from './estado';
-import { PASOS, PLAN_27, REAL_27, TICKER, RUTINA } from '../../data/planeacion-demo';
+import { estado, escucha, ph, phUnaVez, activa } from './estado';
+import { PASOS, PLAN_27, REAL_27, RUTINA } from '../../data/planeacion-demo';
 import { serie, suave } from '../../lib/planeacion-graficas';
 
 type Beat = { t: number; fn: () => void };
@@ -68,7 +68,8 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
     li.classList.toggle('is-auto', como === 'auto');
     li.classList.remove('is-abreme');
     const est = li.querySelector<HTMLElement>('[data-estado]');
-    if (est) est.textContent = !como ? 'Por revisar' : como === 'auto' ? '✓ Automático · 4 h para objetar' : '✓ Hecho';
+    // v3: sin «Por revisar»; el estado solo aparece cuando ya se mandó
+    if (est) est.textContent = !como ? '' : como === 'auto' ? '✓ Automático · 4 h para objetar' : '✓ Hecho';
     const id = li.dataset.tarjeta;
     document.getElementById(`det-${id}`)?.classList.toggle('is-enviada', !!como);
   }
@@ -84,7 +85,7 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
     const repCedis = $(el, '[data-rep-cedis]'), repSalen = $(el, '[data-rep-salen]'), repQuedan = $(el, '[data-rep-quedan]');
     const enviados = new Set<string>();
     let manual = false;
-    const DUR = [4400, 3200, 2800, 2800, 3400, 3200, 2600, 3400, 3800];
+    const DUR = [4400, 3200, 2800, 2800, 3400, 3200, 3400, 3800];
 
     const omitido = (i: number) => { const c = pasos[i].dataset.clave; return !!c && !estado.analiza.has(c); };
     function selecciona(i: number) {
@@ -158,15 +159,6 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
       if (!p.classList.contains('is-on') || p.classList.contains('is-omitida')) return;
       manual = true; selecciona(i); ph('planeacion_paso', { id: PASOS[i].id });
     }));
-    // las dos dudas del catálogo: un clic y queda guardado
-    $$(el, '.pre-duda').forEach((d) => {
-      const ok = $(d, '.pre-duda-ok');
-      $$(d, '.pre-op').forEach((b) => b.addEventListener('click', () => {
-        $$(d, '.pre-op').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-        ok.textContent = `✓ Guardado: ${b.firstChild?.textContent?.trim()}. Queda con tu nombre y la fecha.`;
-        ph('planeacion_duda', { duda: d.dataset.duda, op: b.dataset.op });
-      }));
-    });
 
     return {
       id: 'pre', el, dur: t + 4200, beats,
@@ -212,12 +204,10 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
     const celdas = $$(red, '.vivo-celdas li');
     const cedisNodo = $(red, '[data-nodo="CEDIS"]'), cedisT = $(red, '[data-cedis]'), prov = $(red, '[data-nodo="Proveedor"]');
     const resumen = $(red, '[data-resumen]');
-    const ticker = $(el, '[data-ticker]');
     const lista = $(el, '.vivo-lista');
     const orden = $$(lista, '.pdt');
     const tarjeta = (id: string) => orden.find((li) => li.dataset.tarjeta === id);
     const rutinaBtn = $<HTMLButtonElement>(el, '[data-rutina-btn]'), rutinaT = $(el, '[data-rutina-t]');
-    const radios = $$<HTMLInputElement>(el, 'input[name="modo-vivo"]');
 
     const pts = serie(REAL_27, { w: 640, h: 230, m: 12, max: 7000 }).pts;
     const DOW = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
@@ -232,7 +222,7 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
 
     const resueltos = new Set<string>();
     const autoCola: { id: string; t: number }[] = [];
-    let d = 0, dEntero = -1, ultimoTk = 0, tk = 0, bonus = 0, rutinaHecha = false, tActual = 0, ultimaPintura = -1;
+    let d = 0, dEntero = -1, bonus = 0, rutinaHecha = false, tActual = 0, ultimaPintura = -1;
     // el estado que trae el HTML (póster) es el punto de partida, para que el script no deje dos colores en una celda
     const pintado: string[] = celdas.map((x) => (x.className.match(/\bis-(ok|pronto|falta|sobra|evento)\b/) || [])[1] || 'ok');
 
@@ -349,7 +339,6 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
         hoy.style.setProperty('--p', '0.01');
         pathReal.setAttribute('d', ''); punta.setAttribute('cx', String(pts[0][0])); punta.setAttribute('cy', String(pts[0][1]));
         pintaDia(0); contadores(0);
-        ticker.textContent = TICKER[0];
       },
       final() {
         tActual = acto.dur; d = DIAS;
@@ -366,7 +355,6 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
         const di = Math.floor(d);
         if (di !== dEntero) { dEntero = di; pintaDia(di); contadores(d); }
         if (Math.abs(d - ultimaPintura) > 0.04) { ultimaPintura = d; curva(d); contadores(d); }
-        if (t - ultimoTk > 700) { ultimoTk = t; tk = (tk + 5) % TICKER.length; ticker.textContent = TICKER[tk]; if (movimiento) { ticker.classList.remove('is-entra'); requestAnimationFrame(() => requestAnimationFrame(() => ticker.classList.add('is-entra'))); } }
         while (autoCola.length && autoCola[0].t <= t) acto.envia!(autoCola.shift()!.id, 'auto');
       },
       envia(id, como) {
@@ -393,14 +381,8 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
       contadores(d);
       ph('planeacion_rutina', { modo: estado.modo });
     });
-    radios.forEach((r) => r.addEventListener('change', () => {
-      if (!r.checked) return;
-      estado.modo = r.value as typeof estado.modo;
-      avisa(); document.dispatchEvent(new Event('pd:modo'));
-      ph('planeacion_modo', { modo: r.value, desde: 'consola' });
-    }));
+    // el modo se elige en la ficha del acto 0 (v3: ya no se repite el selector aquí)
     escucha(() => {
-      radios.forEach((r) => { r.checked = r.value === estado.modo; });
       etiquetaRutina();
       autoPendientes();
       if (!movimiento || estadoActo.get('vivo')?.terminado) { autoCola.forEach((x) => acto.envia!(x.id, 'auto')); autoCola.length = 0; }
@@ -410,11 +392,11 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
 
   /* ───────── Acto 3 · Después del evento ───────── */
   function actoCierre(el: HTMLElement): Acto {
+    // 0 la escalera · 1 el candado · 2 lo que quedó · 3 la vida de un modelo · 4 «Armar la rebaja»
     const pasos = $$(el, '[data-paso]');
-    const consol = $(el, '.cie-consol');
     const total = $(el, '.cie-quedo [data-cuenta]');
     const btn = $<HTMLButtonElement>(el, '[data-rebaja]');
-    const T = [400, 2900, 5300, 8900, 12300, 15400];
+    const T = [400, 2800, 4400, 7600, 10400];
     function arma(como: Como) {
       if (el.classList.contains('is-rebaja')) return;
       el.classList.add('is-rebaja');
@@ -423,16 +405,15 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
       ph('planeacion_rebaja', { como });
     }
     btn.addEventListener('click', () => arma('click'));
-    const muestra = (i: number) => { pasos[i].classList.add('is-on'); if (i === 3) cuenta(total, miles(+total.dataset.cuenta!)); };
+    const muestra = (i: number) => { pasos[i].classList.add('is-on'); if (i === 2) cuenta(total, miles(+total.dataset.cuenta!)); };
     return {
-      id: 'cierre', el, dur: 17200,
+      id: 'cierre', el, dur: 12400,
       beats: [
         ...T.map((t, i) => ({ t, fn: () => muestra(i) })),
-        { t: 7000, fn: () => consol.classList.add('is-junta') },
-        { t: 16800, fn: () => { if (estado.modo === 'auto') arma('auto'); } },
+        { t: 12000, fn: () => { if (estado.modo === 'auto') arma('auto'); } },
       ],
-      reset() { pasos.forEach((p) => p.classList.remove('is-on')); consol.classList.remove('is-junta'); el.classList.remove('is-rebaja'); btn.disabled = false; btn.textContent = 'Armar la rebaja'; },
-      final() { pasos.forEach((p) => p.classList.add('is-on')); consol.classList.add('is-junta'); total.textContent = miles(+total.dataset.cuenta!); },
+      reset() { pasos.forEach((p) => p.classList.remove('is-on')); el.classList.remove('is-rebaja'); btn.disabled = false; btn.textContent = 'Armar la rebaja'; },
+      final() { pasos.forEach((p) => p.classList.add('is-on')); total.textContent = miles(+total.dataset.cuenta!); },
     };
   }
 

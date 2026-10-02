@@ -27,13 +27,13 @@ import PdResultado from './PdResultado.astro';
       </ol>
     </nav>
     <div class="pdc-ctl" role="group" aria-label="Reproducción de la simulación">
-      <button type="button" class="pdc-b" data-ctl="pausa" aria-pressed="false" aria-label="Pausa">
+      <button type="button" class="pdc-b" data-ctl="pausa" aria-pressed="false" aria-label="Pausa" title="Pausa">
         <svg class="pdc-i-pausa" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
         <svg class="pdc-i-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>
       </button>
-      <button type="button" class="pdc-b pdc-b--txt" data-ctl="vel" aria-pressed="false" aria-label="×2 · velocidad doble">×2</button>
-      <button type="button" class="pdc-b pdc-b--txt" data-ctl="saltar" aria-label="Saltar al final del acto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 5 7 7-7 7M13 5l7 7-7 7"/></svg><span>Saltar</span></button>
-      <button type="button" class="pdc-b pdc-b--txt" data-ctl="otra" aria-label="Otra vez: repetir el acto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><span>Otra vez</span></button>
+      <button type="button" class="pdc-b" data-ctl="vel" aria-pressed="false" aria-label="×2 · velocidad doble" title="Velocidad doble">×2</button>
+      <button type="button" class="pdc-b" data-ctl="saltar" aria-label="Saltar al final del acto" title="Saltar al final del acto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 5 7 7-7 7M13 5l7 7-7 7"/></svg></button>
+      <button type="button" class="pdc-b" data-ctl="otra" aria-label="Otra vez: repetir el acto" title="Otra vez"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
     </div>
   </div>
 
@@ -76,11 +76,11 @@ import PdResultado from './PdResultado.astro';
   .pdc-avance i { display: block; width: 100%; height: 100%; background: #1A1A1A; transform-origin: 0 50%; transform: scaleX(var(--a, 0)); }
   .pdc-fases li.is-actual .pdc-avance { opacity: 1; }
 
-  .pdc-ctl { display: flex; flex-shrink: 0; gap: 4px; }
-  .pdc-b { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 42px; min-height: 42px; padding: 0 10px; border: 1px solid #E0E0DC; border-radius: 99px; background: #fff; color: #1A1A1A; font: 600 13px/1 var(--font-display); cursor: pointer; transition: background 0.2s, border-color 0.2s; }
-  .pdc-b svg { width: 15px; height: 15px; max-width: none; flex-shrink: 0; }
-  .pdc-b span { display: none; }
-  .pdc-b:hover { border-color: #1A1A1A; }
+  /* v3: los controles van solo con ícono, sin pastillas (el nombre está en aria-label y title) */
+  .pdc-ctl { display: flex; flex-shrink: 0; gap: 2px; }
+  .pdc-b { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: none; color: #1A1A1A; font: 700 14px/1 var(--font-display); cursor: pointer; transition: background 0.2s; }
+  .pdc-b svg { width: 16px; height: 16px; max-width: none; flex-shrink: 0; }
+  .pdc-b:hover { background: #F0EFEB; }
   .pdc-b:focus-visible { outline: 2px solid #4B7BE5; outline-offset: 2px; }
   .pdc-b[aria-pressed="true"] { background: #1A1A1A; color: #fff; border-color: #1A1A1A; }
   .pdc-i-play { display: none; }
@@ -95,13 +95,10 @@ import PdResultado from './PdResultado.astro';
     .pdc-fases li { flex: 0 0 28px; }
     .pdc-fases a { min-height: 44px; padding: 0; }
     .pdc-fases li.is-actual .pdc-t { display: none; }
-    .pdc-ctl { gap: 4px; }
-    .pdc-b { min-width: 48px; min-height: 44px; padding: 0; }
   }
   @media (min-width: 768px) {
     .pdc-barra { padding: 8px 5vw; }
     .pdc-t { display: inline; }
-    .pdc-b span { display: inline; }
   }
 
   /* ── el diálogo: panel blanco a la derecha en escritorio, hoja desde abajo en el teléfono ── */

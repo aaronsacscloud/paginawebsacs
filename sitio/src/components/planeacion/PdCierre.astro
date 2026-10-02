@@ -1,77 +1,63 @@
 ---
 /**
- * Acto 3 · Después del evento: promociones y lo que quedó (21 jun – 1 ago 2027; v2 «limpio» 2-oct-2026: blanco y con
- * menos datos). La escalera de rebajas se arma
- * sola (−20 %, −40 % a los 30 días, outlet), con candado para lo nuevo y los básicos; lo suelto se junta en pocas
- * tiendas; «qué quedó» por categoría, talla y región; y la biografía de un modelo. «Armar la rebaja» (Sacs arma la
- * lista y las etiquetas; el precio lo confirmas tú). Lo reproduce src/scripts/planeacion/consola.ts.
+ * Acto 3 · Después del evento: rebajas y lo que quedó (21 jun – 1 ago 2027). v3 «color» (2-oct-2026): fucsia, como el
+ * paso «Fideliza» del home. La escalera de rebajas va en grande sobre el color, bajando como escalones (−20 %, −40 %
+ * a los 30 días, outlet); los protegidos con candado, en una línea; «lo que quedó» y la vida de un modelo, en dos
+ * tarjetas blancas; y «Armar la rebaja» (Sacs arma la lista y las etiquetas; el precio lo confirmas tú).
+ * «Consolidar» salió de la pantalla en el v3 (su plan automático sigue en construcción). Lo reproduce
+ * src/scripts/planeacion/consola.ts.
  */
-import { CIERRE, OBRA } from '../../data/planeacion-demo';
+import { CIERRE, OBRA_NOTA } from '../../data/planeacion-demo';
 import { miles } from '../../lib/planeacion-graficas';
 
 const q = CIERRE.quedo;
+const PALABRA = Array.from({ length: 4 }, () => 'REBAJAS').join(' · ');
 ---
-<section class="pda cie pd-claro" id="pd-cierre" data-acto="cierre" aria-labelledby="pd-cierre-h">
+<section class="pda cie pd-fucsia" id="pd-cierre" data-acto="cierre" aria-labelledby="pd-cierre-h">
+  <div class="pda-fondo" aria-hidden="true"><span>{PALABRA}</span><span>{PALABRA}</span></div>
   <header class="pda-cab">
-    <p class="pda-k"><b>03</b> · Después del evento</p>
-    <h2 class="pda-h" id="pd-cierre-h">La semana pico ya pasó. Ahora, las rebajas.</h2>
-    <p class="pda-fecha">Del 21 de junio al 1 de agosto: rebajas por escalones y lo que quedó. <span class="pd-ej">Ejemplo</span></p>
+    <p class="pda-k">03 · Cierre</p>
+    <h2 class="pda-h" id="pd-cierre-h">Ahora, las rebajas.</h2>
+    <p class="pda-fecha">Del 21 de junio al 1 de agosto · ejemplo</p>
   </header>
 
+  <ol class="cie-escalera" data-paso="0" aria-label="La escalera de rebajas, que Sacs arma sola">
+    {CIERRE.escalones.map((e, k) => (
+      <li style={`--k:${k}`}><b>{e.pct}</b><em>{e.f}</em><span>{e.t}</span></li>
+    ))}
+  </ol>
+
+  <p class="cie-candado" data-paso="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>{CIERRE.candado}</p>
+
   <div class="cie-grid">
-    <div class="cie-col">
-      <section class="cie-b cie-escalera" data-paso="0" aria-labelledby="cie-esc-h">
-        <h3 class="cie-k" id="cie-esc-h">La escalera de rebajas · se arma sola</h3>
-        <ol>
-          {CIERRE.escalones.map((e, k) => (
-            <li style={`--k:${k}`}><b>{e.pct}</b><span><em>{e.f}</em>{e.t}</span></li>
-          ))}
-        </ol>
-      </section>
-
-      <section class="cie-b cie-prot" data-paso="1" aria-labelledby="cie-prot-h">
-        <h3 class="cie-k" id="cie-prot-h">Protegidos con candado</h3>
-        <ul>
-          {CIERRE.protegidos.map((p) => (
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span><b>{p.t}</b>{p.s}</span></li>
-          ))}
-        </ul>
-      </section>
-
-      <section class="cie-b cie-consol" data-paso="2" aria-labelledby="cie-con-h">
-        <h3 class="cie-k" id="cie-con-h">Consolidar <span class="pd-obra">{CIERRE.consolidar.obra}</span></h3>
-        <p class="cie-t"><b>{CIERRE.consolidar.t}</b> {CIERRE.consolidar.s}</p>
-      </section>
-    </div>
-
-    <div class="cie-col">
-      <section class="cie-b cie-quedo" data-paso="3" aria-labelledby="cie-quedo-h">
-        <h3 class="cie-k" id="cie-quedo-h">Qué quedó <span class="pd-ej">ejemplo</span><span class="pd-obra">{OBRA}</span></h3>
-        <p class="cie-gran"><b data-cuenta={q.total}>{miles(q.total)}</b><span>piezas · {q.pct} de lo que llegó</span></p>
-        <div class="cie-split" aria-label={`${miles(q.basicos)} básicos que pasan a la siguiente temporada y ${miles(q.outlet)} al outlet`}>
-          <span class="is-b" style={`--w:${((q.basicos / q.total) * 100).toFixed(1)}%`}><b>{miles(q.basicos)}</b> básicos que pasan</span>
-          <span class="is-o" style={`--w:${((q.outlet / q.total) * 100).toFixed(1)}%`}><b>{miles(q.outlet)}</b> al outlet</span>
-        </div>
-      </section>
-
-      <section class="cie-b cie-bio" data-paso="4" aria-labelledby="cie-bio-h">
-        <h3 class="cie-k" id="cie-bio-h">La biografía de un modelo</h3>
-        <div class="cie-bio-cab">
-          <img src={`/images/planeacion/prod/${CIERRE.bio.foto}.webp`} width="480" height="480" alt={CIERRE.bio.modelo} loading="lazy" decoding="async" />
-          <p><b>{CIERRE.bio.modelo}</b><span>Dejó <em>{CIERRE.bio.margen}</em></span></p>
-        </div>
-        <ol class="cie-vida">
-          {CIERRE.bio.hitos.map((h, k) => <li style={`--k:${k}`}><i aria-hidden="true"></i><b>{h.t}</b><span>{h.f}{h.s && ` · ${h.s}`}</span></li>)}
-        </ol>
-      </section>
-
-      <div class="cie-b cie-accion" data-paso="5">
-        <button type="button" class="cie-btn" data-rebaja>{CIERRE.boton}</button>
-        <p class="cie-nota">{CIERRE.nota}</p>
-        <p class="cie-hecho" data-rebaja-hecho><span class="cie-hecho-pre">Al armarla: </span>{CIERRE.hecho}</p>
+    <section class="cie-b cie-quedo pd-hoja" data-paso="2" aria-labelledby="cie-quedo-h">
+      <h3 class="cie-k" id="cie-quedo-h">Lo que quedó<span class="pd-ast"><span aria-hidden="true">*</span><span class="sr-only"> (en construcción)</span></span></h3>
+      <p class="cie-gran"><b data-cuenta={q.total}>{miles(q.total)}</b><span>piezas · {q.pct} de lo que llegó</span></p>
+      <div class="cie-split" aria-label={`${miles(q.basicos)} básicos que pasan a la siguiente temporada y ${miles(q.outlet)} al outlet`}>
+        <span class="is-b" style={`--w:${((q.basicos / q.total) * 100).toFixed(1)}%`}><b>{miles(q.basicos)}</b> básicos que pasan</span>
+        <span class="is-o" style={`--w:${((q.outlet / q.total) * 100).toFixed(1)}%`}><b>{miles(q.outlet)}</b> al outlet</span>
       </div>
-    </div>
+    </section>
+
+    <section class="cie-b cie-bio pd-hoja" data-paso="3" aria-labelledby="cie-bio-h">
+      <h3 class="cie-k" id="cie-bio-h">La vida de un modelo</h3>
+      <div class="cie-bio-cab">
+        <img src={`/images/planeacion/prod/${CIERRE.bio.foto}.webp`} width="480" height="480" alt={CIERRE.bio.modelo} loading="lazy" decoding="async" />
+        <p><b>{CIERRE.bio.modelo}</b><span>Dejó <em>{CIERRE.bio.margen}</em></span></p>
+      </div>
+      <ol class="cie-vida">
+        {CIERRE.bio.hitos.map((h, k) => <li style={`--k:${k}`}><i aria-hidden="true"></i><b>{h.t}</b><span>{h.f}</span></li>)}
+      </ol>
+    </section>
   </div>
+
+  <div class="cie-accion" data-paso="4">
+    <button type="button" class="cie-btn" data-rebaja>{CIERRE.boton}</button>
+    <p class="cie-nota">{CIERRE.nota}</p>
+    <p class="cie-hecho" data-rebaja-hecho><span class="cie-hecho-pre">Al armarla: </span>{CIERRE.hecho}</p>
+  </div>
+
+  <p class="pda-nota"><span aria-hidden="true">*</span> {OBRA_NOTA}</p>
 
   <a class="pda-sigue" href="#pd-resultado">Sigue: el resultado de la temporada
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
@@ -79,64 +65,58 @@ const q = CIERRE.quedo;
 </section>
 
 <style>
-  .cie-grid { display: grid; gap: 20px; margin-top: 40px; }
-  .cie-col { display: grid; gap: 20px; align-content: start; min-width: 0; }
+  /* la escalera de rebajas: grande, en blanco sobre el fucsia; en escritorio baja como escalones (la escalera del
+     home, al revés: aquí lo que baja es el precio) */
+  .cie-escalera { display: grid; gap: 0; margin: 56px auto 0; padding: 0; list-style: none; }
+  .cie-escalera li { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); grid-template-areas: 'pct f' 'pct t'; align-items: center; column-gap: 20px; padding: 18px 0; border-top: 2px solid #fff; }
+  .cie-escalera b { grid-area: pct; font: 700 clamp(56px, 13vw, 76px)/0.9 var(--pd-clash); letter-spacing: -0.02em; color: #fff; white-space: nowrap; }
+  .cie-escalera em { grid-area: f; align-self: end; font: 700 15px/1.3 var(--font-display); font-style: normal; color: #fff; }
+  .cie-escalera span { grid-area: t; align-self: start; font: 500 15px/1.45 var(--font-body); color: #fff; }
+
+  .cie-candado { display: flex; align-items: center; gap: 12px; margin-top: 28px; font: 600 16px/1.45 var(--font-display); color: #fff; }
+  .cie-candado svg { flex-shrink: 0; width: 20px; height: 20px; max-width: none; }
+
+  .cie-grid { display: grid; gap: 20px; margin-top: 44px; }
   .cie-b { margin: 0; padding: 24px; border-radius: var(--pd-radio); background: var(--pd-tarjeta); min-width: 0; }
-  .cie-k { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 0 0 16px; font: 700 16px/1.3 var(--font-display); letter-spacing: -0.01em; color: var(--pd-texto); }
-
-  .cie-escalera ol { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
-  .cie-escalera li { display: grid; grid-template-columns: minmax(118px, max-content) minmax(0, 1fr); align-items: baseline; gap: 18px; padding: 14px 0; border-top: 1px solid #DEDEDA; }
-  .cie-escalera li:first-child { border-top: 0; padding-top: 0; }
-  .cie-escalera li b { font: 800 clamp(30px, 3.4vw, 40px)/1 var(--font-display); letter-spacing: -0.04em; color: var(--pd-texto); white-space: nowrap; }
-  .cie-escalera li:last-child b { font-size: clamp(24px, 2.6vw, 30px); }
-  .cie-escalera li span { font: 400 14.5px/1.5 var(--font-body); color: var(--pd-tenue); }
-  .cie-escalera li em { display: block; font: 600 14px/1.35 var(--font-display); font-style: normal; color: var(--pd-texto); }
-
-  .cie-prot ul { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
-  .cie-prot li { display: flex; gap: 12px; }
-  .cie-prot svg { flex-shrink: 0; width: 18px; height: 18px; margin-top: 2px; max-width: none; color: var(--pd-tenue); }
-  .cie-prot span { font: 400 14.5px/1.5 var(--font-body); color: var(--pd-tenue); }
-  .cie-prot b { display: block; font: 600 15px/1.35 var(--font-display); color: var(--pd-texto); }
-
-  .cie-t { margin: 0; font: 400 14.5px/1.55 var(--font-body); color: var(--pd-tenue); }
-  .cie-t b { color: var(--pd-texto); font-family: var(--font-display); font-weight: 600; }
+  .cie-k { display: flex; align-items: baseline; gap: 2px; margin: 0 0 16px; font: 700 16px/1.3 var(--font-display); letter-spacing: -0.01em; color: var(--pd-texto); }
 
   .cie-gran { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin: 0; }
-  .cie-gran b { font: 800 clamp(48px, 5.4vw, 72px)/0.95 var(--font-display); letter-spacing: -0.05em; font-variant-numeric: tabular-nums; color: var(--pd-texto); }
+  .cie-gran b { font: 700 clamp(56px, 6vw, 84px)/0.9 var(--pd-clash); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--pd-texto); }
   .cie-gran span { font: 400 15px/1.4 var(--font-body); color: var(--pd-tenue); }
-  .cie-split { display: flex; height: 44px; margin-top: 16px; border-radius: 12px; overflow: hidden; font: 500 13px/1.15 var(--font-body); }
+  .cie-split { display: flex; height: 44px; margin-top: 18px; border-radius: 12px; overflow: hidden; font: 500 13px/1.15 var(--font-body); }
   .cie-split span { display: flex; align-items: center; gap: 6px; width: var(--w); padding: 0 12px; white-space: nowrap; overflow: hidden; }
   .cie-split b { font: 700 15px var(--font-display); }
-  .cie-split .is-b { background: var(--pd-texto); color: #fff; }
-  .cie-split .is-o { background: #DADAD5; color: var(--pd-texto); }
+  .cie-split .is-b { background: #1A1A1A; color: #fff; }
+  .cie-split .is-o { background: #F7D6E2; color: #1A1A1A; }
 
   .cie-bio-cab { display: flex; align-items: center; gap: 14px; }
-  .cie-bio-cab img { width: 64px; height: 64px; border-radius: 12px; background: #fff; object-fit: contain; padding: 4px; }
+  .cie-bio-cab img { width: 64px; height: 64px; border-radius: 12px; background: #F5F5F3; object-fit: contain; padding: 4px; }
   .cie-bio-cab p { display: grid; gap: 2px; margin: 0; font: 700 16px/1.3 var(--font-display); color: var(--pd-texto); }
   .cie-bio-cab span { font: 400 14px/1.3 var(--font-body); color: var(--pd-tenue); }
   .cie-bio-cab em { font-style: normal; font-weight: 700; color: var(--pd-texto); }
   .cie-vida { position: relative; display: grid; gap: 0; margin: 18px 0 0; padding: 0 0 0 20px; list-style: none; }
-  .cie-vida::before { content: ''; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: #D5D5D0; }
+  .cie-vida::before { content: ''; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: #E2D4DA; }
   .cie-vida li { position: relative; display: grid; gap: 1px; padding: 6px 0; }
-  .cie-vida li i { position: absolute; left: -20px; top: 10px; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 2px solid var(--pd-texto); }
+  .cie-vida li i { position: absolute; left: -20px; top: 10px; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 2px solid #C2315F; }
   .cie-vida li b { font: 600 14px/1.3 var(--font-display); color: var(--pd-texto); }
   .cie-vida li span { font: 400 13px/1.3 var(--font-body); color: var(--pd-tenue); }
 
-  .cie-accion { display: grid; gap: 10px; background: none; padding: 4px 0 0; }
-  .cie-btn { min-height: 52px; padding: 12px 22px; border: 0; border-radius: 99px; background: var(--pd-boton); color: var(--pd-boton-t); font: 700 15.5px/1 var(--font-display); cursor: pointer; transition: transform 0.2s; }
+  .cie-accion { display: grid; gap: 10px; margin-top: 28px; }
+  .cie-btn { width: 100%; min-height: 54px; padding: 12px 22px; border: 0; border-radius: 99px; background: var(--pd-boton); color: var(--pd-boton-t); font: 700 16px/1 var(--font-display); cursor: pointer; transition: transform 0.2s; }
   .cie-btn:hover { transform: translateY(-1px); }
-  .cie-btn:focus-visible { outline: 2px solid var(--pd-azul); outline-offset: 3px; }
-  .cie-btn[disabled] { cursor: default; background: #DADAD5; color: var(--pd-texto); }
-  .cie-nota { margin: 0; font: 400 13.5px/1.5 var(--font-body); color: var(--pd-tenue); }
-  .cie-hecho { margin: 0; font: 400 13.5px/1.45 var(--font-body); color: var(--pd-apagado); }
+  .cie-btn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+  .cie-btn[disabled] { cursor: default; background: rgba(255, 255, 255, 0.2); color: #fff; }
+  .cie-nota { margin: 0; font: 500 14px/1.5 var(--font-body); color: #fff; }
+  .cie-hecho { margin: 0; font: 400 14px/1.45 var(--font-body); color: #fff; }
   :global(.pd-js) .cie-hecho { display: none; }
-  :global(.pd-js) .cie.is-rebaja .cie-hecho { display: block; padding: 12px 14px; border-radius: 12px; border-left: 3px solid var(--pd-ok); background: var(--pd-tarjeta); color: var(--pd-texto); font-weight: 600; }
+  :global(.pd-js) .cie.is-rebaja .cie-hecho { display: block; padding: 12px 14px; border-radius: 12px; border-left: 3px solid #fff; background: var(--pd-tarjeta); font-weight: 600; }
   :global(.pd-js) .cie-hecho-pre { display: none; }
 
   /* ── Con JS: cada bloque entra en su momento ── */
   .cie.is-js [data-paso]:not(.is-on) { opacity: 0; transform: translateY(10px); }
   .cie.is-js [data-paso] { transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
-  .cie.is-js .cie-escalera li { opacity: 0; transform: translateX(-10px); transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(0.2s + var(--k) * 0.35s); }
+  .cie.is-js .cie-escalera:not(.is-on) { opacity: 1; transform: none; }
+  .cie.is-js .cie-escalera li { opacity: 0; transform: translateY(-12px); transition: opacity 0.5s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(0.2s + var(--k) * 0.45s); }
   .cie.is-js .cie-escalera.is-on li { opacity: 1; transform: none; }
   .cie.is-js .cie-split span { transform: scaleX(0); transform-origin: 0 50%; transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.3s; }
   .cie.is-js .cie-quedo.is-on .cie-split span { transform: none; }
@@ -149,8 +129,19 @@ const q = CIERRE.quedo;
     .cie-vida li { padding: 0; }
     .cie-vida li i { left: 0; top: -24px; }
   }
+  @media (min-width: 900px) {
+    .cie-escalera { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; align-items: start; }
+    .cie-escalera li { grid-template-columns: 1fr; grid-template-areas: 'pct' 'f' 't'; row-gap: 8px; margin-top: calc(var(--k) * 56px); padding: 22px 28px 0 0; }
+    /* el tramo que baja de un escalón al siguiente */
+    .cie-escalera li + li { border-left: 2px solid #fff; padding-left: 24px; margin-left: -2px; }
+    .cie-escalera b { font-size: clamp(64px, 7.4vw, 112px); margin-bottom: 6px; }
+    .cie-escalera em { align-self: auto; }
+  }
   @media (min-width: 1024px) {
-    .cie-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 24px; }
+    .cie-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 24px; align-items: start; }
+    .cie-accion { grid-template-columns: minmax(0, 340px) minmax(0, 1fr); align-items: center; column-gap: 24px; }
+    .cie-btn { grid-row: 1; }
+    .cie-hecho { grid-column: 1 / -1; }
   }
   @media (prefers-reduced-motion: reduce) {
     .cie * { animation: none !important; transition: none !important; }

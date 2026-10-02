@@ -14,16 +14,20 @@
  *  - Vendido 29,110 = 93.6 %; sobrante 1,990 = 6.4 % (1,150 básicos que pasan + 840 al outlet).
  *  - A precio completo 25,660 = 82.5 % de lo recibido; rebajas $788 K = 3.7 % de $21.3 M.
  *  - v2 «limpio» (2-oct-2026): en pantalla van menos datos; los que se quitaron no cambian las cuentas.
+ *  - v3 «color» (2-oct-2026): textos aún más cortos (sin horas, sin leyendas de más, sin explicaciones por
+ *    indicador). Tampoco cambian las cuentas: solo se dejó de mostrar.
  *  - Plan semanal (13 semanas, 3 may – 1 ago) suma 28,400; la venta real suma 29,110. A la semana 6 la real va
  *    14,510 contra 13,000 del plan (+12 %): la semana pico sube de 5,800 a 6,500 (fue 6,600).
  *  - Fechas de 2027 verificadas: lun 8 feb, mié 10 feb (8 feb + 2), vie 12 mar, lun 26 abr (26 abr − 75 días = 10 feb;
  *    − 45 días = 12 mar), jue 20 may + 21 días = jue 10 jun, dom 20 jun, lun 21 jun, mié 21 jul (+30 días), dom 1 ago.
  *
  * `obra: true` = EN CONSTRUCCIÓN en el motor (revisado el 1-oct-2026 contra sacs_api por la sesión de nivelación):
- * se muestra con una etiqueta discreta, sin fecha ni promesa de entrega. Lo demás es lógica viva del motor.
+ * desde el v3 se marca con un asterisco y una sola nota al pie por acto (OBRA_NOTA), sin fecha ni promesa de
+ * entrega. Lo demás es lógica viva del motor.
  */
 
 export const OBRA = 'En construcción';
+export const OBRA_NOTA = 'En construcción: todavía no está disponible en Sacs.';
 
 /* ─────────────── Acto 0 · La instrucción ─────────────── */
 export const INSTRUCCION = {
@@ -38,31 +42,30 @@ export type Modo = 'sugerir' | 'aprobar' | 'auto';
 export const FICHA = {
   temporada: {
     v: 'Día del Padre 2027',
-    s: 'Venta del 3 de mayo al 1 de agosto. El evento: domingo 20 de junio.',
+    s: 'Del 3 de mayo al 1 de agosto. El evento: 20 de junio.',
     otras: ['Navidad', 'Buen Fin', 'Hot Sale', 'Día de las Madres', 'Regreso a clases'],
     nota: 'La misma mecánica para cada temporada.',
   },
-  alcance: { v: '100 tiendas, CEDIS y tienda en línea', s: '64 modelos, 18 de ellos nuevos.' },
-  presupuesto: { v: '$8,000,000', s: 'de compra para toda la temporada.' },
-  metas: { v: '80 % a precio completo', s: 'y rebajas de no más del 6 % de la venta.' },
+  alcance: { v: '100 tiendas, CEDIS y tienda en línea', s: '64 modelos, 18 nuevos.' },
+  presupuesto: { v: '$8,000,000', s: 'de compra.' },
+  metas: { v: '80 % a precio completo', s: 'Rebajas de máximo 6 %.' },
   analiza: [
-    { id: 'ventas', t: 'Las ventas de los últimos 3 Días del Padre' },
-    { id: 'alza', t: 'El alza de cada evento' },
-    { id: 'tallas', t: 'Las tallas y colores por tienda y región' },
-    { id: 'inventario', t: 'Lo que hay en tiendas, en el CEDIS y en camino' },
-    { id: 'entregas', t: 'El tiempo de entrega de cada proveedor' },
-    { id: 'nuevos', t: 'Los modelos nuevos con sus parecidos' },
+    { id: 'ventas', t: 'Ventas de 3 Días del Padre' },
+    { id: 'alza', t: 'El alza del evento' },
+    { id: 'tallas', t: 'Tallas y colores por tienda' },
+    { id: 'entregas', t: 'Entrega de cada proveedor' },
+    { id: 'nuevos', t: 'Modelos nuevos' },
   ],
   candados: [
-    'Las compras de más de $100,000 me las pasas a aprobar.',
-    'No rebajes lo que llegó hace menos de 45 días.',
+    'Compras de más de $100,000, a mi aprobación.',
+    'Nada de rebajas a lo que llegó hace menos de 45 días.',
     'Mínimo 2 piezas por talla núcleo en cada tienda.',
   ],
   nucleo: 'Talla núcleo: las que más vendes, como la M y la L.',
   modos: [
-    { id: 'sugerir' as Modo, t: 'Sugerir', s: 'Sacs propone y tú decides cada movimiento.' },
-    { id: 'aprobar' as Modo, t: 'Aprobar', s: 'Sacs deja todo listo: traspasos «Por enviar» y órdenes de compra en borrador. Tú apruebas con un clic.' },
-    { id: 'auto' as Modo, t: 'Automático', s: 'Con candados: los resurtidos de rutina del CEDIS salen solos y tienes 4 horas para objetar. Traspasos y compras grandes esperan tu clic.' },
+    { id: 'sugerir' as Modo, t: 'Sugerir', s: 'Sacs propone; tú decides cada movimiento.' },
+    { id: 'aprobar' as Modo, t: 'Aprobar', s: 'Sacs deja todo listo y tú apruebas con un clic.' },
+    { id: 'auto' as Modo, t: 'Automático', s: 'El resurtido de rutina sale solo, con candados.' },
   ],
 };
 
@@ -94,16 +97,16 @@ export const PICOS = [
 
 /* ─────────────── Acto 1 · Pretemporada y pronóstico ─────────────── */
 export type Paso = { id: string; clave: string | null; t: string; s?: string; obra?: boolean };
+// v3: ocho pasos de una línea (el de «lo que ya tienes» quedó dentro de la cuenta de la compra).
 export const PASOS: Paso[] = [
-  { id: 'catalogo', clave: null, t: 'Revisé tu catálogo: 64 modelos clasificados.', s: 'Departamento › Categoría › Subcategoría, temporada, básico o de temporada, fit, tela, tallas y colores. Tengo 2 dudas.' },
-  { id: 'historia', clave: 'ventas', t: 'Leí 3 Días del Padre, de 2024 a 2026: 1.1 millones de tickets.', s: 'Una curva por año y, encima, el pronóstico 2027 con su banda.', obra: true },
-  { id: 'picos', clave: 'ventas', t: 'Separé lo que fue evento de lo que es demanda real: marqué 3 picos.', s: 'Una venta nocturna, un remate de bodega y un Hot Sale. No cuentan como venta normal.' },
-  { id: 'alza', clave: 'alza', t: 'El alza de Día del Padre: 2.3 veces lo normal.', s: 'La semana del 14 al 20 de junio.' },
-  { id: 'nuevos', clave: 'nuevos', t: 'Pronostiqué los 18 modelos nuevos con sus 3 parecidos.', s: 'Un modelo sin historia se pronostica con los que más se le parecen.', obra: true },
-  { id: 'tallas', clave: 'tallas', t: 'Repartí el pronóstico por región, tienda, talla y color.', s: 'El Norte vende más L y XL; el Centro, más M.' },
-  { id: 'inventario', clave: 'inventario', t: 'Revisé lo que ya tienes: 3,600 piezas.', s: '2,100 en tiendas, 1,500 en el CEDIS y nada en camino.' },
-  { id: 'cortes', clave: 'entregas', t: 'Calculé los cortes de pedido con el tiempo de entrega de cada proveedor.', s: 'Contando hacia atrás desde el 26 de abril, cuando todo debe estar en el CEDIS.' },
-  { id: 'compra', clave: null, t: 'Armé la compra: 26,600 piezas por $7.7 M de tus $8 M.', s: '28,400 pronosticadas + 1,800 de colchón − 3,600 que ya tienes.', obra: true },
+  { id: 'catalogo', clave: null, t: 'Clasifiqué tu catálogo: 64 modelos.' },
+  { id: 'historia', clave: 'ventas', t: 'Leí tus últimos 3 Días del Padre.', obra: true },
+  { id: 'picos', clave: 'ventas', t: 'Aparté 3 picos que no son demanda real.' },
+  { id: 'alza', clave: 'alza', t: 'El alza del Día del Padre: 2.3 veces lo normal.' },
+  { id: 'nuevos', clave: 'nuevos', t: 'Pronostiqué los 18 modelos nuevos.', obra: true },
+  { id: 'tallas', clave: 'tallas', t: 'Repartí por región, tienda, talla y color.' },
+  { id: 'cortes', clave: 'entregas', t: 'Calculé el corte de pedido de cada proveedor.' },
+  { id: 'compra', clave: null, t: 'Armé la compra: 26,600 piezas por $7.7 M.', obra: true },
 ];
 
 // a) La taxonomía (el árbol) y las dos dudas.
@@ -126,10 +129,6 @@ export const CAMPOS = [
   { k: 'Tela', v: 'Piqué · Dry-fit · Nylon con elastano' },
   { k: 'UPF', v: '50+ en polos golf y dry-fit' },
   { k: 'Tallas núcleo', v: 'M y L (S y XL completan la curva)' },
-];
-export const DUDAS = [
-  { q: 'La Playera Básica Blanca se vende todo el año. ¿Es básico de línea o de temporada?', ops: ['Básico de línea', 'De temporada'], sug: 0 },
-  { q: 'Verde olivo es un color nuevo (Polo Golf). ¿En qué familia va?', ops: ['Verdes', 'Neutros'], sug: 0 },
 ];
 
 // e) El modelo nuevo y sus 3 parecidos (piezas por semana).
@@ -362,33 +361,19 @@ export const REGIONES = [
   { id: 'sureste', r: 'Sureste', ciudades: [['Mérida', 4], ['Cancún', 4], ['Villahermosa', 2], ['Veracruz', 2], ['Oaxaca', 2]] },
 ] as const;
 
-// El ticker de ventas (precio de lista).
-export const TICKER = [
-  'Monterrey · Polo Piqué Marino L · $899', 'Tienda en línea · Pants Jogger Gris M · $999', 'Guadalajara · Short Running Negro M · $649',
-  'Mérida · Calcetas tobilleras (3 pares) · $299', 'CDMX · Polo Golf Marino L · $1,099', 'Saltillo · Playera Dry-Fit Blanca XL · $549',
-  'Puebla · Gorra Running Negra · $449', 'León · Short Running Negro L · $649', 'Querétaro · Polo Piqué Blanco M · $899',
-  'Hermosillo · Playera Dry-Fit Blanca L · $549', 'Cancún · Short Training Gris M · $599', 'Toluca · Polo Golf Gris M · $1,099',
-  'Tijuana · Pants Jogger Gris L · $999', 'Zapopan · Polo Piqué Marino M · $899', 'CDMX · Playera Básica Blanca M · $349',
-  'Chihuahua · Short Running Negro XL · $649',
-];
-
 // Lo que pasa cada semana en la consola en vivo (de la 1 a la 7).
-export const AVISO_SEMANA_6 = { t: 'Vas 12 % arriba del plan.', s: 'La semana pico sube de 5,800 a 6,500 piezas.' };
+export const AVISO_SEMANA_6 = { t: 'Vas 12 % arriba del plan.', s: 'El pico sube de 5,800 a 6,500 piezas.' };
 
 /* ─────────────── Acto 3 · Después del evento ─────────────── */
 export const CIERRE = {
   fecha: 'Lunes 21 de junio de 2027',
   escalones: [
-    { pct: '−20 %', f: 'lunes 21 de junio', t: 'A los 22 modelos con más de 6 semanas de inventario.' },
-    { pct: '−40 %', f: 'miércoles 21 de julio', t: 'A los que no giren en 30 días.' },
-    { pct: 'Outlet', f: 'domingo 1 de agosto', t: 'Lo que quede se va al outlet.' },
+    { pct: '−20 %', f: '21 de junio', t: '22 modelos con más de 6 semanas de inventario.' },
+    { pct: '−40 %', f: '21 de julio', t: 'Lo que no gire en 30 días.' },
+    { pct: 'Outlet', f: '1 de agosto', t: 'Lo que quede.' },
   ],
-  protegidos: [
-    { t: '9 modelos nuevos', s: 'Llegaron hace menos de 45 días: son la temporada que entra.' },
-    { t: 'Los básicos', s: 'Calcetas y playera básica pasan a la siguiente temporada a precio completo.' },
-  ],
-  // Vivo: Sacs avisa cuándo conviene juntar lo suelto antes de rebajar. En construcción: el plan automático que decide a qué tiendas juntar.
-  consolidar: { t: 'Sacs te avisa cuándo conviene juntar lo suelto antes de rebajar.', s: '1 o 2 tallas por tienda no se venden solas. En el ejemplo, 312 piezas sueltas en 61 tiendas se juntan en 18, con la curva completa.', obra: 'El plan automático, en construcción' },
+  // v3: los protegidos en una línea (antes, tarjeta con dos renglones); «consolidar» salió de la pantalla.
+  candado: 'Con candado: lo que llegó hace menos de 45 días y los básicos no se rebajan.',
   quedo: {
     total: 1990, pct: '6.4 %', basicos: 1150, outlet: 840,
   },
@@ -397,9 +382,9 @@ export const CIERRE = {
     hitos: [
       { f: '30 abr', t: 'Llegó' },
       { f: '3 may', t: 'Arrancó' },
-      { f: '26 may', t: 'Pagó su lote', s: 'día 24 de venta' },
+      { f: '26 may', t: 'Pagó su lote' },
       { f: '14–20 jun', t: 'Su pico' },
-      { f: '21 jun', t: '−20 %', s: 'solo S y XXL' },
+      { f: '21 jun', t: '−20 % en S y XXL' },
       { f: '1 ago', t: 'Vendió el 96 %' },
     ],
     margen: '$1.7 M de margen',
@@ -414,30 +399,28 @@ export const RESULTADO = {
   fecha: 'Lunes 2 de agosto de 2027',
   // v2 «limpio» (2-oct-2026): solo 6 indicadores; la exactitud del pronóstico va con «lo que aprendió».
   kpis: [
-    { k: 'Venta neta', v: '$21.3 M', s: '$700 K arriba del plan', e: 'Lo que vendiste, ya sin descuentos ni devoluciones.' },
-    { k: '% vendido', v: '93.6 %', s: 'de todo lo que llegó', e: 'De cada 100 piezas que recibiste, cuántas se vendieron.' },
-    { k: 'A precio completo', v: '82.5 %', s: 'meta: 80 %', e: 'Lo que se vendió sin rebaja, contra todo lo que llegó.', meta: true },
-    { k: 'Margen bruto', v: '60 %', s: 'de la venta', e: 'Lo que te queda de cada peso después de pagar la mercancía.' },
-    { k: 'Rebajas', v: '3.7 %', s: 'meta: no más de 6 %', e: 'Lo que dejaste de cobrar por descuentos.', meta: true },
-    { k: 'Rendimiento del inventario', v: '3.1', s: 'veces', e: 'Cada peso que tuviste en inventario dejó $3.10 de margen.' },
+    // v3: sin la explicación de cada indicador (e); solo la comparación que importa (s).
+    { k: 'Venta neta', v: '$21.3 M', s: '+$700 K contra el plan' },
+    { k: 'Vendido', v: '93.6 %', s: 'de lo que llegó' },
+    { k: 'A precio completo', v: '82.5 %', s: 'meta 80 %', meta: true },
+    { k: 'Margen bruto', v: '60 %' },
+    { k: 'Rebajas', v: '3.7 %', s: 'meta: máximo 6 %', meta: true },
+    { k: 'Rendimiento del inventario', v: '3.1×' },
   ],
-  exactitud: { v: '94 %', s: 'de exactitud del pronóstico', e: 'Qué tan cerca quedó el pronóstico de lo que de verdad se vendió (81 % por modelo y 68 % por tienda y talla).' },
+  exactitud: { v: '94 %', s: 'de exactitud del pronóstico' },
   aciertos: [
-    'El pico llegó cuando se pronosticó: 2.3 veces lo normal pronosticado, 2.4 real.',
+    'El pico llegó cuando se pronosticó: 2.4 veces lo normal.',
     'Los traspasos salvaron $850 K de venta antes del domingo.',
-    'La playera blanca extra llegó 10 días antes del evento.',
   ],
   errores: [
-    { t: 'El Polo Golf Verde Olivo (nuevo) se pronosticó como sus parecidos: 1,100 piezas. Vendió 520.', s: 'El color no pegó.' },
-    { t: 'El Short Negro L se agotó en el Bajío 5 días antes del evento.', s: '$180 K de venta perdida.' },
-    { t: 'El proveedor de joggers llegó 8 días tarde.', s: 'Su corte se calculó con 75 días; tardó 83.' },
+    'El Polo Golf Verde Olivo (nuevo) vendió 520 de 1,100.',
+    'El Short Negro L se agotó en el Bajío 5 días antes.',
   ],
   aprendio: [
-    'Los colores nuevos en polos se pronostican al 60 % de sus parecidos, hasta ver 2 semanas de venta.',
-    'En el Bajío, 15 % más de L y XL en shorts.',
-    'El proveedor de joggers en realidad tarda 83 días: su corte se adelanta.',
+    'Colores nuevos en polos: 60 % de sus parecidos hasta ver 2 semanas de venta.',
+    'El proveedor de joggers tarda 83 días, no 75: su corte se adelanta.',
   ],
-  nota: 'Se aplica a la siguiente temporada con tu visto bueno.',
+  nota: 'Se aplica con tu visto bueno.',
   boton: 'Aplicar a Navidad 2027',
   hecho: '✓ Navidad 2027 arranca con lo aprendido. Te lo paso a revisar antes.',
   ciclo: ['Instrucción', 'Pronóstico', 'Temporada', 'Cierre', 'Aprendizaje'],

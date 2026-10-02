@@ -1,13 +1,14 @@
 ---
 /**
- * Acto 1 · Pretemporada y pronóstico (v2 «limpio» 2-oct-2026: fondo blanco, menos datos). Un panel «Sacs está
- * analizando…» escribe sus pasos uno por uno, con palomita,
- * y junto a cada paso aparece su gráfica (en escritorio, todas en el mismo escenario a la derecha; en el teléfono,
- * debajo de su paso). Al terminar salen 3 tarjetas y la vista previa del primer reparto (CEDIS → 100 tiendas).
- * Si en la ficha se apagó algo de «Analiza», ese paso sale «omitido». Lo anima src/scripts/planeacion/consola.ts.
+ * Acto 1 · Pretemporada y pronóstico. v3 «color» (2-oct-2026): fondo azul Sacs, como el paso «Vende» del home, con la
+ * palabra gigante detrás del encabezado; ocho pasos de una línea y las gráficas en tarjetas blancas, sin etiquetas
+ * «ejemplo» ni leyendas de más. Un panel «Sacs está analizando…» escribe sus pasos uno por uno, con palomita, y junto
+ * a cada paso aparece su gráfica (en escritorio, todas en el mismo escenario a la derecha; en el teléfono, debajo de
+ * su paso). Al terminar salen 3 tarjetas y la vista previa del primer reparto (CEDIS → 100 tiendas). Si en la ficha
+ * se apagó algo de «Analiza», ese paso sale «omitido». Lo anima src/scripts/planeacion/consola.ts.
  */
-import { PASOS, ARBOL, DUDAS, ANOS, PICOS, PLAN_27, NUEVO, CURVAS, CORTES, COMPRA, TARJETAS_PRE, OBRA } from '../../data/planeacion-demo';
-import { serie, banda, suave, miles } from '../../lib/planeacion-graficas';
+import { PASOS, ARBOL, ANOS, PICOS, PLAN_27, NUEVO, CURVAS, CORTES, COMPRA, TARJETAS_PRE, OBRA_NOTA } from '../../data/planeacion-demo';
+import { serie, banda, miles } from '../../lib/planeacion-graficas';
 import PdTarjeta from './PdTarjeta.astro';
 import PdDetalle from './PdDetalle.astro';
 
@@ -30,41 +31,41 @@ const yPico = pron.y(5800);
 /* e) el modelo nuevo y sus parecidos */
 const WN = 640, HN = 220, MAXN = 270;
 const nuevo = serie(NUEVO.pron, { w: WN, h: HN, m: M, max: MAXN });
-const parecidos = NUEVO.parecidos.map((p) => ({ ...p, d: serie(p.v, { w: WN, h: HN, m: M, max: MAXN }).d, total: p.v.reduce((a, b) => a + b, 0) }));
+const parecidos = NUEVO.parecidos.map((p) => ({ ...p, d: serie(p.v, { w: WN, h: HN, m: M, max: MAXN }).d }));
 
 /* f) curvas de talla */
 const maxTalla = Math.max(...CURVAS.flatMap((c) => c.v.map((x) => x.p)));
-
 
 /* h) cortes: del 8 de febrero (día 0) al 20 de junio (día 132) */
 const DIA = (d: number) => `${((d / 132) * 100).toFixed(2)}%`;
 const MESES = [{ t: 'feb', d: 0 }, { t: 'mar', d: 21 }, { t: 'abr', d: 52 }, { t: 'may', d: 82 }, { t: 'jun', d: 113 }];
 
 // qué figura va con cada paso (b, c y d comparten la de las curvas)
-// (el paso de inventario va sin gráfica: menos datos en pantalla)
 const FIG: Record<string, string> = { catalogo: 'arbol', historia: 'curvas', picos: 'curvas', alza: 'curvas', nuevos: 'nuevos', tallas: 'tallas', cortes: 'cortes', compra: 'compra' };
+const PALABRA = Array.from({ length: 3 }, () => 'PRETEMPORADA').join(' · ');
 ---
-<section class="pda pre pd-claro" id="pd-pre" data-acto="pre" aria-labelledby="pd-pre-h">
+<section class="pda pre pd-azul" id="pd-pre" data-acto="pre" aria-labelledby="pd-pre-h">
+  <div class="pda-fondo" aria-hidden="true"><span>{PALABRA}</span><span>{PALABRA}</span></div>
   <header class="pda-cab">
-    <p class="pda-k"><b>01</b> · Pretemporada y pronóstico</p>
+    <p class="pda-k">01 · Pretemporada</p>
     <h2 class="pda-h" id="pd-pre-h">Primero, entender tu temporada.</h2>
-    <p class="pda-fecha">Lunes 8 de febrero de 2027, 19 semanas antes del Día del Padre. Sacs lee tu catálogo y tus últimos Días del Padre, y arma la compra. <span class="pd-ej">Ejemplo</span></p>
+    <p class="pda-fecha">Lunes 8 de febrero de 2027 · ejemplo</p>
   </header>
 
   <div class="pre-grid">
     <div class="pre-panel">
-      <p class="pre-panel-k"><span class="pre-punto" aria-hidden="true"></span><span class="pre-estado-t">Sacs está analizando…</span><span class="pre-estado-f">Análisis terminado</span></p>
+      <p class="pre-panel-k"><span class="pre-punto" aria-hidden="true"></span><span class="pre-estado-t">Sacs está analizando…</span><span class="pre-estado-f">Listo</span></p>
       <ol class="pre-pasos">
         {PASOS.map((p, i) => (
           <li class="pre-paso" data-paso={i} data-clave={p.clave || undefined} data-fig={FIG[p.id]}>
             <button type="button" class="pre-paso-b" aria-controls={FIG[p.id] ? `pre-fig-${FIG[p.id]}` : undefined}>
               <span class="pre-check" aria-hidden="true"></span>
-              <span class="pre-paso-t"><b>{p.t}</b><small class="pre-omitida">Omitido: lo apagaste en tu ficha.</small>{p.obra && <span class="pd-obra">{OBRA}</span>}</span>
+              <span class="pre-paso-t"><b>{p.t}{p.obra && <span class="pd-ast"><span aria-hidden="true">*</span><span class="sr-only"> (en construcción)</span></span>}</b><small class="pre-omitida">Omitido: lo apagaste en tu ficha.</small></span>
             </button>
 
             {p.id === 'catalogo' && (
-              <figure class="pre-fig pre-fig--arbol" id="pre-fig-arbol" data-fig="arbol">
-                <figcaption class="pre-cap"><b>Tu árbol: 64 modelos</b><span class="pd-ej">ejemplo</span></figcaption>
+              <figure class="pre-fig pre-fig--arbol pd-hoja" id="pre-fig-arbol" data-fig="arbol">
+                <figcaption class="pre-cap">Tu catálogo: 64 modelos</figcaption>
                 <div class="pre-arbol">
                   {ARBOL.map((d) => (
                     <div class="pre-dep">
@@ -73,29 +74,14 @@ const FIG: Record<string, string> = { catalogo: 'arbol', historia: 'curvas', pic
                     </div>
                   ))}
                 </div>
-                <div class="pre-dudas">
-                  <p class="pre-dudas-k">2 dudas · contéstalas con un clic</p>
-                  {DUDAS.map((d, k) => (
-                    <div class="pre-duda" data-duda={k}>
-                      <p>{d.q}</p>
-                      <div class="pre-ops">
-                        {d.ops.map((o, j) => <button type="button" class="pre-op" data-op={j} aria-pressed="false">{o}{j === d.sug && <small>sugerida</small>}</button>)}
-                      </div>
-                      <p class="pre-duda-ok" aria-live="polite"></p>
-                    </div>
-                  ))}
-                </div>
               </figure>
             )}
 
             {p.id === 'historia' && (
-              <figure class="pre-fig pre-fig--curvas" id="pre-fig-curvas" data-fig="curvas">
-                <figcaption class="pre-cap"><b>Día del Padre · piezas por semana</b><span class="pd-ej">ejemplo</span></figcaption>
+              <figure class="pre-fig pre-fig--curvas pd-hoja" id="pre-fig-curvas" data-fig="curvas">
+                <figcaption class="pre-cap">Día del Padre · piezas por semana</figcaption>
                 <div class="pre-svg">
                   <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Piezas vendidas por semana en los Días del Padre de 2024, 2025 y 2026, en curvas tenues, y encima el pronóstico 2027 con su banda de más y menos 12 por ciento. La semana del evento vende 2.3 veces lo normal.">
-                    <defs>
-                      <linearGradient id="pre-grad" x1="0" x2="1"><stop offset="0" stop-color="#4B7BE5" /><stop offset=".6" stop-color="#8FB0F3" /><stop offset="1" stop-color="#E0457B" /></linearGradient>
-                    </defs>
                     <rect class="pre-evt" x={xEv - anchoSem / 2} y="6" width={anchoSem} height={H - 12} rx="6" />
                     {anos.map((a) => (
                       <g class="pre-ano">
@@ -105,37 +91,35 @@ const FIG: Record<string, string> = { catalogo: 'arbol', historia: 'curvas', pic
                       </g>
                     ))}
                     <path class="pre-banda" d={bandaD} />
-                    <path class="pre-pron-glow" d={pron.d} pathLength="1" />
                     <path class="pre-pron" d={pron.d} pathLength="1" />
                   </svg>
-                  <span class="pre-alza-et" style={`left:${((xEv / W) * 100).toFixed(1)}%;top:${((yPico / H) * 100).toFixed(1)}%`}>2.3× lo normal</span>
-                  {anos.map((a) => <span class="pre-pico-et" style={`left:${((a.pico.x / W) * 100).toFixed(1)}%;top:${((a.pico.y / H) * 100).toFixed(1)}%`}>{a.pico.t} {a.ano}</span>)}
+                  <span class="pre-alza-et" style={`left:${((xEv / W) * 100).toFixed(1)}%;top:${((yPico / H) * 100).toFixed(1)}%`}>×2.3</span>
+                  {anos.map((a) => <span class="pre-pico-et" style={`left:${((a.pico.x / W) * 100).toFixed(1)}%;top:${((a.pico.y / H) * 100).toFixed(1)}%`}>{a.pico.t}</span>)}
                 </div>
                 <p class="pre-eje"><span>3 may</span><span class="pre-eje-ev">★ 20 jun · Día del Padre</span><span>1 ago</span></p>
-                <p class="pre-leyenda"><span class="g">2024 · 2025 · 2026</span><span class="p">Pronóstico 2027</span><span class="b">Banda ±12 %</span><span class="e">Semana del evento</span></p>
+                <p class="pre-leyenda"><span class="g">2024 a 2026</span><span class="p">Pronóstico 2027</span></p>
               </figure>
             )}
 
             {p.id === 'nuevos' && (
-              <figure class="pre-fig pre-fig--nuevos" id="pre-fig-nuevos" data-fig="nuevos">
-                <figcaption class="pre-cap"><b>{NUEVO.modelo} · nuevo, sin historia</b><span class="pd-ej">ejemplo</span></figcaption>
+              <figure class="pre-fig pre-fig--nuevos pd-hoja" id="pre-fig-nuevos" data-fig="nuevos">
+                <figcaption class="pre-cap">Un modelo nuevo, con sus 3 parecidos</figcaption>
                 <div class="pre-svg">
                   <svg viewBox={`0 0 ${WN} ${HN}`} role="img" aria-label={`La venta por semana de tres modelos parecidos, en curvas tenues, y el pronóstico del ${NUEVO.modelo}: ${miles(NUEVO.total)} piezas en la temporada.`}>
                     {parecidos.map((p) => <path class="pre-par" d={p.d} pathLength="1" />)}
-                    <path class="pre-pron-glow" d={nuevo.d} pathLength="1" />
                     <path class="pre-pron" d={nuevo.d} pathLength="1" />
                   </svg>
                 </div>
                 <ul class="pre-fotos">
-                  <li class="is-nuevo"><img src={`/images/planeacion/prod/${NUEVO.foto}.webp`} width="480" height="480" alt="" loading="lazy" decoding="async" /><b>{NUEVO.modelo}</b><small>Nuevo · se pronostican {miles(NUEVO.total)}</small></li>
-                  {parecidos.map((p) => <li><img src={`/images/planeacion/prod/${p.foto}.webp`} width="480" height="480" alt="" loading="lazy" decoding="async" /><b>{p.m}</b><small>{p.ano} · vendió {miles(Math.round(p.total / 10) * 10)}</small></li>)}
+                  <li class="is-nuevo"><img src={`/images/planeacion/prod/${NUEVO.foto}.webp`} width="480" height="480" alt="" loading="lazy" decoding="async" /><b>{NUEVO.modelo}</b><small>{miles(NUEVO.total)} piezas</small></li>
+                  {parecidos.map((p) => <li><img src={`/images/planeacion/prod/${p.foto}.webp`} width="480" height="480" alt="" loading="lazy" decoding="async" /><b>{p.m}</b></li>)}
                 </ul>
               </figure>
             )}
 
             {p.id === 'tallas' && (
-              <figure class="pre-fig pre-fig--tallas" id="pre-fig-tallas" data-fig="tallas">
-                <figcaption class="pre-cap"><b>La curva de tallas de cada región</b><span class="pd-ej">ejemplo</span></figcaption>
+              <figure class="pre-fig pre-fig--tallas pd-hoja" id="pre-fig-tallas" data-fig="tallas">
+                <figcaption class="pre-cap">La curva de tallas por región</figcaption>
                 <div class="pre-curvas">
                   {CURVAS.map((c) => (
                     <div class="pre-curva">
@@ -146,20 +130,19 @@ const FIG: Record<string, string> = { catalogo: 'arbol', historia: 'curvas', pic
                     </div>
                   ))}
                 </div>
-                <p class="pre-nota">La tienda chica hereda la curva de su grupo de tiendas y su zona.</p>
               </figure>
             )}
 
             {p.id === 'cortes' && (
-              <figure class="pre-fig pre-fig--cortes" id="pre-fig-cortes" data-fig="cortes">
-                <figcaption class="pre-cap"><b>Cortes de pedido, contando hacia atrás</b><span class="pd-ej">ejemplo</span></figcaption>
+              <figure class="pre-fig pre-fig--cortes pd-hoja" id="pre-fig-cortes" data-fig="cortes">
+                <figcaption class="pre-cap">Cuándo pedirle a cada proveedor</figcaption>
                 <div class="pre-gantt">
                   <div class="pre-meses" aria-hidden="true">{MESES.map((m) => <span style={`left:${DIA(m.d)}`}>{m.t}</span>)}</div>
                   {CORTES.proveedores.map((pr) => {
                     const ini = pr.urgente ? 2 : 32;
                     return (
                       <div class:list={['pre-fila', { 'is-urgente': pr.urgente }]}>
-                        <p><b>{pr.q}</b><span>{pr.dias} días de entrega · pide antes del {pr.corte} <em>{pr.nota}</em></span></p>
+                        <p><b>{pr.q}</b><span>Pide antes del {pr.corto} · <em>{pr.nota}</em></span></p>
                         <div class="pre-carril"><span class="pre-barra" style={`left:${DIA(ini)};width:${DIA(77 - ini)}`}><i>{pr.corto}</i><i>{pr.dias} días</i></span></div>
                       </div>
                     );
@@ -172,13 +155,12 @@ const FIG: Record<string, string> = { catalogo: 'arbol', historia: 'curvas', pic
                     </div>
                   </div>
                 </div>
-                <p class="pre-nota">Ocho semanas antes de cada temporada, Sacs avisa qué proveedor está por llegar a su corte.</p>
               </figure>
             )}
 
             {p.id === 'compra' && (
-              <figure class="pre-fig pre-fig--compra" id="pre-fig-compra" data-fig="compra">
-                <figcaption class="pre-cap"><b>La compra de la temporada</b><span class="pd-ej">ejemplo</span><span class="pd-obra">{OBRA}</span></figcaption>
+              <figure class="pre-fig pre-fig--compra pd-hoja" id="pre-fig-compra" data-fig="compra">
+                <figcaption class="pre-cap">La compra<span class="pd-ast" aria-hidden="true">*</span></figcaption>
                 <div class="pre-cuenta">
                   <span><b data-cuenta={COMPRA.pronostico}>{miles(COMPRA.pronostico)}</b><small>pronosticadas</small></span>
                   <em aria-hidden="true">+</em>
@@ -186,13 +168,12 @@ const FIG: Record<string, string> = { catalogo: 'arbol', historia: 'curvas', pic
                   <em aria-hidden="true">−</em>
                   <span><b data-cuenta={COMPRA.tienes}>{miles(COMPRA.tienes)}</b><small>que ya tienes</small></span>
                   <em aria-hidden="true">=</em>
-                  <span class="is-total"><b data-cuenta={COMPRA.compra}>{miles(COMPRA.compra)}</b><small>piezas a comprar</small></span>
+                  <span class="is-total"><b data-cuenta={COMPRA.compra}>{miles(COMPRA.compra)}</b><small>a comprar</small></span>
                 </div>
                 <div class="pre-presu" aria-label={`Se usan ${COMPRA.monto} de un presupuesto de ${COMPRA.presupuesto}`}>
                   <p><b>{COMPRA.monto}</b> de tus {COMPRA.presupuesto}</p>
                   <span class="pre-presu-b"><i style={`--w:${COMPRA.usoPct}%`}></i></span>
                 </div>
-                <p class="pre-nota">El colchón se calcula por modelo, no por cada talla y color.</p>
               </figure>
             )}
           </li>
@@ -204,16 +185,18 @@ const FIG: Record<string, string> = { catalogo: 'arbol', historia: 'curvas', pic
 
   <div class="pre-final">
     <div class="pda-tarjetas">
-      <p class="pda-tarjetas-k">Tarjetas de pretemporada · ábrelas para ver qué y por qué</p>
-      <ul class="pda-lista pre-lista">{TARJETAS_PRE.map((t) => <PdTarjeta t={t} />)}</ul>
+      <p class="pda-tarjetas-k">Lo que toca hacer</p>
+      <ul class="pda-lista pre-lista pd-hoja">{TARJETAS_PRE.map((t) => <PdTarjeta t={t} />)}</ul>
     </div>
-    <figure class="pre-reparto" data-reparto>
-      <figcaption class="pre-cap"><b>Primer reparto</b><span class="pd-ej">Ejemplo</span><span class="pd-obra">{OBRA}</span></figcaption>
+    <figure class="pre-reparto pd-hoja" data-reparto>
+      <figcaption class="pre-cap">Primer reparto<span class="pd-ast" aria-hidden="true">*</span></figcaption>
       <div class="pre-rep-barra" aria-hidden="true"><span class="pre-rep-a"></span></div>
-      <p class="pre-rep-l"><b data-rep-salen>18,100</b> piezas salen a las 100 tiendas (60 %). <b data-rep-quedan>12,100</b> se quedan en el CEDIS (40 %) para resurtir donde sí se venda.</p>
+      <p class="pre-rep-l"><span><b data-rep-salen>18,100</b> a las tiendas</span><span><b data-rep-quedan>12,100</b> se quedan en el CEDIS</span></p>
       <p class="pre-rep-cedis" aria-hidden="true">En el CEDIS: <span data-rep-cedis>12,100</span></p>
     </figure>
   </div>
+
+  <p class="pda-nota"><span aria-hidden="true">*</span> {OBRA_NOTA}</p>
 
   <div class="pd-detalles" data-detalles="pre">
     <h3 class="pd-detalles-h">El detalle de cada tarjeta</h3>
@@ -226,26 +209,24 @@ const FIG: Record<string, string> = { catalogo: 'arbol', historia: 'curvas', pic
 </section>
 
 <style>
-  /* ── el panel de pasos: una lista limpia con línea fina ── */
-  .pre-grid { position: relative; margin-top: 40px; }
-  .pre-panel-k { display: flex; align-items: center; gap: 10px; margin: 0 0 4px; font: 600 14px/1.3 var(--font-display); color: var(--pd-texto); }
-  .pre-punto { width: 8px; height: 8px; border-radius: 50%; background: var(--pd-ok); }
+  /* ── el panel de pasos: sobre el azul, texto blanco y palomitas blancas ── */
+  .pre-grid { position: relative; margin-top: 48px; }
+  .pre-panel-k { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--pd-texto); }
+  .pre-punto { width: 8px; height: 8px; border-radius: 50%; background: var(--pd-texto); }
   .pre-estado-f { display: none; }
   .pre-pasos { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--pd-linea); }
   .pre-paso { border-bottom: 1px solid var(--pd-linea); }
-  .pre-paso-b { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 14px; width: 100%; padding: 15px 2px; border: 0; background: none; color: inherit; text-align: left; font: inherit; cursor: default; }
-  .pre-paso-b:focus-visible { outline: 2px solid var(--pd-azul); outline-offset: 2px; border-radius: 10px; }
-  .pre-check { width: 20px; height: 20px; margin-top: 1px; border-radius: 50%; background: var(--pd-texto) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7'/%3E%3C/svg%3E") center / 12px no-repeat; }
-  .pre-paso-t b { display: block; font: 600 16px/1.4 var(--font-display); letter-spacing: -0.015em; color: var(--pd-texto); }
-  .pre-paso-t .pd-obra { margin-top: 4px; }
+  .pre-paso-b { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 14px; width: 100%; padding: 16px 4px; border: 0; background: none; color: inherit; text-align: left; font: inherit; cursor: default; }
+  .pre-paso-b:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 10px; }
+  .pre-check { width: 20px; height: 20px; margin-top: 2px; border-radius: 50%; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234470D8' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7'/%3E%3C/svg%3E") center / 12px no-repeat; }
+  .pre-paso-t b { display: block; font: 600 17px/1.4 var(--font-display); letter-spacing: -0.015em; color: var(--pd-texto); }
   .pre-omitida { display: none !important; }
 
-  /* ── las figuras: paneles grises claros, sin bordes de colores ── */
-  .pre-fig { margin: 4px 0 18px; padding: 20px; border-radius: var(--pd-radio); background: var(--pd-tarjeta); }
-  .pre-cap { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 0 0 14px; font: 700 15px/1.3 var(--font-display); letter-spacing: -0.01em; color: var(--pd-texto); }
+  /* ── las figuras: tarjetas blancas (pd-hoja), sin etiquetas ── */
+  .pre-fig { margin: 4px 0 18px; padding: 22px; border-radius: var(--pd-radio); background: var(--pd-tarjeta); }
+  .pre-cap { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px; margin: 0 0 16px; font: 700 16px/1.3 var(--font-display); letter-spacing: -0.01em; color: var(--pd-texto); }
   .pre-svg { position: relative; }
   .pre-svg svg { display: block; width: 100%; height: auto; max-width: none; overflow: visible; }
-  .pre-nota { margin: 12px 0 0; font: 400 13.5px/1.5 var(--font-body); color: var(--pd-tenue); }
 
   .pre-arbol { display: grid; gap: 14px; }
   .pre-dep-t { display: block; margin-bottom: 8px; font: 600 13px/1.2 var(--font-display); color: var(--pd-apagado); }
@@ -255,21 +236,8 @@ const FIG: Record<string, string> = { catalogo: 'arbol', historia: 'curvas', pic
   .pre-cat { display: inline-flex; align-items: baseline; gap: 6px; font: 600 14px/1.3 var(--font-display); color: var(--pd-texto); }
   .pre-cat em { font-style: normal; font-weight: 500; font-size: 13px; color: var(--pd-apagado); }
   .pre-dep small { font: 400 13px/1.3 var(--font-body); color: var(--pd-tenue); }
-  .pre-dudas { margin-top: 18px; padding-top: 16px; border-top: 1px solid #DEDEDA; }
-  .pre-dudas-k { margin: 0 0 10px; font: 600 14px/1.2 var(--font-display); color: var(--pd-texto); }
-  .pre-duda + .pre-duda { margin-top: 14px; }
-  .pre-duda > p:first-child { margin: 0; font: 400 14.5px/1.45 var(--font-body); color: var(--pd-texto); }
-  .pre-ops { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .pre-op { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 16px; border-radius: 99px; border: 1px solid #CFCFCA; background: #fff; color: var(--pd-texto); font: 600 13.5px/1 var(--font-display); cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s; }
-  .pre-op small { font-weight: 500; font-size: 12px; color: var(--pd-apagado); }
-  .pre-op:hover { border-color: var(--pd-texto); }
-  .pre-op:focus-visible { outline: 2px solid var(--pd-azul); outline-offset: 2px; }
-  .pre-op[aria-pressed="true"] { background: var(--pd-texto); color: #fff; border-color: var(--pd-texto); }
-  .pre-op[aria-pressed="true"] small { color: rgba(255, 255, 255, 0.75); }
-  .pre-duda-ok { margin: 8px 0 0; font: 600 13px/1.3 var(--font-display); color: var(--pd-ok); }
-  .pre-duda-ok:empty { display: none; }
 
-  /* curvas: años en gris, pronóstico en azul Sacs */
+  /* curvas: años en gris, pronóstico en azul Sacs; las etiquetas son texto, sin pastilla */
   .pre-evt { fill: rgba(75, 123, 229, 0.1); }
   .pre-ano-pico, .pre-ano-limpia, .pre-pron, .pre-par { fill: none; stroke-linecap: round; stroke-linejoin: round; }
   .pre-ano-pico, .pre-ano-limpia { stroke: #BDBDB8; stroke-width: 2; }
@@ -277,23 +245,20 @@ const FIG: Record<string, string> = { catalogo: 'arbol', historia: 'curvas', pic
   .pre-pico { fill: none; stroke: var(--pd-falta); stroke-width: 1.8; opacity: 0; }
   .pre-banda { fill: rgba(75, 123, 229, 0.12); }
   .pre-pron { stroke: var(--pd-azul); stroke-width: 4; }
-  .pre-pron-glow { display: none; }
   .pre-par { stroke: #BDBDB8; stroke-width: 2; }
-  .pre-alza-et, .pre-pico-et { position: absolute; transform: translate(-50%, -150%); padding: 3px 9px; border-radius: 99px; font: 600 12px/1.2 var(--font-display); white-space: nowrap; pointer-events: none; }
-  .pre-alza-et { background: var(--pd-texto); color: #fff; }
-  .pre-pico-et { background: #fff; border: 1px solid #E2C0C0; color: #A23333; opacity: 0; transform: translate(-50%, -190%); }
+  .pre-alza-et, .pre-pico-et { position: absolute; transform: translate(-50%, -150%); white-space: nowrap; pointer-events: none; }
+  .pre-alza-et { font: 700 22px/1 var(--pd-clash); color: #2F55C4; }
+  .pre-pico-et { font: 600 12px/1.2 var(--font-display); color: #A23333; opacity: 0; transform: translate(-50%, -210%); }
   .pre-eje { display: flex; justify-content: space-between; margin: 8px 0 0; font: 500 12.5px/1.2 var(--font-display); color: var(--pd-apagado); }
   .pre-eje-ev { color: var(--pd-texto); }
-  .pre-leyenda { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0 0; font: 500 12.5px/1.2 var(--font-body); color: var(--pd-tenue); }
+  .pre-leyenda { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 12px 0 0; font: 500 12.5px/1.2 var(--font-body); color: var(--pd-tenue); }
   .pre-leyenda span::before { content: ''; display: inline-block; width: 14px; height: 2px; margin-right: 6px; vertical-align: middle; border-radius: 2px; }
   .pre-leyenda .g::before { background: #BDBDB8; }
   .pre-leyenda .p::before { background: var(--pd-azul); height: 3px; }
-  .pre-leyenda .b::before { background: rgba(75, 123, 229, 0.25); height: 8px; }
-  .pre-leyenda .e::before { background: rgba(75, 123, 229, 0.12); height: 8px; }
 
   .pre-fotos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 14px 0 0; padding: 0; list-style: none; }
-  .pre-fotos li { display: grid; gap: 3px; font: 600 12.5px/1.3 var(--font-display); color: var(--pd-texto); }
-  .pre-fotos img { width: 100%; height: auto; aspect-ratio: 1; border-radius: 12px; background: #fff; object-fit: contain; padding: 4px; margin-bottom: 4px; }
+  .pre-fotos li { display: grid; gap: 3px; align-content: start; font: 600 12.5px/1.3 var(--font-display); color: var(--pd-texto); }
+  .pre-fotos img { width: 100%; height: auto; aspect-ratio: 1; border-radius: 12px; background: #F5F5F3; object-fit: contain; padding: 4px; margin-bottom: 4px; }
   .pre-fotos small { font: 400 12px/1.3 var(--font-body); color: var(--pd-tenue); }
   .pre-fotos .is-nuevo img { box-shadow: inset 0 0 0 2px var(--pd-azul); }
 
@@ -313,7 +278,7 @@ const FIG: Record<string, string> = { catalogo: 'arbol', historia: 'curvas', pic
   .pre-fila { position: relative; margin-top: 12px; }
   .pre-fila > p { margin: 0 0 6px; font: 400 13.5px/1.45 var(--font-body); color: var(--pd-tenue); }
   .pre-fila > p b { display: block; font: 600 14px/1.3 var(--font-display); color: var(--pd-texto); }
-  .pre-fila > p em { font-style: normal; font-weight: 600; color: var(--pd-falta); }
+  .pre-fila > p em { font-style: normal; font-weight: 600; color: #B23A3A; }
   .pre-carril { position: relative; height: 26px; }
   .pre-barra { position: absolute; top: 0; height: 26px; display: flex; justify-content: space-between; align-items: center; padding: 0 9px; border-radius: 8px; background: var(--pd-texto); font: 600 11.5px/1 var(--font-display); color: #fff; white-space: nowrap; overflow: hidden; transform-origin: 100% 50%; }
   .pre-barra i { font-style: normal; }
@@ -329,10 +294,10 @@ const FIG: Record<string, string> = { catalogo: 'arbol', historia: 'curvas', pic
 
   .pre-cuenta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
   .pre-cuenta span { display: grid; gap: 3px; }
-  .pre-cuenta b { font: 800 clamp(24px, 2.4vw, 34px)/1 var(--font-display); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--pd-texto); }
+  .pre-cuenta b { font: 700 clamp(22px, 2.1vw, 31px)/1 var(--pd-clash); letter-spacing: -0.01em; font-variant-numeric: tabular-nums; color: var(--pd-texto); }
   .pre-cuenta small { font: 400 12.5px/1.2 var(--font-body); color: var(--pd-tenue); }
   .pre-cuenta em { font: 500 22px/1 var(--font-display); font-style: normal; color: var(--pd-apagado); }
-  .pre-cuenta .is-total b { color: var(--pd-azul); }
+  .pre-cuenta .is-total b { color: #2F55C4; }
   .pre-presu { margin-top: 18px; }
   .pre-presu p { margin: 0 0 8px; font: 400 14px/1.3 var(--font-body); color: var(--pd-tenue); }
   .pre-presu p b { font: 700 16px var(--font-display); color: var(--pd-texto); }
@@ -340,21 +305,22 @@ const FIG: Record<string, string> = { catalogo: 'arbol', historia: 'curvas', pic
   .pre-presu-b i { display: block; width: var(--w); height: 100%; border-radius: 6px; background: var(--pd-texto); transform-origin: 0 50%; }
 
   /* ── tarjetas y primer reparto ── */
-  .pre-final { display: grid; gap: 24px; margin-top: 40px; }
-  .pre-reparto { margin: 0; padding: 20px; border-radius: var(--pd-radio); background: var(--pd-tarjeta); }
+  .pre-final { display: grid; gap: 24px; margin-top: 48px; }
+  .pre-final .pda-tarjetas-k { color: #fff; }
+  .pre-reparto { margin: 0; padding: 22px; border-radius: var(--pd-radio); background: var(--pd-tarjeta); }
   .pre-rep-barra { display: flex; height: 14px; border-radius: 8px; background: #DADAD5; overflow: hidden; }
   .pre-rep-a { display: block; width: 60%; height: 100%; background: var(--pd-azul); transform-origin: 0 50%; }
-  .pre-rep-l { margin: 14px 0 0; font: 400 14.5px/1.55 var(--font-body); color: var(--pd-tenue); }
-  .pre-rep-l b { font: 700 15px var(--font-display); color: var(--pd-texto); font-variant-numeric: tabular-nums; }
+  .pre-rep-l { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; margin: 14px 0 0; font: 400 14px/1.4 var(--font-body); color: var(--pd-tenue); }
+  .pre-rep-l b { margin-right: 6px; font: 700 20px/1 var(--pd-clash); color: var(--pd-texto); font-variant-numeric: tabular-nums; }
   .pre-rep-cedis { display: none; }
 
   /* ── Con JS: lo que aún no pasa, oculto ── */
   .pre.is-js .pre-paso:not(.is-on) { display: none; }
-  .pre.is-js .pre-paso.is-ahora .pre-check { border: 2px solid #D5D5D0; border-top-color: var(--pd-texto); background: none; animation: preGira 0.9s linear infinite; }
+  .pre.is-js .pre-paso.is-ahora .pre-check { border: 2px solid rgba(255, 255, 255, 0.4); border-top-color: #fff; background: none; animation: preGira 0.9s linear infinite; }
   .pre.is-js .pre-paso.is-on > .pre-paso-b { animation: preEntra 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
-  .pre.is-js .pre-paso.is-omitida .pre-check { background: #E2E2DE; }
-  .pre.is-js .pre-paso.is-omitida .pre-paso-t b { color: var(--pd-apagado); text-decoration: line-through; }
-  .pre.is-js .pre-paso.is-omitida .pre-omitida { display: block !important; margin-top: 2px; font: 400 13px/1.4 var(--font-body); color: var(--pd-obra); }
+  .pre.is-js .pre-paso.is-omitida .pre-check { background: rgba(255, 255, 255, 0.35); }
+  .pre.is-js .pre-paso.is-omitida .pre-paso-t b { text-decoration: line-through; }
+  .pre.is-js .pre-paso.is-omitida .pre-omitida { display: block !important; margin-top: 2px; font: 400 13.5px/1.4 var(--font-body); color: var(--pd-texto); }
   .pre.is-js .pre-fig.is-omitida { display: none !important; }
   .pre.is-js.is-terminado .pre-estado-t { display: none; }
   .pre.is-js.is-terminado .pre-estado-f { display: inline; }
@@ -404,7 +370,7 @@ const FIG: Record<string, string> = { catalogo: 'arbol', historia: 'curvas', pic
   .pre-escenario { display: none; }
   .pre.pd-escenario .pre-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr); gap: 56px; align-items: start; }
   .pre.pd-escenario .pre-escenario { position: sticky; top: 76px; display: grid; align-self: start; }
-  .pre.pd-escenario .pre-escenario > .pre-fig { grid-area: 1 / 1; align-self: start; margin: 0; padding: 24px; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.35s; }
+  .pre.pd-escenario .pre-escenario > .pre-fig { grid-area: 1 / 1; align-self: start; margin: 0; padding: 26px; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.35s; }
   .pre.pd-escenario .pre-escenario > .pre-fig.is-sel { opacity: 1; visibility: visible; transform: none; transition: opacity 0.45s ease 0.1s, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s, visibility 0s; }
   .pre.pd-escenario .pre-paso-b { cursor: pointer; border-radius: 10px; transition: background 0.2s; }
   .pre.pd-escenario .pre-paso-b:hover { background: var(--pd-tarjeta); }

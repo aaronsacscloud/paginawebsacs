@@ -6,7 +6,7 @@
 import type { Modo } from '../../data/planeacion-demo';
 
 export const estado = {
-  analiza: new Set(['ventas', 'alza', 'tallas', 'inventario', 'entregas', 'nuevos']),
+  analiza: new Set(['ventas', 'alza', 'tallas', 'entregas', 'nuevos']),
   modo: 'aprobar' as Modo,
 };
 

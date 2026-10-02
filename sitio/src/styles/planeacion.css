@@ -1,7 +1,13 @@
-/* /planeacion-de-demanda (2-oct-2026, v2 «limpio»): el dueño pidió menos saturado, estilo Squarespace,
-   blanco y negro alternados, menos datos y nada de «AI slop» (sin brillos, contornos neón ni degradados).
-   Cada sección elige su tema con .pd-claro o .pd-oscuro; los componentes solo usan estas variables.
-   Contraste AA medido: --pd-tenue 8.6:1 y --pd-apagado 5.1:1 sobre blanco; 10.4:1 y 6.6:1 sobre negro. */
+/* /planeacion-de-demanda — v3 «color» (2-oct-2026). El dueño, después del v2 blanco y negro: «métele más colores,
+   usa los que usamos en el home de fondos para que no se vea tan AI slop, y combínalos; no pongas tantos pills ni
+   tanto texto, simplifica». Los fondos son los del paso a paso de la portada (src/components/home/PasoAPaso.astro),
+   en su mismo orden: acto 0 marfil (la cortina, azul) · 1 azul · 2 negro con rayas de cebra · 3 fucsia · 4 marino
+   con líneas. Cada acto lleva, como allá, la palabra gigante detrás del encabezado.
+   Cada sección elige su tema con una clase; los componentes solo usan estas variables. Sobre azul y fucsia las
+   tarjetas van blancas (.pd-hoja: solo cambia la tinta, no pinta fondo) y ahí viven las gráficas.
+   Contraste AA: blanco sobre azul #4470D8 4.6:1 y sobre fucsia #D03A70 4.6:1 (un pelo más oscuro que el #DB3F77
+   del home, que da 4.2:1 y no alcanza para texto chico) → en esos dos fondos TODO el texto va en blanco puro: la
+   jerarquía la dan el tamaño y el peso, no la opacidad. Negro y marino sí admiten blanco atenuado. */
 .pd {
   --pd-azul: #4B7BE5;
   --pd-ok: #1F9D63;
@@ -9,9 +15,12 @@
   --pd-falta: #D64545;
   --pd-sobra: #4B7BE5;
   --pd-radio: 18px;
-  background: #fff;
+  --pd-clash: 'Clash Display', var(--font-display);
+  background: #F5F3EE;
 }
-.pd-claro {
+
+/* tinta clara (tarjetas blancas, el diálogo) */
+.pd-claro, .pd-hoja {
   --pd-fondo: #FFFFFF;
   --pd-texto: #1A1A1A;
   --pd-tenue: #4A4A4A;
@@ -22,50 +31,82 @@
   --pd-boton: #1A1A1A;
   --pd-boton-t: #FFFFFF;
   --pd-obra: #8A5A00;
-  background: var(--pd-fondo);
-  color: var(--pd-texto);
+  --pd-ok-t: #17804F;
 }
-.pd-oscuro {
-  --pd-fondo: #111111;
-  --pd-texto: #FFFFFF;
-  --pd-tenue: rgba(255, 255, 255, 0.74);
-  --pd-apagado: rgba(255, 255, 255, 0.58);
-  --pd-linea: rgba(255, 255, 255, 0.12);
-  --pd-tarjeta: #1C1C1C;
-  --pd-acento: #9DB8F5;
-  --pd-boton: #FFFFFF;
-  --pd-boton-t: #111111;
-  --pd-obra: #F2C46B;
-  background: var(--pd-fondo);
-  color: var(--pd-texto);
-}
+.pd-hoja { --pd-tarjeta: #FFFFFF; color: var(--pd-texto); }
 
-/* «ejemplo» y «en construcción»: texto discreto, sin pastillas de colores */
-.pd .pd-ej, .pd .pd-obra { display: inline-flex; align-items: center; gap: 6px; font: 500 12px/1.3 var(--font-body); white-space: nowrap; }
-.pd .pd-ej { color: var(--pd-apagado); }
-.pd .pd-obra { color: var(--pd-obra); }
-.pd .pd-obra::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+/* los fondos de los actos (los del home) */
+.pd-marfil {
+  --pd-fondo: #F5F3EE; --pd-fondo-t: #E9E5DA; --pd-trazo: rgba(20, 20, 20, 0.14);
+  --pd-texto: #141414; --pd-tenue: #45433E; --pd-apagado: #6B6862; --pd-linea: rgba(20, 20, 20, 0.12);
+  --pd-tarjeta: #FFFFFF; --pd-acento: #3A62C4; --pd-boton: #141414; --pd-boton-t: #FFFFFF; --pd-obra: #8A5A00; --pd-ok-t: #17804F;
+}
+.pd-azul {
+  --pd-fondo: #4470D8; --pd-fondo-t: #5B86EA; --pd-trazo: rgba(255, 255, 255, 0.34);
+  --pd-texto: #FFFFFF; --pd-tenue: #FFFFFF; --pd-apagado: #FFFFFF; --pd-linea: rgba(255, 255, 255, 0.3);
+  --pd-tarjeta: rgba(255, 255, 255, 0.14); --pd-acento: #FFFFFF; --pd-boton: #FFFFFF; --pd-boton-t: #141414; --pd-obra: #FFFFFF; --pd-ok-t: #FFFFFF;
+}
+.pd-negro, .pd-oscuro {
+  --pd-fondo: #0B0B0C; --pd-fondo-t: #1C1C1F; --pd-trazo: rgba(255, 255, 255, 0.26);
+  --pd-texto: #FFFFFF; --pd-tenue: rgba(255, 255, 255, 0.74); --pd-apagado: rgba(255, 255, 255, 0.58); --pd-linea: rgba(255, 255, 255, 0.12);
+  --pd-tarjeta: #18181A; --pd-acento: #7FA3F0; --pd-boton: #FFFFFF; --pd-boton-t: #0B0B0C; --pd-obra: #F2C46B; --pd-ok-t: #6FD3A3;
+}
+.pd-fucsia {
+  --pd-fondo: #D03A70; --pd-fondo-t: #DC5689; --pd-trazo: rgba(255, 255, 255, 0.36);
+  --pd-texto: #FFFFFF; --pd-tenue: #FFFFFF; --pd-apagado: #FFFFFF; --pd-linea: rgba(255, 255, 255, 0.35);
+  --pd-tarjeta: rgba(255, 255, 255, 0.16); --pd-acento: #FFFFFF; --pd-boton: #FFFFFF; --pd-boton-t: #141414; --pd-obra: #FFFFFF; --pd-ok-t: #FFFFFF;
+}
+.pd-marino {
+  --pd-fondo: #0A1648; --pd-fondo-t: #14267A; --pd-trazo: rgba(127, 163, 240, 0.45);
+  --pd-texto: #FFFFFF; --pd-tenue: rgba(255, 255, 255, 0.78); --pd-apagado: rgba(255, 255, 255, 0.62); --pd-linea: rgba(127, 163, 240, 0.24);
+  --pd-tarjeta: #13215C; --pd-acento: #9DB8F5; --pd-boton: #FFFFFF; --pd-boton-t: #0A1648; --pd-obra: #F2C46B; --pd-ok-t: #6FD3A3;
+}
+.pd-claro, .pd-marfil, .pd-azul, .pd-negro, .pd-oscuro, .pd-fucsia, .pd-marino { background: var(--pd-fondo); color: var(--pd-texto); }
+
+/* «en construcción»: un asterisco junto a lo que aún no hace el motor y una sola nota al pie por acto (antes era una
+   etiqueta en cada tarjeta) */
+.pd .pd-ast { font-weight: 700; }
+.pd .pda-nota { margin-top: 32px; font: 500 13.5px/1.4 var(--font-body); color: var(--pd-apagado); }
 .pd .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 
 /* ── los actos (comunes a los 4) ── */
 .pd .pda { position: relative; padding: 72px 20px 80px; scroll-margin-top: 56px; }
-.pd .pda > * { max-width: 1160px; margin-left: auto; margin-right: auto; }
-.pd .pda-k { margin: 0 0 14px; font: 600 13px/1.3 var(--font-display); letter-spacing: 0.02em; color: var(--pd-apagado); }
-.pd .pda-k b { color: var(--pd-texto); font-weight: 600; }
-.pd .pda-h { margin: 0; max-width: 17ch; font: 800 clamp(34px, 5vw, 64px)/1.02 var(--font-display); letter-spacing: -0.04em; color: var(--pd-texto); text-wrap: balance; }
-.pd .pda-fecha { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin: 16px 0 0; font: 400 16px/1.5 var(--font-body); color: var(--pd-tenue); }
-.pd .pda-tarjetas-k { margin: 0 0 12px; font: 600 14px/1.3 var(--font-display); color: var(--pd-texto); }
+.pd .pda > * { position: relative; max-width: 1160px; margin-left: auto; margin-right: auto; }
+/* la palabra del acto, gigante, detrás del título (como el paso a paso del home): una fila llena y una en trazo.
+   Empieza debajo del letrero «01 · …»: el texto chico no queda encima de la fila llena (blanco sobre el tono claro
+   no da contraste AA); el título sí, porque es texto grande (3:1 alcanza). */
+.pd .pda > .pda-fondo { position: absolute; left: 0; right: 0; top: 100px; max-width: none; margin: 0; overflow: hidden; pointer-events: none; display: flex; flex-direction: column; -webkit-mask-image: linear-gradient(#000 45%, rgba(0, 0, 0, 0.35) 72%, transparent 92%); mask-image: linear-gradient(#000 45%, rgba(0, 0, 0, 0.35) 72%, transparent 92%); }
+.pd .pda-fondo span { display: block; white-space: nowrap; font: 700 clamp(76px, 15vw, 220px)/0.9 var(--pd-clash); letter-spacing: -0.02em; color: var(--pd-fondo-t); transform: translateX(-4%); }
+.pd .pda-fondo span + span { color: transparent; -webkit-text-stroke: 1.5px var(--pd-trazo); transform: translateX(-31%); }
+.pd .pda-k { margin: 0 0 16px; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--pd-texto); }
+.pd .pda-h { margin: 0; max-width: 15ch; font: 700 clamp(40px, 6.4vw, 92px)/0.94 var(--pd-clash); letter-spacing: -0.02em; color: var(--pd-texto); text-wrap: balance; }
+.pd .pda-fecha { margin: 18px 0 0; font: 500 15px/1.5 var(--font-body); color: var(--pd-tenue); }
+.pd .pda-tarjetas-k { margin: 0 0 12px; font: 700 15px/1.3 var(--font-display); color: var(--pd-texto); }
 .pd .pda-lista { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
-.pd .pda-sigue { display: flex; width: max-content; align-items: center; gap: 10px; margin-top: 40px; padding-bottom: 3px; border-bottom: 1.5px solid currentColor; font: 600 15px var(--font-display); color: var(--pd-texto); text-decoration: none; }
+.pd .pda-sigue { display: flex; width: max-content; align-items: center; gap: 10px; margin-top: 48px; padding-bottom: 3px; border-bottom: 1.5px solid currentColor; font: 600 15px var(--font-display); color: var(--pd-texto); text-decoration: none; }
 .pd .pda-sigue:hover { color: var(--pd-texto); text-decoration: none; opacity: 0.75; }
-.pd .pda-sigue:focus-visible { outline: 2px solid var(--pd-azul); outline-offset: 4px; }
+.pd .pda-sigue:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
 
-/* el detalle de las tarjetas: en el póster va completo; con JS se abre en el diálogo */
+/* negro: rayas de cebra como las paredes de la tienda; marino: líneas de neón y un resplandor abajo (los del home).
+   Son textura decorativa: en el teléfono no van. */
+.pd .pd-negro > .pda-fondo { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='240' viewBox='0 0 260 240'%3E%3Cg fill='none' stroke='%23fff' stroke-opacity='.09' stroke-width='18' stroke-linecap='round'%3E%3Cpath d='M-30 30C30 -5 80 70 140 32S230 -8 290 30'/%3E%3Cpath d='M-30 90C30 55 80 130 140 92S230 52 290 90'/%3E%3Cpath d='M-30 150C30 115 80 190 140 152S230 112 290 150'/%3E%3Cpath d='M-30 210C30 175 80 250 140 212S230 172 290 210'/%3E%3C/g%3E%3C/svg%3E"); background-size: 260px 240px; }
+.pd .pd-marino { background-image: radial-gradient(ellipse at 50% 108%, rgba(75, 123, 229, 0.42), transparent 58%); }
+.pd .pd-marino > .pda-fondo { background-image: repeating-linear-gradient(112deg, transparent 0 58px, rgba(127, 163, 240, 0.2) 58px 60px); }
+@media (max-width: 767px) {
+  .pd .pd-negro > .pda-fondo, .pd .pd-marino > .pda-fondo { background-image: none; }
+}
+
+/* el detalle de las tarjetas: en el póster va completo (tarjetas blancas); con JS se abre en el diálogo */
 .pd .pd-detalles { display: grid; gap: 16px; margin-top: 32px; }
 .pd .pd-detalles-h { margin: 0; font: 600 14px/1.3 var(--font-display); color: var(--pd-texto); }
-.pd .pd-detalles > article { padding: 20px; border-radius: var(--pd-radio); background: var(--pd-tarjeta); }
+.pd .pd-detalles > article {
+  --pd-fondo: #FFFFFF; --pd-texto: #1A1A1A; --pd-tenue: #4A4A4A; --pd-apagado: #6E6E6D; --pd-linea: #E7E7E4;
+  --pd-tarjeta: #F5F5F3; --pd-boton: #1A1A1A; --pd-boton-t: #FFFFFF; --pd-obra: #8A5A00;
+  padding: 20px; border-radius: var(--pd-radio); background: #FFFFFF; color: var(--pd-texto);
+}
 .pd.pd-js .pd-detalles { display: none; }
 
 @media (min-width: 768px) {
   .pd .pda { padding: 112px 5vw 120px; }
+  .pd .pda > .pda-fondo { top: 142px; }
 }

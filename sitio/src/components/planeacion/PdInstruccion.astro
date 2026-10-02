@@ -1,6 +1,7 @@
 ---
 /**
- * Acto 0 · La instrucción (1-oct-2026; v2 «limpio» 2-oct-2026: blanco con la cortina en negro, sin brillos).
+ * Acto 0 · La instrucción (1-oct-2026; v2 «limpio» 2-oct-2026; v3 «color» 2-oct-2026: marfil como la portada y la
+ * cortina en azul Sacs; la ficha con menos texto y «Saltar» / «Otra vez» como texto, sin pastillas).
  *
  * Como «La orden» de la portada: la directora comercial le dicta a Sacs «planea mi Día del Padre…». La frase pasa
  * gigante DETRÁS de ella, trozo por trozo, y abajo se transcribe palabra por palabra. Sacs la convierte en una
@@ -21,12 +22,12 @@ const PALABRAS = trozos.flatMap((t) => t.split(' '));
 const ONDA = Array.from({ length: 30 }, (_, k) => Math.round(28 + 72 * Math.abs(Math.sin(k * 1.7) * Math.cos(k * 0.45))));
 const CANDADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
 ---
-<section class="pdi pd-claro" id="pd-instruccion" aria-labelledby="pdi-h1">
+<section class="pdi pd-marfil" id="pd-instruccion" aria-labelledby="pdi-h1">
   <div class="pdi-escena">
     <div class="pdi-cab">
       <p class="pdi-kicker">Una temporada de ejemplo, de principio a fin</p>
       <h1 class="pdi-h1" id="pdi-h1">Planeación de demanda <span>para moda</span></h1>
-      <p class="pdi-sub">Qué comprar, cuánto, para qué tienda, en qué talla y color, y cuándo. Dale una instrucción a Sacs y mira la temporada completa, de la compra a lo que aprendió.</p>
+      <p class="pdi-sub">Qué comprar, cuánto, para qué tienda, en qué talla y color, y cuándo. Una temporada completa, de la compra a lo que aprendió.</p>
       <p class="pdi-fecha">{INSTRUCCION.fecha} · {INSTRUCCION.faltan}</p>
     </div>
 
@@ -62,14 +63,13 @@ const CANDADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
       </div>
     </div>
 
-    <form class="pdi-ficha" aria-labelledby="pdi-ficha-t" action="#pd-pre">
+    <form class="pdi-ficha pd-claro" aria-labelledby="pdi-ficha-t" action="#pd-pre">
       <p class="pdi-ficha-k" id="pdi-ficha-t"><i aria-hidden="true"></i>Sacs entendió tu temporada</p>
       <dl>
         <div class="pdi-f">
           <dt>Temporada</dt>
           <dd>
             <b>{FICHA.temporada.v}</b><span>{FICHA.temporada.s}</span>
-            <small>{FICHA.temporada.nota.replace('.', '')}: {FICHA.temporada.otras.join(', ')}.</small>
           </dd>
         </div>
         <div class="pdi-f"><dt>Alcance</dt><dd><b>{FICHA.alcance.v}</b><span>{FICHA.alcance.s}</span></dd></div>
@@ -89,7 +89,6 @@ const CANDADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
           <dt>Candados</dt>
           <dd>
             <ul class="pdi-candados">{FICHA.candados.map((c) => <li><span class="pdi-cand-i" set:html={CANDADO} />{c}</li>)}</ul>
-            <small>{FICHA.nucleo}</small>
           </dd>
         </div>
         <div class="pdi-f">
@@ -110,7 +109,7 @@ const CANDADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
       </button>
     </form>
 
-    <div class="pdi-azul pd-oscuro">
+    <div class="pdi-azul pd-azul">
       <div class="pdi-azul-in">
         <p class="pdi-azul-de"><b>Sacs</b> respondió · 19:40</p>
         <p class="pdi-azul-h">{respuesta.h}</p>
@@ -143,7 +142,7 @@ const CANDADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
   /* la foto: la frase gigante va DETRÁS de ella, en tinta, como portada de revista */
   .pdi-foto { position: relative; height: min(70svh, 600px); min-height: 430px; margin-top: 8px; isolation: isolate; }
   .pdi-gigante { position: absolute; left: 0; right: 0; top: 4%; z-index: 0; display: grid; place-items: center; height: 36%; pointer-events: none; }
-  .pdi-g { grid-area: 1 / 1; max-width: 94vw; font: 800 min(21vw, calc(150vw / var(--m)))/0.86 var(--font-display); letter-spacing: -0.05em; text-align: center; text-wrap: balance; color: #ECECE8; opacity: 0; user-select: none; }
+  .pdi-g { grid-area: 1 / 1; max-width: 94vw; font: 800 min(21vw, calc(150vw / var(--m)))/0.86 var(--font-display); letter-spacing: -0.05em; text-align: center; text-wrap: balance; color: #E6E1D5; opacity: 0; user-select: none; }
   .pdi-g.is-on { opacity: 1; }
   .pdi-ella { position: absolute; z-index: 1; bottom: 0; left: 50%; height: 86%; width: auto; max-width: none; transform: translateX(-50%); transform-origin: 50% 100%; }
 
@@ -193,7 +192,8 @@ const CANDADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
   .pdi-modo input:checked + span { background: #fff; color: var(--pd-texto); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); }
   .pdi-modo input:focus-visible + span { outline: 2px solid var(--pd-azul); outline-offset: 2px; }
   .pdi-modo-s { min-height: 2.9em; }
-  .pdi-modo-s[hidden] { display: none; }
+  /* con «.pdi-ficha» delante: «.pdi-ficha small { display: block }» pesaba más y se veían las tres descripciones */
+  .pdi-ficha .pdi-modo-s[hidden] { display: none; }
 
   .pdi-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 50px; margin-top: 14px; padding: 12px 18px; border: 0; border-radius: 99px; background: var(--pd-boton); color: var(--pd-boton-t); font: 700 15px/1 var(--font-display); cursor: pointer; transition: transform 0.2s, opacity 0.2s; }
   .pdi-btn:hover { transform: translateY(-1px); }
@@ -204,7 +204,7 @@ const CANDADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
   .pdi-azul-in { padding: 64px 20px 72px; max-width: 1240px; }
   .pdi-azul-de { margin: 0 0 18px; font: 500 13px/1.3 var(--font-display); color: var(--pd-apagado); }
   .pdi-azul-de b { color: var(--pd-texto); font-weight: 700; }
-  .pdi-azul-h { margin: 0; font: 800 clamp(64px, 19vw, 230px)/0.9 var(--font-display); letter-spacing: -0.05em; color: var(--pd-texto); }
+  .pdi-azul-h { margin: 0; font: 700 clamp(72px, 20vw, 250px)/0.88 var(--pd-clash); letter-spacing: -0.02em; color: var(--pd-texto); }
   .pdi-azul-p { margin: 22px 0 0; max-width: 24ch; font: 500 clamp(20px, 2.3vw, 32px)/1.25 var(--font-display); letter-spacing: -0.02em; color: var(--pd-tenue); }
   .pdi-sigue { display: inline-flex; align-items: center; gap: 10px; margin-top: 32px; padding-bottom: 3px; border-bottom: 1.5px solid currentColor; font: 600 15px var(--font-display); color: var(--pd-texto); text-decoration: none; }
   .pdi-sigue:hover { color: var(--pd-texto); text-decoration: none; opacity: 0.75; }
@@ -243,7 +243,7 @@ const CANDADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
   /* teléfono y tableta: se reproduce sola */
   .pdi.is-auto .pdi-azul-h, .pdi.is-auto .pdi-azul-p, .pdi.is-auto .pdi-sigue { transition: opacity 0.6s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
   .pdi.is-auto:not(.is-azul) .pdi-azul-h, .pdi.is-auto:not(.is-azul) .pdi-azul-p, .pdi.is-auto:not(.is-azul) .pdi-sigue { opacity: 0; transform: translateY(22px); }
-  .pdi.is-auto .pdi-repite { display: inline-flex; position: absolute; right: 20px; bottom: 20px; padding: 10px 16px; min-height: 44px; align-items: center; border: 1px solid rgba(255, 255, 255, 0.45); border-radius: 999px; background: none; color: #fff; font: 600 13px var(--font-display); cursor: pointer; }
+  .pdi.is-auto .pdi-repite { display: inline-flex; position: absolute; right: 20px; bottom: 20px; min-height: 44px; align-items: center; padding: 0; border: 0; background: none; color: #fff; font: 600 14px var(--font-display); text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
 
   @keyframes pdiOnda { from { transform: scaleY(0.25); } to { transform: scaleY(1); } }
   @keyframes pdiPulso { from { opacity: 0.35; } to { opacity: 1; } }
@@ -290,8 +290,8 @@ const CANDADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
   .pdi.is-escena.is-azul .pdi-azul-h { opacity: 1; transform: none; transition-delay: 0.08s; }
   .pdi.is-escena.is-azul .pdi-azul-p { opacity: 1; transform: none; transition-delay: 0.2s; }
   .pdi.is-escena.is-azul .pdi-sigue { opacity: 1; transform: none; transition-delay: 0.6s; }
-  .pdi.is-escena .pdi-saltar { display: inline-flex; position: absolute; left: 50%; bottom: 3vh; z-index: 4; align-items: center; gap: 8px; padding: 9px 16px; border: 1px solid var(--pd-linea); border-radius: 999px; background: #fff; font: 600 13px var(--font-display); color: var(--pd-texto); text-decoration: none; transform: translateX(-50%); transition: opacity 0.3s; }
-  .pdi.is-escena .pdi-saltar:hover { border-color: var(--pd-texto); text-decoration: none; }
+  .pdi.is-escena .pdi-saltar { display: inline-flex; position: absolute; left: 50%; bottom: 3vh; z-index: 4; align-items: center; gap: 8px; padding: 6px 2px 3px; border-bottom: 1.5px solid currentColor; font: 600 14px var(--font-display); color: var(--pd-texto); text-decoration: none; transform: translateX(-50%); transition: opacity 0.3s; }
+  .pdi.is-escena .pdi-saltar:hover { opacity: 0.7; text-decoration: none; }
   .pdi.is-escena.is-azul .pdi-saltar { opacity: 0; pointer-events: none; }
 
   /* escritorio bajito: menos texto en la escena para que la ficha respire */
@@ -328,6 +328,7 @@ const CANDADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
     const tiempo = sec.querySelector<HTMLElement>('.pdi-tiempo');
     const respuesta = sec.querySelector<HTMLElement>('.pdi-azul-h');
     const foto = sec.querySelector<HTMLElement>('.pdi-foto')!, voz = sec.querySelector<HTMLElement>('.pdi-voz')!;
+    const cortina = sec.querySelector<HTMLElement>('.pdi-azul')!;
     const vistos = new Set<Element>();
     const NT = trozos.length, NF = campos.length;
     const FIN: number[] = [];
@@ -451,6 +452,8 @@ const CANDADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
     const ioAuto = new IntersectionObserver((es) => { es.forEach((e) => {
       if (e.target === foto || e.target === voz) { const en = vistos.has(foto) || vistos.has(voz); if (e.isIntersecting) vistos.add(e.target); else vistos.delete(e.target); if (vistos.size) arrancaAuto(); else if (en) paraAuto(); }
       else if (e.target === ficha) { if (e.isIntersecting) arrancaFicha(); else paraFicha(); }
+      // la cortina responde al verse, aunque no se haya apretado «Analizar temporada» (antes se quedaba vacía)
+      else if (e.target === cortina && e.isIntersecting && !sec.classList.contains('is-azul')) { sec.classList.add('is-azul'); phUnaVez('planeacion_entendido'); }
     }); }, { threshold: 0.3 });
     sec.querySelector('.pdi-repite')?.addEventListener('click', () => {
       paraAuto(); paraFicha(); autoBeat = -1; beat = -2; llenos = -2; pinta(-1); llena(0); sec.classList.remove('is-azul');
@@ -473,7 +476,7 @@ const CANDADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
       if (modo === 'escena') { pinta(0); llena(0); if (visible) { window.addEventListener('scroll', onScroll, { passive: true }); mide(); } }
       else {
         autoBeat = reprodujo ? NT : -1; pinta(reprodujo ? NT : -1); llena(reprodujo ? NF : 0);
-        vistos.clear(); ioAuto.observe(foto); ioAuto.observe(voz); ioAuto.observe(ficha);
+        vistos.clear(); ioAuto.observe(foto); ioAuto.observe(voz); ioAuto.observe(ficha); ioAuto.observe(cortina);
       }
     }
 
