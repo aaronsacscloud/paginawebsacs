@@ -1,0 +1,88 @@
+---
+/**
+ * Mini gráfica de cada «por qué» de una tarjeta (/producto/planeacion-de-demanda). SVG/HTML calculado en el build.
+ *  linea  · venta diaria o existencia (con un punto rosa en el evento, si hay `e`)
+ *  barras · cantidades con su etiqueta (las negativas restan)
+ *  dias   · cuántos días le alcanza a una tienda contra otra
+ *  camino · de cuándo a cuándo (pides → llega)
+ *  curva  · qué tallas hay (✓) y cuál falta (✕)
+ */
+import type { Razon } from '../../data/planeacion-demo';
+import { serie, area, miles } from '../../lib/planeacion-graficas';
+
+interface Props { g: NonNullable<Razon['g']>; }
+const { g } = Astro.props;
+
+const W = 220, H = 56;
+let linea: { d: string; a: string; px?: number; py?: number } | null = null;
+if (g.tipo === 'linea' && g.v) {
+  const max = Math.max(...g.v) * 1.1;
+  const s = serie(g.v, { w: W, h: H, m: 4, max });
+  linea = { d: s.d, a: area(s.pts, H - 4) };
+  if (g.e !== undefined) { linea.px = s.pts[g.e][0]; linea.py = s.pts[g.e][1]; }
+}
+const maxBarra = g.tipo === 'barras' && g.v ? Math.max(...g.v.map((n) => Math.abs(n))) : 1;
+const maxDias = g.tipo === 'dias' ? Math.max(g.va ?? 0, g.vb ?? 0, 1) : 1;
+---
+{linea && (
+  <svg class="pdm pdm--linea" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Mini gráfica de la tendencia">
+    <path class="pdm-area" d={linea.a} />
+    <path class="pdm-l" d={linea.d} />
+    {linea.px !== undefined && <circle class="pdm-ev" cx={linea.px} cy={linea.py} r="4.5" />}
+  </svg>
+)}
+{g.tipo === 'barras' && g.v && (
+  <ul class="pdm pdm--barras" aria-label="Mini gráfica de cantidades">
+    {g.v.map((n, i) => (
+      <li class:list={[{ 'is-resta': n < 0 }]} style={`--w:${Math.max(4, Math.round((Math.abs(n) / maxBarra) * 100))}%`}>
+        <span>{g.et?.[i]}</span><i></i><b>{n < 0 ? '−' : ''}{miles(Math.abs(n))}{g.u ? ` ${g.u}` : ''}</b>
+      </li>
+    ))}
+  </ul>
+)}
+{g.tipo === 'dias' && (
+  <ul class="pdm pdm--dias" aria-label="Días que le alcanzan">
+    <li style={`--w:${Math.max(3, Math.round(((g.va ?? 0) / maxDias) * 100))}%`}><span>{g.a}</span><i></i><b>{`${g.va} días`}</b></li>
+    <li class="is-poco" style={`--w:${Math.max(3, Math.round(((g.vb ?? 0) / maxDias) * 100))}%`}><span>{g.b}</span><i></i><b>{`${g.vb} ${g.vb === 1 ? 'día' : 'días'}`}</b></li>
+  </ul>
+)}
+{g.tipo === 'camino' && (
+  <div class="pdm pdm--camino" aria-label={`De ${g.a} a ${g.b}`}>
+    <span class="pdm-c-a"><i></i><b>{g.a}</b><small>{g.et?.[0]}</small></span>
+    <span class="pdm-c-l" aria-hidden="true"></span>
+    <span class="pdm-c-b"><i></i><b>{g.b}</b><small>{g.et?.[1]}</small></span>
+  </div>
+)}
+{g.tipo === 'curva' && g.ok && (
+  <ul class="pdm pdm--curva" aria-label="Tallas disponibles">
+    {g.ok.map((ok, i) => <li class:list={[{ 'is-falta': !ok }]}><b>{g.et?.[i]}</b><span>{ok ? '✓' : '✕'}</span></li>)}
+  </ul>
+)}
+
+<style>
+  .pdm { display: block; margin: 8px 0 0; }
+  svg.pdm { width: 100%; max-width: 260px; height: auto; overflow: visible; }
+  .pdm-area { fill: rgba(143, 176, 243, 0.14); }
+  .pdm-l { fill: none; stroke: var(--pd-azul-c); stroke-width: 2.2; stroke-linecap: round; }
+  .pdm-ev { fill: var(--pd-rosa); stroke: var(--pd-noche); stroke-width: 2; }
+
+  .pdm--barras, .pdm--dias, .pdm--curva { list-style: none; padding: 0; }
+  .pdm--barras li, .pdm--dias li { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 2px 0; font: 500 12px/1.3 var(--font-display); color: var(--pd-tenue); }
+  .pdm--barras i, .pdm--dias i { display: block; height: 8px; width: var(--w); border-radius: 4px; background: var(--pd-azul-c); }
+  .pdm--barras li.is-resta i { background: repeating-linear-gradient(135deg, rgba(143, 176, 243, 0.65) 0 4px, transparent 4px 7px); }
+  .pdm--barras b, .pdm--dias b { font-weight: 600; color: #fff; font-variant-numeric: tabular-nums; }
+  .pdm--dias li.is-poco i { background: var(--pd-rosa); }
+
+  .pdm--camino { display: grid; grid-template-columns: auto minmax(30px, 1fr) auto; align-items: start; gap: 8px; max-width: 320px; }
+  .pdm--camino > span:not(.pdm-c-l) { display: grid; justify-items: start; gap: 2px; font: 500 11.5px/1.25 var(--font-display); color: var(--pd-tenue); }
+  .pdm--camino i { width: 10px; height: 10px; border-radius: 50%; background: var(--pd-azul-c); }
+  .pdm-c-b i { background: var(--pd-verde); }
+  .pdm--camino b { font-weight: 600; font-size: 13px; color: #fff; }
+  .pdm-c-l { height: 2px; margin-top: 4px; background: repeating-linear-gradient(90deg, var(--pd-azul-c) 0 6px, transparent 6px 10px); }
+
+  .pdm--curva { display: flex; gap: 6px; }
+  .pdm--curva li { display: grid; justify-items: center; gap: 2px; min-width: 38px; padding: 6px 4px; border-radius: 8px; background: rgba(61, 220, 132, 0.12); border: 1px solid rgba(61, 220, 132, 0.4); font: 600 12px/1 var(--font-display); color: #fff; }
+  .pdm--curva li span { color: var(--pd-verde); }
+  .pdm--curva li.is-falta { background: rgba(255, 107, 107, 0.14); border-color: rgba(255, 107, 107, 0.6); }
+  .pdm--curva li.is-falta span { color: var(--pd-rojo); }
+</style>

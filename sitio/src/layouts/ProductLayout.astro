@@ -13,9 +13,13 @@ interface Props {
   currentPillar: PillarId;
   noindex?: boolean;
   preloadImage?: string;
+  preloadSrcset?: string;
+  preloadSizes?: string;
+  /** Imagen OG propia (si no, la de siempre). */
+  image?: string;
 }
 
-const { title, description, currentSlug, currentPillar, noindex, preloadImage } = Astro.props;
+const { title, description, currentSlug, currentPillar, noindex, preloadImage, preloadSrcset, preloadSizes, image } = Astro.props;
 
 // Antes esta plantilla no emitía NADA propio: las 28 páginas de función (más
 // las de soluciones, que la reutilizan) solo llevaban el Organization +
@@ -51,7 +55,7 @@ const softwareSchema = feature
 const productStructuredData = [softwareSchema, breadcrumbProducto(currentSlug)].filter(Boolean);
 ---
 
-<BaseLayout title={title} description={description} noindex={noindex} preloadImage={preloadImage} structuredData={productStructuredData}>
+<BaseLayout title={title} description={description} image={image} noindex={noindex} preloadImage={preloadImage} preloadSrcset={preloadSrcset} preloadSizes={preloadSizes} structuredData={productStructuredData}>
   <ProductSubnav currentSlug={currentSlug} currentPillar={currentPillar} />
   <slot />
 </BaseLayout>

@@ -62,6 +62,16 @@ Más detalle: ${g.landing}`).join('\n\n')}
 
 ${[...porArea.entries()].map(([area, mods]) => `### ${area}\n${mods.map(m => `- **${m.nombre}**: ${m.queHace}${m.noHace ? ` (no hace: ${m.noHace})` : ''}`).join('\n')}`).join('\n\n')}
 
+## Planeación de demanda para moda
+
+${SITIO}/producto/planeacion-de-demanda — pronóstico de ventas para tiendas de
+ropa por temporada, modelo y tienda, con la curva de tallas de cada región. Antes
+de mover nada revisa lo que viene en camino; luego traspasa desde la tienda donde
+sobra, resurte desde el CEDIS y solo compra lo que falta en toda la red, con el
+corte de pedido de cada proveedor. Automático con candados solo para el resurtido
+de rutina del CEDIS. La página es una temporada de ejemplo (Día del Padre); lo que
+está en construcción va marcado.
+
 ## Planes y precios
 
 ${PLANES.map(p => `### ${p.nombre} — $${p.mensual.toLocaleString('es-MX')} MXN al mes por sucursal

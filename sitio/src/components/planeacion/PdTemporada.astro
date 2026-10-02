@@ -1,0 +1,263 @@
+---
+/**
+ * Acto 2 · La temporada en vivo (3 may – 20 jun 2027). Una consola: el calendario corre con su marcador «hoy», un
+ * ticker de ventas, contadores, la curva plan contra real que se corrige sola, la rejilla de las 100 tiendas por
+ * región pintada por estado y las tarjetas que van saliendo (se abren: qué mover, por qué y un botón).
+ * El HTML trae el estado final (póster y SEO); src/scripts/planeacion/consola.ts lo reproduce en vivo.
+ */
+import { SEMANAS, PLAN_27, REAL_27, REPRONOSTICO_27, TARJETAS_VIVO, REGIONES, TICKER, AVISO_SEMANA_6, FICHA, RUTINA, OBRA } from '../../data/planeacion-demo';
+import { serie, suave } from '../../lib/planeacion-graficas';
+import PdTarjeta from './PdTarjeta.astro';
+import PdDetalle from './PdDetalle.astro';
+
+const W = 640, H = 230, M = 12, MAX = 7000;
+const plan = serie(PLAN_27, { w: W, h: H, m: M, max: MAX });
+const real7 = serie(REAL_27, { w: W, h: H, m: M, max: MAX });
+const realHasta = suave(real7.pts.slice(0, 7));
+const repro = suave(serie(REPRONOSTICO_27, { w: W, h: H, m: M, max: MAX }).pts.slice(5));
+const xEv = plan.x(6), anchoSem = plan.x(1) - plan.x(0);
+const SEM7 = SEMANAS.slice(0, 7);
+
+// El estado final de la rejilla (póster): casi todo en verde, con lo que quedó pendiente pintado.
+const FINAL: Record<string, string> = { 'Monterrey': 'ok', 'Saltillo': 'ok', 'Querétaro': 'ok', 'Zapopan': 'ok', 'Guadalajara Sur': 'ok', 'Mérida': 'ok' };
+let n = 0;
+const regiones = REGIONES.map((r) => ({
+  ...r,
+  celdas: r.ciudades.flatMap(([c, k]) => Array.from({ length: k as number }, (_, j) => {
+    const i = n++;
+    const nombre = j === 0 ? (c as string) : `${c} ${j + 1}`;
+    const est = FINAL[nombre] || (i % 17 === 5 ? 'pronto' : i % 23 === 7 ? 'sobra' : 'ok');
+    return { i, nombre, ciudad: c as string, est };
+  })),
+}));
+const total = regiones.reduce((a, r) => a + r.celdas.length, 0);
+---
+<section class="pda vivo" id="pd-vivo" data-acto="vivo" aria-labelledby="pd-vivo-h">
+  <header class="pda-cab">
+    <span class="pda-gigante" aria-hidden="true">Durante</span>
+    <p class="pda-k"><i aria-hidden="true"></i>Acto 2 · La temporada en vivo</p>
+    <h2 class="pda-h" id="pd-vivo-h">La venta, tienda por tienda. Y lo que toca hacer hoy.</h2>
+    <p class="pda-fecha">Del lunes 3 de mayo al domingo 20 de junio de 2027 <span class="pd-ej">ejemplo</span></p>
+  </header>
+
+  <div class="vivo-consola">
+    <div class="vivo-cal" aria-label="Semanas de la temporada hasta el Día del Padre">
+      <ol>
+        {SEM7.map((s) => <li class:list={[{ 'is-ev': s.evento }]}><b>Sem {s.n}</b><span>{s.ini} – {s.fin}</span></li>)}
+      </ol>
+      <span class="vivo-hoy" style="--p:1"><i aria-hidden="true"></i><b data-hoy>hoy · dom 20 jun</b></span>
+    </div>
+
+    <dl class="vivo-conts">
+      <div><dt>Venta de hoy</dt><dd><b data-cont="hoy">$1.1 M</b><small data-cont-s="hoy">domingo, Día del Padre</small></dd></div>
+      <div><dt>Acumulada contra el plan</dt><dd><b data-cont="acum">$15.4 M</b><small data-cont-s="acum" class="is-arriba">+13 % arriba</small></dd></div>
+      <div><dt>% vendido</dt><dd><b data-cont="vendido">67.9 %</b><small>de lo que llegó</small></dd></div>
+      <div><dt>Agotados evitados</dt><dd><b data-cont="agotados">173</b><small>tallas que no se acabaron</small></dd></div>
+    </dl>
+
+    <div class="vivo-main">
+      <figure class="vivo-graf">
+        <figcaption class="vivo-cap"><b>Plan contra real · piezas por semana</b><span class="pd-ej">ejemplo</span><span class="pd-obra">{OBRA}</span></figcaption>
+        <div class="vivo-svg">
+          <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Piezas por semana: el plan en línea punteada y la venta real encima. A la semana 6 la venta va 12 por ciento arriba y el pronóstico de la semana pico sube de 5,800 a 6,500 piezas; la semana del Día del Padre vendió 6,600.">
+            <rect class="vivo-evt" x={xEv - anchoSem / 2} y="4" width={anchoSem} height={H - 8} rx="6" />
+            <path class="vivo-plan" d={plan.d} />
+            <path class="vivo-repro" d={repro} />
+            <path class="vivo-real" d={realHasta} data-real />
+            <circle class="vivo-punta" cx={real7.pts[6][0]} cy={real7.pts[6][1]} r="5" data-punta />
+          </svg>
+          <p class="vivo-aviso" style={`left:${((plan.x(5) / W) * 100).toFixed(1)}%`}><b>{AVISO_SEMANA_6.t}</b>{AVISO_SEMANA_6.s}</p>
+        </div>
+        <p class="vivo-leyenda"><span class="p">Plan</span><span class="r">Real</span><span class="n">Pronóstico corregido</span><span class="e">Día del Padre</span></p>
+      </figure>
+
+      <figure class="vivo-red" data-red>
+        <figcaption class="vivo-cap"><b>Tus 100 tiendas</b><span class="pd-ej">ejemplo</span></figcaption>
+        <p class="vivo-nodos"><span class="vivo-nodo" data-nodo="CEDIS"><b>CEDIS</b><span data-cedis>6,436</span> piezas</span><span class="vivo-nodo vivo-nodo--prov" data-nodo="Proveedor"><b>Proveedor</b>playeras</span></p>
+        <div class="vivo-regs">
+          {regiones.map((r) => (
+            <div class="vivo-reg" data-reg={r.id}>
+              <p><b>{r.r}</b><span>{r.celdas.length}</span></p>
+              <ul class="vivo-celdas" aria-hidden="true">
+                {r.celdas.map((c) => <li class={`is-${c.est}`} data-i={c.i} data-t={c.nombre} data-c={c.ciudad} title={c.nombre}></li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <ul class="vivo-ley">
+          <li class="is-ok"><i></i>Va bien</li><li class="is-pronto"><i></i>Se acaba pronto</li><li class="is-falta"><i></i>Le falta una talla</li><li class="is-sobra"><i></i>Le sobra</li>
+        </ul>
+        <p class="vivo-resumen" data-resumen>{total} tiendas: casi todas van bien al cierre del Día del Padre.</p>
+        <div class="vivo-viajes" aria-hidden="true"></div>
+      </figure>
+
+      <p class="vivo-ticker" aria-hidden="true"><span class="vivo-tk-k"><i></i>En vivo</span><span class="vivo-tk-t" data-ticker>{TICKER[0]}</span></p>
+    </div>
+
+    <div class="vivo-tarjetas">
+      <div class="vivo-tar-cab">
+        <p class="pda-tarjetas-k">Acciones de hoy · ábrelas para ver qué mover y por qué</p>
+        <div class="vivo-modo" role="radiogroup" aria-label="Modo de la simulación">
+          {FICHA.modos.map((m) => <label class="vivo-modo-op"><input type="radio" name="modo-vivo" value={m.id} checked={m.id === 'aprobar'} /><span>{m.t}</span></label>)}
+        </div>
+        <button type="button" class="vivo-rutina" data-rutina-btn data-total={RUTINA.total} data-traspasos={RUTINA.traspasos}>
+          <span data-rutina-t>Mandar las {RUTINA.total} de rutina</span>
+          <small>Traspasos y resurtidos chicos que Sacs ya revisó</small>
+        </button>
+      </div>
+      <ul class="pda-lista vivo-lista">{TARJETAS_VIVO.map((t) => <PdTarjeta t={t} />)}</ul>
+    </div>
+  </div>
+
+  <div class="pd-detalles" data-detalles="vivo">
+    <h3 class="pd-detalles-h">El detalle de cada tarjeta</h3>
+    {TARJETAS_VIVO.map((t) => <PdDetalle t={t} />)}
+  </div>
+
+  <a class="pda-sigue" href="#pd-cierre">Sigue: después del evento
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+  </a>
+</section>
+
+<style>
+  .vivo-consola { display: grid; gap: 12px; margin-top: 22px; }
+
+  /* calendario con «hoy» */
+  .vivo-cal { position: relative; padding: 10px 10px 30px; border-radius: 16px; background: var(--pd-panel); border: 1px solid var(--pd-linea); }
+  .vivo-cal ol { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; margin: 0; padding: 0; list-style: none; }
+  .vivo-cal li { display: grid; gap: 2px; padding: 7px 6px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); font: 500 10.5px/1.2 var(--font-display); color: var(--pd-tenue); min-width: 0; }
+  .vivo-cal li b { font-weight: 600; font-size: 11px; color: #fff; }
+  .vivo-cal li span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .vivo-cal li.is-ev { background: rgba(224, 69, 123, 0.28); box-shadow: inset 0 0 0 1px var(--pd-rosa); }
+  .vivo-cal li.is-ev b::after { content: ' ★'; color: var(--pd-rosa-c); }
+  .vivo-cal li.is-pasada { background: rgba(143, 176, 243, 0.16); }
+  .vivo-hoy { position: absolute; left: calc(10px + (100% - 20px) * var(--p, 1)); bottom: 6px; width: 0; height: 20px; white-space: nowrap; }
+  .vivo-hoy i { position: absolute; left: -1px; bottom: 20px; width: 2px; height: 46px; background: #fff; box-shadow: 0 0 10px rgba(255, 255, 255, 0.6); }
+  .vivo-hoy b { position: absolute; left: 0; bottom: 0; padding: 2px 8px; border-radius: 99px; background: #fff; color: var(--pd-noche); font: 700 11px/1.3 var(--font-display); transform: translateX(calc(var(--p, 1) * -100%)); }
+
+  /* contadores */
+  .vivo-conts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
+  .vivo-conts > div { padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--pd-linea); min-width: 0; }
+  .vivo-conts dt { font: 600 10.5px/1.25 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--pd-azul-c); }
+  .vivo-conts dd { margin: 4px 0 0; }
+  .vivo-conts dd b { display: block; font: 700 clamp(22px, 2.2vw, 30px)/1.05 'Clash Display', var(--font-display); font-variant-numeric: tabular-nums; color: #fff; }
+  .vivo-conts dd small { display: block; margin-top: 3px; font: 500 11.5px/1.3 var(--font-display); color: var(--pd-tenue); }
+  .vivo-conts dd small.is-arriba { color: #9BF0C0; }
+
+  /* plan contra real */
+  .vivo-main { display: grid; gap: 12px; min-width: 0; }
+  .vivo-graf, .vivo-red { position: relative; margin: 0; padding: 12px 14px; border-radius: 16px; background: linear-gradient(160deg, rgba(75, 123, 229, 0.14), rgba(255, 255, 255, 0.03)); border: 1px solid var(--pd-linea); min-width: 0; }
+  .vivo-cap { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 8px; font: 600 13.5px/1.3 var(--font-display); color: #fff; }
+  .vivo-svg { position: relative; }
+  .vivo-svg svg { display: block; width: 100%; height: auto; max-width: none; overflow: visible; }
+  .vivo-evt { fill: rgba(224, 69, 123, 0.18); }
+  .vivo-plan, .vivo-repro, .vivo-real { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .vivo-plan { stroke: rgba(255, 255, 255, 0.42); stroke-width: 2; stroke-dasharray: 6 6; }
+  .vivo-repro { stroke: var(--pd-rosa-c); stroke-width: 2.5; stroke-dasharray: 2 6; }
+  .vivo-real { stroke: #fff; stroke-width: 4; filter: drop-shadow(0 0 6px rgba(143, 176, 243, 0.7)); }
+  .vivo-punta { fill: #fff; stroke: var(--pd-azul); stroke-width: 3; }
+  .vivo-aviso { position: absolute; top: 0; margin: 0; max-width: 210px; padding: 7px 10px; border-radius: 10px; background: rgba(7, 15, 51, 0.92); border: 1px solid var(--pd-rosa-c); font: 400 11.5px/1.35 var(--font-body); color: var(--pd-tenue); transform: translateX(-100%); }
+  .vivo-aviso b { display: block; font: 600 12.5px/1.3 var(--font-display); color: #fff; }
+  .vivo-leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 6px 0 0; font: 600 11px/1.2 var(--font-display); color: var(--pd-tenue); }
+  .vivo-leyenda span::before { content: ''; display: inline-block; width: 14px; height: 3px; margin-right: 6px; vertical-align: middle; border-radius: 2px; }
+  .vivo-leyenda .p::before { background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.6) 0 4px, transparent 4px 7px); }
+  .vivo-leyenda .r::before { background: #fff; height: 4px; }
+  .vivo-leyenda .n::before { background: repeating-linear-gradient(90deg, var(--pd-rosa-c) 0 2px, transparent 2px 5px); }
+  .vivo-leyenda .e::before { background: rgba(224, 69, 123, 0.5); height: 8px; }
+
+  /* las 100 tiendas */
+  .vivo-nodos { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+  .vivo-nodo { display: inline-flex; align-items: baseline; gap: 6px; padding: 5px 10px; border-radius: 10px; background: var(--pd-panel); border: 1px solid rgba(143, 176, 243, 0.4); font: 500 12px/1.2 var(--font-display); color: var(--pd-tenue); }
+  .vivo-nodo b { font-weight: 700; font-size: 11px; letter-spacing: 0.1em; color: var(--pd-azul-c); }
+  .vivo-nodo span { font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+  .vivo-nodo--prov { border-style: dashed; }
+  .vivo-regs { display: grid; gap: 8px; }
+  .vivo-reg { display: grid; gap: 5px; }
+  .vivo-reg p { display: flex; align-items: baseline; gap: 6px; margin: 0; font: 600 12.5px/1.2 var(--font-display); color: #fff; }
+  .vivo-reg p span { font-weight: 500; font-size: 11px; color: var(--pd-tenue); }
+  /* la misma rejilla para todas las regiones: 15 columnas en el teléfono, 30 en escritorio */
+  .vivo-celdas { display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: 4px; margin: 0; padding: 0; list-style: none; }
+  .vivo-celdas li { aspect-ratio: 1; border-radius: 4px; background: var(--pd-verde); transition: background 0.5s ease, box-shadow 0.4s ease, transform 0.3s ease; }
+  .vivo-celdas li.is-pronto { background: var(--pd-ambar); }
+  .vivo-celdas li.is-falta { background: var(--pd-rojo); }
+  .vivo-celdas li.is-sobra { background: var(--pd-azul); box-shadow: inset 0 0 0 2px var(--pd-azul-c); }
+  .vivo-celdas li.is-evento { background: var(--pd-rosa); box-shadow: 0 0 0 3px rgba(224, 69, 123, 0.35); }
+  .vivo-celdas li.is-marca { transform: scale(1.35); box-shadow: 0 0 0 2px #fff; z-index: 1; }
+  .vivo-ley { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 10px 0 0; padding: 0; list-style: none; font: 500 11.5px/1.2 var(--font-display); color: var(--pd-tenue); }
+  .vivo-ley li { display: inline-flex; align-items: center; gap: 6px; }
+  .vivo-ley i { width: 10px; height: 10px; border-radius: 3px; background: var(--pd-verde); }
+  .vivo-ley .is-pronto i { background: var(--pd-ambar); }
+  .vivo-ley .is-falta i { background: var(--pd-rojo); }
+  .vivo-ley .is-sobra i { background: var(--pd-azul); box-shadow: inset 0 0 0 2px var(--pd-azul-c); }
+  .vivo-resumen { margin: 8px 0 0; font: 400 12.5px/1.4 var(--font-body); color: var(--pd-tenue); }
+  .vivo-viajes { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+  .vivo-viajes :global(i) { position: absolute; left: 0; top: 0; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px 2px rgba(143, 176, 243, 0.9); transition: transform 0.9s cubic-bezier(0.45, 0, 0.2, 1), opacity 0.3s ease; }
+
+  /* ticker */
+  .vivo-ticker { display: flex; align-items: center; gap: 10px; margin: 0; padding: 9px 12px; border-radius: 12px; background: var(--pd-noche-2); border: 1px solid var(--pd-linea); font: 500 12.5px/1.2 var(--font-display); color: #fff; overflow: hidden; white-space: nowrap; }
+  .vivo-tk-k { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; font-weight: 700; font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--pd-rosa-c); }
+  .vivo-tk-k i { width: 7px; height: 7px; border-radius: 50%; background: var(--pd-rosa); }
+  .vivo-tk-t { overflow: hidden; text-overflow: ellipsis; }
+  .vivo-tk-t.is-entra { animation: vivoTk 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+
+  /* tarjetas */
+  .vivo-tarjetas { min-width: 0; padding: 12px; border-radius: 16px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--pd-linea); }
+  .vivo-tar-cab { display: grid; gap: 10px; margin-bottom: 10px; }
+  .vivo-modo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; padding: 3px; border-radius: 11px; background: var(--pd-noche-2); border: 1px solid rgba(143, 176, 243, 0.25); }
+  .vivo-modo-op { position: relative; display: grid; cursor: pointer; }
+  .vivo-modo-op input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+  .vivo-modo-op span { display: grid; place-items: center; min-height: 44px; border-radius: 8px; font: 600 12.5px/1.1 var(--font-display); color: var(--pd-tenue); text-align: center; }
+  .vivo-modo-op input:checked + span { background: #fff; color: var(--pd-noche); }
+  .vivo-modo-op input:focus-visible + span { outline: 2px solid #fff; outline-offset: 2px; }
+  .vivo-rutina { display: grid; justify-items: start; gap: 2px; min-height: 48px; padding: 9px 14px; border-radius: 12px; border: 1px solid rgba(61, 220, 132, 0.5); background: rgba(61, 220, 132, 0.1); color: #fff; font: 700 13.5px/1.2 var(--font-display); text-align: left; cursor: pointer; transition: background 0.2s; }
+  .vivo-rutina small { font: 400 11.5px/1.3 var(--font-body); color: var(--pd-tenue); }
+  .vivo-rutina:hover { background: rgba(61, 220, 132, 0.18); }
+  .vivo-rutina:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  .vivo-rutina[disabled] { cursor: default; opacity: 0.85; border-style: dashed; }
+  .vivo-lista { gap: 8px; }
+
+  /* ── Con JS: lo que todavía no pasa no se ve ── */
+  .vivo.is-js .vivo-lista .pdt:not(.is-on) { display: none; }
+  .vivo.is-js .vivo-aviso { opacity: 0; transform: translate(-100%, 6px); transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+  .vivo.is-js.is-aviso .vivo-aviso { opacity: 1; transform: translateX(-100%); }
+  .vivo.is-js .vivo-repro { opacity: 0; transition: opacity 0.8s ease; }
+  .vivo.is-js.is-aviso .vivo-repro { opacity: 1; }
+  .vivo.is-js .vivo-nodo--prov.is-activo { border-style: solid; border-color: var(--pd-ambar); }
+  .vivo.is-js .vivo-lista:empty::before, .vivo.is-js .vivo-lista.is-vacia::before { content: 'Todavía nada que hacer: las tiendas van bien.'; display: block; padding: 14px; border-radius: 12px; border: 1px dashed var(--pd-linea); font: 500 13px/1.4 var(--font-display); color: var(--pd-tenue); }
+  @keyframes vivoTk { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  /* teléfono: el calendario solo con el número de semana y el aviso debajo de la gráfica */
+  @media (max-width: 639px) {
+    .vivo-cal li { place-items: center; padding: 8px 2px; }
+    .vivo-cal li span { display: none; }
+    .vivo-cal li b { font-size: 10.5px; }
+    .vivo-aviso { position: static; max-width: none; margin-top: 8px; transform: none; }
+    .vivo.is-js .vivo-aviso { transform: translateY(6px); }
+    .vivo.is-js.is-aviso .vivo-aviso { transform: none; }
+  }
+  @media (min-width: 640px) {
+    .vivo-conts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .vivo-tar-cab { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+    .vivo-tar-cab .pda-tarjetas-k { grid-column: 1 / -1; }
+  }
+  @media (min-width: 1024px) {
+    .vivo-consola { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); grid-template-areas: 'cal cal' 'conts conts' 'main tarjetas'; gap: 12px; align-items: start; }
+    .vivo-cal { grid-area: cal; }
+    .vivo-conts { grid-area: conts; }
+    .vivo-main { grid-area: main; }
+    .vivo-tarjetas { grid-area: tarjetas; }
+    .vivo-tar-cab { grid-template-columns: 1fr; }
+    .vivo-reg { grid-template-columns: 64px minmax(0, 1fr); }
+    .vivo-reg { grid-template-columns: 78px minmax(0, 1fr); align-items: center; gap: 8px; }
+    .vivo-reg p { flex-direction: column; gap: 1px; }
+    .vivo-celdas { grid-template-columns: repeat(30, minmax(0, 1fr)); gap: 3px; }
+    .vivo-celdas li { border-radius: 3px; }
+    .vivo-cal li { padding: 6px 8px; font-size: 11px; }
+  }
+  @media (max-width: 767px) {
+    .vivo-real { filter: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .vivo *, .vivo-viajes :global(i) { animation: none !important; transition: none !important; }
+  }
+</style>

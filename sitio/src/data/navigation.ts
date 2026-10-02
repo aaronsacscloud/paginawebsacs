@@ -100,7 +100,7 @@ export const cicloTemporada: EtapaTemporada[] = [
     clave: '01',
     label: 'Antes · la compra',
     description: 'Decides con seis meses de anticipación qué comprar y para qué tienda.',
-    href: '/planes',
+    href: '/producto/planeacion-de-demanda',
     items: [
       'Presupuesto de compra por temporada (OTB) · pronto',
       'Plan de surtido: cuánto de cada modelo a cada tienda · pronto',
@@ -805,6 +805,7 @@ export const navLinks: NavLink[] = [
         items: [
           { label: 'Especialista IA dedicado', href: '/producto/especialista-ia' },
           { label: 'AXO · Copiloto IA', href: '/producto/axo-copiloto-ia' },
+          { label: 'Planeación de demanda', href: '/producto/planeacion-de-demanda' },
           { label: 'Workflows', href: '/producto/workflows' },
           { label: 'Alertas de quiebre y estancados', href: '/producto/alertas-inteligentes' },
           { label: 'Forecast de demanda', href: '/producto/reportes-predictivos' },
@@ -862,6 +863,7 @@ export const footerLinks = {
   automatiza: [
     { label: 'Especialista IA dedicado', href: '/producto/especialista-ia' },
     { label: 'AXO · Copiloto IA', href: '/producto/axo-copiloto-ia' },
+    { label: 'Planeación de demanda', href: '/producto/planeacion-de-demanda' },
     { label: 'Workflows', href: '/producto/workflows' },
     { label: 'Alertas de quiebre y estancados', href: '/producto/alertas-inteligentes' },
     { label: 'Forecast de demanda', href: '/producto/reportes-predictivos' },

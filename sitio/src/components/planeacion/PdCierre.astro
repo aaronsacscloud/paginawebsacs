@@ -1,0 +1,193 @@
+---
+/**
+ * Acto 3 · Después del evento: promociones y lo que quedó (21 jun – 1 ago 2027). La escalera de rebajas se arma
+ * sola (−20 %, −40 % a los 30 días, outlet), con candado para lo nuevo y los básicos; lo suelto se junta en pocas
+ * tiendas; «qué quedó» por categoría, talla y región; y la biografía de un modelo. «Armar la rebaja» (Sacs arma la
+ * lista y las etiquetas; el precio lo confirmas tú). Lo reproduce src/scripts/planeacion/consola.ts.
+ */
+import { CIERRE, OBRA } from '../../data/planeacion-demo';
+import { miles } from '../../lib/planeacion-graficas';
+
+const q = CIERRE.quedo;
+const maxCat = Math.max(...q.categoria.map((x) => x.n));
+const maxTalla = Math.max(...q.talla.map((x) => x.n));
+const maxReg = Math.max(...q.region.map((x) => x.n));
+// consolidar: 61 tiendas con 1 o 2 piezas sueltas → 18 con la curva completa
+const SUELTAS = Array.from({ length: 61 }, (_, i) => ({ i, n: i % 3 === 0 ? 2 : 1, queda: i % 61 < 61 && [2, 5, 9, 12, 16, 19, 23, 27, 30, 34, 37, 41, 44, 48, 51, 55, 57, 60].includes(i) }));
+---
+<section class="pda cie" id="pd-cierre" data-acto="cierre" aria-labelledby="pd-cierre-h">
+  <header class="pda-cab">
+    <span class="pda-gigante" aria-hidden="true">Después</span>
+    <p class="pda-k"><i aria-hidden="true"></i>Acto 3 · Después del evento: promociones y lo que quedó</p>
+    <h2 class="pda-h" id="pd-cierre-h">La semana pico ya pasó. Ahora, las rebajas.</h2>
+    <p class="pda-fecha">Del lunes 21 de junio al domingo 1 de agosto de 2027 <span class="pd-ej">ejemplo</span></p>
+  </header>
+
+  <div class="cie-grid">
+    <div class="cie-col">
+      <section class="cie-b cie-escalera" data-paso="0" aria-labelledby="cie-esc-h">
+        <h3 class="cie-k" id="cie-esc-h">La escalera de rebajas · se arma sola</h3>
+        <ol>
+          {CIERRE.escalones.map((e, k) => (
+            <li style={`--k:${k}`}><b>{e.pct}</b><span><em>{e.f}</em>{e.t}</span></li>
+          ))}
+        </ol>
+      </section>
+
+      <section class="cie-b cie-prot" data-paso="1" aria-labelledby="cie-prot-h">
+        <h3 class="cie-k" id="cie-prot-h">Protegidos con candado</h3>
+        <ul>
+          {CIERRE.protegidos.map((p) => (
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span><b>{p.t}</b>{p.s}</span></li>
+          ))}
+        </ul>
+      </section>
+
+      <section class="cie-b cie-consol" data-paso="2" aria-labelledby="cie-con-h">
+        <h3 class="cie-k" id="cie-con-h">Consolidar <span class="pd-obra">{CIERRE.consolidar.obra}</span></h3>
+        <p class="cie-t"><b>{CIERRE.consolidar.t}</b> {CIERRE.consolidar.s}</p>
+        <ul class="cie-sueltas" aria-hidden="true">
+          {SUELTAS.map((s) => <li class:list={[{ 'is-queda': s.queda }]}>{Array.from({ length: s.n }, () => <i></i>)}</li>)}
+        </ul>
+        <p class="cie-ley"><span class="a">Pieza suelta</span><span class="b">Tienda con la curva completa</span></p>
+      </section>
+    </div>
+
+    <div class="cie-col">
+      <section class="cie-b cie-quedo" data-paso="3" aria-labelledby="cie-quedo-h">
+        <h3 class="cie-k" id="cie-quedo-h">Qué quedó <span class="pd-ej">ejemplo</span><span class="pd-obra">{OBRA}</span></h3>
+        <p class="cie-gran"><b data-cuenta={q.total}>{miles(q.total)}</b><span>piezas · {q.pct} de lo que llegó</span></p>
+        <div class="cie-split" aria-label={`${miles(q.basicos)} básicos que pasan a la siguiente temporada y ${miles(q.outlet)} al outlet`}>
+          <span class="is-b" style={`--w:${((q.basicos / q.total) * 100).toFixed(1)}%`}><b>{miles(q.basicos)}</b> básicos que pasan</span>
+          <span class="is-o" style={`--w:${((q.outlet / q.total) * 100).toFixed(1)}%`}><b>{miles(q.outlet)}</b> al outlet</span>
+        </div>
+        <div class="cie-tres">
+          <div><p>Por categoría</p><ul>{q.categoria.map((x) => <li class:list={[{ 'is-b': x.b }]} style={`--w:${((x.n / maxCat) * 100).toFixed(0)}%`}><span>{x.k}</span><i></i><b>{miles(x.n)}</b></li>)}</ul></div>
+          <div><p>Por talla</p><ul>{q.talla.map((x) => <li style={`--w:${((x.n / maxTalla) * 100).toFixed(0)}%`}><span>{x.k}</span><i></i><b>{miles(x.n)}</b></li>)}</ul></div>
+          <div><p>Por región</p><ul>{q.region.map((x) => <li style={`--w:${((x.n / maxReg) * 100).toFixed(0)}%`}><span>{x.k}</span><i></i><b>{miles(x.n)}</b></li>)}</ul></div>
+        </div>
+      </section>
+
+      <section class="cie-b cie-bio" data-paso="4" aria-labelledby="cie-bio-h">
+        <h3 class="cie-k" id="cie-bio-h">La biografía de un modelo</h3>
+        <div class="cie-bio-cab">
+          <img src={`/images/planeacion/prod/${CIERRE.bio.foto}.webp`} width="480" height="480" alt={CIERRE.bio.modelo} loading="lazy" decoding="async" />
+          <p><b>{CIERRE.bio.modelo}</b><span>Dejó <em>{CIERRE.bio.margen}</em></span></p>
+        </div>
+        <ol class="cie-vida">
+          {CIERRE.bio.hitos.map((h, k) => <li style={`--k:${k}`}><i aria-hidden="true"></i><b>{h.t}</b><span>{h.f}{h.s && ` · ${h.s}`}</span></li>)}
+        </ol>
+      </section>
+
+      <div class="cie-b cie-accion" data-paso="5">
+        <button type="button" class="cie-btn" data-rebaja>{CIERRE.boton}</button>
+        <p class="cie-nota">{CIERRE.nota}</p>
+        <p class="cie-hecho" data-rebaja-hecho><span class="cie-hecho-pre">Al armarla: </span>{CIERRE.hecho}</p>
+      </div>
+    </div>
+  </div>
+
+  <a class="pda-sigue" href="#pd-resultado">Sigue: el resultado de la temporada
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+  </a>
+</section>
+
+<style>
+  .cie-grid { display: grid; gap: 12px; margin-top: 22px; }
+  .cie-col { display: grid; gap: 12px; align-content: start; min-width: 0; }
+  .cie-b { margin: 0; padding: 14px; border-radius: 16px; background: linear-gradient(160deg, rgba(75, 123, 229, 0.14), rgba(255, 255, 255, 0.03)); border: 1px solid var(--pd-linea); min-width: 0; }
+  .cie-k { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 10px; font: 600 11px/1.2 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--pd-azul-c); }
+
+  .cie-escalera ol { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .cie-escalera li { display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: center; gap: 12px; margin-left: calc(var(--k) * 22px); padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); }
+  .cie-escalera li b { font: 700 30px/1 'Clash Display', var(--font-display); color: var(--pd-rosa-c); }
+  .cie-escalera li:last-child b { font-size: 22px; color: var(--pd-ambar); }
+  .cie-escalera li span { font: 400 13px/1.4 var(--font-body); color: #fff; }
+  .cie-escalera li em { display: block; font: 600 11px/1.3 var(--font-display); font-style: normal; letter-spacing: 0.06em; text-transform: uppercase; color: var(--pd-azul-c); }
+
+  .cie-prot ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .cie-prot li { display: flex; gap: 10px; padding: 10px 12px; border-radius: 12px; background: rgba(255, 181, 71, 0.08); border: 1px solid rgba(255, 181, 71, 0.4); }
+  .cie-prot svg { flex-shrink: 0; width: 18px; height: 18px; max-width: none; color: var(--pd-ambar); }
+  .cie-prot span { font: 400 13px/1.4 var(--font-body); color: var(--pd-tenue); }
+  .cie-prot b { display: block; font: 600 14px/1.3 var(--font-display); color: #fff; }
+
+  .cie-t { margin: 0 0 10px; font: 400 13px/1.45 var(--font-body); color: var(--pd-tenue); }
+  .cie-t b { color: #fff; font-family: var(--font-display); font-weight: 600; }
+  .cie-sueltas { display: grid; grid-template-columns: repeat(auto-fill, minmax(18px, 1fr)); gap: 4px; margin: 0; padding: 0; list-style: none; }
+  .cie-sueltas li { display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 2px; aspect-ratio: 1; border-radius: 4px; background: rgba(255, 255, 255, 0.05); transition: background 0.5s ease, opacity 0.5s ease; }
+  .cie-sueltas i { width: 5px; height: 5px; border-radius: 50%; background: var(--pd-ambar); transition: opacity 0.4s ease; }
+  .cie-sueltas li.is-queda { background: rgba(61, 220, 132, 0.85); }
+  .cie-sueltas li.is-queda i { background: var(--pd-noche); }
+  .cie-ley { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 0 0; font: 500 11.5px/1.2 var(--font-display); color: var(--pd-tenue); }
+  .cie-ley span::before { content: ''; display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 50%; vertical-align: -1px; background: var(--pd-ambar); }
+  .cie-ley .b::before { border-radius: 2px; background: rgba(61, 220, 132, 0.85); }
+
+  .cie-gran { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; margin: 0; }
+  .cie-gran b { font: 700 clamp(44px, 5vw, 64px)/0.95 'Clash Display', var(--font-display); font-variant-numeric: tabular-nums; }
+  .cie-gran span { font: 500 13.5px/1.3 var(--font-display); color: var(--pd-tenue); }
+  .cie-split { display: flex; height: 40px; margin-top: 10px; border-radius: 10px; overflow: hidden; font: 500 11.5px/1.15 var(--font-display); }
+  .cie-split span { display: flex; align-items: center; gap: 5px; width: var(--w); padding: 0 10px; white-space: nowrap; overflow: hidden; }
+  .cie-split b { font-weight: 700; font-size: 14px; }
+  .cie-split .is-b { background: var(--pd-azul-c); color: var(--pd-noche); }
+  .cie-split .is-o { background: rgba(255, 181, 71, 0.85); color: var(--pd-noche); }
+  .cie-tres { display: grid; gap: 12px; margin-top: 12px; }
+  .cie-tres p { margin: 0 0 6px; font: 600 11px/1.2 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--pd-tenue); }
+  .cie-tres ul { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+  .cie-tres li { display: grid; grid-template-columns: 104px minmax(0, 1fr) 44px; align-items: center; gap: 8px; font: 500 12px/1.2 var(--font-display); color: var(--pd-tenue); }
+  .cie-tres li i { display: block; height: 8px; width: var(--w); border-radius: 4px; background: rgba(255, 181, 71, 0.8); transform-origin: 0 50%; }
+  .cie-tres li.is-b i { background: var(--pd-azul-c); }
+  .cie-tres li b { text-align: right; font-weight: 600; color: #fff; font-variant-numeric: tabular-nums; }
+
+  .cie-bio-cab { display: flex; align-items: center; gap: 12px; }
+  .cie-bio-cab img { width: 64px; height: 64px; border-radius: 12px; background: #E9EEF9; object-fit: contain; padding: 4px; }
+  .cie-bio-cab p { display: grid; gap: 2px; margin: 0; font: 600 15px/1.3 var(--font-display); }
+  .cie-bio-cab span { font: 500 13px/1.3 var(--font-display); color: var(--pd-tenue); }
+  .cie-bio-cab em { font-style: normal; font-weight: 700; color: var(--pd-verde); }
+  .cie-vida { position: relative; display: grid; gap: 0; margin: 12px 0 0; padding: 0 0 0 18px; list-style: none; }
+  .cie-vida::before { content: ''; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 2px; border-radius: 2px; background: linear-gradient(180deg, var(--pd-azul-c), var(--pd-rosa), var(--pd-verde)); }
+  .cie-vida li { position: relative; display: grid; gap: 1px; padding: 5px 0; }
+  .cie-vida li i { position: absolute; left: -18px; top: 9px; width: 12px; height: 12px; border-radius: 50%; background: var(--pd-noche); border: 2px solid var(--pd-azul-c); }
+  .cie-vida li b { font: 600 13.5px/1.3 var(--font-display); color: #fff; }
+  .cie-vida li span { font: 400 12px/1.3 var(--font-body); color: var(--pd-tenue); }
+
+  .cie-accion { display: grid; gap: 8px; }
+  .cie-btn { min-height: 50px; padding: 12px 20px; border: 0; border-radius: 99px; background: #fff; color: var(--pd-noche); font: 700 15.5px/1 var(--font-display); cursor: pointer; transition: transform 0.2s; }
+  .cie-btn:hover { transform: translateY(-1px); }
+  .cie-btn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+  .cie-btn[disabled] { cursor: default; background: rgba(61, 220, 132, 0.2); color: #fff; }
+  .cie-nota { margin: 0; font: 400 12.5px/1.45 var(--font-body); color: var(--pd-tenue); }
+  .cie-hecho { margin: 0; font: 500 13px/1.4 var(--font-display); color: var(--pd-apagado); }
+  :global(.pd-js) .cie-hecho { display: none; }
+  :global(.pd-js) .cie.is-rebaja .cie-hecho { display: block; padding: 10px 12px; border-radius: 12px; background: rgba(61, 220, 132, 0.14); border: 1px solid rgba(61, 220, 132, 0.4); color: #fff; font-weight: 600; }
+  :global(.pd-js) .cie-hecho-pre { display: none; }
+
+  /* ── Con JS: cada bloque entra en su momento ── */
+  .cie.is-js [data-paso]:not(.is-on) { opacity: 0.12; transform: translateY(8px); }
+  .cie.is-js [data-paso] { transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
+  .cie.is-js .cie-escalera li { opacity: 0; transform: translateX(-12px); transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(0.2s + var(--k) * 0.35s); }
+  .cie.is-js .cie-escalera.is-on li { opacity: 1; transform: none; }
+  .cie.is-js .cie-consol:not(.is-junta) .cie-sueltas li.is-queda { background: rgba(255, 255, 255, 0.05); }
+  .cie.is-js .cie-consol:not(.is-junta) .cie-sueltas li.is-queda i { background: var(--pd-ambar); }
+  .cie.is-js .cie-consol.is-junta .cie-sueltas li:not(.is-queda) i { opacity: 0; }
+  .cie.is-js .cie-consol.is-junta .cie-sueltas li:not(.is-queda) { opacity: 0.4; }
+  .cie.is-js .cie-tres li i { transform: scaleX(0); transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s; }
+  .cie.is-js .cie-quedo.is-on .cie-tres li i { transform: none; }
+  .cie.is-js .cie-vida li { opacity: 0; transition: opacity 0.4s ease; transition-delay: calc(0.2s + var(--k) * 0.3s); }
+  .cie.is-js .cie-bio.is-on .cie-vida li { opacity: 1; }
+
+  @media (min-width: 640px) {
+    .cie-tres { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .cie-tres li { grid-template-columns: minmax(0, 1fr); gap: 3px; }
+    .cie-tres li b { text-align: left; }
+    .cie-vida { grid-template-columns: repeat(6, minmax(0, 1fr)); padding: 22px 0 0; gap: 8px; }
+    .cie-vida::before { left: 6px; right: 6px; top: 6px; bottom: auto; width: auto; height: 2px; background: linear-gradient(90deg, var(--pd-azul-c), var(--pd-rosa), var(--pd-verde)); }
+    .cie-vida li { padding: 0; }
+    .cie-vida li i { left: 0; top: -22px; }
+  }
+  @media (min-width: 1024px) {
+    .cie-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cie * { animation: none !important; transition: none !important; }
+  }
+</style>

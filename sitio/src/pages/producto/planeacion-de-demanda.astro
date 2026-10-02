@@ -1,0 +1,75 @@
+---
+/**
+ * /producto/planeacion-de-demanda — «Planeación de demanda para moda» (1-oct-2026).
+ *
+ * La página es UNA TEMPORADA SIMULADA que el visitante vive y toca (guion de la sesión «Nivelación moda flujo
+ * completo», en COLA.md): la directora le da la instrucción a Sacs (acto 0), y una consola reproduce la
+ * pretemporada, la temporada en vivo, el cierre y el resultado con lo que aprendió (actos 1–4). Dirección visual B,
+ * «cabina nocturna», elegida por el dueño. Todo es un ejemplo (src/data/planeacion-demo.ts); lo que el motor todavía
+ * no hace va marcado «en construcción», sin fecha.
+ *
+ * La ruta estática gana a [slug].astro. El SoftwareApplication y la miga de pan los pone ProductLayout; aquí va el
+ * FAQPage de las preguntas frecuentes.
+ */
+import ProductLayout from '../../layouts/ProductLayout.astro';
+import PdInstruccion from '../../components/planeacion/PdInstruccion.astro';
+import PdConsola from '../../components/planeacion/PdConsola.astro';
+import BeforeAfter from '../../components/BeforeAfter.astro';
+import GiroFAQ from '../../components/giros/GiroFAQ.astro';
+import FinalCTA from '../../components/FinalCTA.astro';
+import StructuredData from '../../components/StructuredData.astro';
+import { ANTES_DESPUES, PREGUNTAS } from '../../data/planeacion-demo';
+import '../../styles/planeacion.css';
+
+const title = 'Planeación de demanda para moda: pronóstico y resurtido';
+const description = 'Pronóstico de ventas para tiendas de ropa por temporada, modelo y tienda, y software de resurtido para cadenas de ropa: qué comprar, cuánto y cuándo.';
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: PREGUNTAS.map((p) => ({
+    '@type': 'Question',
+    name: p.question,
+    acceptedAnswer: { '@type': 'Answer', text: p.answer },
+  })),
+};
+const { antes, despues } = ANTES_DESPUES;
+---
+<ProductLayout
+  title={title}
+  description={description}
+  currentSlug="planeacion-de-demanda"
+  currentPillar="automatiza"
+  image="/images/planeacion/og.jpg"
+  preloadImage="/images/planeacion/directora.webp"
+  preloadSrcset="/images/planeacion/directora-640.webp 640w, /images/planeacion/directora.webp 1024w"
+  preloadSizes="(min-width: 1024px) 58vh, 78vw"
+>
+  <StructuredData data={faqSchema} />
+
+  <div class="pd">
+    <PdInstruccion />
+    <PdConsola />
+    <BeforeAfter
+      tema="noche"
+      title={ANTES_DESPUES.titulo}
+      beforeLabel={antes.label}
+      beforeHeading={antes.h}
+      painPoints={antes.puntos}
+      afterLabel={despues.label}
+      afterHeading={despues.h}
+      benefits={despues.puntos}
+      ctaHref="/prueba-gratis"
+      ctaText="Pruébalo gratis"
+    />
+  </div>
+
+  <GiroFAQ title="Preguntas frecuentes sobre planeación de demanda" faqs={PREGUNTAS} />
+  <FinalCTA />
+</ProductLayout>
+
+<script>
+  import { ph } from '../../scripts/planeacion/estado';
+  document.querySelectorAll<HTMLElement>('.ba-btn').forEach((a) => a.addEventListener('click', () => ph('planeacion_cta_antes_despues')));
+  document.querySelector('.final-cta-btn')?.addEventListener('click', () => ph('planeacion_cta_prueba'));
+</script>

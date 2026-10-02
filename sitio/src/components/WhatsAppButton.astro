@@ -223,7 +223,7 @@ const DEFAULT_MESSAGE = t('whatsapp.message', locale);
     }
   }
   /* Se esconde mientras corre una historia (la clase la pone Hero en <body>; aquí va :global porque el CSS es scoped) */
-  :global(body.recorrido-activo) .wa-bar, :global(body.agentes-activo) .wa-bar, :global(body.orden-activo) .wa-bar, :global(body.pasos-activo) .wa-bar, :global(body.probador-activo) .wa-bar { opacity: 0 !important; pointer-events: none !important; }
+  :global(body.recorrido-activo) .wa-bar, :global(body.agentes-activo) .wa-bar, :global(body.orden-activo) .wa-bar, :global(body.pasos-activo) .wa-bar, :global(body.probador-activo) .wa-bar, :global(body.planeacion-activo) .wa-bar { opacity: 0 !important; pointer-events: none !important; }
   /* Móvil: botón redondo abajo a la derecha, sin texto; la barra completa tapaba media pantalla */
   @media (max-width: 767px) {
     .wa-bar { left: auto; right: 16px; bottom: 16px; padding: 0; width: auto; transition: opacity 0.25s, transform 0.3s; }

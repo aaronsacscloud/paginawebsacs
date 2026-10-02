@@ -375,6 +375,20 @@ export const pillars: Pillar[] = [
         status: 'live',
       },
       {
+        // 1-oct-2026: página dedicada en src/pages/producto/planeacion-de-demanda.astro (la ruta estática gana a [slug]).
+        slug: 'planeacion-de-demanda',
+        pillarId: 'automatiza',
+        label: 'Planeación de demanda',
+        title: 'Planeación de demanda para moda: pronóstico y resurtido',
+        description: 'Pronóstico de ventas para tiendas de ropa por temporada, modelo y tienda, con la curva de tallas de cada región. Sacs calcula el corte de pedido de cada proveedor y resurte desde el CEDIS, con candados.',
+        hero: {
+          eyebrow: 'Automatiza',
+          headline: 'Planeación de demanda para moda',
+          subtitle: 'Qué comprar, cuánto, para qué tienda, en qué talla y color, y cuándo.',
+        },
+        status: 'live',
+      },
+      {
         slug: 'workflows',
         pillarId: 'automatiza',
         label: 'Workflows',

@@ -1,0 +1,135 @@
+---
+/**
+ * El detalle de una tarjeta: QUÉ (la prenda, tallas × piezas, de dónde a dónde y cuándo llega), POR QUÉ (razones con
+ * su mini gráfica), la ESCALERA DE DECISIÓN de Sacs con el escalón elegido, el IMPACTO y UN SOLO BOTÓN.
+ * Vive en el HTML (póster y SEO); con JS se muestra dentro del diálogo.
+ */
+import type { Tarjeta } from '../../data/planeacion-demo';
+import { ESCALERA, OBRA } from '../../data/planeacion-demo';
+import { miles } from '../../lib/planeacion-graficas';
+import PdMini from './PdMini.astro';
+
+interface Props { t: Tarjeta; }
+const { t } = Astro.props;
+---
+<article class="pdd-c" id={`det-${t.id}`} data-det={t.id} aria-labelledby={`det-${t.id}-h`}>
+  <header class="pdd-cab">
+    <p class="pdd-k"><span class="pdd-tipo">{t.tipo}</span><span>{t.hora}</span><span>{t.tienda}</span></p>
+    <h3 class="pdd-h" id={`det-${t.id}-h`}>{t.titulo}</h3>
+    {t.obra && <p class="pd-obra pdd-obra">{OBRA} · se muestra como ejemplo</p>}
+  </header>
+
+  <section class="pdd-s">
+    <h4>Qué</h4>
+    <div class="pdd-prod">
+      {t.foto && <img src={`/images/planeacion/prod/${t.foto}.webp`} width="480" height="480" alt={t.modelo || ''} loading="lazy" decoding="async" />}
+      <div><b>{t.modelo || t.tipo}</b><p>{t.detalleQue}</p></div>
+    </div>
+    {t.tallas && (
+      <table class="pdd-tallas">
+        <caption>Piezas por talla</caption>
+        <thead><tr><th scope="row">Talla</th>{t.tallas.map((x) => <th scope="col">{x.t}</th>)}</tr></thead>
+        <tbody><tr><th scope="row">Piezas</th>{t.tallas.map((x) => <td class:list={[{ 'is-cero': !x.n }]}>{x.n ? miles(x.n) : '—'}</td>)}</tr></tbody>
+      </table>
+    )}
+    {(t.ruta || t.llega) && <p class="pdd-ruta">{t.ruta && <span>{t.ruta}</span>}{t.llega && <span>Llega: <b>{t.llega}</b></span>}</p>}
+  </section>
+
+  <section class="pdd-s">
+    <h4>Por qué</h4>
+    <ol class="pdd-razones">
+      {t.porque.map((r) => <li><p>{r.t}</p>{r.g && <PdMini g={r.g} />}</li>)}
+    </ol>
+  </section>
+
+  {t.escalon && (
+    <section class="pdd-s">
+      <h4>La escalera de decisión</h4>
+      <ol class="pdd-escalera">
+        {ESCALERA.map((e, k) => {
+          const n = k + 1;
+          return (
+            <li class:list={[{ 'is-elegido': n === t.escalon, 'is-paso': n < t.escalon!, 'is-no': n > t.escalon! }]}>
+              <span class="pdd-n">{n}</span>
+              <div><b>{e.q}</b><small>{t.respuestas?.[k] || 'No hizo falta preguntar.'}</small></div>
+              <em>{e.a}</em>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  )}
+
+  {t.candado && (
+    <p class="pdd-candado"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span><b>Candado:</b> {t.candado}</span></p>
+  )}
+
+  <section class="pdd-s">
+    <h4>Impacto</h4>
+    <ul class="pdd-impacto">{t.impacto.map((x) => <li>{x}</li>)}</ul>
+  </section>
+
+  <footer class="pdd-pie">
+    <button type="button" class="pdd-btn" data-envia={t.id}>{t.boton}</button>
+    <p class="pdd-hecho">{t.hecho}</p>
+  </footer>
+</article>
+
+<style>
+  .pdd-c { color: #fff; }
+  .pdd-cab { padding-right: 44px; }
+  .pdd-k { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: 0 0 8px; font: 500 12px/1.3 var(--font-display); color: var(--pd-tenue); }
+  .pdd-tipo { font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-size: 11px; color: var(--pd-azul-c); }
+  .pdd-h { margin: 0; font: 600 clamp(20px, 2vw, 25px)/1.2 var(--font-display); letter-spacing: -0.02em; color: #fff; }
+  .pdd-obra { display: inline-block; margin: 10px 0 0; }
+  .pdd-s { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--pd-linea); }
+  .pdd-s h4 { margin: 0 0 10px; font: 600 11px/1.2 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--pd-azul-c); }
+  .pdd-prod { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 14px; align-items: center; }
+  .pdd-prod img { width: 92px; height: 92px; border-radius: 12px; background: #E9EEF9; object-fit: contain; padding: 6px; }
+  .pdd-prod b { font: 600 15px/1.3 var(--font-display); }
+  .pdd-prod p { margin: 4px 0 0; font: 400 14px/1.45 var(--font-body); color: var(--pd-tenue); }
+  .pdd-tallas { width: 100%; margin-top: 12px; border-collapse: separate; border-spacing: 4px 0; table-layout: fixed; font: 600 13px/1 var(--font-display); }
+  .pdd-tallas caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .pdd-tallas th, .pdd-tallas td { padding: 8px 4px; text-align: center; }
+  .pdd-tallas thead th { color: var(--pd-tenue); font-weight: 500; font-size: 12px; }
+  .pdd-tallas th[scope="row"] { width: 58px; text-align: left; color: var(--pd-tenue); font-weight: 500; font-size: 11.5px; }
+  .pdd-tallas td { border-radius: 8px; background: rgba(143, 176, 243, 0.2); color: #fff; font-variant-numeric: tabular-nums; }
+  .pdd-tallas td.is-cero { background: rgba(255, 255, 255, 0.04); color: var(--pd-apagado); }
+  .pdd-ruta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 14px; margin: 12px 0 0; font: 500 13px/1.4 var(--font-display); color: var(--pd-tenue); }
+  .pdd-ruta b { color: #fff; font-weight: 600; }
+
+  .pdd-razones { margin: 0; padding: 0; list-style: none; counter-reset: r; display: grid; gap: 12px; }
+  .pdd-razones li { position: relative; padding-left: 30px; counter-increment: r; }
+  .pdd-razones li::before { content: counter(r); position: absolute; left: 0; top: 0; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: rgba(143, 176, 243, 0.2); font: 700 11px/1 var(--font-display); color: #fff; }
+  .pdd-razones p { margin: 0; font: 400 14px/1.45 var(--font-body); color: #fff; }
+
+  .pdd-escalera { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+  .pdd-escalera li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 12px; border: 1px solid var(--pd-linea); font: 500 13px/1.35 var(--font-display); }
+  .pdd-escalera b { display: block; font-weight: 600; color: #fff; }
+  .pdd-escalera small { display: block; margin-top: 2px; font: 400 12.5px/1.35 var(--font-body); color: var(--pd-tenue); }
+  .pdd-escalera em { font-style: normal; font-weight: 600; font-size: 12px; color: var(--pd-apagado); }
+  .pdd-n { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, 0.08); font: 700 12px/1 var(--font-display); color: var(--pd-tenue); }
+  .pdd-escalera li.is-paso { opacity: 0.85; }
+  .pdd-escalera li.is-no { opacity: 0.7; border-style: dashed; }
+  .pdd-escalera li.is-elegido { border-color: var(--pd-azul-c); background: rgba(75, 123, 229, 0.22); box-shadow: 0 0 0 3px rgba(75, 123, 229, 0.18); }
+  .pdd-escalera li.is-elegido .pdd-n { background: var(--pd-azul-c); color: var(--pd-noche); }
+  .pdd-escalera li.is-elegido em { padding: 4px 10px; border-radius: 99px; background: #fff; color: var(--pd-noche); }
+
+  .pdd-candado { display: flex; gap: 10px; align-items: flex-start; margin: 16px 0 0; padding: 10px 12px; border-radius: 12px; background: rgba(255, 181, 71, 0.12); border: 1px solid rgba(255, 181, 71, 0.45); font: 400 13.5px/1.45 var(--font-body); color: #fff; }
+  .pdd-candado svg { flex-shrink: 0; width: 18px; height: 18px; margin-top: 1px; max-width: none; color: var(--pd-ambar); }
+  .pdd-candado b { font-weight: 600; }
+  .pdd-impacto { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+  .pdd-impacto li { padding-left: 18px; position: relative; font: 600 14px/1.4 var(--font-display); color: #fff; }
+  .pdd-impacto li::before { content: ''; position: absolute; left: 0; top: 7px; width: 8px; height: 8px; border-radius: 50%; background: var(--pd-verde); }
+
+  .pdd-pie { margin-top: 20px; }
+  .pdd-btn { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 50px; padding: 12px 20px; border: 0; border-radius: 99px; background: #fff; color: var(--pd-noche); font: 700 15.5px/1 var(--font-display); cursor: pointer; transition: transform 0.2s, background 0.2s; }
+  .pdd-btn:hover { transform: translateY(-1px); }
+  .pdd-btn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+  .pdd-hecho { margin: 10px 0 0; font: 500 13px/1.4 var(--font-display); color: var(--pd-apagado); }
+  .pdd-hecho::before { content: 'Al enviarla: '; }
+  :global(.pd-js) .pdd-hecho { display: none; }
+  :global(.pd-js) .pdd-c.is-enviada .pdd-hecho { display: block; padding: 10px 12px; border-radius: 12px; background: rgba(61, 220, 132, 0.14); border: 1px solid rgba(61, 220, 132, 0.4); color: #fff; font-weight: 600; }
+  :global(.pd-js) .pdd-c.is-enviada .pdd-hecho::before { content: none; }
+  .pdd-c.is-enviada .pdd-btn { display: none; }
+</style>

@@ -1,22 +1,49 @@
 ---
-const painPoints = [
-  'Datos dispersos en hojas de cálculo que nadie actualiza.',
-  'Inventario que nunca cuadra entre tienda y online.',
-  'Horas perdidas conciliando ventas a mano.',
-  'Clientes que se van sin que lo notes.',
-];
+/**
+ * Antes / Después con scroll (la tarjeta azul se desliza sobre la gris). Los textos son props opcionales: sin
+ * props queda igual que siempre («¿Por qué SACS?»). `tema="noche"` es la versión oscura que usa
+ * /producto/planeacion-de-demanda (1-oct-2026).
+ */
+interface Props {
+  title?: string;
+  beforeLabel?: string;
+  beforeHeading?: string;
+  painPoints?: string[];
+  afterLabel?: string;
+  afterHeading?: string;
+  benefits?: string[];
+  ctaHref?: string;
+  ctaText?: string;
+  tema?: 'claro' | 'noche';
+}
 
-const benefits = [
-  'Un solo dashboard para todas tus tiendas.',
-  'Inventario sincronizado en tiempo real.',
-  'Ventas, envíos y facturación — automatizados.',
-  'Cada cliente con perfil, historial y seguimiento.',
-];
+const {
+  title = '¿Por qué SACS?',
+  beforeLabel = 'Sin sistema:',
+  beforeHeading = 'Operas tu negocio a ciegas.',
+  painPoints = [
+    'Datos dispersos en hojas de cálculo que nadie actualiza.',
+    'Inventario que nunca cuadra entre tienda y online.',
+    'Horas perdidas conciliando ventas a mano.',
+    'Clientes que se van sin que lo notes.',
+  ],
+  afterLabel = 'Con SACS:',
+  afterHeading = 'Todo conectado, todo claro.',
+  benefits = [
+    'Un solo dashboard para todas tus tiendas.',
+    'Inventario sincronizado en tiempo real.',
+    'Ventas, envíos y facturación — automatizados.',
+    'Cada cliente con perfil, historial y seguimiento.',
+  ],
+  ctaHref = '/prueba-gratis',
+  ctaText = 'Empieza gratis',
+  tema = 'claro',
+} = Astro.props;
 ---
 
-<section class="ba-section" id="ba-section">
+<section class:list={['ba-section', { 'ba-section--noche': tema === 'noche' }]} id="ba-section">
   <div class="ba-section-header reveal">
-    <h2 class="ba-section-title">¿Por qué SACS?</h2>
+    <h2 class="ba-section-title">{title}</h2>
   </div>
   <div class="ba-sticky">
     <div class="container">
@@ -25,8 +52,8 @@ const benefits = [
         <div class="ba-card ba-before" id="ba-before">
           <div class="ba-inner">
             <div class="ba-card-top">
-              <span class="ba-label">Sin sistema:</span>
-              <h2 class="ba-heading">Operas tu negocio a ciegas.</h2>
+              <span class="ba-label">{beforeLabel}</span>
+              <h3 class="ba-heading">{beforeHeading}</h3>
             </div>
             <div class="ba-card-bottom">
               <ul class="ba-list">
@@ -39,7 +66,7 @@ const benefits = [
                   </li>
                 ))}
               </ul>
-              <a href="/prueba-gratis" class="ba-btn ba-btn-before">Empieza gratis</a>
+              <a href={ctaHref} class="ba-btn ba-btn-before">{ctaText}</a>
             </div>
           </div>
         </div>
@@ -48,8 +75,8 @@ const benefits = [
         <div class="ba-card ba-after" id="ba-after">
           <div class="ba-inner">
             <div class="ba-card-top">
-              <span class="ba-label ba-label-after">Con SACS:</span>
-              <h2 class="ba-heading ba-heading-after">Todo conectado, todo claro.</h2>
+              <span class="ba-label ba-label-after">{afterLabel}</span>
+              <h3 class="ba-heading ba-heading-after">{afterHeading}</h3>
             </div>
             <div class="ba-card-bottom">
               <ul class="ba-list">
@@ -62,7 +89,7 @@ const benefits = [
                   </li>
                 ))}
               </ul>
-              <a href="/prueba-gratis" class="ba-btn ba-btn-after">Empieza gratis</a>
+              <a href={ctaHref} class="ba-btn ba-btn-after">{ctaText}</a>
             </div>
           </div>
         </div>
@@ -141,7 +168,6 @@ const benefits = [
     width: 100%;
     background: var(--color-bg-secondary);
     z-index: 1;
-    will-change: width, left, opacity;
   }
 
   .ba-before .ba-inner {
@@ -156,7 +182,6 @@ const benefits = [
     z-index: 2;
     border-radius: 20px;
     box-shadow: -8px 0 30px rgba(0, 0, 0, 0.15);
-    will-change: right;
   }
 
   /* ─── Labels ─── */
@@ -288,6 +313,10 @@ const benefits = [
     .ba-before {
       width: 100%;
     }
+    /* en el teléfono la tarjeta gris va completa (antes se quedaba al 50 % y el texto salía en columna angosta) */
+    .ba-before .ba-inner {
+      max-width: none;
+    }
     .ba-after {
       width: 100%;
     }
@@ -315,7 +344,22 @@ const benefits = [
       width: 100% !important;
       border-radius: 20px !important;
     }
+    .ba-before .ba-inner {
+      max-width: none;
+    }
   }
+  /* ─── Tema noche (planeación de demanda) ─── */
+  .ba-section--noche { background: var(--pd-noche-2, #070F33); }
+  .ba-section--noche .ba-section-title { color: #fff; }
+  .ba-section--noche .ba-before { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(143, 176, 243, 0.22); }
+  .ba-section--noche .ba-label { color: rgba(255, 255, 255, 0.7); }
+  .ba-section--noche .ba-heading { color: #fff; }
+  .ba-section--noche .ba-item-before { color: rgba(255, 255, 255, 0.72); }
+  .ba-section--noche .ba-list-item + .ba-list-item { border-top-color: rgba(255, 255, 255, 0.1); }
+  .ba-section--noche .ba-x-icon { color: #FF8FB3; opacity: 0.9; }
+  .ba-section--noche .ba-btn-before { background: #fff; color: #0A1648; }
+  .ba-section--noche .ba-after { background: linear-gradient(150deg, #4B7BE5, #2F55C4); }
+  .ba-section--noche .ba-btn-after { color: #0A1648; }
 </style>
 
 <script>

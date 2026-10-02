@@ -1,0 +1,125 @@
+---
+/**
+ * La consola de la temporada simulada (actos 1–4) de /producto/planeacion-de-demanda. Una barra pegada arriba con
+ * las fases (Instrucción · Pretemporada · Temporada · Cierre · Resultado), pausa, ×2, «Saltar» y «Otra vez»; cada
+ * acto se reproduce solo al entrar en pantalla (src/scripts/planeacion/consola.ts) y abrir una tarjeta lo pausa.
+ * El detalle de cada tarjeta se abre en un <dialog> (panel lateral en escritorio, hoja desde abajo en el teléfono).
+ * «Reducir movimiento» o sin JS: póster con cada acto completo y estático.
+ */
+import { FASES } from '../../data/planeacion-demo';
+import PdPretemporada from './PdPretemporada.astro';
+import PdTemporada from './PdTemporada.astro';
+import PdCierre from './PdCierre.astro';
+import PdResultado from './PdResultado.astro';
+---
+<div class="pdc" id="pd-consola">
+  <div class="pdc-barra">
+    <nav class="pdc-fases" aria-label="Fases de la temporada">
+      <ol>
+        {FASES.map((f, i) => (
+          <li data-fase={f.id}>
+            <a href={`#${f.ancla}`} data-evento={`planeacion_fase_click_${f.id}`}><span class="pdc-n">{i}</span><span class="pdc-t">{f.t}</span></a>
+            <span class="pdc-avance" aria-hidden="true"><i></i></span>
+          </li>
+        ))}
+      </ol>
+    </nav>
+    <div class="pdc-ctl" role="group" aria-label="Reproducción de la simulación">
+      <button type="button" class="pdc-b" data-ctl="pausa" aria-pressed="false" aria-label="Pausa">
+        <svg class="pdc-i-pausa" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+        <svg class="pdc-i-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>
+      </button>
+      <button type="button" class="pdc-b pdc-b--txt" data-ctl="vel" aria-pressed="false" aria-label="×2 · velocidad doble">×2</button>
+      <button type="button" class="pdc-b pdc-b--txt" data-ctl="saltar" aria-label="Saltar al final del acto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 5 7 7-7 7M13 5l7 7-7 7"/></svg><span>Saltar</span></button>
+      <button type="button" class="pdc-b pdc-b--txt" data-ctl="otra" aria-label="Otra vez: repetir el acto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><span>Otra vez</span></button>
+    </div>
+  </div>
+
+  <PdPretemporada />
+  <PdTemporada />
+  <PdCierre />
+  <PdResultado />
+
+  <p class="sr-only" aria-live="polite" data-anuncio></p>
+
+  <dialog class="pdd" id="pd-dialogo">
+    <div class="pdd-in">
+      <button type="button" class="pdd-cierra" aria-label="Cerrar el detalle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+      <div class="pdd-cuerpo"></div>
+      <p class="pdd-vivo sr-only" aria-live="polite"></p>
+    </div>
+  </dialog>
+</div>
+
+<style>
+  .pdc { position: relative; background-color: var(--pd-noche-2); background-image: repeating-linear-gradient(112deg, transparent 0 58px, rgba(127, 163, 240, 0.05) 58px 60px); }
+
+  /* ── la barra de la consola ── */
+  .pdc-barra { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; background: rgba(7, 15, 51, 0.97); border-bottom: 1px solid var(--pd-linea); }
+  .pdc-fases { min-width: 0; flex: 1; }
+  .pdc-fases ol { display: flex; gap: 4px; margin: 0; padding: 0; list-style: none; }
+  .pdc-fases li { position: relative; flex: 1; min-width: 0; }
+  .pdc-fases a { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 4px 6px; border-radius: 9px; font: 600 12px/1.1 var(--font-display); color: var(--pd-tenue); text-decoration: none; white-space: nowrap; }
+  .pdc-fases a:hover { color: #fff; background: rgba(143, 176, 243, 0.1); text-decoration: none; }
+  .pdc-fases a:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+  .pdc-n { display: grid; place-items: center; flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgba(143, 176, 243, 0.45); font: 700 10.5px/1 var(--font-display); }
+  .pdc-t { display: none; overflow: hidden; text-overflow: ellipsis; }
+  .pdc-fases li.is-actual a { color: #fff; background: rgba(75, 123, 229, 0.3); }
+  .pdc-fases li.is-actual .pdc-n { background: #fff; border-color: #fff; color: var(--pd-noche); }
+  .pdc-fases li.is-actual .pdc-t { display: inline; }
+  .pdc-fases li.is-hecha .pdc-n { background: var(--pd-verde); border-color: var(--pd-verde); color: var(--pd-noche); }
+  .pdc-avance { position: absolute; left: 8px; right: 8px; bottom: 1px; height: 2px; border-radius: 2px; background: rgba(255, 255, 255, 0.08); overflow: hidden; opacity: 0; }
+  .pdc-avance i { display: block; width: 100%; height: 100%; background: var(--pd-azul-c); transform-origin: 0 50%; transform: scaleX(var(--a, 0)); }
+  .pdc-fases li.is-actual .pdc-avance { opacity: 1; }
+
+  .pdc-ctl { display: flex; flex-shrink: 0; gap: 4px; }
+  .pdc-b { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 40px; min-height: 40px; padding: 0 9px; border: 1px solid rgba(143, 176, 243, 0.35); border-radius: 10px; background: none; color: #fff; font: 700 12.5px/1 var(--font-display); cursor: pointer; transition: background 0.2s, border-color 0.2s; }
+  .pdc-b svg { width: 16px; height: 16px; max-width: none; flex-shrink: 0; }
+  .pdc-b span { display: none; }
+  .pdc-b:hover { background: rgba(143, 176, 243, 0.14); }
+  .pdc-b:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  .pdc-b[aria-pressed="true"] { background: #fff; color: var(--pd-noche); border-color: #fff; }
+  .pdc-i-play { display: none; }
+  .pdc-b[data-ctl="pausa"][aria-pressed="true"] .pdc-i-pausa { display: none; }
+  .pdc-b[data-ctl="pausa"][aria-pressed="true"] .pdc-i-play { display: block; }
+  .pdc:not(.is-js) .pdc-ctl, .pdc.is-quieta .pdc-ctl { display: none; }
+
+  /* teléfono: solo el número de cada fase (el acto ya dice su nombre) y botones grandes */
+  @media (max-width: 767px) {
+    .pdc-barra { gap: 6px; padding: 6px 10px; }
+    .pdc-fases ol { gap: 3px; }
+    .pdc-fases li { flex: 0 0 28px; }
+    .pdc-fases a { min-height: 44px; padding: 0; }
+    .pdc-fases li.is-actual .pdc-t { display: none; }
+    .pdc-ctl { gap: 4px; }
+    .pdc-b { min-width: 48px; min-height: 44px; padding: 0; }
+  }
+  @media (min-width: 768px) {
+    .pdc-barra { padding: 8px 4vw; }
+    .pdc-t { display: inline; }
+    .pdc-b span { display: inline; }
+  }
+
+  /* ── el diálogo: panel lateral en escritorio, hoja desde abajo en el teléfono ── */
+  .pdd { position: fixed; inset: auto 0 0 0; width: 100%; max-width: none; max-height: 90svh; height: auto; margin: 0; padding: 0; border: 0; border-radius: 20px 20px 0 0; background: var(--pd-noche); color: #fff; box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.35); overflow: hidden; }
+  .pdd::backdrop { background: rgba(4, 9, 32, 0.66); }
+  .pdd[open] { display: flex; flex-direction: column; animation: pddSube 0.38s cubic-bezier(0.16, 1, 0.3, 1); }
+  .pdd-in { position: relative; overflow: auto; overscroll-behavior: contain; padding: 22px 18px calc(22px + env(safe-area-inset-bottom)); border-top: 3px solid var(--pd-azul-c); }
+  .pdd-cierra { position: absolute; right: 12px; top: 12px; z-index: 2; display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid rgba(143, 176, 243, 0.4); border-radius: 50%; background: var(--pd-noche); color: #fff; cursor: pointer; }
+  .pdd-cierra svg { width: 18px; height: 18px; max-width: none; }
+  .pdd-cierra:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  @keyframes pddSube { from { transform: translateY(40px); opacity: 0.4; } to { transform: none; opacity: 1; } }
+  @keyframes pddEntra { from { transform: translateX(40px); opacity: 0.4; } to { transform: none; opacity: 1; } }
+  @media (min-width: 900px) {
+    .pdd { inset: 0 0 0 auto; width: min(560px, 94vw); height: 100vh; max-height: none; border-radius: 0; box-shadow: -10px 0 24px rgba(0, 0, 0, 0.4); }
+    .pdd[open] { animation-name: pddEntra; }
+    .pdd-in { height: 100%; padding: 26px 26px 30px; border-top: 0; border-left: 3px solid var(--pd-azul-c); }
+  }
+  @media (prefers-reduced-motion: reduce) { .pdd[open] { animation: none; } }
+</style>
+
+<script>
+  import '../../scripts/planeacion/consola';
+</script>

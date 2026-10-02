@@ -59,6 +59,7 @@ export const GIRO_RELACIONES: Record<string, GiroRelaciones> = {
     nombre: 'las marcas de ropa',
     funciones: [
       { slug: 'inventario-omnicanal', ancla: 'Cómo se controla una matriz de tallas y colores por sucursal, sin capturarla dos veces' },
+      { slug: 'planeacion-de-demanda', ancla: 'Qué comprar, cuánto y cuándo para cada temporada y cada tienda, con un pronóstico y no a corazonada' },
       { slug: 'ordenes-de-compra', ancla: 'El pedido de temporada a fábrica o a taller, con su costo y su fecha de llegada' },
       { slug: 'reportes-y-analitica', ancla: 'Qué talla y qué color se venden de verdad, temporada contra temporada' },
       { slug: 'tienda-en-linea', ancla: 'Vender en línea del mismo inventario que la tienda física, sin duplicar catálogo' },
@@ -125,6 +126,7 @@ export const GIRO_RELACIONES: Record<string, GiroRelaciones> = {
       { slug: 'agentic-commerce', ancla: 'Un agente de IA que responde tallas y colorways por WhatsApp mientras dura el drop' },
       { slug: 'membresias-y-suscripciones', ancla: 'Una comunidad que paga por acceso anticipado a cada drop' },
       { slug: 'reportes-predictivos', ancla: 'Predecir qué talla se agota primero en el siguiente drop, con datos del anterior' },
+      { slug: 'planeacion-de-demanda', ancla: 'Qué pedir en el siguiente lote, cuánto y cuándo, con el pronóstico de la temporada y no de memoria' },
     ],
     herramienta: { slug: 'sale-o-no-sale', ancla: 'Calcula gratis si vas a sacar tu próximo drop a tiempo con esta herramienta' },
     comparativa: { slug: 'software-de-moda-talla-color-temporada', ancla: 'Software de moda para marcas que venden por drop, no por temporada larga' },
@@ -428,6 +430,10 @@ export const FUNCION_GIROS: Record<string, EnlaceRel[]> = {
   'axo-copiloto-ia': [
     { slug: 'boutique-multimarca', ancla: 'Preguntarle a Axo qué marca rota mejor en una boutique multimarca' },
     { slug: 'zapateria', ancla: 'Preguntarle a Axo qué número comprar la próxima temporada en una zapatería' },
+  ],
+  'planeacion-de-demanda': [
+    { slug: 'marcas-de-ropa', ancla: 'Cómo una marca de ropa decide qué comprar para cada tienda antes de que empiece la temporada' },
+    { slug: 'activewear', ancla: 'Cómo una marca de activewear pide el siguiente lote con un pronóstico, no de memoria' },
   ],
   'workflows': [
     { slug: 'uniformes', ancla: 'El proceso de bordado, revisión y entrega automatizado para un pedido de uniformes' },

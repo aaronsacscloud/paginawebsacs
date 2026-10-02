@@ -3726,7 +3726,10 @@ export const pageContent: Record<string, any> = {
         "description": "Cada semana el sistema analiza la venta de los últimos 14, 30 o 60 días (tú eliges el horizonte) y detecta desbalances: Polanco agotó la talla 6 pero Santa Fe tiene 8 piezas paradas. Arma la propuesta lista para tu revisión.",
         "image": "/images/nivelacion-de-inventario-propuesta.webp",
         "imageAlt": "Pantalla de propuesta de nivelación generada por Sacs",
-        "link": null,
+        "link": {
+          "label": "Ver planeación de demanda: qué comprar, cuánto y cuándo",
+          "href": "/producto/planeacion-de-demanda"
+        },
         "featured": true,
         "variant": "control-central"
       },

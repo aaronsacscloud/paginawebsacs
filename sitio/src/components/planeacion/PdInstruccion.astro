@@ -1,0 +1,524 @@
+---
+/**
+ * Acto 0 · La instrucción (1-oct-2026) — /producto/planeacion-de-demanda, dirección B «cabina nocturna».
+ *
+ * Como «La orden» de la portada: la directora comercial le dicta a Sacs «planea mi Día del Padre…». La frase pasa
+ * gigante DETRÁS de ella, trozo por trozo, y abajo se transcribe palabra por palabra. Sacs la convierte en una
+ * ficha de temporada que se llena sola, campo por campo, y que se puede tocar (qué analizar, el modo). Al apretar
+ * «Analizar temporada» (o al seguir bajando) sube la cortina azul: «Entendido.» y empieza la consola (actos 1–4).
+ *
+ * Escritorio (≥1024 px, ≥620 px de alto y sin «reducir movimiento»): riel con escena pegada; el scroll dicta la
+ * frase, llena la ficha y corre la cortina (rAF + listener pasivo solo mientras la sección está en vista).
+ * Teléfono y tableta: la frase se reproduce sola al verse y la ficha se llena al llegar a ella.
+ * «Reducir movimiento» y sin JS: póster fijo con la frase, la ficha completa y la respuesta debajo.
+ *
+ * Foto: gpt-image-2.5 (recorte con fondo transparente), public/images/planeacion/.
+ */
+import { INSTRUCCION, FICHA } from '../../data/planeacion-demo';
+
+const { trozos, respuesta } = INSTRUCCION;
+const PALABRAS = trozos.flatMap((t) => t.split(' '));
+const ONDA = Array.from({ length: 30 }, (_, k) => Math.round(28 + 72 * Math.abs(Math.sin(k * 1.7) * Math.cos(k * 0.45))));
+const CANDADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+---
+<section class="pdi" id="pd-instruccion" aria-labelledby="pdi-h1">
+  <div class="pdi-escena">
+    <div class="pdi-cab">
+      <p class="pdi-kicker"><i aria-hidden="true"></i>Una temporada simulada · ejemplo</p>
+      <h1 class="pdi-h1" id="pdi-h1">Planeación de demanda <span>para moda</span></h1>
+      <p class="pdi-sub">Qué comprar, cuánto, para qué tienda, en qué talla y color, y cuándo. Dale una instrucción a Sacs y mira la temporada completa, de la compra a lo que aprendió.</p>
+      <p class="pdi-fecha"><b>{INSTRUCCION.fecha}</b> · {INSTRUCCION.faltan}</p>
+    </div>
+
+    <div class="pdi-foto">
+      <div class="pdi-gigante" aria-hidden="true">
+        {trozos.map((t, k) => (
+          <span class:list={['pdi-g', { 'is-on': k === 0 }]} data-k={k} style={`--n:${t.length};--m:${Math.max(...t.split(' ').map((w) => w.length))}`}>{t}</span>
+        ))}
+      </div>
+      <img
+        class="pdi-ella"
+        src="/images/planeacion/directora.webp"
+        srcset="/images/planeacion/directora-640.webp 640w, /images/planeacion/directora.webp 1024w"
+        sizes="(min-width: 1024px) 58vh, 78vw"
+        width="1024" height="1536"
+        alt="La directora comercial de una cadena de ropa deportiva le dicta a Sacs una instrucción desde su celular"
+        loading="eager" fetchpriority="high" decoding="async"
+      />
+    </div>
+
+    <div class="pdi-voz">
+      <p class="pdi-voz-k"><i aria-hidden="true"></i><span class="pdi-k-grab">Instrucción para Sacs</span><span class="pdi-k-env">Enviada a Sacs · 19:40</span></p>
+      <p class="pdi-frase">
+        <span aria-hidden="true">«</span>{PALABRAS.map((p, k) => <><span class="pdi-w" data-k={k}>{p}</span>{k < PALABRAS.length - 1 ? ' ' : ''}</>)}<span aria-hidden="true">»</span>
+      </p>
+      <div class="pdi-nota" aria-hidden="true">
+        <span class="pdi-mic">
+          <svg class="pdi-mic-v" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          <svg class="pdi-mic-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12.5 4.5 4.5L20 6"/></svg>
+        </span>
+        <span class="pdi-onda">{ONDA.map((h, k) => <i style={`--h:${h}%;--k:${k}`}></i>)}</span>
+        <span class="pdi-tiempo">0:06</span>
+      </div>
+    </div>
+
+    <form class="pdi-ficha" aria-labelledby="pdi-ficha-t" action="#pd-pre">
+      <p class="pdi-ficha-k" id="pdi-ficha-t"><i aria-hidden="true"></i><span><b>Sacs</b> entendió · tu temporada</span></p>
+      <dl>
+        <div class="pdi-f">
+          <dt>Temporada</dt>
+          <dd>
+            <b>{FICHA.temporada.v}</b><span>{FICHA.temporada.s}</span>
+            <ul class="pdi-otras" aria-label="Otras temporadas">{FICHA.temporada.otras.map((o) => <li>{o}</li>)}</ul>
+            <small>{FICHA.temporada.nota}</small>
+          </dd>
+        </div>
+        <div class="pdi-f"><dt>Alcance</dt><dd><b>{FICHA.alcance.v}</b><span>{FICHA.alcance.s}</span></dd></div>
+        <div class="pdi-f pdi-f--mitad"><dt>Presupuesto</dt><dd><b>{FICHA.presupuesto.v}</b><span>{FICHA.presupuesto.s}</span></dd></div>
+        <div class="pdi-f pdi-f--mitad"><dt>Metas</dt><dd><b>{FICHA.metas.v}</b><span>{FICHA.metas.s}</span></dd></div>
+        <div class="pdi-f">
+          <dt id="pdi-analiza-t">Analiza</dt>
+          <dd>
+            <fieldset class="pdi-chks" aria-labelledby="pdi-analiza-t">
+              {FICHA.analiza.map((a) => (
+                <label class="pdi-chk"><input type="checkbox" name="analiza" value={a.id} checked /><span>{a.t}</span></label>
+              ))}
+            </fieldset>
+          </dd>
+        </div>
+        <div class="pdi-f">
+          <dt>Candados</dt>
+          <dd>
+            <ul class="pdi-candados">{FICHA.candados.map((c) => <li><span class="pdi-cand-i" set:html={CANDADO} />{c}</li>)}</ul>
+            <small>{FICHA.nucleo}</small>
+          </dd>
+        </div>
+        <div class="pdi-f">
+          <dt id="pdi-modo-t">Modo</dt>
+          <dd>
+            <div class="pdi-modos" role="radiogroup" aria-labelledby="pdi-modo-t">
+              {FICHA.modos.map((m) => (
+                <label class="pdi-modo"><input type="radio" name="modo" value={m.id} checked={m.id === 'aprobar'} /><span>{m.t}</span></label>
+              ))}
+            </div>
+            {FICHA.modos.map((m) => <small class="pdi-modo-s" data-modo={m.id} hidden={m.id !== 'aprobar'}>{m.s}</small>)}
+          </dd>
+        </div>
+      </dl>
+      <button type="submit" class="pdi-btn" data-evento="planeacion_analizar">
+        Analizar temporada
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </form>
+
+    <div class="pdi-azul">
+      <div class="pdi-azul-in">
+        <p class="pdi-azul-de"><b>Sacs</b> respondió · 19:40</p>
+        <p class="pdi-azul-h">{respuesta.h}</p>
+        <p class="pdi-azul-p">{respuesta.p}</p>
+        <a class="pdi-sigue" href="#pd-pre" data-evento="planeacion_sigue">Mira la pretemporada
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+        </a>
+      </div>
+      <button type="button" class="pdi-repite" data-evento="planeacion_repetir">↻ Otra vez</button>
+    </div>
+
+    <a class="pdi-saltar" href="#pd-pre" data-evento="planeacion_saltar">Saltar
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+    </a>
+  </div>
+</section>
+
+<style>
+  /* ── Base = póster (sin JS y «reducir movimiento») y teléfono ── */
+  .pdi {
+    --c: 0;
+    position: relative; overflow: clip; color: #fff;
+    background-color: var(--pd-noche);
+    background-image:
+      radial-gradient(70% 45% at 50% 42%, rgba(75, 123, 229, 0.42), transparent 70%),
+      repeating-linear-gradient(112deg, transparent 0 58px, rgba(127, 163, 240, 0.1) 58px 60px);
+  }
+  .pdi-escena { position: relative; display: flex; flex-direction: column; padding: 150px 0 0; }
+
+  .pdi-cab { position: relative; z-index: 3; padding: 0 16px; }
+  .pdi-kicker { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; font: 600 11px/1.2 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--pd-azul-c); }
+  .pdi-kicker i { width: 8px; height: 8px; border-radius: 50%; background: var(--pd-rosa); }
+  .pdi-h1 { margin: 0; font: 700 clamp(38px, 10.5vw, 64px)/0.95 'Clash Display', var(--font-display); letter-spacing: -0.01em; color: #fff; text-wrap: balance; }
+  .pdi-h1 span { display: block; color: transparent; -webkit-text-stroke: 1.5px var(--pd-azul-c); }
+  .pdi-sub { margin: 16px 0 0; max-width: 42ch; font: 400 16px/1.5 var(--font-body); color: var(--pd-tenue); }
+  .pdi-fecha { display: inline-flex; flex-wrap: wrap; gap: 4px; margin: 16px 0 0; padding: 7px 12px; border: 1px solid var(--pd-linea); border-radius: 99px; font: 500 12.5px/1.3 var(--font-display); color: var(--pd-tenue); }
+  .pdi-fecha b { font-weight: 600; color: #fff; }
+
+  /* la foto: la frase gigante va DETRÁS de ella */
+  .pdi-foto { position: relative; height: min(70svh, 600px); min-height: 430px; margin-top: 12px; isolation: isolate; }
+  .pdi-gigante { position: absolute; left: 0; right: 0; top: 4%; z-index: 0; display: grid; place-items: center; height: 36%; pointer-events: none; }
+  .pdi-g { grid-area: 1 / 1; max-width: 94vw; font: 700 min(22vw, calc(150vw / var(--m)))/0.84 'Clash Display', var(--font-display); letter-spacing: -0.01em; text-transform: uppercase; text-align: center; text-wrap: balance; color: transparent; -webkit-text-stroke: 1.5px rgba(143, 176, 243, 0.55); opacity: 0; user-select: none; }
+  .pdi-g.is-on { opacity: 1; }
+  .pdi-ella { position: absolute; z-index: 1; bottom: 0; left: 50%; height: 86%; width: auto; max-width: none; transform: translateX(-50%); transform-origin: 50% 100%; }
+
+  /* la instrucción, palabra por palabra */
+  .pdi-voz { position: relative; z-index: 2; margin: -120px 16px 0; padding: 16px 18px 14px; border-radius: 18px; background: var(--pd-panel); border: 1px solid rgba(143, 176, 243, 0.45); box-shadow: 0 0 0 4px rgba(75, 123, 229, 0.16); }
+  .pdi-voz-k { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font: 600 10.5px/1.2 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--pd-azul-c); }
+  .pdi-voz-k i { width: 8px; height: 8px; border-radius: 50%; background: var(--pd-rosa); }
+  .pdi-k-env { display: none; }
+  .pdi-frase { margin: 0; font: 600 clamp(20px, 5.4vw, 28px)/1.22 var(--font-display); letter-spacing: -0.02em; color: #fff; text-wrap: pretty; }
+  .pdi-w { transition: color 0.35s ease; }
+  .pdi-nota { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+  .pdi-mic { position: relative; flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--pd-azul); color: #fff; }
+  .pdi-mic svg { grid-area: 1 / 1; width: 17px; height: 17px; transition: opacity 0.3s, transform 0.3s; }
+  .pdi-mic-ok { opacity: 0; transform: scale(0.6); }
+  .pdi-onda { flex: 1; display: flex; align-items: center; gap: 3px; height: 26px; min-width: 0; overflow: hidden; }
+  .pdi-onda i { flex: 1 0 2px; max-width: 4px; height: var(--h); border-radius: 2px; background: var(--pd-azul-c); opacity: 0.8; }
+  .pdi-tiempo { flex-shrink: 0; font: 500 12.5px var(--font-display); font-variant-numeric: tabular-nums; color: var(--pd-tenue); }
+
+  /* la ficha de la temporada */
+  .pdi-ficha { position: relative; z-index: 2; margin: 18px 16px 0; padding: 16px 16px 18px; border-radius: 18px; background: linear-gradient(160deg, rgba(75, 123, 229, 0.24), rgba(255, 255, 255, 0.04)); border: 1px solid rgba(143, 176, 243, 0.32); }
+  .pdi-ficha-k { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font: 600 11px/1.2 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--pd-azul-c); }
+  .pdi-ficha-k i { width: 8px; height: 8px; border-radius: 50%; background: var(--pd-verde); }
+  .pdi-ficha-k b { color: #fff; }
+  .pdi-ficha dl { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 14px; margin: 0; }
+  .pdi-f { grid-column: 1 / -1; display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 10px; padding: 11px 0; border-top: 1px solid rgba(143, 176, 243, 0.18); }
+  .pdi-ficha dt { padding-top: 2px; font: 600 10.5px/1.3 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--pd-azul-c); }
+  .pdi-ficha dd { position: relative; margin: 0; min-width: 0; }
+  .pdi-ficha dd > b { display: block; font: 600 15px/1.3 var(--font-display); color: #fff; }
+  .pdi-ficha dd > span { display: block; margin-top: 2px; font: 400 13px/1.45 var(--font-body); color: var(--pd-tenue); }
+  .pdi-ficha small { display: block; margin-top: 6px; font: 400 12px/1.4 var(--font-body); color: var(--pd-tenue); }
+  .pdi-otras { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0 0; padding: 0; list-style: none; }
+  .pdi-otras li { padding: 3px 9px; border: 1px dashed rgba(143, 176, 243, 0.35); border-radius: 99px; font: 500 11.5px/1.3 var(--font-display); color: rgba(255, 255, 255, 0.55); }
+
+  .pdi-chks { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; border: 0; min-width: 0; }
+  .pdi-chk { position: relative; display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 6px 11px 6px 8px; border-radius: 10px; border: 1px solid rgba(143, 176, 243, 0.35); background: rgba(255, 255, 255, 0.04); font: 500 12.5px/1.25 var(--font-display); color: #fff; cursor: pointer; transition: background 0.2s, border-color 0.2s, color 0.2s; }
+  .pdi-chk input { appearance: none; -webkit-appearance: none; flex-shrink: 0; width: 18px; height: 18px; margin: 0; border-radius: 5px; border: 1.5px solid var(--pd-azul-c); background: transparent center / 12px no-repeat; cursor: pointer; }
+  .pdi-chk input:checked { border-color: var(--pd-azul); background-color: var(--pd-azul); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7'/%3E%3C/svg%3E"); }
+  .pdi-chk:has(input:not(:checked)) { color: rgba(255, 255, 255, 0.64); border-style: dashed; }
+  .pdi-chk:has(input:focus-visible) { outline: 2px solid #fff; outline-offset: 2px; }
+
+  .pdi-candados { margin: 0; padding: 0; list-style: none; display: grid; gap: 5px; }
+  .pdi-candados li { display: flex; gap: 8px; font: 500 13px/1.4 var(--font-body); color: #fff; }
+  .pdi-cand-i { flex-shrink: 0; width: 15px; height: 15px; margin-top: 2px; color: var(--pd-ambar); }
+  .pdi-cand-i :global(svg) { display: block; width: 100%; height: 100%; max-width: none; }
+
+  .pdi-modos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 12px; background: rgba(7, 15, 51, 0.6); border: 1px solid rgba(143, 176, 243, 0.25); }
+  .pdi-modo { position: relative; display: grid; cursor: pointer; }
+  .pdi-modo input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .pdi-modo span { display: grid; place-items: center; min-height: 40px; padding: 6px 4px; border-radius: 9px; font: 600 12.5px/1.2 var(--font-display); text-align: center; color: var(--pd-tenue); transition: background 0.2s, color 0.2s; }
+  .pdi-modo input:checked + span { background: #fff; color: var(--pd-noche); }
+  .pdi-modo input:focus-visible + span { outline: 2px solid #fff; outline-offset: 2px; }
+  .pdi-modo-s { min-height: 2.8em; }
+  .pdi-modo-s[hidden] { display: none; }
+
+  .pdi-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 48px; margin-top: 14px; padding: 12px 18px; border: 0; border-radius: 99px; background: #fff; color: var(--pd-noche); font: 700 15px/1 var(--font-display); cursor: pointer; transition: transform 0.2s, box-shadow 0.3s; }
+  .pdi-btn:hover { transform: translateY(-1px); }
+  .pdi-btn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+
+  /* la respuesta de Sacs: en el póster va debajo; con JS en escritorio es una cortina */
+  .pdi-azul { position: relative; z-index: 5; margin-top: 32px; color: #fff; background: var(--pd-azul) repeating-linear-gradient(112deg, transparent 0 58px, rgba(255, 255, 255, 0.08) 58px 60px); }
+  .pdi-azul-in { padding: 56px 20px 64px; max-width: 1240px; }
+  .pdi-azul-de { margin: 0 0 16px; font: 500 11px/1.2 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255, 255, 255, 0.85); }
+  .pdi-azul-de b { font: 700 13px 'Clash Display', var(--font-display); letter-spacing: 0.04em; color: #fff; }
+  .pdi-azul-h { margin: 0; font: 700 clamp(64px, 19vw, 230px)/0.86 'Clash Display', var(--font-display); letter-spacing: -0.03em; }
+  .pdi-azul-p { margin: 20px 0 0; max-width: 26ch; font: 500 clamp(20px, 2.2vw, 32px)/1.25 var(--font-display); letter-spacing: -0.02em; }
+  .pdi-sigue { display: inline-flex; align-items: center; gap: 10px; margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.6); font: 600 15px var(--font-display); color: #fff; text-decoration: none; }
+  .pdi-sigue:hover { color: #fff; text-decoration: none; border-color: #fff; }
+  .pdi-sigue:focus-visible, .pdi-repite:focus-visible, .pdi-saltar:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+  .pdi-repite, .pdi-saltar { display: none; }
+
+  /* ── Con JS ── */
+  .pdi.is-js .pdi-w { color: rgba(255, 255, 255, 0.26); }
+  .pdi.is-js .pdi-w.is-dicha { color: #fff; }
+  .pdi.is-js .pdi-w.is-ahora { color: var(--pd-azul-c); }
+  .pdi.is-js .pdi-g { opacity: 0; transform: translateY(38%) scaleY(1.25); clip-path: inset(-40% -6% 100% -6%); transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), clip-path 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+  .pdi.is-js .pdi-g.is-on { opacity: 1; transform: none; clip-path: inset(-40% -6% -14% -6%); transition-delay: 0.12s; }
+  .pdi.is-js .pdi-g.is-ido { opacity: 0; transform: translateY(-34%); clip-path: inset(-40% -6% -14% -6%); transition-duration: 0.26s, 0.4s, 0.4s; }
+  .pdi.is-js.is-grabando .pdi-onda i { animation: pdiOnda 0.9s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -0.11s); }
+  .pdi:not(.is-visible) .pdi-onda i { animation-play-state: paused; }
+  .pdi.is-enviado .pdi-voz-k i { background: var(--pd-verde); }
+  .pdi.is-enviado .pdi-k-grab { display: none; }
+  .pdi.is-enviado .pdi-k-env { display: inline; }
+  .pdi.is-enviado .pdi-mic-v { opacity: 0; transform: scale(0.6); }
+  .pdi.is-enviado .pdi-mic-ok { opacity: 1; transform: none; }
+  .pdi.is-enviado .pdi-onda i { opacity: 0.3; }
+
+  /* la ficha se llena campo por campo: antes de llenarse, una raya que «escribe» */
+  .pdi.is-js .pdi-ficha { transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+  .pdi.is-js .pdi-f dd > * { opacity: 0; transform: translateY(6px); transition: opacity 0.45s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+  .pdi.is-js .pdi-f dd::before { content: ''; position: absolute; left: 0; top: 4px; width: 62%; height: 10px; border-radius: 6px; background: rgba(143, 176, 243, 0.22); opacity: 0.6; transition: opacity 0.3s; }
+  .pdi.is-js .pdi-f.is-sig dd::before { animation: pdiPulso 0.8s ease-in-out infinite alternate; }
+  .pdi:not(.is-visible) .pdi-f dd::before { animation-play-state: paused; }
+  .pdi.is-js .pdi-f.is-lleno dd::before { opacity: 0; animation: none; }
+  .pdi.is-js .pdi-f.is-lleno dd > * { opacity: 1; transform: none; }
+  .pdi.is-js .pdi-f.is-lleno dd > :nth-child(2) { transition-delay: 0.08s; }
+  .pdi.is-js .pdi-f.is-lleno dd > :nth-child(3) { transition-delay: 0.16s; }
+  .pdi.is-js .pdi-f.is-lleno dd > :nth-child(4) { transition-delay: 0.24s; }
+  .pdi.is-js:not(.is-lista) .pdi-btn { opacity: 0.45; }
+  .pdi.is-lista .pdi-btn { animation: pdiPide 1.8s ease-in-out 0.4s 3; }
+
+  /* teléfono y tableta: se reproduce sola */
+  .pdi.is-auto .pdi-azul { transition: opacity 0.6s ease; }
+  .pdi.is-auto:not(.is-azul) .pdi-azul { opacity: 0.35; }
+  .pdi.is-auto .pdi-azul-h, .pdi.is-auto .pdi-azul-p, .pdi.is-auto .pdi-sigue { transition: opacity 0.6s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+  .pdi.is-auto:not(.is-azul) .pdi-azul-h, .pdi.is-auto:not(.is-azul) .pdi-azul-p, .pdi.is-auto:not(.is-azul) .pdi-sigue { opacity: 0; transform: translateY(22px); }
+  .pdi.is-auto .pdi-repite { display: inline-flex; position: absolute; right: 16px; bottom: 18px; padding: 10px 16px; min-height: 44px; align-items: center; border: 1px solid rgba(255, 255, 255, 0.55); border-radius: 999px; background: none; color: #fff; font: 600 13px var(--font-display); cursor: pointer; }
+
+  @keyframes pdiOnda { from { transform: scaleY(0.25); } to { transform: scaleY(1); } }
+  @keyframes pdiPulso { from { opacity: 0.25; } to { opacity: 0.85; } }
+  @keyframes pdiPide { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.5); } 50% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); } }
+
+  @media (min-width: 640px) {
+    .pdi-cab { padding: 0 32px; }
+    .pdi-voz { margin: -150px auto 0; width: min(580px, calc(100% - 64px)); }
+    .pdi-ficha { margin: 18px auto 0; width: min(580px, calc(100% - 64px)); }
+    .pdi-azul-in { padding: 72px 40px 80px; }
+  }
+
+  /* ── Escritorio: escena pegada; el scroll dicta la frase, llena la ficha y sube la cortina ── */
+  .pdi.is-escena { height: 440vh; }
+  .pdi.is-escena .pdi-escena { position: sticky; top: 0; height: 100vh; padding: 0; overflow: hidden; display: block; }
+  .pdi.is-escena .pdi-cab { position: absolute; left: 3.5vw; top: clamp(150px, 19vh, 190px); width: min(33vw, 520px); padding: 0; }
+  .pdi.is-escena .pdi-h1 { font-size: clamp(40px, min(4.1vw, 7.4vh), 76px); }
+  .pdi.is-escena .pdi-sub { font-size: clamp(14px, 1.05vw, 17px); max-width: 38ch; }
+  .pdi.is-escena .pdi-foto { position: absolute; inset: 0; height: auto; min-height: 0; margin: 0; }
+  .pdi.is-escena .pdi-gigante { left: 36vw; right: 3vw; top: 16vh; height: 44vh; transform: translateX(calc(var(--q, 0) * -2vw)); transition: opacity 0.5s ease; }
+  .pdi.is-escena.is-ficha .pdi-gigante { opacity: 0; }
+  .pdi.is-escena .pdi-g { max-width: none; white-space: nowrap; font-size: min(36vh, calc(120vw / var(--n))); text-wrap: nowrap; -webkit-text-stroke-width: 2px; }
+  .pdi.is-escena .pdi-ella { left: 50%; height: 90vh; transform: translateX(-50%) scale(calc(1 + var(--q, 0) * 0.05)); }
+  .pdi.is-escena .pdi-voz { position: absolute; left: 3.5vw; bottom: 7vh; width: min(31vw, 480px); margin: 0; }
+  .pdi.is-escena .pdi-frase { font-size: clamp(19px, min(1.75vw, 3.1vh), 30px); }
+  .pdi.is-escena .pdi-ficha { position: absolute; right: 3vw; top: 50%; width: min(31vw, 470px); margin: 0; padding: 14px 16px 16px; transform: translateY(calc(-50% + 4vh)); max-height: calc(100vh - 110px); overflow: auto; scrollbar-width: thin; }
+  .pdi.is-escena:not(.is-ficha) .pdi-ficha { opacity: 0; transform: translateY(calc(-50% + 4vh + 30px)); pointer-events: none; visibility: hidden; transition: opacity 0.35s, transform 0.5s, visibility 0s linear 0.5s; }
+  .pdi.is-escena .pdi-f { padding: min(9px, 1.1vh) 0; grid-template-columns: 86px minmax(0, 1fr); }
+  .pdi.is-escena .pdi-f--mitad { grid-column: auto; grid-template-columns: 1fr; gap: 2px; }
+  .pdi.is-escena .pdi-ficha dd > b { font-size: 14px; }
+  .pdi.is-escena .pdi-ficha dd > span { font-size: 12.5px; }
+  .pdi.is-escena .pdi-chk { min-height: 30px; padding: 4px 9px 4px 6px; font-size: 11.5px; }
+  .pdi.is-escena .pdi-chk input { width: 16px; height: 16px; }
+  .pdi.is-escena .pdi-modo span { min-height: 34px; }
+  .pdi.is-escena .pdi-btn { min-height: 44px; margin-top: 10px; }
+
+  .pdi.is-escena .pdi-azul { position: absolute; inset: 0; margin: 0; display: flex; align-items: center; clip-path: inset(calc((1 - var(--c)) * 100%) 0 0 0); pointer-events: none; }
+  .pdi.is-escena.is-azul .pdi-azul { pointer-events: auto; }
+  .pdi.is-escena:not(.is-azul) .pdi-azul-in { visibility: hidden; }
+  .pdi.is-escena .pdi-azul-in { width: 100%; padding: 0 4vw; }
+  .pdi.is-escena .pdi-azul-h { font-size: min(19vw, 34vh); }
+  .pdi.is-escena .pdi-azul-de, .pdi.is-escena .pdi-azul-h, .pdi.is-escena .pdi-azul-p, .pdi.is-escena .pdi-sigue { opacity: 0; transform: translateY(26px); transition: opacity 0.6s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+  .pdi.is-escena.is-azul .pdi-azul-de { opacity: 1; transform: none; }
+  .pdi.is-escena.is-azul .pdi-azul-h { opacity: 1; transform: none; transition-delay: 0.08s; }
+  .pdi.is-escena.is-azul .pdi-azul-p { opacity: 1; transform: none; transition-delay: 0.2s; }
+  .pdi.is-escena.is-azul .pdi-sigue { opacity: 1; transform: none; transition-delay: 0.6s; }
+  .pdi.is-escena .pdi-saltar { display: inline-flex; position: absolute; left: 50%; bottom: 3vh; z-index: 4; align-items: center; gap: 8px; padding: 8px 15px; border: 1px solid rgba(143, 176, 243, 0.4); border-radius: 999px; background: rgba(7, 15, 51, 0.75); font: 600 12.5px var(--font-display); color: #fff; text-decoration: none; transform: translateX(-50%); transition: opacity 0.3s, background 0.3s; }
+  .pdi.is-escena .pdi-saltar:hover { background: var(--pd-noche); text-decoration: none; }
+  .pdi.is-escena.is-azul .pdi-saltar { opacity: 0; pointer-events: none; }
+
+  /* escritorio bajito: menos texto en la escena para que la ficha respire */
+  @media (max-height: 780px) {
+    .pdi.is-escena .pdi-sub { display: none; }
+    .pdi.is-escena .pdi-otras { display: none; }
+  }
+  @media (max-width: 479px) {
+    .pdi-f { grid-template-columns: 1fr; gap: 6px; }
+    .pdi-modo span { font-size: 12px; padding: 6px 2px; min-height: 46px; }
+    .pdi-chk { min-height: 44px; }
+  }
+  @media (max-width: 767px) {
+    .pdi { background-image: radial-gradient(80% 40% at 50% 45%, rgba(75, 123, 229, 0.38), transparent 70%); }
+    .pdi-voz { box-shadow: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pdi-onda i, .pdi-btn { animation: none !important; }
+    .pdi.is-js .pdi-g, .pdi.is-js .pdi-w { transition: none !important; }
+  }
+</style>
+
+<script>
+  import { estado, avisa, ph, phUnaVez, activa } from '../../scripts/planeacion/estado';
+  import type { Modo } from '../../data/planeacion-demo';
+
+  (() => {
+    const sec = document.getElementById('pd-instruccion');
+    if (!sec) return;
+    const escena = sec.querySelector<HTMLElement>('.pdi-escena')!;
+    const gigante = sec.querySelector<HTMLElement>('.pdi-gigante')!;
+    const trozos = Array.from(sec.querySelectorAll<HTMLElement>('.pdi-g'));
+    const palabras = Array.from(sec.querySelectorAll<HTMLElement>('.pdi-w'));
+    const campos = Array.from(sec.querySelectorAll<HTMLElement>('.pdi-f'));
+    const ficha = sec.querySelector<HTMLFormElement>('.pdi-ficha')!;
+    const tiempo = sec.querySelector<HTMLElement>('.pdi-tiempo');
+    const respuesta = sec.querySelector<HTMLElement>('.pdi-azul-h');
+    const foto = sec.querySelector<HTMLElement>('.pdi-foto')!, voz = sec.querySelector<HTMLElement>('.pdi-voz')!;
+    const vistos = new Set<Element>();
+    const NT = trozos.length, NF = campos.length;
+    const FIN: number[] = [];
+    trozos.reduce((acc, t) => { const n = acc + (t.textContent || '').trim().split(/\s+/).length; FIN.push(n - 1); return n; }, 0);
+
+    const mqEscena = window.matchMedia('(min-width: 1024px) and (min-height: 620px) and (prefers-reduced-motion: no-preference)');
+    const mqMovimiento = window.matchMedia('(prefers-reduced-motion: no-preference)');
+    let modo: 'fijo' | 'escena' | 'auto' = 'fijo';
+    let visible = false, raf = 0, alto = 0, beat = -2, llenos = -1, fijada = false;
+    let autoT = 0, autoBeat = -1, fichaT = 0, reprodujo = false;
+
+    /* ── la ficha: lo que el visitante elige va al estado compartido (la consola lo lee) ── */
+    ficha.addEventListener('change', (e) => {
+      const el = e.target as HTMLInputElement;
+      if (el.name === 'analiza') {
+        if (el.checked) estado.analiza.add(el.value); else estado.analiza.delete(el.value);
+        ph('planeacion_analiza', { que: el.value, on: el.checked });
+      }
+      if (el.name === 'modo') {
+        estado.modo = el.value as Modo;
+        sec.querySelectorAll<HTMLElement>('.pdi-modo-s').forEach((s) => { s.hidden = s.dataset.modo !== el.value; });
+        ph('planeacion_modo', { modo: el.value, desde: 'ficha' });
+      }
+      avisa();
+    });
+    // la consola también cambia el modo: aquí se refleja
+    document.addEventListener('pd:modo', () => {
+      const r = ficha.querySelector<HTMLInputElement>(`input[name="modo"][value="${estado.modo}"]`);
+      if (r && !r.checked) { r.checked = true; sec.querySelectorAll<HTMLElement>('.pdi-modo-s').forEach((s) => { s.hidden = s.dataset.modo !== estado.modo; }); }
+    });
+
+    /* ── «Analizar temporada»: llena lo que falte y sube la cortina ── */
+    ficha.addEventListener('submit', (e) => {
+      e.preventDefault();
+      ph('planeacion_analizar', { modo: estado.modo, analiza: [...estado.analiza].join(',') });
+      llena(NF);
+      if (modo === 'escena') {
+        const total = alto - window.innerHeight;
+        const y = sec.getBoundingClientRect().top + window.scrollY + total * 0.985;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      } else {
+        sec.classList.add('is-azul');
+        const azul = sec.querySelector<HTMLElement>('.pdi-azul')!;
+        azul.scrollIntoView({ behavior: mqMovimiento.matches ? 'smooth' : 'auto', block: 'start' });
+      }
+    });
+
+    const fija = (on: boolean) => { if (on !== fijada) { fijada = on; activa('instruccion', on); } };
+
+    /* ── pinta el momento `b`: 0–7 la frase, 8 enviada ── */
+    function pinta(b: number) {
+      if (b === beat) return;
+      beat = b;
+      const t = Math.max(0, Math.min(b, NT - 1));
+      trozos.forEach((g, k) => { g.classList.toggle('is-on', b >= 0 && k === t); g.classList.toggle('is-ido', b >= 0 && k < t); });
+      const hasta = b < 0 ? -1 : FIN[t];
+      const desde = t > 0 ? FIN[t - 1] + 1 : 0;
+      palabras.forEach((w, k) => {
+        w.classList.toggle('is-dicha', k <= hasta);
+        w.classList.toggle('is-ahora', b < NT && k >= desde && k <= hasta);
+      });
+      sec!.classList.toggle('is-grabando', b >= 0 && b < NT);
+      sec!.classList.toggle('is-enviado', b >= NT);
+      if (tiempo) tiempo.textContent = '0:0' + Math.max(1, Math.min(6, t + 1));
+    }
+    /* ── la ficha: `n` campos llenos (NF = todos) ── */
+    function llena(n: number) {
+      if (n === llenos) return;
+      llenos = n;
+      campos.forEach((c, k) => { c.classList.toggle('is-lleno', k < n); c.classList.toggle('is-sig', k === n); });
+      sec!.classList.toggle('is-lista', n >= NF);
+      if (n >= NF) phUnaVez('planeacion_ficha');
+    }
+
+    /* ── los trozos gigantes caben a lo ancho (se mide al cargar y al cambiar el tamaño, nunca en el scroll) ── */
+    function ajusta() {
+      trozos.forEach((g) => { g.style.fontSize = ''; });
+      if (respuesta) respuesta.style.fontSize = '';
+      const ancho = gigante.clientWidth * 0.98;
+      const medidas = trozos.map((g) => [g.scrollWidth, parseFloat(getComputedStyle(g).fontSize)]);
+      const r = respuesta ? [respuesta.scrollWidth, respuesta.clientWidth * 0.99, parseFloat(getComputedStyle(respuesta).fontSize)] : null;
+      trozos.forEach((g, k) => { const [w, fs] = medidas[k]; if (w > ancho) g.style.fontSize = (fs * (ancho / w)).toFixed(1) + 'px'; });
+      if (respuesta && r && r[0] > r[1]) respuesta.style.fontSize = (r[2] * (r[1] / r[0])).toFixed(1) + 'px';
+    }
+
+    /* ── escritorio: el progreso del riel dicta todo ── */
+    const FRASE = 0.4, ENV = 0.46, FICHA0 = 0.48, FICHA1 = 0.74, CORT0 = 0.84, CORT = 0.12;
+    function mide() {
+      raf = 0;
+      const r = sec!.getBoundingClientRect();
+      const total = alto - window.innerHeight;
+      const p = total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0;
+      fija(r.top <= 0 && r.bottom >= window.innerHeight);
+      const b = p < FRASE ? Math.min(NT - 1, Math.floor((p / FRASE) * NT)) : NT;
+      pinta(b);
+      sec!.classList.toggle('is-ficha', p >= ENV);
+      llena(p < FICHA0 ? 0 : Math.min(NF, 1 + Math.floor(((p - FICHA0) / (FICHA1 - FICHA0)) * NF)));
+      const c = Math.min(1, Math.max(0, (p - CORT0) / CORT));
+      escena.style.setProperty('--q', Math.min(1, p / ENV).toFixed(3));
+      escena.style.setProperty('--c', c.toFixed(3));
+      const azul = c >= 0.92;
+      if (azul !== sec!.classList.contains('is-azul')) { sec!.classList.toggle('is-azul', azul); if (azul) phUnaVez('planeacion_entendido'); }
+    }
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(mide); };
+
+    /* ── teléfono y tableta: la frase se reproduce sola; la ficha se llena al llegar a ella ── */
+    function pasoAuto() {
+      autoBeat++;
+      pinta(autoBeat);
+      if (autoBeat >= NT) { paraAuto(); return; }
+      autoT = window.setTimeout(pasoAuto, autoBeat === NT - 1 ? 900 : 620);
+    }
+    function arrancaAuto() { if (autoT || modo !== 'auto' || document.hidden || autoBeat >= NT) return; reprodujo = true; autoT = window.setTimeout(pasoAuto, autoBeat < 0 ? 350 : 500); }
+    function paraAuto() { if (autoT) { clearTimeout(autoT); autoT = 0; } }
+    function pasoFicha() {
+      llena(llenos + 1);
+      fichaT = llenos < NF ? window.setTimeout(pasoFicha, 520) : 0;
+    }
+    function arrancaFicha() { if (fichaT || modo !== 'auto' || document.hidden || llenos >= NF) return; fichaT = window.setTimeout(pasoFicha, 300); }
+    function paraFicha() { if (fichaT) { clearTimeout(fichaT); fichaT = 0; } }
+    const ioAuto = new IntersectionObserver((es) => { es.forEach((e) => {
+      if (e.target === foto || e.target === voz) { const en = vistos.has(foto) || vistos.has(voz); if (e.isIntersecting) vistos.add(e.target); else vistos.delete(e.target); if (vistos.size) arrancaAuto(); else if (en) paraAuto(); }
+      else if (e.target === ficha) { if (e.isIntersecting) arrancaFicha(); else paraFicha(); }
+    }); }, { threshold: 0.3 });
+    sec.querySelector('.pdi-repite')?.addEventListener('click', () => {
+      paraAuto(); paraFicha(); autoBeat = -1; beat = -2; llenos = -2; pinta(-1); llena(0); sec.classList.remove('is-azul');
+      sec.querySelector<HTMLElement>('.pdi-voz')!.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      arrancaAuto();
+    });
+
+    function aplicaModo() {
+      window.removeEventListener('scroll', onScroll);
+      paraAuto(); paraFicha(); ioAuto.disconnect(); fija(false);
+      modo = mqEscena.matches ? 'escena' : mqMovimiento.matches ? 'auto' : 'fijo';
+      sec!.classList.toggle('is-js', modo !== 'fijo');
+      sec!.classList.toggle('is-escena', modo === 'escena');
+      sec!.classList.toggle('is-auto', modo === 'auto');
+      escena.style.removeProperty('--c'); escena.style.removeProperty('--q');
+      alto = sec!.offsetHeight;
+      beat = -2; llenos = -2;
+      ajusta();
+      if (modo === 'fijo') { sec!.classList.remove('is-grabando', 'is-enviado', 'is-azul', 'is-ficha', 'is-lista'); campos.forEach((c) => c.classList.add('is-lleno')); return; }
+      if (modo === 'escena') { pinta(0); llena(0); if (visible) { window.addEventListener('scroll', onScroll, { passive: true }); mide(); } }
+      else {
+        autoBeat = reprodujo ? NT : -1; pinta(reprodujo ? NT : -1); llena(reprodujo ? NF : 0);
+        vistos.clear(); ioAuto.observe(foto); ioAuto.observe(voz); ioAuto.observe(ficha);
+      }
+    }
+
+    const io = new IntersectionObserver((es) => {
+      visible = es[0].isIntersecting;
+      sec.classList.toggle('is-visible', visible);
+      if (!visible) fija(false);
+      if (visible) {
+        phUnaVez('planeacion_ver');
+        if (modo === 'escena') { window.addEventListener('scroll', onScroll, { passive: true }); mide(); }
+      } else {
+        window.removeEventListener('scroll', onScroll);
+        paraAuto(); paraFicha();
+      }
+    }, { rootMargin: '120px 0px' });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { paraAuto(); paraFicha(); }
+      else if (visible && modo === 'auto') { arrancaAuto(); }
+    });
+    window.addEventListener('resize', () => { alto = sec.offsetHeight; ajusta(); if (modo === 'escena' && visible) onScroll(); }, { passive: true });
+    mqEscena.addEventListener('change', aplicaModo);
+    mqMovimiento.addEventListener('change', aplicaModo);
+    sec.querySelectorAll<HTMLElement>('a[data-evento]').forEach((a) => a.addEventListener('click', () => ph(a.dataset.evento || '')));
+    document.fonts?.ready.then(ajusta);
+
+    aplicaModo();
+    io.observe(sec);
+  })();
+</script>

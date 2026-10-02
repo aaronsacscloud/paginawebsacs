@@ -1,0 +1,147 @@
+---
+/**
+ * Acto 4 · Resultado de la temporada y lo que aprendió (lunes 2 de agosto de 2027). Tablero de cierre con cada
+ * indicador explicado en una línea, la venta por colección, aciertos, errores (sin esconderlos, con su porqué), lo
+ * que aprendió (se aplica con tu visto bueno) y el ciclo que vuelve a empezar. Todo esto está EN CONSTRUCCIÓN en el
+ * motor: se muestra como ejemplo, sin fecha. Lo reproduce src/scripts/planeacion/consola.ts.
+ */
+import { RESULTADO, OBRA } from '../../data/planeacion-demo';
+---
+<section class="pda res" id="pd-resultado" data-acto="resultado" aria-labelledby="pd-resultado-h">
+  <header class="pda-cab">
+    <span class="pda-gigante" aria-hidden="true">Resultado</span>
+    <p class="pda-k"><i aria-hidden="true"></i>Acto 4 · Resultado y lo que aprendió</p>
+    <h2 class="pda-h" id="pd-resultado-h">La temporada, en números. Y lo que aprendió.</h2>
+    <p class="pda-fecha">{RESULTADO.fecha} <span class="pd-ej">ejemplo</span><span class="pd-obra">{OBRA}</span></p>
+  </header>
+
+  <ul class="res-kpis" data-paso="0">
+    {RESULTADO.kpis.map((k, i) => (
+      <li class:list={[{ 'is-meta': k.meta }]} style={`--i:${i}`}>
+        <p class="res-k">{k.k}</p>
+        <p class="res-v" data-kpi={k.v}>{k.v}</p>
+        <p class="res-s">{k.s}</p>
+        <p class="res-e">{k.e}</p>
+      </li>
+    ))}
+  </ul>
+
+  <section class="res-col-venta" data-paso="1" aria-labelledby="res-colec-h">
+    <h3 class="res-h3" id="res-colec-h">Por colección <span class="pd-ej">ejemplo</span></h3>
+    <ul>
+      {RESULTADO.colecciones.map((c, i) => (
+        <li style={`--w:${c.w}%;--i:${i}`}>
+          <p><b>{c.k}</b><span>{c.s}</span></p>
+          <span class="res-barra"><i></i></span>
+          <p class="res-num"><b>{c.venta}</b><span>margen {c.margen}</span></p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <div class="res-tres">
+    <section class="res-c res-c--ok" data-paso="2" aria-labelledby="res-ok-h">
+      <h3 class="res-h3" id="res-ok-h"><span aria-hidden="true">✓</span> Aciertos</h3>
+      <ul>{RESULTADO.aciertos.map((a) => <li>{a}</li>)}</ul>
+    </section>
+    <section class="res-c res-c--mal" data-paso="3" aria-labelledby="res-mal-h">
+      <h3 class="res-h3" id="res-mal-h"><span aria-hidden="true">✕</span> Errores</h3>
+      <ul>{RESULTADO.errores.map((e) => <li><b>{e.t}</b><span>{e.s}</span></li>)}</ul>
+    </section>
+    <section class="res-c res-c--aprende" data-paso="4" aria-labelledby="res-ap-h">
+      <h3 class="res-h3" id="res-ap-h">Lo que Sacs aprendió</h3>
+      <ul>{RESULTADO.aprendio.map((a) => <li>{a}</li>)}</ul>
+      <p class="res-nota">{RESULTADO.nota}</p>
+      <button type="button" class="res-btn" data-aplicar>{RESULTADO.boton}</button>
+      <p class="res-hecho" data-aplicar-hecho><span class="res-hecho-pre">Al aplicarlo: </span>{RESULTADO.hecho}</p>
+    </section>
+  </div>
+
+  <figure class="res-ciclo" data-paso="5">
+    <ol aria-label="El ciclo de cada temporada">
+      {RESULTADO.ciclo.map((c, i) => <li style={`--i:${i}`}><span>{String(i + 1).padStart(2, '0')}</span>{c}</li>)}
+    </ol>
+    <figcaption>{RESULTADO.cicloFin}</figcaption>
+  </figure>
+</section>
+
+<style>
+  .res-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 22px 0 0; padding: 0; list-style: none; }
+  .res-kpis li { display: grid; align-content: start; gap: 4px; padding: 12px; border-radius: 14px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--pd-linea); min-width: 0; }
+  .res-kpis li:first-child { grid-column: 1 / -1; background: linear-gradient(135deg, rgba(75, 123, 229, 0.4), rgba(224, 69, 123, 0.18)); border-color: rgba(143, 176, 243, 0.5); }
+  .res-kpis p { margin: 0; }
+  .res-k { font: 600 10.5px/1.25 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--pd-azul-c); }
+  .res-v { font: 700 clamp(26px, 3vw, 40px)/1 'Clash Display', var(--font-display); font-variant-numeric: tabular-nums; color: #fff; }
+  .res-kpis li:first-child .res-v { font-size: clamp(40px, 6vw, 72px); }
+  .res-s { font: 600 12px/1.3 var(--font-display); color: #9BF0C0; }
+  .res-e { font: 400 12.5px/1.4 var(--font-body); color: var(--pd-tenue); }
+  .res-kpis li.is-meta { border-color: rgba(61, 220, 132, 0.45); }
+
+  .res-h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 10px; font: 600 12px/1.2 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--pd-azul-c); }
+  .res-col-venta { margin-top: 14px; padding: 14px; border-radius: 16px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--pd-linea); }
+  .res-col-venta ul { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .res-col-venta li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; }
+  .res-col-venta li > p { margin: 0; display: grid; gap: 1px; font: 600 14px/1.3 var(--font-display); }
+  .res-col-venta li > p span { font: 400 12px/1.3 var(--font-body); color: var(--pd-tenue); }
+  .res-num { text-align: right; }
+  .res-num b { font: 700 18px/1.1 'Clash Display', var(--font-display); }
+  .res-barra { grid-column: 1 / -1; grid-row: 2; display: block; height: 10px; border-radius: 6px; background: rgba(255, 255, 255, 0.06); overflow: hidden; }
+  .res-barra i { display: block; width: var(--w); height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--pd-azul), var(--pd-azul-c)); transform-origin: 0 50%; }
+
+  .res-tres { display: grid; gap: 12px; margin-top: 14px; }
+  .res-c { padding: 14px; border-radius: 16px; border: 1px solid var(--pd-linea); background: rgba(255, 255, 255, 0.03); }
+  .res-c ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .res-c li { position: relative; padding-left: 22px; font: 400 13.5px/1.45 var(--font-body); color: #fff; }
+  .res-c li b { display: block; font-weight: 500; }
+  .res-c li span { display: block; margin-top: 2px; color: var(--pd-tenue); font-size: 12.5px; }
+  .res-c--ok { border-color: rgba(61, 220, 132, 0.45); background: rgba(61, 220, 132, 0.06); }
+  .res-c--ok h3 { color: #9BF0C0; }
+  .res-c--ok li::before { content: '✓'; position: absolute; left: 0; top: 0; font-weight: 700; color: var(--pd-verde); }
+  .res-c--mal { border-color: rgba(255, 107, 107, 0.5); background: rgba(255, 107, 107, 0.06); }
+  .res-c--mal h3 { color: #FFB3B3; }
+  .res-c--mal li::before { content: '✕'; position: absolute; left: 0; top: 0; font-weight: 700; color: var(--pd-rojo); }
+  .res-c--aprende { border-color: rgba(143, 176, 243, 0.55); background: linear-gradient(160deg, rgba(75, 123, 229, 0.22), rgba(255, 255, 255, 0.03)); }
+  .res-c--aprende li::before { content: '→'; position: absolute; left: 0; top: 0; font-weight: 700; color: var(--pd-azul-c); }
+  .res-nota { margin: 12px 0 0; font: 400 12.5px/1.45 var(--font-body); color: var(--pd-tenue); }
+  .res-btn { width: 100%; min-height: 50px; margin-top: 10px; padding: 12px 20px; border: 0; border-radius: 99px; background: #fff; color: var(--pd-noche); font: 700 15.5px/1 var(--font-display); cursor: pointer; transition: transform 0.2s; }
+  .res-btn:hover { transform: translateY(-1px); }
+  .res-btn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+  .res-btn[disabled] { cursor: default; background: rgba(61, 220, 132, 0.2); color: #fff; }
+  .res-hecho { margin: 8px 0 0; font: 500 13px/1.4 var(--font-display); color: var(--pd-apagado); }
+  :global(.pd-js) .res-hecho { display: none; }
+  :global(.pd-js) .res.is-aplicado .res-hecho { display: block; padding: 10px 12px; border-radius: 12px; background: rgba(61, 220, 132, 0.14); border: 1px solid rgba(61, 220, 132, 0.4); color: #fff; font-weight: 600; }
+  :global(.pd-js) .res-hecho-pre { display: none; }
+
+  .res-ciclo { margin: 18px 0 0; padding: 18px 14px; border-radius: 18px; background: var(--pd-panel); border: 1px solid rgba(143, 176, 243, 0.4); text-align: center; }
+  .res-ciclo ol { position: relative; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .res-ciclo li { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 99px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(143, 176, 243, 0.35); font: 600 13.5px/1.2 var(--font-display); color: #fff; }
+  .res-ciclo li span { font: 700 11px/1 'Clash Display', var(--font-display); color: var(--pd-azul-c); }
+  .res-ciclo li:not(:last-child)::after { content: '→'; margin-left: 4px; color: var(--pd-azul-c); }
+  .res-ciclo li:last-child { background: #fff; color: var(--pd-noche); }
+  .res-ciclo li:last-child span { color: #2F55C4; }
+  .res-ciclo figcaption { margin: 14px auto 0; max-width: 24ch; font: 700 clamp(22px, 2.6vw, 34px)/1.15 'Clash Display', var(--font-display); color: #fff; text-wrap: balance; }
+
+  /* ── Con JS: cada bloque entra en su momento ── */
+  .res.is-js [data-paso]:not(.is-on) { opacity: 0.1; transform: translateY(8px); }
+  .res.is-js [data-paso] { transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
+  .res.is-js .res-kpis li { opacity: 0; transform: translateY(8px); transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.12s); }
+  .res.is-js .res-kpis.is-on li { opacity: 1; transform: none; }
+  .res.is-js .res-kpis:not(.is-on) { opacity: 1; transform: none; }
+  .res.is-js .res-barra i { transform: scaleX(0); transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(0.2s + var(--i) * 0.2s); }
+  .res.is-js .res-col-venta.is-on .res-barra i { transform: none; }
+  .res.is-js .res-ciclo li { opacity: 0.25; transition: opacity 0.4s ease; transition-delay: calc(var(--i) * 0.35s); }
+  .res.is-js .res-ciclo.is-on li { opacity: 1; }
+
+  @media (min-width: 640px) {
+    .res-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  @media (min-width: 1024px) {
+    .res-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .res-kpis li:first-child { grid-column: span 2; grid-row: span 2; align-content: center; padding: 20px; }
+    .res-kpis li:nth-last-child(-n+2) { grid-column: span 2; }
+    .res-tres { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .res * { animation: none !important; transition: none !important; }
+  }
+</style>
