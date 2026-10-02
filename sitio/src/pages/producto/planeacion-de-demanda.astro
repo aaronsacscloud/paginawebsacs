@@ -4,8 +4,8 @@
  *
  * La página es UNA TEMPORADA SIMULADA que el visitante vive y toca (guion de la sesión «Nivelación moda flujo
  * completo», en COLA.md): la directora le da la instrucción a Sacs (acto 0), y una consola reproduce la
- * pretemporada, la temporada en vivo, el cierre y el resultado con lo que aprendió (actos 1–4). Dirección visual B,
- * «cabina nocturna», elegida por el dueño. Todo es un ejemplo (src/data/planeacion-demo.ts); lo que el motor todavía
+ * pretemporada, la temporada en vivo, el cierre y el resultado con lo que aprendió (actos 1–4). v2 «limpio»
+ * (2-oct-2026, pedido del dueño): estilo Squarespace, blanco y negro alternados, menos datos, sin brillos. Todo es un ejemplo (src/data/planeacion-demo.ts); lo que el motor todavía
  * no hace va marcado «en construcción», sin fecha.
  *
  * La ruta estática gana a [slug].astro. El SoftwareApplication y la miga de pan los pone ProductLayout; aquí va el
@@ -51,7 +51,6 @@ const { antes, despues } = ANTES_DESPUES;
     <PdInstruccion />
     <PdConsola />
     <BeforeAfter
-      tema="noche"
       title={ANTES_DESPUES.titulo}
       beforeLabel={antes.label}
       beforeHeading={antes.h}

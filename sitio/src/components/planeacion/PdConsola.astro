@@ -42,7 +42,7 @@ import PdResultado from './PdResultado.astro';
 
   <p class="sr-only" aria-live="polite" data-anuncio></p>
 
-  <dialog class="pdd" id="pd-dialogo">
+  <dialog class="pdd pd-claro" id="pd-dialogo">
     <div class="pdd-in">
       <button type="button" class="pdd-cierra" aria-label="Cerrar el detalle">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
@@ -54,33 +54,33 @@ import PdResultado from './PdResultado.astro';
 </div>
 
 <style>
-  .pdc { position: relative; background-color: var(--pd-noche-2); background-image: repeating-linear-gradient(112deg, transparent 0 58px, rgba(127, 163, 240, 0.05) 58px 60px); }
+  .pdc { position: relative; }
 
-  /* ── la barra de la consola ── */
-  .pdc-barra { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; background: rgba(7, 15, 51, 0.97); border-bottom: 1px solid var(--pd-linea); }
+  /* ── la barra de la consola: blanca, fina, con las fases como pestañas ── */
+  .pdc-barra { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; background: rgba(255, 255, 255, 0.97); border-bottom: 1px solid #E7E7E4; color: #1A1A1A; }
   .pdc-fases { min-width: 0; flex: 1; }
-  .pdc-fases ol { display: flex; gap: 4px; margin: 0; padding: 0; list-style: none; }
+  .pdc-fases ol { display: flex; gap: 2px; margin: 0; padding: 0; list-style: none; }
   .pdc-fases li { position: relative; flex: 1; min-width: 0; }
-  .pdc-fases a { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 4px 6px; border-radius: 9px; font: 600 12px/1.1 var(--font-display); color: var(--pd-tenue); text-decoration: none; white-space: nowrap; }
-  .pdc-fases a:hover { color: #fff; background: rgba(143, 176, 243, 0.1); text-decoration: none; }
-  .pdc-fases a:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
-  .pdc-n { display: grid; place-items: center; flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgba(143, 176, 243, 0.45); font: 700 10.5px/1 var(--font-display); }
+  .pdc-fases a { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 4px 6px; border-radius: 10px; font: 600 13px/1.1 var(--font-display); color: #6E6E6D; text-decoration: none; white-space: nowrap; }
+  .pdc-fases a:hover { color: #1A1A1A; background: #F5F5F3; text-decoration: none; }
+  .pdc-fases a:focus-visible { outline: 2px solid #4B7BE5; outline-offset: 1px; }
+  .pdc-n { display: grid; place-items: center; flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; border: 1px solid #D5D5D1; font: 600 11px/1 var(--font-display); }
   .pdc-t { display: none; overflow: hidden; text-overflow: ellipsis; }
-  .pdc-fases li.is-actual a { color: #fff; background: rgba(75, 123, 229, 0.3); }
-  .pdc-fases li.is-actual .pdc-n { background: #fff; border-color: #fff; color: var(--pd-noche); }
+  .pdc-fases li.is-actual a { color: #1A1A1A; }
+  .pdc-fases li.is-actual .pdc-n { background: #1A1A1A; border-color: #1A1A1A; color: #fff; }
   .pdc-fases li.is-actual .pdc-t { display: inline; }
-  .pdc-fases li.is-hecha .pdc-n { background: var(--pd-verde); border-color: var(--pd-verde); color: var(--pd-noche); }
-  .pdc-avance { position: absolute; left: 8px; right: 8px; bottom: 1px; height: 2px; border-radius: 2px; background: rgba(255, 255, 255, 0.08); overflow: hidden; opacity: 0; }
-  .pdc-avance i { display: block; width: 100%; height: 100%; background: var(--pd-azul-c); transform-origin: 0 50%; transform: scaleX(var(--a, 0)); }
+  .pdc-fases li.is-hecha .pdc-n { background: #fff; border-color: #1A1A1A; color: #1A1A1A; }
+  .pdc-avance { position: absolute; left: 10px; right: 10px; bottom: 0; height: 2px; border-radius: 2px; background: #EDEDEA; overflow: hidden; opacity: 0; }
+  .pdc-avance i { display: block; width: 100%; height: 100%; background: #1A1A1A; transform-origin: 0 50%; transform: scaleX(var(--a, 0)); }
   .pdc-fases li.is-actual .pdc-avance { opacity: 1; }
 
   .pdc-ctl { display: flex; flex-shrink: 0; gap: 4px; }
-  .pdc-b { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 40px; min-height: 40px; padding: 0 9px; border: 1px solid rgba(143, 176, 243, 0.35); border-radius: 10px; background: none; color: #fff; font: 700 12.5px/1 var(--font-display); cursor: pointer; transition: background 0.2s, border-color 0.2s; }
-  .pdc-b svg { width: 16px; height: 16px; max-width: none; flex-shrink: 0; }
+  .pdc-b { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 42px; min-height: 42px; padding: 0 10px; border: 1px solid #E0E0DC; border-radius: 99px; background: #fff; color: #1A1A1A; font: 600 13px/1 var(--font-display); cursor: pointer; transition: background 0.2s, border-color 0.2s; }
+  .pdc-b svg { width: 15px; height: 15px; max-width: none; flex-shrink: 0; }
   .pdc-b span { display: none; }
-  .pdc-b:hover { background: rgba(143, 176, 243, 0.14); }
-  .pdc-b:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-  .pdc-b[aria-pressed="true"] { background: #fff; color: var(--pd-noche); border-color: #fff; }
+  .pdc-b:hover { border-color: #1A1A1A; }
+  .pdc-b:focus-visible { outline: 2px solid #4B7BE5; outline-offset: 2px; }
+  .pdc-b[aria-pressed="true"] { background: #1A1A1A; color: #fff; border-color: #1A1A1A; }
   .pdc-i-play { display: none; }
   .pdc-b[data-ctl="pausa"][aria-pressed="true"] .pdc-i-pausa { display: none; }
   .pdc-b[data-ctl="pausa"][aria-pressed="true"] .pdc-i-play { display: block; }
@@ -97,25 +97,25 @@ import PdResultado from './PdResultado.astro';
     .pdc-b { min-width: 48px; min-height: 44px; padding: 0; }
   }
   @media (min-width: 768px) {
-    .pdc-barra { padding: 8px 4vw; }
+    .pdc-barra { padding: 8px 5vw; }
     .pdc-t { display: inline; }
     .pdc-b span { display: inline; }
   }
 
-  /* ── el diálogo: panel lateral en escritorio, hoja desde abajo en el teléfono ── */
-  .pdd { position: fixed; inset: auto 0 0 0; width: 100%; max-width: none; max-height: 90svh; height: auto; margin: 0; padding: 0; border: 0; border-radius: 20px 20px 0 0; background: var(--pd-noche); color: #fff; box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.35); overflow: hidden; }
-  .pdd::backdrop { background: rgba(4, 9, 32, 0.66); }
+  /* ── el diálogo: panel blanco a la derecha en escritorio, hoja desde abajo en el teléfono ── */
+  .pdd { position: fixed; inset: auto 0 0 0; width: 100%; max-width: none; max-height: 90svh; height: auto; margin: 0; padding: 0; border: 0; border-radius: 22px 22px 0 0; background: #fff; color: #1A1A1A; box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.18); overflow: hidden; }
+  .pdd::backdrop { background: rgba(17, 17, 17, 0.45); }
   .pdd[open] { display: flex; flex-direction: column; animation: pddSube 0.38s cubic-bezier(0.16, 1, 0.3, 1); }
-  .pdd-in { position: relative; overflow: auto; overscroll-behavior: contain; padding: 22px 18px calc(22px + env(safe-area-inset-bottom)); border-top: 3px solid var(--pd-azul-c); }
-  .pdd-cierra { position: absolute; right: 12px; top: 12px; z-index: 2; display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid rgba(143, 176, 243, 0.4); border-radius: 50%; background: var(--pd-noche); color: #fff; cursor: pointer; }
+  .pdd-in { position: relative; overflow: auto; overscroll-behavior: contain; padding: 26px 20px calc(24px + env(safe-area-inset-bottom)); }
+  .pdd-cierra { position: absolute; right: 14px; top: 14px; z-index: 2; display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid #E0E0DC; border-radius: 50%; background: #fff; color: #1A1A1A; cursor: pointer; }
   .pdd-cierra svg { width: 18px; height: 18px; max-width: none; }
-  .pdd-cierra:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  .pdd-cierra:focus-visible { outline: 2px solid #4B7BE5; outline-offset: 2px; }
   @keyframes pddSube { from { transform: translateY(40px); opacity: 0.4; } to { transform: none; opacity: 1; } }
   @keyframes pddEntra { from { transform: translateX(40px); opacity: 0.4; } to { transform: none; opacity: 1; } }
   @media (min-width: 900px) {
-    .pdd { inset: 0 0 0 auto; width: min(560px, 94vw); height: 100vh; max-height: none; border-radius: 0; box-shadow: -10px 0 24px rgba(0, 0, 0, 0.4); }
+    .pdd { inset: 0 0 0 auto; width: min(560px, 94vw); height: 100vh; max-height: none; border-radius: 0; box-shadow: -12px 0 30px rgba(0, 0, 0, 0.16); }
     .pdd[open] { animation-name: pddEntra; }
-    .pdd-in { height: 100%; padding: 26px 26px 30px; border-top: 0; border-left: 3px solid var(--pd-azul-c); }
+    .pdd-in { height: 100%; padding: 30px 30px 34px; }
   }
   @media (prefers-reduced-motion: reduce) { .pdd[open] { animation: none; } }
 </style>

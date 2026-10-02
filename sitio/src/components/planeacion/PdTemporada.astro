@@ -1,6 +1,7 @@
 ---
 /**
- * Acto 2 · La temporada en vivo (3 may – 20 jun 2027). Una consola: el calendario corre con su marcador «hoy», un
+ * Acto 2 · La temporada en vivo (3 may – 20 jun 2027; v2 «limpio» 2-oct-2026: negro plano, sin brillos y menos
+ * contadores). Una consola: el calendario corre con su marcador «hoy», un
  * ticker de ventas, contadores, la curva plan contra real que se corrige sola, la rejilla de las 100 tiendas por
  * región pintada por estado y las tarjetas que van saliendo (se abren: qué mover, por qué y un botón).
  * El HTML trae el estado final (póster y SEO); src/scripts/planeacion/consola.ts lo reproduce en vivo.
@@ -32,12 +33,11 @@ const regiones = REGIONES.map((r) => ({
 }));
 const total = regiones.reduce((a, r) => a + r.celdas.length, 0);
 ---
-<section class="pda vivo" id="pd-vivo" data-acto="vivo" aria-labelledby="pd-vivo-h">
+<section class="pda vivo pd-oscuro" id="pd-vivo" data-acto="vivo" aria-labelledby="pd-vivo-h">
   <header class="pda-cab">
-    <span class="pda-gigante" aria-hidden="true">Durante</span>
-    <p class="pda-k"><i aria-hidden="true"></i>Acto 2 · La temporada en vivo</p>
+    <p class="pda-k"><b>02</b> · La temporada en vivo</p>
     <h2 class="pda-h" id="pd-vivo-h">La venta, tienda por tienda. Y lo que toca hacer hoy.</h2>
-    <p class="pda-fecha">Del lunes 3 de mayo al domingo 20 de junio de 2027 <span class="pd-ej">ejemplo</span></p>
+    <p class="pda-fecha">Del 3 de mayo al 20 de junio. Abre una tarjeta para ver qué mover y por qué, y mándala con un clic. <span class="pd-ej">Ejemplo</span></p>
   </header>
 
   <div class="vivo-consola">
@@ -49,7 +49,6 @@ const total = regiones.reduce((a, r) => a + r.celdas.length, 0);
     </div>
 
     <dl class="vivo-conts">
-      <div><dt>Venta de hoy</dt><dd><b data-cont="hoy">$1.1 M</b><small data-cont-s="hoy">domingo, Día del Padre</small></dd></div>
       <div><dt>Acumulada contra el plan</dt><dd><b data-cont="acum">$15.4 M</b><small data-cont-s="acum" class="is-arriba">+13 % arriba</small></dd></div>
       <div><dt>% vendido</dt><dd><b data-cont="vendido">67.9 %</b><small>de lo que llegó</small></dd></div>
       <div><dt>Agotados evitados</dt><dd><b data-cont="agotados">173</b><small>tallas que no se acabaron</small></dd></div>
@@ -87,7 +86,7 @@ const total = regiones.reduce((a, r) => a + r.celdas.length, 0);
         <ul class="vivo-ley">
           <li class="is-ok"><i></i>Va bien</li><li class="is-pronto"><i></i>Se acaba pronto</li><li class="is-falta"><i></i>Le falta una talla</li><li class="is-sobra"><i></i>Le sobra</li>
         </ul>
-        <p class="vivo-resumen" data-resumen>{total} tiendas: casi todas van bien al cierre del Día del Padre.</p>
+        <p class="vivo-resumen sr-only" data-resumen>{total} tiendas: casi todas van bien al cierre del Día del Padre.</p>
         <div class="vivo-viajes" aria-hidden="true"></div>
       </figure>
 
@@ -96,13 +95,13 @@ const total = regiones.reduce((a, r) => a + r.celdas.length, 0);
 
     <div class="vivo-tarjetas">
       <div class="vivo-tar-cab">
-        <p class="pda-tarjetas-k">Acciones de hoy · ábrelas para ver qué mover y por qué</p>
+        <p class="pda-tarjetas-k">Acciones de hoy</p>
         <div class="vivo-modo" role="radiogroup" aria-label="Modo de la simulación">
           {FICHA.modos.map((m) => <label class="vivo-modo-op"><input type="radio" name="modo-vivo" value={m.id} checked={m.id === 'aprobar'} /><span>{m.t}</span></label>)}
         </div>
         <button type="button" class="vivo-rutina" data-rutina-btn data-total={RUTINA.total} data-traspasos={RUTINA.traspasos}>
           <span data-rutina-t>Mandar las {RUTINA.total} de rutina</span>
-          <small>Traspasos y resurtidos chicos que Sacs ya revisó</small>
+          <small>Traspasos y resurtidos chicos, ya revisados</small>
         </button>
       </div>
       <ul class="pda-lista vivo-lista">{TARJETAS_VIVO.map((t) => <PdTarjeta t={t} />)}</ul>
@@ -120,101 +119,100 @@ const total = regiones.reduce((a, r) => a + r.celdas.length, 0);
 </section>
 
 <style>
-  .vivo-consola { display: grid; gap: 12px; margin-top: 22px; }
+  .vivo-consola { display: grid; gap: 16px; margin-top: 40px; }
 
-  /* calendario con «hoy» */
-  .vivo-cal { position: relative; padding: 10px 10px 30px; border-radius: 16px; background: var(--pd-panel); border: 1px solid var(--pd-linea); }
-  .vivo-cal ol { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; margin: 0; padding: 0; list-style: none; }
-  .vivo-cal li { display: grid; gap: 2px; padding: 7px 6px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); font: 500 10.5px/1.2 var(--font-display); color: var(--pd-tenue); min-width: 0; }
-  .vivo-cal li b { font-weight: 600; font-size: 11px; color: #fff; }
+  /* calendario: una línea con siete semanas y el marcador «hoy» */
+  .vivo-cal { position: relative; padding: 0 0 30px; }
+  .vivo-cal ol { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin: 0; padding: 0; list-style: none; }
+  .vivo-cal li { display: grid; gap: 2px; padding: 10px 0 0; border-top: 3px solid rgba(255, 255, 255, 0.16); font: 400 12px/1.25 var(--font-body); color: var(--pd-apagado); min-width: 0; }
+  .vivo-cal li b { font: 600 12.5px/1.2 var(--font-display); color: var(--pd-tenue); }
   .vivo-cal li span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .vivo-cal li.is-ev { background: rgba(224, 69, 123, 0.28); box-shadow: inset 0 0 0 1px var(--pd-rosa); }
-  .vivo-cal li.is-ev b::after { content: ' ★'; color: var(--pd-rosa-c); }
-  .vivo-cal li.is-pasada { background: rgba(143, 176, 243, 0.16); }
-  .vivo-hoy { position: absolute; left: calc(10px + (100% - 20px) * var(--p, 1)); bottom: 6px; width: 0; height: 20px; white-space: nowrap; }
-  .vivo-hoy i { position: absolute; left: -1px; bottom: 20px; width: 2px; height: 46px; background: #fff; box-shadow: 0 0 10px rgba(255, 255, 255, 0.6); }
-  .vivo-hoy b { position: absolute; left: 0; bottom: 0; padding: 2px 8px; border-radius: 99px; background: #fff; color: var(--pd-noche); font: 700 11px/1.3 var(--font-display); transform: translateX(calc(var(--p, 1) * -100%)); }
+  .vivo-cal li.is-ev b::after { content: ' · Día del Padre'; color: #fff; }
+  .vivo-cal li.is-pasada { border-top-color: rgba(255, 255, 255, 0.55); }
+  .vivo-cal li.is-actual { border-top-color: #fff; }
+  .vivo-cal li.is-actual b { color: #fff; }
+  .vivo-hoy { position: absolute; left: calc(100% * var(--p, 1)); top: -6px; bottom: 4px; width: 0; white-space: nowrap; }
+  .vivo-hoy i { position: absolute; left: -1px; top: 0; width: 2px; height: 15px; background: #fff; }
+  .vivo-hoy b { position: absolute; left: 0; bottom: 0; padding: 3px 9px; border-radius: 99px; background: #fff; color: #111; font: 700 12px/1.3 var(--font-display); transform: translateX(calc(var(--p, 1) * -100%)); }
 
-  /* contadores */
-  .vivo-conts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
-  .vivo-conts > div { padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--pd-linea); min-width: 0; }
-  .vivo-conts dt { font: 600 10.5px/1.25 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--pd-azul-c); }
-  .vivo-conts dd { margin: 4px 0 0; }
-  .vivo-conts dd b { display: block; font: 700 clamp(22px, 2.2vw, 30px)/1.05 'Clash Display', var(--font-display); font-variant-numeric: tabular-nums; color: #fff; }
-  .vivo-conts dd small { display: block; margin-top: 3px; font: 500 11.5px/1.3 var(--font-display); color: var(--pd-tenue); }
-  .vivo-conts dd small.is-arriba { color: #9BF0C0; }
+  /* contadores: tres números grandes, separados por una línea */
+  .vivo-conts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin: 0; border-top: 1px solid var(--pd-linea); border-bottom: 1px solid var(--pd-linea); }
+  .vivo-conts > div { padding: 16px 12px 16px 0; min-width: 0; }
+  .vivo-conts > div + div { padding-left: 16px; border-left: 1px solid var(--pd-linea); }
+  .vivo-conts dt { font: 500 13px/1.3 var(--font-body); color: var(--pd-apagado); }
+  .vivo-conts dd { margin: 6px 0 0; }
+  .vivo-conts dd b { display: block; font: 800 clamp(24px, 3vw, 40px)/1 var(--font-display); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: #fff; }
+  .vivo-conts dd small { display: block; margin-top: 4px; font: 400 13px/1.3 var(--font-body); color: var(--pd-tenue); }
+  .vivo-conts dd small.is-arriba { color: #6FD3A3; }
 
-  /* plan contra real */
-  .vivo-main { display: grid; gap: 12px; min-width: 0; }
-  .vivo-graf, .vivo-red { position: relative; margin: 0; padding: 12px 14px; border-radius: 16px; background: linear-gradient(160deg, rgba(75, 123, 229, 0.14), rgba(255, 255, 255, 0.03)); border: 1px solid var(--pd-linea); min-width: 0; }
-  .vivo-cap { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 8px; font: 600 13.5px/1.3 var(--font-display); color: #fff; }
+  /* plan contra real y la red de tiendas */
+  .vivo-main { display: grid; gap: 16px; min-width: 0; }
+  .vivo-graf, .vivo-red { position: relative; margin: 0; padding: 20px; border-radius: var(--pd-radio); background: var(--pd-tarjeta); min-width: 0; }
+  .vivo-cap { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 0 0 12px; font: 700 15px/1.3 var(--font-display); color: #fff; }
   .vivo-svg { position: relative; }
   .vivo-svg svg { display: block; width: 100%; height: auto; max-width: none; overflow: visible; }
-  .vivo-evt { fill: rgba(224, 69, 123, 0.18); }
+  .vivo-evt { fill: rgba(255, 255, 255, 0.06); }
   .vivo-plan, .vivo-repro, .vivo-real { fill: none; stroke-linecap: round; stroke-linejoin: round; }
-  .vivo-plan { stroke: rgba(255, 255, 255, 0.42); stroke-width: 2; stroke-dasharray: 6 6; }
-  .vivo-repro { stroke: var(--pd-rosa-c); stroke-width: 2.5; stroke-dasharray: 2 6; }
-  .vivo-real { stroke: #fff; stroke-width: 4; filter: drop-shadow(0 0 6px rgba(143, 176, 243, 0.7)); }
-  .vivo-punta { fill: #fff; stroke: var(--pd-azul); stroke-width: 3; }
-  .vivo-aviso { position: absolute; top: 0; margin: 0; max-width: 210px; padding: 7px 10px; border-radius: 10px; background: rgba(7, 15, 51, 0.92); border: 1px solid var(--pd-rosa-c); font: 400 11.5px/1.35 var(--font-body); color: var(--pd-tenue); transform: translateX(-100%); }
-  .vivo-aviso b { display: block; font: 600 12.5px/1.3 var(--font-display); color: #fff; }
-  .vivo-leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 6px 0 0; font: 600 11px/1.2 var(--font-display); color: var(--pd-tenue); }
-  .vivo-leyenda span::before { content: ''; display: inline-block; width: 14px; height: 3px; margin-right: 6px; vertical-align: middle; border-radius: 2px; }
+  .vivo-plan { stroke: rgba(255, 255, 255, 0.4); stroke-width: 1.8; stroke-dasharray: 5 6; }
+  .vivo-repro { stroke: #9DB8F5; stroke-width: 2.2; stroke-dasharray: 2 5; }
+  .vivo-real { stroke: #fff; stroke-width: 3.5; }
+  .vivo-punta { fill: #111; stroke: #fff; stroke-width: 3; }
+  .vivo-aviso { position: absolute; top: 0; margin: 0; max-width: 220px; padding: 9px 12px; border-radius: 12px; background: #fff; font: 400 12.5px/1.4 var(--font-body); color: #4A4A4A; transform: translateX(-100%); }
+  .vivo-aviso b { display: block; font: 700 13px/1.3 var(--font-display); color: #111; }
+  .vivo-leyenda { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0 0; font: 400 12.5px/1.2 var(--font-body); color: var(--pd-tenue); }
+  .vivo-leyenda span::before { content: ''; display: inline-block; width: 14px; height: 2px; margin-right: 6px; vertical-align: middle; border-radius: 2px; }
   .vivo-leyenda .p::before { background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.6) 0 4px, transparent 4px 7px); }
-  .vivo-leyenda .r::before { background: #fff; height: 4px; }
-  .vivo-leyenda .n::before { background: repeating-linear-gradient(90deg, var(--pd-rosa-c) 0 2px, transparent 2px 5px); }
-  .vivo-leyenda .e::before { background: rgba(224, 69, 123, 0.5); height: 8px; }
+  .vivo-leyenda .r::before { background: #fff; height: 3px; }
+  .vivo-leyenda .n::before { background: repeating-linear-gradient(90deg, #9DB8F5 0 2px, transparent 2px 5px); }
+  .vivo-leyenda .e::before { background: rgba(255, 255, 255, 0.18); height: 8px; }
 
-  /* las 100 tiendas */
-  .vivo-nodos { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
-  .vivo-nodo { display: inline-flex; align-items: baseline; gap: 6px; padding: 5px 10px; border-radius: 10px; background: var(--pd-panel); border: 1px solid rgba(143, 176, 243, 0.4); font: 500 12px/1.2 var(--font-display); color: var(--pd-tenue); }
-  .vivo-nodo b { font-weight: 700; font-size: 11px; letter-spacing: 0.1em; color: var(--pd-azul-c); }
-  .vivo-nodo span { font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
-  .vivo-nodo--prov { border-style: dashed; }
-  .vivo-regs { display: grid; gap: 8px; }
-  .vivo-reg { display: grid; gap: 5px; }
-  .vivo-reg p { display: flex; align-items: baseline; gap: 6px; margin: 0; font: 600 12.5px/1.2 var(--font-display); color: #fff; }
-  .vivo-reg p span { font-weight: 500; font-size: 11px; color: var(--pd-tenue); }
+  .vivo-nodos { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0 0 14px; font: 400 13px/1.3 var(--font-body); color: var(--pd-tenue); }
+  .vivo-nodo { display: inline-flex; align-items: baseline; gap: 6px; }
+  .vivo-nodo b { font: 600 13px var(--font-display); color: #fff; }
+  .vivo-nodo span { font-weight: 600; color: #fff; font-variant-numeric: tabular-nums; }
+  .vivo-regs { display: grid; gap: 10px; }
+  .vivo-reg { display: grid; gap: 6px; }
+  .vivo-reg p { display: flex; align-items: baseline; gap: 6px; margin: 0; font: 600 13px/1.2 var(--font-display); color: #fff; }
+  .vivo-reg p span { font: 400 12px/1.2 var(--font-body); color: var(--pd-apagado); }
   /* la misma rejilla para todas las regiones: 15 columnas en el teléfono, 30 en escritorio */
   .vivo-celdas { display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: 4px; margin: 0; padding: 0; list-style: none; }
-  .vivo-celdas li { aspect-ratio: 1; border-radius: 4px; background: var(--pd-verde); transition: background 0.5s ease, box-shadow 0.4s ease, transform 0.3s ease; }
-  .vivo-celdas li.is-pronto { background: var(--pd-ambar); }
-  .vivo-celdas li.is-falta { background: var(--pd-rojo); }
-  .vivo-celdas li.is-sobra { background: var(--pd-azul); box-shadow: inset 0 0 0 2px var(--pd-azul-c); }
-  .vivo-celdas li.is-evento { background: var(--pd-rosa); box-shadow: 0 0 0 3px rgba(224, 69, 123, 0.35); }
+  .vivo-celdas li { aspect-ratio: 1; border-radius: 3px; background: var(--pd-ok); transition: background 0.5s ease, transform 0.3s ease; }
+  .vivo-celdas li.is-pronto { background: var(--pd-pronto); }
+  .vivo-celdas li.is-falta { background: var(--pd-falta); }
+  .vivo-celdas li.is-sobra { background: var(--pd-sobra); }
+  .vivo-celdas li.is-evento { background: #A970D6; }
   .vivo-celdas li.is-marca { transform: scale(1.35); box-shadow: 0 0 0 2px #fff; z-index: 1; }
-  .vivo-ley { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 10px 0 0; padding: 0; list-style: none; font: 500 11.5px/1.2 var(--font-display); color: var(--pd-tenue); }
+  .vivo-ley { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 14px 0 0; padding: 0; list-style: none; font: 400 12.5px/1.2 var(--font-body); color: var(--pd-tenue); }
   .vivo-ley li { display: inline-flex; align-items: center; gap: 6px; }
-  .vivo-ley i { width: 10px; height: 10px; border-radius: 3px; background: var(--pd-verde); }
-  .vivo-ley .is-pronto i { background: var(--pd-ambar); }
-  .vivo-ley .is-falta i { background: var(--pd-rojo); }
-  .vivo-ley .is-sobra i { background: var(--pd-azul); box-shadow: inset 0 0 0 2px var(--pd-azul-c); }
-  .vivo-resumen { margin: 8px 0 0; font: 400 12.5px/1.4 var(--font-body); color: var(--pd-tenue); }
+  .vivo-ley i { width: 10px; height: 10px; border-radius: 3px; background: var(--pd-ok); }
+  .vivo-ley .is-pronto i { background: var(--pd-pronto); }
+  .vivo-ley .is-falta i { background: var(--pd-falta); }
+  .vivo-ley .is-sobra i { background: var(--pd-sobra); }
   .vivo-viajes { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
-  .vivo-viajes :global(i) { position: absolute; left: 0; top: 0; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px 2px rgba(143, 176, 243, 0.9); transition: transform 0.9s cubic-bezier(0.45, 0, 0.2, 1), opacity 0.3s ease; }
+  .vivo-viajes :global(i) { position: absolute; left: 0; top: 0; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: #fff; transition: transform 0.9s cubic-bezier(0.45, 0, 0.2, 1), opacity 0.3s ease; }
 
-  /* ticker */
-  .vivo-ticker { display: flex; align-items: center; gap: 10px; margin: 0; padding: 9px 12px; border-radius: 12px; background: var(--pd-noche-2); border: 1px solid var(--pd-linea); font: 500 12.5px/1.2 var(--font-display); color: #fff; overflow: hidden; white-space: nowrap; }
-  .vivo-tk-k { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; font-weight: 700; font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--pd-rosa-c); }
-  .vivo-tk-k i { width: 7px; height: 7px; border-radius: 50%; background: var(--pd-rosa); }
+  /* el ticker: una línea discreta */
+  .vivo-ticker { display: flex; align-items: center; gap: 10px; margin: 0; font: 400 13.5px/1.3 var(--font-body); color: var(--pd-tenue); overflow: hidden; white-space: nowrap; }
+  .vivo-tk-k { display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; font: 600 13px var(--font-display); color: #fff; }
+  .vivo-tk-k i { width: 7px; height: 7px; border-radius: 50%; background: #E5484D; }
   .vivo-tk-t { overflow: hidden; text-overflow: ellipsis; }
   .vivo-tk-t.is-entra { animation: vivoTk 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
 
-  /* tarjetas */
-  .vivo-tarjetas { min-width: 0; padding: 12px; border-radius: 16px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--pd-linea); }
-  .vivo-tar-cab { display: grid; gap: 10px; margin-bottom: 10px; }
-  .vivo-modo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; padding: 3px; border-radius: 11px; background: var(--pd-noche-2); border: 1px solid rgba(143, 176, 243, 0.25); }
+  /* las tarjetas */
+  .vivo-tarjetas { min-width: 0; }
+  .vivo-tar-cab { display: grid; gap: 10px; margin-bottom: 12px; }
+  .vivo-modo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 12px; background: var(--pd-tarjeta); }
   .vivo-modo-op { position: relative; display: grid; cursor: pointer; }
   .vivo-modo-op input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
-  .vivo-modo-op span { display: grid; place-items: center; min-height: 44px; border-radius: 8px; font: 600 12.5px/1.1 var(--font-display); color: var(--pd-tenue); text-align: center; }
-  .vivo-modo-op input:checked + span { background: #fff; color: var(--pd-noche); }
+  .vivo-modo-op span { display: grid; place-items: center; min-height: 44px; border-radius: 9px; font: 600 13px/1.1 var(--font-display); color: var(--pd-tenue); text-align: center; }
+  .vivo-modo-op input:checked + span { background: #fff; color: #111; }
   .vivo-modo-op input:focus-visible + span { outline: 2px solid #fff; outline-offset: 2px; }
-  .vivo-rutina { display: grid; justify-items: start; gap: 2px; min-height: 48px; padding: 9px 14px; border-radius: 12px; border: 1px solid rgba(61, 220, 132, 0.5); background: rgba(61, 220, 132, 0.1); color: #fff; font: 700 13.5px/1.2 var(--font-display); text-align: left; cursor: pointer; transition: background 0.2s; }
-  .vivo-rutina small { font: 400 11.5px/1.3 var(--font-body); color: var(--pd-tenue); }
-  .vivo-rutina:hover { background: rgba(61, 220, 132, 0.18); }
+  .vivo-rutina { display: grid; justify-items: start; gap: 2px; min-height: 48px; padding: 10px 16px; border-radius: 14px; border: 1px solid var(--pd-linea); background: none; color: #fff; font: 700 14px/1.2 var(--font-display); text-align: left; cursor: pointer; transition: border-color 0.2s; }
+  .vivo-rutina small { font: 400 12.5px/1.3 var(--font-body); color: var(--pd-tenue); }
+  .vivo-rutina:hover { border-color: rgba(255, 255, 255, 0.5); }
   .vivo-rutina:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-  .vivo-rutina[disabled] { cursor: default; opacity: 0.85; border-style: dashed; }
-  .vivo-lista { gap: 8px; }
+  .vivo-rutina[disabled] { cursor: default; color: #6FD3A3; }
+  .vivo-lista { gap: 10px; }
 
   /* ── Con JS: lo que todavía no pasa no se ve ── */
   .vivo.is-js .vivo-lista .pdt:not(.is-on) { display: none; }
@@ -222,40 +220,36 @@ const total = regiones.reduce((a, r) => a + r.celdas.length, 0);
   .vivo.is-js.is-aviso .vivo-aviso { opacity: 1; transform: translateX(-100%); }
   .vivo.is-js .vivo-repro { opacity: 0; transition: opacity 0.8s ease; }
   .vivo.is-js.is-aviso .vivo-repro { opacity: 1; }
-  .vivo.is-js .vivo-nodo--prov.is-activo { border-style: solid; border-color: var(--pd-ambar); }
-  .vivo.is-js .vivo-lista:empty::before, .vivo.is-js .vivo-lista.is-vacia::before { content: 'Todavía nada que hacer: las tiendas van bien.'; display: block; padding: 14px; border-radius: 12px; border: 1px dashed var(--pd-linea); font: 500 13px/1.4 var(--font-display); color: var(--pd-tenue); }
+  .vivo.is-js .vivo-nodo--prov { opacity: 0.6; }
+  .vivo.is-js .vivo-nodo--prov.is-activo { opacity: 1; }
+  .vivo.is-js .vivo-lista:empty::before { content: 'Todavía nada que hacer: las tiendas van bien.'; display: block; padding: 16px; border-radius: 14px; border: 1px dashed var(--pd-linea); font: 400 14px/1.4 var(--font-body); color: var(--pd-tenue); }
   @keyframes vivoTk { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
   /* teléfono: el calendario solo con el número de semana y el aviso debajo de la gráfica */
   @media (max-width: 639px) {
-    .vivo-cal li { place-items: center; padding: 8px 2px; }
     .vivo-cal li span { display: none; }
-    .vivo-cal li b { font-size: 10.5px; }
-    .vivo-aviso { position: static; max-width: none; margin-top: 8px; transform: none; }
+    .vivo-cal li.is-ev b::after { content: ' ★'; }
+    .vivo-conts > div { padding-right: 8px; }
+    .vivo-conts > div + div { padding-left: 10px; }
+    .vivo-conts dt { font-size: 12px; }
+    .vivo-aviso { position: static; max-width: none; margin-top: 10px; transform: none; }
     .vivo.is-js .vivo-aviso { transform: translateY(6px); }
     .vivo.is-js.is-aviso .vivo-aviso { transform: none; }
   }
   @media (min-width: 640px) {
-    .vivo-conts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .vivo-tar-cab { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
     .vivo-tar-cab .pda-tarjetas-k { grid-column: 1 / -1; }
   }
   @media (min-width: 1024px) {
-    .vivo-consola { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); grid-template-areas: 'cal cal' 'conts conts' 'main tarjetas'; gap: 12px; align-items: start; }
+    .vivo-consola { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); grid-template-areas: 'cal cal' 'conts conts' 'main tarjetas'; gap: 24px 32px; align-items: start; }
     .vivo-cal { grid-area: cal; }
     .vivo-conts { grid-area: conts; }
     .vivo-main { grid-area: main; }
     .vivo-tarjetas { grid-area: tarjetas; }
     .vivo-tar-cab { grid-template-columns: 1fr; }
-    .vivo-reg { grid-template-columns: 64px minmax(0, 1fr); }
-    .vivo-reg { grid-template-columns: 78px minmax(0, 1fr); align-items: center; gap: 8px; }
-    .vivo-reg p { flex-direction: column; gap: 1px; }
+    .vivo-reg { grid-template-columns: 82px minmax(0, 1fr); align-items: center; gap: 10px; }
+    .vivo-reg p { flex-direction: column; gap: 2px; }
     .vivo-celdas { grid-template-columns: repeat(30, minmax(0, 1fr)); gap: 3px; }
-    .vivo-celdas li { border-radius: 3px; }
-    .vivo-cal li { padding: 6px 8px; font-size: 11px; }
-  }
-  @media (max-width: 767px) {
-    .vivo-real { filter: none; }
   }
   @media (prefers-reduced-motion: reduce) {
     .vivo *, .vivo-viajes :global(i) { animation: none !important; transition: none !important; }

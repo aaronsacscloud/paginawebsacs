@@ -1,11 +1,12 @@
 ---
 /**
- * Acto 1 · Pretemporada y pronóstico. Un panel «Sacs está analizando…» escribe sus pasos uno por uno, con palomita,
+ * Acto 1 · Pretemporada y pronóstico (v2 «limpio» 2-oct-2026: fondo blanco, menos datos). Un panel «Sacs está
+ * analizando…» escribe sus pasos uno por uno, con palomita,
  * y junto a cada paso aparece su gráfica (en escritorio, todas en el mismo escenario a la derecha; en el teléfono,
  * debajo de su paso). Al terminar salen 3 tarjetas y la vista previa del primer reparto (CEDIS → 100 tiendas).
  * Si en la ficha se apagó algo de «Analiza», ese paso sale «omitido». Lo anima src/scripts/planeacion/consola.ts.
  */
-import { PASOS, ARBOL, CAMPOS, DUDAS, ANOS, PICOS, PLAN_27, NUEVO, CURVAS, INVENTARIO, CORTES, COMPRA, TARJETAS_PRE, OBRA } from '../../data/planeacion-demo';
+import { PASOS, ARBOL, DUDAS, ANOS, PICOS, PLAN_27, NUEVO, CURVAS, CORTES, COMPRA, TARJETAS_PRE, OBRA } from '../../data/planeacion-demo';
 import { serie, banda, suave, miles } from '../../lib/planeacion-graficas';
 import PdTarjeta from './PdTarjeta.astro';
 import PdDetalle from './PdDetalle.astro';
@@ -34,23 +35,20 @@ const parecidos = NUEVO.parecidos.map((p) => ({ ...p, d: serie(p.v, { w: WN, h: 
 /* f) curvas de talla */
 const maxTalla = Math.max(...CURVAS.flatMap((c) => c.v.map((x) => x.p)));
 
-/* g) inventario */
-const totalInv = INVENTARIO.reduce((a, b) => a + b.n, 0);
 
 /* h) cortes: del 8 de febrero (día 0) al 20 de junio (día 132) */
 const DIA = (d: number) => `${((d / 132) * 100).toFixed(2)}%`;
 const MESES = [{ t: 'feb', d: 0 }, { t: 'mar', d: 21 }, { t: 'abr', d: 52 }, { t: 'may', d: 82 }, { t: 'jun', d: 113 }];
 
 // qué figura va con cada paso (b, c y d comparten la de las curvas)
-const FIG: Record<string, string> = { catalogo: 'arbol', historia: 'curvas', picos: 'curvas', alza: 'curvas', nuevos: 'nuevos', tallas: 'tallas', inventario: 'inventario', cortes: 'cortes', compra: 'compra' };
-const TIENDAS = Array.from({ length: 100 }, (_, i) => (i % 10 < 3 ? 'a' : i % 10 < 7 ? 'b' : 'c'));
+// (el paso de inventario va sin gráfica: menos datos en pantalla)
+const FIG: Record<string, string> = { catalogo: 'arbol', historia: 'curvas', picos: 'curvas', alza: 'curvas', nuevos: 'nuevos', tallas: 'tallas', cortes: 'cortes', compra: 'compra' };
 ---
-<section class="pda pre" id="pd-pre" data-acto="pre" aria-labelledby="pd-pre-h">
+<section class="pda pre pd-claro" id="pd-pre" data-acto="pre" aria-labelledby="pd-pre-h">
   <header class="pda-cab">
-    <span class="pda-gigante" aria-hidden="true">Antes</span>
-    <p class="pda-k"><i aria-hidden="true"></i>Acto 1 · Pretemporada y pronóstico</p>
+    <p class="pda-k"><b>01</b> · Pretemporada y pronóstico</p>
     <h2 class="pda-h" id="pd-pre-h">Primero, entender tu temporada.</h2>
-    <p class="pda-fecha">Lunes 8 de febrero de 2027 · 19 semanas antes del Día del Padre <span class="pd-ej">ejemplo</span></p>
+    <p class="pda-fecha">Lunes 8 de febrero de 2027, 19 semanas antes del Día del Padre. Sacs lee tu catálogo y tus últimos Días del Padre, y arma la compra. <span class="pd-ej">Ejemplo</span></p>
   </header>
 
   <div class="pre-grid">
@@ -59,9 +57,9 @@ const TIENDAS = Array.from({ length: 100 }, (_, i) => (i % 10 < 3 ? 'a' : i % 10
       <ol class="pre-pasos">
         {PASOS.map((p, i) => (
           <li class="pre-paso" data-paso={i} data-clave={p.clave || undefined} data-fig={FIG[p.id]}>
-            <button type="button" class="pre-paso-b" aria-controls={`pre-fig-${FIG[p.id]}`}>
+            <button type="button" class="pre-paso-b" aria-controls={FIG[p.id] ? `pre-fig-${FIG[p.id]}` : undefined}>
               <span class="pre-check" aria-hidden="true"></span>
-              <span class="pre-paso-t"><b>{p.t}</b>{p.s && <small>{p.s}</small>}<small class="pre-omitida">Omitido: lo apagaste en tu ficha.</small>{p.obra && <span class="pd-obra">{OBRA}</span>}</span>
+              <span class="pre-paso-t"><b>{p.t}</b><small class="pre-omitida">Omitido: lo apagaste en tu ficha.</small>{p.obra && <span class="pd-obra">{OBRA}</span>}</span>
             </button>
 
             {p.id === 'catalogo' && (
@@ -75,7 +73,6 @@ const TIENDAS = Array.from({ length: 100 }, (_, i) => (i % 10 < 3 ? 'a' : i % 10
                     </div>
                   ))}
                 </div>
-                <dl class="pre-campos">{CAMPOS.map((c) => <div><dt>{c.k}</dt><dd>{c.v}</dd></div>)}</dl>
                 <div class="pre-dudas">
                   <p class="pre-dudas-k">2 dudas · contéstalas con un clic</p>
                   {DUDAS.map((d, k) => (
@@ -153,17 +150,6 @@ const TIENDAS = Array.from({ length: 100 }, (_, i) => (i % 10 < 3 ? 'a' : i % 10
               </figure>
             )}
 
-            {p.id === 'inventario' && (
-              <figure class="pre-fig pre-fig--inventario" id="pre-fig-inventario" data-fig="inventario">
-                <figcaption class="pre-cap"><b>Lo que ya tienes: {miles(totalInv)} piezas</b><span class="pd-ej">ejemplo</span></figcaption>
-                <div class="pre-inv" aria-label={INVENTARIO.map((x) => `${x.k}: ${miles(x.n)}`).join(', ')}>
-                  {INVENTARIO.filter((x) => x.n).map((x, k) => <span class={`pre-inv-${k}`} style={`--w:${((x.n / totalInv) * 100).toFixed(1)}%`}><b>{miles(x.n)}</b>{x.k}</span>)}
-                </div>
-                <ul class="pre-inv-l">{INVENTARIO.map((x, k) => <li class={`pre-inv-${k}`}><i></i>{x.k}<b>{miles(x.n)}</b></li>)}</ul>
-                <p class="pre-nota">Antes de comprar, Sacs descuenta lo que hay en toda la red: tiendas, CEDIS y lo que viene en camino.</p>
-              </figure>
-            )}
-
             {p.id === 'cortes' && (
               <figure class="pre-fig pre-fig--cortes" id="pre-fig-cortes" data-fig="cortes">
                 <figcaption class="pre-cap"><b>Cortes de pedido, contando hacia atrás</b><span class="pd-ej">ejemplo</span></figcaption>
@@ -206,10 +192,6 @@ const TIENDAS = Array.from({ length: 100 }, (_, i) => (i % 10 < 3 ? 'a' : i % 10
                   <p><b>{COMPRA.monto}</b> de tus {COMPRA.presupuesto}</p>
                   <span class="pre-presu-b"><i style={`--w:${COMPRA.usoPct}%`}></i></span>
                 </div>
-                <ul class="pre-split">
-                  <li><b>Importados</b>9,400 piezas · $2.96 M</li>
-                  <li><b>Nacionales</b>17,200 piezas · $4.74 M</li>
-                </ul>
                 <p class="pre-nota">El colchón se calcula por modelo, no por cada talla y color.</p>
               </figure>
             )}
@@ -226,16 +208,10 @@ const TIENDAS = Array.from({ length: 100 }, (_, i) => (i % 10 < 3 ? 'a' : i % 10
       <ul class="pda-lista pre-lista">{TARJETAS_PRE.map((t) => <PdTarjeta t={t} />)}</ul>
     </div>
     <figure class="pre-reparto" data-reparto>
-      <figcaption class="pre-cap"><b>Primer reparto · vista previa</b><span class="pd-ej">ejemplo</span><span class="pd-obra">{OBRA}</span></figcaption>
-      <div class="pre-rep-in">
-        <div class="pre-cedis">
-          <span class="pre-cedis-k">CEDIS</span>
-          <b data-rep-cedis>30,200</b><small>piezas</small>
-        </div>
-        <ul class="pre-tiendas" aria-hidden="true">{TIENDAS.map((n, i) => <li class={`is-${n}`} style={`--i:${i}`}></li>)}</ul>
-      </div>
-      <p class="pre-rep-l">Salen <b data-rep-salen>18,100</b> a 100 tiendas · se quedan <b data-rep-quedan>12,100</b> para resurtir donde sí se venda.</p>
-      <p class="pre-rep-leyenda"><span class="a">Tiendas A</span><span class="b">B</span><span class="c">C</span></p>
+      <figcaption class="pre-cap"><b>Primer reparto</b><span class="pd-ej">Ejemplo</span><span class="pd-obra">{OBRA}</span></figcaption>
+      <div class="pre-rep-barra" aria-hidden="true"><span class="pre-rep-a"></span></div>
+      <p class="pre-rep-l"><b data-rep-salen>18,100</b> piezas salen a las 100 tiendas (60 %). <b data-rep-quedan>12,100</b> se quedan en el CEDIS (40 %) para resurtir donde sí se venda.</p>
+      <p class="pre-rep-cedis" aria-hidden="true">En el CEDIS: <span data-rep-cedis>12,100</span></p>
     </figure>
   </div>
 
@@ -250,197 +226,160 @@ const TIENDAS = Array.from({ length: 100 }, (_, i) => (i % 10 < 3 ? 'a' : i % 10
 </section>
 
 <style>
-  /* ── el panel de pasos ── */
-  .pre-grid { position: relative; margin-top: 24px; }
-  .pre-panel { border-radius: 18px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--pd-linea); padding: 14px 14px 6px; }
-  .pre-panel-k { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; font: 600 11px/1.2 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--pd-azul-c); }
-  .pre-punto { width: 8px; height: 8px; border-radius: 50%; background: var(--pd-verde); }
+  /* ── el panel de pasos: una lista limpia con línea fina ── */
+  .pre-grid { position: relative; margin-top: 40px; }
+  .pre-panel-k { display: flex; align-items: center; gap: 10px; margin: 0 0 4px; font: 600 14px/1.3 var(--font-display); color: var(--pd-texto); }
+  .pre-punto { width: 8px; height: 8px; border-radius: 50%; background: var(--pd-ok); }
   .pre-estado-f { display: none; }
-  .pre-pasos { margin: 0; padding: 0; list-style: none; }
-  .pre-paso { border-top: 1px solid rgba(143, 176, 243, 0.14); }
-  .pre-paso:first-child { border-top: 0; }
-  .pre-paso-b { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 12px; width: 100%; padding: 12px 4px; border: 0; background: none; color: inherit; text-align: left; font: inherit; cursor: default; }
-  .pre-paso-b:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 10px; }
-  .pre-check { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--pd-azul); background: var(--pd-azul) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7'/%3E%3C/svg%3E") center / 13px no-repeat; }
-  .pre-paso-t b { display: block; font: 600 14.5px/1.35 var(--font-display); letter-spacing: -0.01em; color: #fff; }
-  .pre-paso-t small { display: block; margin-top: 3px; font: 400 13px/1.45 var(--font-body); color: var(--pd-tenue); }
-  .pre-paso-t .pd-obra { margin-top: 6px; }
+  .pre-pasos { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--pd-linea); }
+  .pre-paso { border-bottom: 1px solid var(--pd-linea); }
+  .pre-paso-b { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 14px; width: 100%; padding: 15px 2px; border: 0; background: none; color: inherit; text-align: left; font: inherit; cursor: default; }
+  .pre-paso-b:focus-visible { outline: 2px solid var(--pd-azul); outline-offset: 2px; border-radius: 10px; }
+  .pre-check { width: 20px; height: 20px; margin-top: 1px; border-radius: 50%; background: var(--pd-texto) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7'/%3E%3C/svg%3E") center / 12px no-repeat; }
+  .pre-paso-t b { display: block; font: 600 16px/1.4 var(--font-display); letter-spacing: -0.015em; color: var(--pd-texto); }
+  .pre-paso-t .pd-obra { margin-top: 4px; }
   .pre-omitida { display: none !important; }
 
-  /* ── las figuras ── */
-  .pre-fig { margin: 4px 0 14px; padding: 14px; border-radius: 16px; background: linear-gradient(160deg, rgba(75, 123, 229, 0.16), rgba(255, 255, 255, 0.03)); border: 1px solid var(--pd-linea); }
-  .pre-cap { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 10px; font: 600 14px/1.3 var(--font-display); color: #fff; }
+  /* ── las figuras: paneles grises claros, sin bordes de colores ── */
+  .pre-fig { margin: 4px 0 18px; padding: 20px; border-radius: var(--pd-radio); background: var(--pd-tarjeta); }
+  .pre-cap { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 0 0 14px; font: 700 15px/1.3 var(--font-display); letter-spacing: -0.01em; color: var(--pd-texto); }
   .pre-svg { position: relative; }
   .pre-svg svg { display: block; width: 100%; height: auto; max-width: none; overflow: visible; }
-  .pre-nota { margin: 10px 0 0; font: 400 12.5px/1.45 var(--font-body); color: var(--pd-tenue); }
+  .pre-nota { margin: 12px 0 0; font: 400 13.5px/1.5 var(--font-body); color: var(--pd-tenue); }
 
-  .pre-arbol { display: grid; gap: 10px; }
-  .pre-dep-t { display: block; margin-bottom: 6px; font: 600 11px/1.2 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--pd-azul-c); }
-  .pre-dep ul { margin: 0; padding: 0 0 0 12px; list-style: none; border-left: 1px solid rgba(143, 176, 243, 0.35); display: grid; gap: 5px; }
-  .pre-dep li { position: relative; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
-  .pre-dep li::before { content: ''; position: absolute; left: -12px; top: 0.7em; width: 9px; height: 1px; background: rgba(143, 176, 243, 0.35); }
-  .pre-cat { display: inline-flex; align-items: baseline; gap: 6px; font: 600 13.5px/1.3 var(--font-display); color: #fff; }
-  .pre-cat em { font-style: normal; font-weight: 500; font-size: 12px; color: var(--pd-azul-c); }
-  .pre-dep small { font: 400 12px/1.3 var(--font-body); color: var(--pd-tenue); }
-  .pre-campos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 12px 0 0; }
-  .pre-campos div { padding: 7px 9px; border-radius: 10px; background: rgba(7, 15, 51, 0.5); border: 1px solid rgba(143, 176, 243, 0.16); }
-  .pre-campos dt { font: 600 10px/1.2 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--pd-azul-c); }
-  .pre-campos dd { margin: 3px 0 0; font: 500 12px/1.35 var(--font-display); color: #fff; }
-  .pre-dudas { margin-top: 12px; padding: 12px; border-radius: 12px; border: 1px solid rgba(224, 69, 123, 0.5); background: rgba(224, 69, 123, 0.08); }
-  .pre-dudas-k { margin: 0 0 8px; font: 600 11px/1.2 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--pd-rosa-c); }
-  .pre-duda + .pre-duda { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(224, 69, 123, 0.25); }
-  .pre-duda > p:first-child { margin: 0; font: 500 13.5px/1.4 var(--font-display); color: #fff; }
+  .pre-arbol { display: grid; gap: 14px; }
+  .pre-dep-t { display: block; margin-bottom: 8px; font: 600 13px/1.2 var(--font-display); color: var(--pd-apagado); }
+  .pre-dep ul { margin: 0; padding: 0 0 0 14px; list-style: none; border-left: 1px solid #CFCFCA; display: grid; gap: 6px; }
+  .pre-dep li { position: relative; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+  .pre-dep li::before { content: ''; position: absolute; left: -14px; top: 0.72em; width: 10px; height: 1px; background: #CFCFCA; }
+  .pre-cat { display: inline-flex; align-items: baseline; gap: 6px; font: 600 14px/1.3 var(--font-display); color: var(--pd-texto); }
+  .pre-cat em { font-style: normal; font-weight: 500; font-size: 13px; color: var(--pd-apagado); }
+  .pre-dep small { font: 400 13px/1.3 var(--font-body); color: var(--pd-tenue); }
+  .pre-dudas { margin-top: 18px; padding-top: 16px; border-top: 1px solid #DEDEDA; }
+  .pre-dudas-k { margin: 0 0 10px; font: 600 14px/1.2 var(--font-display); color: var(--pd-texto); }
+  .pre-duda + .pre-duda { margin-top: 14px; }
+  .pre-duda > p:first-child { margin: 0; font: 400 14.5px/1.45 var(--font-body); color: var(--pd-texto); }
   .pre-ops { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .pre-op { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 14px; border-radius: 99px; border: 1px solid rgba(255, 255, 255, 0.4); background: none; color: #fff; font: 600 13px/1 var(--font-display); cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s; }
-  .pre-op small { font-weight: 500; font-size: 11px; color: var(--pd-rosa-c); }
-  .pre-op:hover { border-color: #fff; }
-  .pre-op:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-  .pre-op[aria-pressed="true"] { background: #fff; color: var(--pd-noche); border-color: #fff; }
-  .pre-op[aria-pressed="true"] small { color: var(--pd-rosa); }
-  .pre-duda-ok { margin: 6px 0 0; min-height: 1em; font: 600 12px/1.3 var(--font-display); color: #9BF0C0; }
+  .pre-op { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 16px; border-radius: 99px; border: 1px solid #CFCFCA; background: #fff; color: var(--pd-texto); font: 600 13.5px/1 var(--font-display); cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s; }
+  .pre-op small { font-weight: 500; font-size: 12px; color: var(--pd-apagado); }
+  .pre-op:hover { border-color: var(--pd-texto); }
+  .pre-op:focus-visible { outline: 2px solid var(--pd-azul); outline-offset: 2px; }
+  .pre-op[aria-pressed="true"] { background: var(--pd-texto); color: #fff; border-color: var(--pd-texto); }
+  .pre-op[aria-pressed="true"] small { color: rgba(255, 255, 255, 0.75); }
+  .pre-duda-ok { margin: 8px 0 0; font: 600 13px/1.3 var(--font-display); color: var(--pd-ok); }
   .pre-duda-ok:empty { display: none; }
 
-  /* curvas */
-  .pre-evt { fill: rgba(224, 69, 123, 0.16); }
-  .pre-ano-pico, .pre-ano-limpia, .pre-pron, .pre-pron-glow, .pre-par { fill: none; stroke-linecap: round; stroke-linejoin: round; }
-  .pre-ano-pico { stroke: rgba(255, 255, 255, 0.3); stroke-width: 2.4; }
-  .pre-ano-limpia { stroke: rgba(255, 255, 255, 0.3); stroke-width: 2.4; opacity: 0; }
-  .pre-pico { fill: none; stroke: var(--pd-rosa-c); stroke-width: 2; opacity: 0; }
-  .pre-banda { fill: rgba(143, 176, 243, 0.16); }
-  .pre-pron { stroke: url(#pre-grad); stroke-width: 5; }
-  .pre-pron-glow { stroke: rgba(143, 176, 243, 0.22); stroke-width: 16; }
-  .pre-par { stroke: rgba(255, 255, 255, 0.3); stroke-width: 2.2; }
-  .pre-alza-et, .pre-pico-et { position: absolute; transform: translate(-50%, -150%); padding: 3px 8px; border-radius: 99px; font: 600 11px/1.2 var(--font-display); white-space: nowrap; pointer-events: none; }
-  .pre-alza-et { background: #B8325F; color: #fff; }
-  .pre-pico-et { background: rgba(7, 15, 51, 0.9); border: 1px solid var(--pd-rosa-c); color: var(--pd-rosa-c); opacity: 0; transform: translate(-50%, -190%); }
-  .pre-eje { display: flex; justify-content: space-between; margin: 6px 0 0; font: 500 11.5px/1.2 var(--font-display); color: var(--pd-tenue); }
-  .pre-eje-ev { color: var(--pd-rosa-c); }
-  .pre-leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 0 0; font: 600 11.5px/1.2 var(--font-display); color: var(--pd-tenue); }
-  .pre-leyenda span::before { content: ''; display: inline-block; width: 14px; height: 3px; margin-right: 6px; vertical-align: middle; border-radius: 2px; }
-  .pre-leyenda .g::before { background: rgba(255, 255, 255, 0.4); }
-  .pre-leyenda .p::before { background: linear-gradient(90deg, #4B7BE5, #8FB0F3, #E0457B); height: 4px; }
-  .pre-leyenda .b::before { background: rgba(143, 176, 243, 0.35); height: 8px; }
-  .pre-leyenda .e::before { background: rgba(224, 69, 123, 0.5); height: 8px; }
+  /* curvas: años en gris, pronóstico en azul Sacs */
+  .pre-evt { fill: rgba(75, 123, 229, 0.1); }
+  .pre-ano-pico, .pre-ano-limpia, .pre-pron, .pre-par { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .pre-ano-pico, .pre-ano-limpia { stroke: #BDBDB8; stroke-width: 2; }
+  .pre-ano-limpia { opacity: 0; }
+  .pre-pico { fill: none; stroke: var(--pd-falta); stroke-width: 1.8; opacity: 0; }
+  .pre-banda { fill: rgba(75, 123, 229, 0.12); }
+  .pre-pron { stroke: var(--pd-azul); stroke-width: 4; }
+  .pre-pron-glow { display: none; }
+  .pre-par { stroke: #BDBDB8; stroke-width: 2; }
+  .pre-alza-et, .pre-pico-et { position: absolute; transform: translate(-50%, -150%); padding: 3px 9px; border-radius: 99px; font: 600 12px/1.2 var(--font-display); white-space: nowrap; pointer-events: none; }
+  .pre-alza-et { background: var(--pd-texto); color: #fff; }
+  .pre-pico-et { background: #fff; border: 1px solid #E2C0C0; color: #A23333; opacity: 0; transform: translate(-50%, -190%); }
+  .pre-eje { display: flex; justify-content: space-between; margin: 8px 0 0; font: 500 12.5px/1.2 var(--font-display); color: var(--pd-apagado); }
+  .pre-eje-ev { color: var(--pd-texto); }
+  .pre-leyenda { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0 0; font: 500 12.5px/1.2 var(--font-body); color: var(--pd-tenue); }
+  .pre-leyenda span::before { content: ''; display: inline-block; width: 14px; height: 2px; margin-right: 6px; vertical-align: middle; border-radius: 2px; }
+  .pre-leyenda .g::before { background: #BDBDB8; }
+  .pre-leyenda .p::before { background: var(--pd-azul); height: 3px; }
+  .pre-leyenda .b::before { background: rgba(75, 123, 229, 0.25); height: 8px; }
+  .pre-leyenda .e::before { background: rgba(75, 123, 229, 0.12); height: 8px; }
 
-  .pre-fotos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 10px 0 0; padding: 0; list-style: none; }
-  .pre-fotos li { display: grid; gap: 2px; font: 600 11.5px/1.25 var(--font-display); color: #fff; }
-  .pre-fotos img { width: 100%; height: auto; aspect-ratio: 1; border-radius: 10px; background: #E9EEF9; object-fit: contain; padding: 4px; margin-bottom: 4px; }
-  .pre-fotos small { font: 400 11px/1.3 var(--font-body); color: var(--pd-tenue); }
-  .pre-fotos .is-nuevo img { box-shadow: 0 0 0 2px var(--pd-rosa); }
-  .pre-fotos .is-nuevo small { color: var(--pd-rosa-c); }
+  .pre-fotos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 14px 0 0; padding: 0; list-style: none; }
+  .pre-fotos li { display: grid; gap: 3px; font: 600 12.5px/1.3 var(--font-display); color: var(--pd-texto); }
+  .pre-fotos img { width: 100%; height: auto; aspect-ratio: 1; border-radius: 12px; background: #fff; object-fit: contain; padding: 4px; margin-bottom: 4px; }
+  .pre-fotos small { font: 400 12px/1.3 var(--font-body); color: var(--pd-tenue); }
+  .pre-fotos .is-nuevo img { box-shadow: inset 0 0 0 2px var(--pd-azul); }
 
-  .pre-curvas { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .pre-curva p { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; margin: 0 0 8px; font: 600 14px/1.2 var(--font-display); }
-  .pre-curva p span { font-weight: 500; font-size: 12px; color: var(--pd-azul-c); }
-  .pre-curva ul { display: flex; align-items: flex-end; gap: 6px; height: 150px; margin: 0; padding: 0; list-style: none; border-bottom: 1px solid var(--pd-linea); }
-  .pre-curva li { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 4px; font: 600 11px/1 var(--font-display); color: var(--pd-tenue); }
-  .pre-curva li i { order: 1; display: block; width: 100%; height: var(--h); border-radius: 6px 6px 2px 2px; background: rgba(143, 176, 243, 0.4); transform-origin: 50% 100%; }
-  .pre-curva li.is-top i { background: linear-gradient(180deg, var(--pd-rosa), var(--pd-azul)); }
-  .pre-curva li b { order: 0; font-weight: 600; color: #fff; }
+  .pre-curvas { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .pre-curva p { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; margin: 0 0 10px; font: 600 14px/1.2 var(--font-display); color: var(--pd-texto); }
+  .pre-curva p span { font: 400 13px/1.2 var(--font-body); color: var(--pd-tenue); }
+  .pre-curva ul { display: flex; align-items: flex-end; gap: 6px; height: 150px; margin: 0; padding: 0; list-style: none; border-bottom: 1px solid #CFCFCA; }
+  .pre-curva li { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 5px; font: 500 12px/1 var(--font-display); color: var(--pd-tenue); }
+  .pre-curva li i { order: 1; display: block; width: 100%; height: var(--h); border-radius: 6px 6px 0 0; background: #CFCFCA; transform-origin: 50% 100%; }
+  .pre-curva li.is-top i { background: var(--pd-azul); }
+  .pre-curva li b { order: 0; font-weight: 600; color: var(--pd-texto); }
   .pre-curva li span { order: 2; padding-top: 4px; }
 
-  .pre-inv { display: flex; height: 54px; border-radius: 12px; overflow: hidden; }
-  .pre-inv span { display: flex; flex-direction: column; justify-content: center; width: var(--w); padding: 0 12px; font: 500 11.5px/1.2 var(--font-display); color: var(--pd-noche); }
-  .pre-inv span b { font: 700 18px/1.1 'Clash Display', var(--font-display); }
-  .pre-inv-0 { background: var(--pd-azul-c); }
-  .pre-inv-1 { background: #C9D8FA; }
-  .pre-inv-l { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0 0; padding: 0; list-style: none; font: 500 12.5px/1.2 var(--font-display); color: var(--pd-tenue); }
-  .pre-inv-l li { display: inline-flex; align-items: center; gap: 6px; }
-  .pre-inv-l i { width: 10px; height: 10px; border-radius: 3px; background: var(--pd-azul-c); }
-  .pre-inv-l .pre-inv-1 i { background: #C9D8FA; }
-  .pre-inv-l .pre-inv-2 i { background: transparent; border: 1px dashed var(--pd-azul-c); }
-  .pre-inv-l b { color: #fff; font-weight: 600; }
-  .pre-inv-l li.pre-inv-0, .pre-inv-l li.pre-inv-1 { background: none; }
-
-  .pre-gantt { position: relative; padding-top: 20px; }
+  .pre-gantt { position: relative; padding-top: 22px; }
   .pre-meses { position: absolute; left: 0; right: 0; top: 0; height: 100%; pointer-events: none; }
-  .pre-meses span { position: absolute; top: 0; height: 100%; padding-left: 4px; border-left: 1px dashed rgba(143, 176, 243, 0.2); font: 500 10.5px/1 var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--pd-apagado); }
-  .pre-fila { position: relative; margin-top: 10px; }
-  .pre-fila > p { margin: 0 0 6px; font: 400 12.5px/1.4 var(--font-body); color: var(--pd-tenue); }
-  .pre-fila > p b { display: block; font: 600 13.5px/1.3 var(--font-display); color: #fff; }
-  .pre-fila > p em { font-style: normal; font-weight: 600; color: var(--pd-rosa-c); }
+  .pre-meses span { position: absolute; top: 0; height: 100%; padding-left: 4px; border-left: 1px dashed #D5D5D0; font: 500 11.5px/1 var(--font-display); color: var(--pd-apagado); }
+  .pre-fila { position: relative; margin-top: 12px; }
+  .pre-fila > p { margin: 0 0 6px; font: 400 13.5px/1.45 var(--font-body); color: var(--pd-tenue); }
+  .pre-fila > p b { display: block; font: 600 14px/1.3 var(--font-display); color: var(--pd-texto); }
+  .pre-fila > p em { font-style: normal; font-weight: 600; color: var(--pd-falta); }
   .pre-carril { position: relative; height: 26px; }
-  .pre-barra { position: absolute; top: 0; height: 26px; display: flex; justify-content: space-between; align-items: center; padding: 0 8px; border-radius: 8px; background: rgba(143, 176, 243, 0.25); border: 1px solid rgba(143, 176, 243, 0.5); font: 600 11px/1 var(--font-display); color: #fff; white-space: nowrap; overflow: hidden; transform-origin: 100% 50%; }
+  .pre-barra { position: absolute; top: 0; height: 26px; display: flex; justify-content: space-between; align-items: center; padding: 0 9px; border-radius: 8px; background: var(--pd-texto); font: 600 11.5px/1 var(--font-display); color: #fff; white-space: nowrap; overflow: hidden; transform-origin: 100% 50%; }
   .pre-barra i { font-style: normal; }
-  .pre-fila.is-urgente .pre-barra { background: rgba(224, 69, 123, 0.28); border-color: var(--pd-rosa-c); }
+  .pre-fila.is-urgente .pre-barra { background: var(--pd-falta); }
   .pre-fila--hitos .pre-carril { height: 40px; }
-  .pre-hito { position: absolute; top: 4px; display: grid; justify-items: start; gap: 4px; font: 600 11px/1.2 var(--font-display); color: var(--pd-tenue); white-space: nowrap; }
-  .pre-hito i { width: 10px; height: 10px; border-radius: 50%; background: var(--pd-azul-c); margin-left: -5px; }
-  .pre-hito.is-hoy i { background: #fff; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25); }
-  .pre-hito.is-meta { transform: translateX(-50%); justify-items: center; color: #fff; }
-  .pre-hito.is-meta i { margin: 0; background: var(--pd-verde); }
-  .pre-hito.is-ev { transform: translateX(-100%); justify-items: end; color: var(--pd-rosa-c); }
-  .pre-hito.is-ev i { margin: 0 -5px 0 0; background: var(--pd-rosa); }
+  .pre-hito { position: absolute; top: 4px; display: grid; justify-items: start; gap: 4px; font: 600 11.5px/1.2 var(--font-display); color: var(--pd-tenue); white-space: nowrap; }
+  .pre-hito i { width: 10px; height: 10px; border-radius: 50%; background: var(--pd-apagado); margin-left: -5px; }
+  .pre-hito.is-hoy i { background: var(--pd-texto); }
+  .pre-hito.is-meta { transform: translateX(-50%); justify-items: center; color: var(--pd-texto); }
+  .pre-hito.is-meta i { margin: 0; background: var(--pd-ok); }
+  .pre-hito.is-ev { transform: translateX(-100%); justify-items: end; color: var(--pd-texto); }
+  .pre-hito.is-ev i { margin: 0 -5px 0 0; background: var(--pd-azul); }
 
-  .pre-cuenta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
-  .pre-cuenta span { display: grid; gap: 2px; }
-  .pre-cuenta b { font: 700 clamp(22px, 2.4vw, 32px)/1 'Clash Display', var(--font-display); font-variant-numeric: tabular-nums; color: #fff; }
-  .pre-cuenta small { font: 500 11.5px/1.2 var(--font-display); color: var(--pd-tenue); }
-  .pre-cuenta em { font: 600 22px/1 var(--font-display); font-style: normal; color: var(--pd-azul-c); }
-  .pre-cuenta .is-total b { color: var(--pd-verde); }
-  .pre-presu { margin-top: 14px; }
-  .pre-presu p { margin: 0 0 6px; font: 500 13px/1.3 var(--font-display); color: var(--pd-tenue); }
-  .pre-presu p b { font-size: 16px; color: #fff; }
-  .pre-presu-b { display: block; height: 10px; border-radius: 6px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
-  .pre-presu-b i { display: block; width: var(--w); height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--pd-azul), var(--pd-azul-c)); transform-origin: 0 50%; }
-  .pre-split { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
-  .pre-split li { padding: 8px 10px; border-radius: 10px; background: rgba(7, 15, 51, 0.5); border: 1px solid rgba(143, 176, 243, 0.16); font: 500 12px/1.35 var(--font-display); color: var(--pd-tenue); }
-  .pre-split b { display: block; font-weight: 600; font-size: 13px; color: #fff; }
+  .pre-cuenta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+  .pre-cuenta span { display: grid; gap: 3px; }
+  .pre-cuenta b { font: 800 clamp(24px, 2.4vw, 34px)/1 var(--font-display); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--pd-texto); }
+  .pre-cuenta small { font: 400 12.5px/1.2 var(--font-body); color: var(--pd-tenue); }
+  .pre-cuenta em { font: 500 22px/1 var(--font-display); font-style: normal; color: var(--pd-apagado); }
+  .pre-cuenta .is-total b { color: var(--pd-azul); }
+  .pre-presu { margin-top: 18px; }
+  .pre-presu p { margin: 0 0 8px; font: 400 14px/1.3 var(--font-body); color: var(--pd-tenue); }
+  .pre-presu p b { font: 700 16px var(--font-display); color: var(--pd-texto); }
+  .pre-presu-b { display: block; height: 8px; border-radius: 6px; background: #E2E2DE; overflow: hidden; }
+  .pre-presu-b i { display: block; width: var(--w); height: 100%; border-radius: 6px; background: var(--pd-texto); transform-origin: 0 50%; }
 
-  /* ── tarjetas y reparto ── */
-  .pre-final { display: grid; gap: 16px; margin-top: 20px; }
-  .pre-reparto { margin: 0; padding: 14px; border-radius: 16px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--pd-linea); }
-  .pre-rep-in { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 12px; align-items: center; }
-  .pre-cedis { display: grid; justify-items: center; gap: 2px; padding: 12px 6px; border-radius: 12px; background: var(--pd-panel); border: 1px solid rgba(143, 176, 243, 0.4); text-align: center; }
-  .pre-cedis-k { font: 600 10.5px/1 var(--font-display); letter-spacing: 0.12em; color: var(--pd-azul-c); }
-  .pre-cedis b { font: 700 18px/1.1 'Clash Display', var(--font-display); font-variant-numeric: tabular-nums; }
-  .pre-cedis small { font: 500 11px/1 var(--font-display); color: var(--pd-tenue); }
-  .pre-tiendas { display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 3px; margin: 0; padding: 0; list-style: none; }
-  .pre-tiendas li { aspect-ratio: 1; border-radius: 3px; background: var(--pd-azul-c); }
-  .pre-tiendas li.is-a { background: var(--pd-verde); }
-  .pre-tiendas li.is-b { background: var(--pd-azul-c); }
-  .pre-tiendas li.is-c { background: #C9D8FA; }
-  .pre-rep-l { margin: 10px 0 0; font: 400 13px/1.45 var(--font-body); color: var(--pd-tenue); }
-  .pre-rep-l b { font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
-  .pre-rep-leyenda { display: flex; gap: 12px; margin: 6px 0 0; font: 600 11.5px/1 var(--font-display); color: var(--pd-tenue); }
-  .pre-rep-leyenda span::before { content: ''; display: inline-block; width: 9px; height: 9px; margin-right: 5px; border-radius: 2px; vertical-align: -1px; }
-  .pre-rep-leyenda .a::before { background: var(--pd-verde); }
-  .pre-rep-leyenda .b::before { background: var(--pd-azul-c); }
-  .pre-rep-leyenda .c::before { background: #C9D8FA; }
+  /* ── tarjetas y primer reparto ── */
+  .pre-final { display: grid; gap: 24px; margin-top: 40px; }
+  .pre-reparto { margin: 0; padding: 20px; border-radius: var(--pd-radio); background: var(--pd-tarjeta); }
+  .pre-rep-barra { display: flex; height: 14px; border-radius: 8px; background: #DADAD5; overflow: hidden; }
+  .pre-rep-a { display: block; width: 60%; height: 100%; background: var(--pd-azul); transform-origin: 0 50%; }
+  .pre-rep-l { margin: 14px 0 0; font: 400 14.5px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .pre-rep-l b { font: 700 15px var(--font-display); color: var(--pd-texto); font-variant-numeric: tabular-nums; }
+  .pre-rep-cedis { display: none; }
 
-  /* ── Con JS: lo que aún no pasa, apagado ── */
+  /* ── Con JS: lo que aún no pasa, oculto ── */
   .pre.is-js .pre-paso:not(.is-on) { display: none; }
-  .pre.is-js .pre-paso.is-ahora .pre-check { border-color: rgba(143, 176, 243, 0.35); border-top-color: var(--pd-azul-c); background: none; animation: preGira 0.9s linear infinite; }
+  .pre.is-js .pre-paso.is-ahora .pre-check { border: 2px solid #D5D5D0; border-top-color: var(--pd-texto); background: none; animation: preGira 0.9s linear infinite; }
   .pre.is-js .pre-paso.is-on > .pre-paso-b { animation: preEntra 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
-  .pre.is-js .pre-paso.is-omitida .pre-check { border-color: rgba(255, 255, 255, 0.3); background: none; }
-  .pre.is-js .pre-paso.is-omitida .pre-paso-t b { color: var(--pd-apagado); text-decoration: line-through; text-decoration-color: rgba(255, 255, 255, 0.35); }
-  .pre.is-js .pre-paso.is-omitida .pre-paso-t small:not(.pre-omitida) { display: none; }
-  .pre.is-js .pre-paso.is-omitida .pre-omitida { display: block !important; color: var(--pd-ambar); }
+  .pre.is-js .pre-paso.is-omitida .pre-check { background: #E2E2DE; }
+  .pre.is-js .pre-paso.is-omitida .pre-paso-t b { color: var(--pd-apagado); text-decoration: line-through; }
+  .pre.is-js .pre-paso.is-omitida .pre-omitida { display: block !important; margin-top: 2px; font: 400 13px/1.4 var(--font-body); color: var(--pd-obra); }
   .pre.is-js .pre-fig.is-omitida { display: none !important; }
   .pre.is-js.is-terminado .pre-estado-t { display: none; }
   .pre.is-js.is-terminado .pre-estado-f { display: inline; }
   .pre.is-js:not(.is-terminado) .pre-punto { animation: preLate 1s ease-in-out infinite alternate; }
 
   /* las curvas se dibujan por estados (los pone el script en la figura) */
-  .pre.is-js .pre-fig--curvas .pre-ano-pico, .pre.is-js .pre-fig--curvas .pre-pron, .pre.is-js .pre-fig--curvas .pre-pron-glow { stroke-dasharray: 1; stroke-dashoffset: 1; }
+  .pre.is-js .pre-fig--curvas .pre-ano-pico, .pre.is-js .pre-fig--curvas .pre-pron { stroke-dasharray: 1; stroke-dashoffset: 1; }
   .pre.is-js .pre-fig--curvas .pre-banda, .pre.is-js .pre-fig--curvas .pre-evt, .pre.is-js .pre-fig--curvas .pre-alza-et { opacity: 0; transition: opacity 0.8s ease; }
   .pre.is-js .pre-fig--curvas.f-historia .pre-ano-pico { animation: preTraza 1.1s ease forwards; }
   .pre.is-js .pre-fig--curvas.f-historia .pre-ano:nth-of-type(2) .pre-ano-pico { animation-delay: 0.35s; }
   .pre.is-js .pre-fig--curvas.f-historia .pre-ano:nth-of-type(3) .pre-ano-pico { animation-delay: 0.7s; }
-  .pre.is-js .pre-fig--curvas.f-historia .pre-pron, .pre.is-js .pre-fig--curvas.f-historia .pre-pron-glow { animation: preTraza 1.6s cubic-bezier(0.45, 0, 0.2, 1) 1.1s forwards; }
+  .pre.is-js .pre-fig--curvas.f-historia .pre-pron { animation: preTraza 1.6s cubic-bezier(0.45, 0, 0.2, 1) 1.1s forwards; }
   .pre.is-js .pre-fig--curvas.f-historia .pre-banda { opacity: 1; transition-delay: 2.4s; }
   .pre.is-js .pre-fig.f-ya path { animation: none !important; stroke-dashoffset: 0 !important; }
   .pre.is-js .pre-fig.f-ya .pre-banda { transition-delay: 0s; }
-  .pre .pre-fig--curvas.f-picos .pre-ano-pico { stroke-dasharray: 4 6 !important; stroke-dashoffset: 0 !important; opacity: 0.35; transition: opacity 0.8s ease 0.6s; animation: none !important; }
+  .pre .pre-fig--curvas.f-picos .pre-ano-pico { stroke-dasharray: 3 5 !important; stroke-dashoffset: 0 !important; opacity: 0.5; transition: opacity 0.8s ease 0.6s; animation: none !important; }
   .pre .pre-fig--curvas.f-picos .pre-ano-limpia { opacity: 1; transition: opacity 0.8s ease 0.6s; }
   .pre .pre-fig--curvas.f-picos .pre-pico, .pre .pre-fig--curvas.f-picos .pre-pico-et { opacity: 1; transition: opacity 0.4s ease; }
   .pre .pre-fig--curvas.f-alza .pre-pico, .pre .pre-fig--curvas.f-alza .pre-pico-et { opacity: 0; }
   .pre .pre-fig--curvas.f-alza .pre-evt, .pre .pre-fig--curvas.f-alza .pre-alza-et { opacity: 1; }
-  .pre.is-js .pre-fig--nuevos .pre-par, .pre.is-js .pre-fig--nuevos .pre-pron, .pre.is-js .pre-fig--nuevos .pre-pron-glow { stroke-dasharray: 1; stroke-dashoffset: 1; }
+  .pre.is-js .pre-fig--nuevos .pre-par, .pre.is-js .pre-fig--nuevos .pre-pron { stroke-dasharray: 1; stroke-dashoffset: 1; }
   .pre.is-js .pre-fig--nuevos.f-on .pre-par { animation: preTraza 1s ease forwards; }
   .pre.is-js .pre-fig--nuevos.f-on .pre-par:nth-child(2) { animation-delay: 0.3s; }
   .pre.is-js .pre-fig--nuevos.f-on .pre-par:nth-child(3) { animation-delay: 0.6s; }
-  .pre.is-js .pre-fig--nuevos.f-on .pre-pron, .pre.is-js .pre-fig--nuevos.f-on .pre-pron-glow { animation: preTraza 1.4s ease 1s forwards; }
+  .pre.is-js .pre-fig--nuevos.f-on .pre-pron { animation: preTraza 1.4s ease 1s forwards; }
   .pre.is-js .pre-fig--tallas li i { transform: scaleY(0); transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.08s); }
   .pre.is-js .pre-fig--tallas.f-on li i { transform: none; }
   .pre.is-js .pre-fig--cortes .pre-barra { transform: scaleX(0); transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -449,9 +388,9 @@ const TIENDAS = Array.from({ length: 100 }, (_, i) => (i % 10 < 3 ? 'a' : i % 10
   .pre.is-js .pre-fig--compra .pre-presu-b i { transform: scaleX(0); transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.8s; }
   .pre.is-js .pre-fig--compra.f-on .pre-presu-b i { transform: none; }
 
-  /* el reparto: las tiendas se encienden cuando sale la mercancía */
-  .pre.is-js .pre-reparto:not(.is-reparte) .pre-tiendas li { background: rgba(255, 255, 255, 0.08); }
-  .pre.is-js .pre-reparto .pre-tiendas li { transition: background 0.4s ease; transition-delay: calc(var(--i) * 12ms); }
+  /* el reparto: la barra crece cuando sale la mercancía */
+  .pre.is-js .pre-reparto .pre-rep-a { transform: scaleX(0); transition: transform 1.4s cubic-bezier(0.16, 1, 0.3, 1); }
+  .pre.is-js .pre-reparto.is-reparte .pre-rep-a { transform: none; }
   .pre.is-js .pre-final:not(.is-on) { display: none; }
   .pre.is-js .pre-final.is-on { animation: preEntra 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
@@ -460,21 +399,20 @@ const TIENDAS = Array.from({ length: 100 }, (_, i) => (i % 10 < 3 ? 'a' : i % 10
   @keyframes preTraza { to { stroke-dashoffset: 0; } }
   @keyframes preEntra { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
-  /* ── Escritorio: pasos a la izquierda, la gráfica del paso elegido en el escenario de la derecha ── */
   /* ── Escritorio con JS: pasos a la izquierda y un escenario pegado a la derecha, adonde el script muda las
      gráficas (.pd-escenario); en el teléfono, sin JS y en el póster, cada gráfica va debajo de su paso ── */
   .pre-escenario { display: none; }
-  .pre.pd-escenario .pre-grid { display: grid; grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.25fr); gap: 20px; align-items: start; }
-  .pre.pd-escenario .pre-escenario { position: sticky; top: 72px; display: grid; align-self: start; }
-  .pre.pd-escenario .pre-escenario > .pre-fig { grid-area: 1 / 1; align-self: start; margin: 0; padding: 18px 20px; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.35s; }
+  .pre.pd-escenario .pre-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr); gap: 56px; align-items: start; }
+  .pre.pd-escenario .pre-escenario { position: sticky; top: 76px; display: grid; align-self: start; }
+  .pre.pd-escenario .pre-escenario > .pre-fig { grid-area: 1 / 1; align-self: start; margin: 0; padding: 24px; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.35s; }
   .pre.pd-escenario .pre-escenario > .pre-fig.is-sel { opacity: 1; visibility: visible; transform: none; transition: opacity 0.45s ease 0.1s, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s, visibility 0s; }
   .pre.pd-escenario .pre-paso-b { cursor: pointer; border-radius: 10px; transition: background 0.2s; }
-  .pre.pd-escenario .pre-paso-b:hover { background: rgba(143, 176, 243, 0.08); }
-  .pre.pd-escenario .pre-paso.is-sel .pre-paso-b { background: rgba(143, 176, 243, 0.12); }
+  .pre.pd-escenario .pre-paso-b:hover { background: var(--pd-tarjeta); }
+  .pre.pd-escenario .pre-paso.is-sel .pre-paso-b { background: var(--pd-tarjeta); }
   .pre.is-js:not(.pd-escenario) .pre-fig { display: none; }
   .pre.is-js:not(.pd-escenario) .pre-paso.is-on .pre-fig { display: block; animation: preEntra 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
   @media (min-width: 1024px) {
-    .pre-final { grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.25fr); gap: 20px; align-items: start; }
+    .pre-final { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr); gap: 56px; align-items: start; }
   }
   @media (prefers-reduced-motion: reduce) {
     .pre * { animation: none !important; transition: none !important; }

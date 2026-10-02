@@ -1,60 +1,74 @@
-/* /producto/planeacion-de-demanda · dirección B «cabina nocturna» (1-oct-2026).
-   Colores y piezas comunes de la temporada simulada. Contraste AA medido sobre --pd-noche:
-   --pd-tenue ≈ 9.5:1, --pd-apagado ≈ 5.9:1, --pd-azul-c ≈ 8:1 (el azul Sacs puro va solo en rellenos). */
+/* /producto/planeacion-de-demanda (2-oct-2026, v2 «limpio»): el dueño pidió menos saturado, estilo Squarespace,
+   blanco y negro alternados, menos datos y nada de «AI slop» (sin brillos, contornos neón ni degradados).
+   Cada sección elige su tema con .pd-claro o .pd-oscuro; los componentes solo usan estas variables.
+   Contraste AA medido: --pd-tenue 8.6:1 y --pd-apagado 5.1:1 sobre blanco; 10.4:1 y 6.6:1 sobre negro. */
 .pd {
-  --pd-noche: #0A1648;
-  --pd-noche-2: #070F33;
-  --pd-panel: #0E1E5C;
-  --pd-linea: rgba(143, 176, 243, 0.22);
   --pd-azul: #4B7BE5;
-  --pd-azul-c: #8FB0F3;
-  --pd-rosa: #E0457B;
-  --pd-rosa-c: #FF8FB3;
-  --pd-verde: #3DDC84;
-  --pd-ambar: #FFB547;
-  --pd-rojo: #FF6B6B;
-  --pd-tenue: rgba(255, 255, 255, 0.72);
+  --pd-ok: #1F9D63;
+  --pd-pronto: #E09B2D;
+  --pd-falta: #D64545;
+  --pd-sobra: #4B7BE5;
+  --pd-radio: 18px;
+  background: #fff;
+}
+.pd-claro {
+  --pd-fondo: #FFFFFF;
+  --pd-texto: #1A1A1A;
+  --pd-tenue: #4A4A4A;
+  --pd-apagado: #6E6E6D;
+  --pd-linea: #E7E7E4;
+  --pd-tarjeta: #F5F5F3;
+  --pd-acento: #2F55C4;
+  --pd-boton: #1A1A1A;
+  --pd-boton-t: #FFFFFF;
+  --pd-obra: #8A5A00;
+  background: var(--pd-fondo);
+  color: var(--pd-texto);
+}
+.pd-oscuro {
+  --pd-fondo: #111111;
+  --pd-texto: #FFFFFF;
+  --pd-tenue: rgba(255, 255, 255, 0.74);
   --pd-apagado: rgba(255, 255, 255, 0.58);
-  background: var(--pd-noche-2);
-  color: #fff;
+  --pd-linea: rgba(255, 255, 255, 0.12);
+  --pd-tarjeta: #1C1C1C;
+  --pd-acento: #9DB8F5;
+  --pd-boton: #FFFFFF;
+  --pd-boton-t: #111111;
+  --pd-obra: #F2C46B;
+  background: var(--pd-fondo);
+  color: var(--pd-texto);
 }
 
-/* «ejemplo» y «en construcción»: discretos, siempre legibles */
-.pd .pd-ej, .pd .pd-obra {
-  display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 99px;
-  font: 600 10.5px/1.2 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap;
-}
-.pd .pd-ej { background: rgba(255, 255, 255, 0.08); color: var(--pd-tenue); }
-.pd .pd-obra { border: 1px dashed rgba(255, 181, 71, 0.6); color: #FFD08A; }
-.pd .pd-obra::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--pd-ambar); }
-
+/* «ejemplo» y «en construcción»: texto discreto, sin pastillas de colores */
+.pd .pd-ej, .pd .pd-obra { display: inline-flex; align-items: center; gap: 6px; font: 500 12px/1.3 var(--font-body); white-space: nowrap; }
+.pd .pd-ej { color: var(--pd-apagado); }
+.pd .pd-obra { color: var(--pd-obra); }
+.pd .pd-obra::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
 .pd .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 
 /* la barra de WhatsApp y el submenú de producto no tapan la escena mientras está pegada */
 body.planeacion-activo .product-subnav.nav-hidden { transform: translateY(-100%); }
 
-/* ── los actos de la consola (comunes a los 4) ── */
-.pd .pda { position: relative; padding: 52px 16px 60px; overflow: clip; scroll-margin-top: 56px; }
-.pd .pda + .pda { border-top: 1px solid var(--pd-linea); }
-.pd .pda > * { max-width: 1280px; margin-left: auto; margin-right: auto; }
-.pd .pda-cab { position: relative; z-index: 1; }
-.pd .pda-gigante { position: absolute; z-index: -1; right: -3vw; top: -18px; font: 700 clamp(84px, 21vw, 300px)/0.8 'Clash Display', var(--font-display); text-transform: uppercase; color: transparent; -webkit-text-stroke: 1.5px rgba(143, 176, 243, 0.2); white-space: nowrap; pointer-events: none; user-select: none; }
-.pd .pda-k { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; font: 600 11px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--pd-azul-c); }
-.pd .pda-k i { flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--pd-rosa); }
-.pd .pda-h { margin: 0; max-width: 19ch; font: 700 clamp(32px, 4.4vw, 62px)/0.98 'Clash Display', var(--font-display); letter-spacing: -0.01em; color: #fff; text-wrap: balance; }
-.pd .pda-fecha { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0 0; font: 500 13px/1.4 var(--font-display); color: var(--pd-tenue); }
-.pd .pda-tarjetas-k { margin: 0 0 10px; font: 600 11px/1.3 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--pd-azul-c); }
-.pd .pda-lista { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.pd .pda-sigue { display: flex; width: max-content; align-items: center; gap: 10px; margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.5); font: 600 15px var(--font-display); color: #fff; text-decoration: none; }
-.pd .pda-sigue:hover { color: #fff; text-decoration: none; border-color: #fff; }
-.pd .pda-sigue:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+/* ── los actos (comunes a los 4) ── */
+.pd .pda { position: relative; padding: 72px 20px 80px; scroll-margin-top: 56px; }
+.pd .pda > * { max-width: 1160px; margin-left: auto; margin-right: auto; }
+.pd .pda-k { margin: 0 0 14px; font: 600 13px/1.3 var(--font-display); letter-spacing: 0.02em; color: var(--pd-apagado); }
+.pd .pda-k b { color: var(--pd-texto); font-weight: 600; }
+.pd .pda-h { margin: 0; max-width: 17ch; font: 800 clamp(34px, 5vw, 64px)/1.02 var(--font-display); letter-spacing: -0.04em; color: var(--pd-texto); text-wrap: balance; }
+.pd .pda-fecha { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin: 16px 0 0; font: 400 16px/1.5 var(--font-body); color: var(--pd-tenue); }
+.pd .pda-tarjetas-k { margin: 0 0 12px; font: 600 14px/1.3 var(--font-display); color: var(--pd-texto); }
+.pd .pda-lista { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.pd .pda-sigue { display: flex; width: max-content; align-items: center; gap: 10px; margin-top: 40px; padding-bottom: 3px; border-bottom: 1.5px solid currentColor; font: 600 15px var(--font-display); color: var(--pd-texto); text-decoration: none; }
+.pd .pda-sigue:hover { color: var(--pd-texto); text-decoration: none; opacity: 0.75; }
+.pd .pda-sigue:focus-visible { outline: 2px solid var(--pd-azul); outline-offset: 4px; }
 
 /* el detalle de las tarjetas: en el póster va completo; con JS se abre en el diálogo */
-.pd .pd-detalles { display: grid; gap: 14px; margin-top: 28px; }
-.pd .pd-detalles-h { margin: 0; font: 600 12px/1.2 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--pd-azul-c); }
-.pd .pd-detalles > article { padding: 16px; border-radius: 16px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--pd-linea); }
+.pd .pd-detalles { display: grid; gap: 16px; margin-top: 32px; }
+.pd .pd-detalles-h { margin: 0; font: 600 14px/1.3 var(--font-display); color: var(--pd-texto); }
+.pd .pd-detalles > article { padding: 20px; border-radius: var(--pd-radio); background: var(--pd-tarjeta); }
 .pd.pd-js .pd-detalles { display: none; }
 
 @media (min-width: 768px) {
-  .pd .pda { padding: 72px 4vw 84px; }
+  .pd .pda { padding: 112px 5vw 120px; }
 }

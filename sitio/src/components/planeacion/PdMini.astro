@@ -60,29 +60,29 @@ const maxDias = g.tipo === 'dias' ? Math.max(g.va ?? 0, g.vb ?? 0, 1) : 1;
 )}
 
 <style>
-  .pdm { display: block; margin: 8px 0 0; }
+  .pdm { display: block; margin: 10px 0 0; }
   svg.pdm { width: 100%; max-width: 260px; height: auto; overflow: visible; }
-  .pdm-area { fill: rgba(143, 176, 243, 0.14); }
-  .pdm-l { fill: none; stroke: var(--pd-azul-c); stroke-width: 2.2; stroke-linecap: round; }
-  .pdm-ev { fill: var(--pd-rosa); stroke: var(--pd-noche); stroke-width: 2; }
+  .pdm-area { fill: rgba(75, 123, 229, 0.12); }
+  .pdm-l { fill: none; stroke: var(--pd-azul); stroke-width: 2.2; stroke-linecap: round; }
+  .pdm-ev { fill: var(--pd-falta); stroke: var(--pd-fondo); stroke-width: 2; }
 
   .pdm--barras, .pdm--dias, .pdm--curva { list-style: none; padding: 0; }
-  .pdm--barras li, .pdm--dias li { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 2px 0; font: 500 12px/1.3 var(--font-display); color: var(--pd-tenue); }
-  .pdm--barras i, .pdm--dias i { display: block; height: 8px; width: var(--w); border-radius: 4px; background: var(--pd-azul-c); }
-  .pdm--barras li.is-resta i { background: repeating-linear-gradient(135deg, rgba(143, 176, 243, 0.65) 0 4px, transparent 4px 7px); }
-  .pdm--barras b, .pdm--dias b { font-weight: 600; color: #fff; font-variant-numeric: tabular-nums; }
-  .pdm--dias li.is-poco i { background: var(--pd-rosa); }
+  .pdm--barras li, .pdm--dias li { display: grid; grid-template-columns: 104px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 3px 0; font: 400 13px/1.3 var(--font-body); color: var(--pd-tenue); }
+  .pdm--barras i, .pdm--dias i { display: block; height: 8px; width: var(--w); border-radius: 4px; background: var(--pd-azul); }
+  .pdm--barras li.is-resta i { background: repeating-linear-gradient(135deg, var(--pd-apagado) 0 3px, transparent 3px 6px); }
+  .pdm--barras b, .pdm--dias b { font: 600 13px/1.3 var(--font-display); color: var(--pd-texto); font-variant-numeric: tabular-nums; }
+  .pdm--dias li.is-poco i { background: var(--pd-falta); }
 
-  .pdm--camino { display: grid; grid-template-columns: auto minmax(30px, 1fr) auto; align-items: start; gap: 8px; max-width: 320px; }
-  .pdm--camino > span:not(.pdm-c-l) { display: grid; justify-items: start; gap: 2px; font: 500 11.5px/1.25 var(--font-display); color: var(--pd-tenue); }
-  .pdm--camino i { width: 10px; height: 10px; border-radius: 50%; background: var(--pd-azul-c); }
-  .pdm-c-b i { background: var(--pd-verde); }
-  .pdm--camino b { font-weight: 600; font-size: 13px; color: #fff; }
-  .pdm-c-l { height: 2px; margin-top: 4px; background: repeating-linear-gradient(90deg, var(--pd-azul-c) 0 6px, transparent 6px 10px); }
+  .pdm--camino { display: grid; grid-template-columns: auto minmax(30px, 1fr) auto; align-items: start; gap: 10px; max-width: 320px; }
+  .pdm--camino > span:not(.pdm-c-l) { display: grid; justify-items: start; gap: 2px; font: 400 12.5px/1.3 var(--font-body); color: var(--pd-tenue); }
+  .pdm--camino i { width: 10px; height: 10px; border-radius: 50%; background: var(--pd-azul); }
+  .pdm-c-b i { background: var(--pd-ok); }
+  .pdm--camino b { font: 600 14px/1.3 var(--font-display); color: var(--pd-texto); }
+  .pdm-c-l { height: 1.5px; margin-top: 5px; background: repeating-linear-gradient(90deg, var(--pd-apagado) 0 5px, transparent 5px 9px); }
 
   .pdm--curva { display: flex; gap: 6px; }
-  .pdm--curva li { display: grid; justify-items: center; gap: 2px; min-width: 38px; padding: 6px 4px; border-radius: 8px; background: rgba(61, 220, 132, 0.12); border: 1px solid rgba(61, 220, 132, 0.4); font: 600 12px/1 var(--font-display); color: #fff; }
-  .pdm--curva li span { color: var(--pd-verde); }
-  .pdm--curva li.is-falta { background: rgba(255, 107, 107, 0.14); border-color: rgba(255, 107, 107, 0.6); }
-  .pdm--curva li.is-falta span { color: var(--pd-rojo); }
+  .pdm--curva li { display: grid; justify-items: center; gap: 3px; min-width: 40px; padding: 7px 4px; border-radius: 10px; background: var(--pd-tarjeta); font: 600 12.5px/1 var(--font-display); color: var(--pd-texto); }
+  .pdm--curva li span { color: var(--pd-ok); }
+  .pdm--curva li.is-falta { box-shadow: inset 0 0 0 1.5px var(--pd-falta); }
+  .pdm--curva li.is-falta span { color: var(--pd-falta); }
 </style>

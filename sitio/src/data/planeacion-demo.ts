@@ -13,6 +13,7 @@
  *  - Recibido en la temporada: 30,200 + 360 (playera extra) + 540 (polo extra) = 31,100.
  *  - Vendido 29,110 = 93.6 %; sobrante 1,990 = 6.4 % (1,150 básicos que pasan + 840 al outlet).
  *  - A precio completo 25,660 = 82.5 % de lo recibido; rebajas $788 K = 3.7 % de $21.3 M.
+ *  - v2 «limpio» (2-oct-2026): en pantalla van menos datos; los que se quitaron no cambian las cuentas.
  *  - Plan semanal (13 semanas, 3 may – 1 ago) suma 28,400; la venta real suma 29,110. A la semana 6 la real va
  *    14,510 contra 13,000 del plan (+12 %): la semana pico sube de 5,800 a 6,500 (fue 6,600).
  *  - Fechas de 2027 verificadas: lun 8 feb, mié 10 feb (8 feb + 2), vie 12 mar, lun 26 abr (26 abr − 75 días = 10 feb;
@@ -390,12 +391,6 @@ export const CIERRE = {
   consolidar: { t: 'Sacs te avisa cuándo conviene juntar lo suelto antes de rebajar.', s: '1 o 2 tallas por tienda no se venden solas. En el ejemplo, 312 piezas sueltas en 61 tiendas se juntan en 18, con la curva completa.', obra: 'El plan automático, en construcción' },
   quedo: {
     total: 1990, pct: '6.4 %', basicos: 1150, outlet: 840,
-    categoria: [
-      { k: 'Playeras básicas', n: 640, b: true }, { k: 'Calcetas', n: 510, b: true },
-      { k: 'Polos golf', n: 590 }, { k: 'Shorts', n: 150 }, { k: 'Joggers', n: 100 },
-    ],
-    talla: [{ k: 'S', n: 260 }, { k: 'M', n: 410 }, { k: 'L', n: 520 }, { k: 'XL', n: 480 }, { k: 'XXL', n: 320 }],
-    region: [{ k: 'Norte', n: 380 }, { k: 'Bajío', n: 340 }, { k: 'Centro', n: 690 }, { k: 'Occidente', n: 300 }, { k: 'Sureste', n: 280 }],
   },
   bio: {
     modelo: 'Polo Piqué Marino', foto: 'polo-pique-marino',
@@ -417,27 +412,18 @@ export const CIERRE = {
 /* ─────────────── Acto 4 · Resultado y lo que aprendió ─────────────── */
 export const RESULTADO = {
   fecha: 'Lunes 2 de agosto de 2027',
+  // v2 «limpio» (2-oct-2026): solo 6 indicadores; la exactitud del pronóstico va con «lo que aprendió».
   kpis: [
     { k: 'Venta neta', v: '$21.3 M', s: '$700 K arriba del plan', e: 'Lo que vendiste, ya sin descuentos ni devoluciones.' },
     { k: '% vendido', v: '93.6 %', s: 'de todo lo que llegó', e: 'De cada 100 piezas que recibiste, cuántas se vendieron.' },
     { k: 'A precio completo', v: '82.5 %', s: 'meta: 80 %', e: 'Lo que se vendió sin rebaja, contra todo lo que llegó.', meta: true },
-    { k: 'Margen bruto', v: '60 %', s: 'de la venta', e: 'Lo que te queda de cada peso de venta después de pagar la mercancía.' },
-    { k: 'Rebajas', v: '3.7 %', s: 'de la venta · meta: no más de 6 %', e: 'Lo que dejaste de cobrar por descuentos.', meta: true },
-    { k: 'Venta perdida por agotados', v: '$180 K', s: 'Short Negro L en el Bajío', e: 'Lo que no vendiste porque no había la talla.' },
-    { k: 'Sobrante', v: '6.4 %', s: '1,990 piezas', e: 'Lo que quedó al cierre: básicos que pasan y lo que va al outlet.' },
-    { k: 'Semanas de inventario', v: '2.2', s: 'al cierre', e: 'Para cuántas semanas de venta te alcanza lo que quedó.' },
+    { k: 'Margen bruto', v: '60 %', s: 'de la venta', e: 'Lo que te queda de cada peso después de pagar la mercancía.' },
+    { k: 'Rebajas', v: '3.7 %', s: 'meta: no más de 6 %', e: 'Lo que dejaste de cobrar por descuentos.', meta: true },
     { k: 'Rendimiento del inventario', v: '3.1', s: 'veces', e: 'Cada peso que tuviste en inventario dejó $3.10 de margen.' },
-    { k: 'Exactitud del pronóstico', v: '94 %', s: '81 % por modelo · 68 % por tienda y talla', e: 'Qué tan cerca quedó el pronóstico de lo que de verdad se vendió.' },
-    { k: 'Movimientos', v: '600', s: '186 traspasos · 412 resurtidos · 2 compras extra', e: '400 resurtidos se mandaron solos: 2 de cada 3 movimientos.' },
   ],
-  colecciones: [
-    { k: 'Día del Padre', s: 'polos golf y playeras dry-fit', venta: '$9.8 M', margen: '61 %', w: 46 },
-    { k: 'Running', s: 'shorts, joggers y gorras', venta: '$6.9 M', margen: '58 %', w: 32 },
-    { k: 'Básicos', s: 'playera básica y calcetas', venta: '$4.6 M', margen: '62 %', w: 22 },
-  ],
+  exactitud: { v: '94 %', s: 'de exactitud del pronóstico', e: 'Qué tan cerca quedó el pronóstico de lo que de verdad se vendió (81 % por modelo y 68 % por tienda y talla).' },
   aciertos: [
     'El pico llegó cuando se pronosticó: 2.3 veces lo normal pronosticado, 2.4 real.',
-    'Las tallas grandes del Norte.',
     'Los traspasos salvaron $850 K de venta antes del domingo.',
     'La playera blanca extra llegó 10 días antes del evento.',
   ],
@@ -450,7 +436,6 @@ export const RESULTADO = {
     'Los colores nuevos en polos se pronostican al 60 % de sus parecidos, hasta ver 2 semanas de venta.',
     'En el Bajío, 15 % más de L y XL en shorts.',
     'El proveedor de joggers en realidad tarda 83 días: su corte se adelanta.',
-    'El pico empieza 9 días antes del domingo: el último resurtido sale una semana antes.',
   ],
   nota: 'Se aplica a la siguiente temporada con tu visto bueno.',
   boton: 'Aplicar a Navidad 2027',

@@ -88,7 +88,8 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
 
     const omitido = (i: number) => { const c = pasos[i].dataset.clave; return !!c && !estado.analiza.has(c); };
     function selecciona(i: number) {
-      const f = pasos[i].dataset.fig!;
+      const f = pasos[i].dataset.fig;
+      if (!f) return;   // el paso de inventario va sin gráfica: se queda la que estaba
       figs.forEach((fig, k) => fig.classList.toggle('is-sel', k === f));
       pasos.forEach((p, k) => p.classList.toggle('is-sel', k === i));
     }
@@ -105,7 +106,8 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
     ubica();
     selecciona(pasos.length - 1);   // el póster (antes de prepararse) muestra la compra en el escenario
     function estadoFig(i: number, ya = false) {
-      const fig = figs.get(pasos[i].dataset.fig!)!;
+      const fig = figs.get(pasos[i].dataset.fig || '');
+      if (!fig) return;
       const id = PASOS[i].id;
       if (fig.dataset.fig === 'curvas') {
         fig.classList.add('f-historia');
@@ -179,7 +181,7 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
       },
       final() {
         pasos.forEach((_, i) => muestra(i, true));
-        const ultimo = [...pasos.keys()].reverse().find((i) => !omitido(i));
+        const ultimo = [...pasos.keys()].reverse().find((i) => !omitido(i) && !!pasos[i].dataset.fig);
         if (ultimo !== undefined && !manual) selecciona(ultimo);
         el.classList.add('is-terminado');
         final.classList.add('is-on'); tarjetas.forEach((li) => li.classList.add('is-on'));
@@ -201,7 +203,7 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
     const cal = $$(el, '.vivo-cal li');
     const hoy = $(el, '.vivo-hoy'), hoyT = $(el, '[data-hoy]');
     const c = {
-      hoy: $(el, '[data-cont="hoy"]'), hoyS: $(el, '[data-cont-s="hoy"]'),
+      hoy: el.querySelector<HTMLElement>('[data-cont="hoy"]'), hoyS: el.querySelector<HTMLElement>('[data-cont-s="hoy"]'),
       acum: $(el, '[data-cont="acum"]'), acumS: $(el, '[data-cont-s="acum"]'),
       vendido: $(el, '[data-cont="vendido"]'), agotados: $(el, '[data-cont="agotados"]'),
     };
@@ -267,8 +269,8 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
     function contadores(dia: number) {
       const w = Math.min(6, Math.floor(dia / 7)), di = Math.min(DIAS, Math.floor(dia));
       const hoyPzs = REAL_27[w] * FAC[di % 7];
-      c.hoy.textContent = dinero(hoyPzs * 731);
-      c.hoyS.textContent = di === DIAS ? 'domingo, Día del Padre' : `${Math.round(hoyPzs).toLocaleString('en-US')} piezas`;
+      if (c.hoy) c.hoy.textContent = dinero(hoyPzs * 731);
+      if (c.hoyS) c.hoyS.textContent = di === DIAS ? 'domingo, Día del Padre' : `${Math.round(hoyPzs).toLocaleString('en-US')} piezas`;
       const fin = Math.min(49, Math.floor(dia) + 1);   // al cierre de cada día
       const real = acumula(REAL_27, fin), plan = acumula(PLAN_27, fin);
       c.acum.textContent = dinero(real * 731);
@@ -437,7 +439,8 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
   /* ───────── Acto 4 · Resultado ───────── */
   function actoResultado(el: HTMLElement): Acto {
     const pasos = $$(el, '[data-paso]');
-    const kpis = $$(el, '[data-kpi]');
+    const kpis = $$(el, '.res-kpis [data-kpi]');
+    const exacta = el.querySelector<HTMLElement>('.res-exact [data-kpi]');
     const btn = $<HTMLButtonElement>(el, '[data-aplicar]');
     btn.addEventListener('click', () => {
       if (el.classList.contains('is-aplicado')) return;
@@ -445,15 +448,20 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
       anuncia(el.querySelector('[data-aplicar-hecho]')?.textContent?.replace('Al aplicarlo: ', '') || '✓ Aplicado');
       ph('planeacion_aplicar');
     });
-    const T = [400, 3600, 5600, 7800, 10200, 12600];
+    // 0 indicadores · 1 aciertos · 2 errores · 3 lo que aprendió · 4 el ciclo
+    const T = [400, 3600, 5600, 7800, 10400];
     return {
-      id: 'resultado', el, dur: 14600,
+      id: 'resultado', el, dur: 12400,
       beats: [
-        ...T.map((t, i) => ({ t, fn: () => { pasos[i].classList.add('is-on'); if (i === 0) kpis.forEach((k, j) => setTimeout(() => cuenta(k, k.dataset.kpi!), j * 110)); } })),
-        { t: 14400, fn: () => phUnaVez('planeacion_final') },
+        ...T.map((t, i) => ({ t, fn: () => {
+          pasos[i].classList.add('is-on');
+          if (i === 0) kpis.forEach((k, j) => setTimeout(() => cuenta(k, k.dataset.kpi!), j * 110));
+          if (i === 3 && exacta) cuenta(exacta, exacta.dataset.kpi!);
+        } })),
+        { t: 12200, fn: () => phUnaVez('planeacion_final') },
       ],
-      reset() { pasos.forEach((p) => p.classList.remove('is-on')); el.classList.remove('is-aplicado'); btn.disabled = false; btn.textContent = 'Aplicar a Navidad 2027'; kpis.forEach((k) => (k.textContent = k.dataset.kpi!)); },
-      final() { pasos.forEach((p) => p.classList.add('is-on')); kpis.forEach((k) => (k.textContent = k.dataset.kpi!)); },
+      reset() { pasos.forEach((p) => p.classList.remove('is-on')); el.classList.remove('is-aplicado'); btn.disabled = false; btn.textContent = 'Aplicar a Navidad 2027'; [...kpis, exacta].forEach((k) => { if (k) k.textContent = k.dataset.kpi!; }); },
+      final() { pasos.forEach((p) => p.classList.add('is-on')); [...kpis, exacta].forEach((k) => { if (k) k.textContent = k.dataset.kpi!; }); },
     };
   }
 
