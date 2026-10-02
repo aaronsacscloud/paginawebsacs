@@ -7,21 +7,33 @@ const structuredData = breadcrumbCaso();
 const cases = [
   {
     slug: 'liveshow',
+    featured: true,
     brand: 'Live Shows Merchandising',
-    tagline: 'Desde 2007, el recuerdo que te llevas del concierto. Vendido al ritmo de un estadio lleno.',
-    tag: 'Entretenimiento',
-    tagColor: '#E84393',
-    image: '/images/ls-stand-sacrifice.webp',
+    tagline: 'La moda que se vuelve recuerdo.',
+    tag: 'Moda · Merch oficial',
+    tagColor: '#C42A74',
+    image: '/images/ls-guts-fans.webp',
+    imageAlt: 'Fan con la sudadera oficial del GUTS World Tour frente a la pared de playeras',
+    image2: '/images/ls-guts-tote.webp',
+    image2Alt: 'Tote bag oficial de GUTS gallery',
+    image3: '/images/ls-guts-experiencia.webp',
+    image3Alt: 'Instalación iluminada de la experiencia GUTS gallery',
     stats: [
       { num: '2007', label: 'líderes del merch oficial' },
       { num: '8', label: 'países con oficina' },
-      { num: '100+', label: 'puntos de venta simultáneos' },
+      { num: '100+', label: 'puntos de venta a la vez' },
       { num: '150K+', label: 'transacciones sin error' },
     ],
     quote: '"En un concierto perdimos 20% de ventas en dos horas porque el sistema colapsó. Con SACS eso no vuelve a pasar."',
     author: 'Mariana López, Directora de Operaciones',
-    desc: 'Live Shows fabrica y vende la mercancía oficial de los artistas más grandes en toda América Latina: moda que se vuelve recuerdo. En cada estadio, cada caja es una sucursal que no para de vender, con varias ventas por segundo entre todos sus módulos.',
-    highlights: ['Cobro sin internet que se sincroniza solo', 'Cada módulo con su inventario, su caja y su corte', 'Traspasos entre módulos en pleno evento', 'Tablero en vivo de lo que se vende y dónde'],
+    desc: 'Playeras, sudaderas y prendas de corte especial con diseño propio y ediciones limitadas por ciudad y por fecha: la prenda con la que te llevas puesto al artista que te inspira.',
+    points: [
+      { k: 'La moda', t: 'Te pones la playera y vuelves a esa noche.', d: 'Diseño propio, cortes especiales y ediciones limitadas para fans que se visten como su artista.' },
+      { k: 'El ritmo', t: 'Cada caja es una sucursal que no para de vender.', d: 'Más de 100 módulos cobrando a la vez, con varias ventas por segundo en un estadio lleno.' },
+      { k: 'La seguridad', t: 'Ni una venta se pierde.', d: 'Si la señal se cae, se sigue cobrando y todo se sincroniza solo. 0% de ventas perdidas.' },
+      { k: 'El sistema', t: 'Un evento entero dentro de SACS.', d: 'Inventario por módulo, traspasos en pleno evento, alertas de agotado y corte por vendedor.' },
+    ],
+    highlights: [],
   },
   {
     slug: 'la-bella-pandita',
@@ -97,7 +109,48 @@ const cases = [
 </section>
 
 <!-- Cases -->
-{cases.map((c, idx) => (
+{cases.map((c, idx) => c.featured ? (
+  <section class="ce-feat" id={c.slug}>
+    <div class="ce-feat-inner">
+      <div class="ce-feat-visual">
+        <img src={c.image} alt={c.imageAlt} width="1080" height="1080" loading="eager" class="ce-feat-img-a" />
+        <img src={c.image3} alt={c.image3Alt} width="1080" height="1080" loading="lazy" class="ce-feat-img-c" />
+        <img src={c.image2} alt={c.image2Alt} width="1080" height="1080" loading="lazy" class="ce-feat-img-b" />
+        <span class="ce-feat-badge">Lookbook de concierto</span>
+      </div>
+      <div class="ce-feat-content">
+        <span class="ce-feat-tag">{c.tag}</span>
+        <h2 class="ce-feat-brand">{c.brand}</h2>
+        <p class="ce-feat-tagline">{c.tagline}</p>
+        <p class="ce-feat-desc">{c.desc}</p>
+        <div class="ce-feat-stats">
+          {c.stats.map((s) => (
+            <div class="ce-feat-stat"><span class="ce-feat-stat-num">{s.num}</span><span class="ce-feat-stat-label">{s.label}</span></div>
+          ))}
+        </div>
+      </div>
+    </div>
+    <div class="ce-feat-points">
+      {c.points?.map((pt, i) => (
+        <div class="ce-feat-point">
+          <span class="ce-feat-point-k">{String(i + 1).padStart(2, '0')} · {pt.k}</span>
+          <h3>{pt.t}</h3>
+          <p>{pt.d}</p>
+        </div>
+      ))}
+    </div>
+    <div class="ce-feat-foot">
+      <blockquote class="ce-feat-quote">
+        <p>{c.quote}</p>
+        <cite>— {c.author}</cite>
+      </blockquote>
+      <a href={`/casos-de-exito/${c.slug}`} class="ce-feat-link">
+        Entra a la historia completa
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+  </section>
+) : (
   <section class={`ce-case ${idx % 2 === 1 ? 'ce-case--alt' : ''}`} id={c.slug}>
     <div class="ce-case-inner">
       <div class="ce-case-visual">
@@ -358,6 +411,48 @@ const cases = [
   }
   .ce-case-link:hover {
     gap: 10px;
+  }
+
+
+  /* ── Caso destacado (Live Shows): editorial de moda ── */
+  .ce-feat { background: #0b0a10; color: #fff; padding: clamp(64px, 8vw, 110px) 0; }
+  .ce-feat-inner, .ce-feat-points, .ce-feat-foot { max-width: 1200px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px); }
+  .ce-feat-inner { display: grid; grid-template-columns: 1.05fr 1fr; gap: clamp(36px, 6vw, 80px); align-items: center; }
+  .ce-feat-visual { position: relative; padding: 0 30% 12% 0; }
+  .ce-feat-visual img { display: block; width: 100%; height: auto; object-fit: cover; }
+  .ce-feat-img-a { aspect-ratio: 4 / 5; border-radius: 4px; }
+  .ce-feat-img-b { position: absolute; right: 0; bottom: 0; width: 46% !important; aspect-ratio: 1; border-radius: 4px; border: 6px solid #0b0a10; }
+  .ce-feat-img-c { position: absolute; right: 0; top: 0; width: 36% !important; aspect-ratio: 1; border-radius: 4px; }
+  .ce-feat-badge { position: absolute; top: 16px; left: 16px; background: #fff; color: #0b0a10; font-family: var(--font-display); font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; padding: 8px 12px; }
+  .ce-feat-tag { display: inline-block; font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #FF7AB6; border-bottom: 1px solid #FF7AB6; padding-bottom: 4px; }
+  .ce-feat-brand { font-family: var(--font-display); font-size: clamp(2.4rem, 5vw, 4rem); font-weight: 800; letter-spacing: -0.04em; line-height: 1.02; color: #fff; margin: 18px 0 10px; }
+  .ce-feat-tagline { font-family: var(--font-display); font-size: clamp(1.4rem, 2.6vw, 2rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; color: #FF7AB6; margin: 0 0 18px; }
+  .ce-feat-desc { font-family: var(--font-body); font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.72); margin: 0 0 28px; max-width: 520px; }
+  .ce-feat-stats { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid rgba(255,255,255,0.14); }
+  .ce-feat-stat { padding: 18px 12px 0 0; }
+  .ce-feat-stat-num { display: block; font-family: var(--font-display); font-size: clamp(1.5rem, 2.4vw, 2rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: #fff; }
+  .ce-feat-stat-label { display: block; font-family: var(--font-body); font-size: 12px; line-height: 1.35; color: rgba(255,255,255,0.55); margin-top: 6px; }
+  .ce-feat-points { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: clamp(48px, 6vw, 72px); }
+  .ce-feat-point { border-top: 2px solid #C42A74; padding-top: 18px; }
+  .ce-feat-point-k { font-family: var(--font-body); font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #FF7AB6; }
+  .ce-feat-point h3 { font-family: var(--font-display); font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.25; color: #fff; margin: 10px 0 8px; }
+  .ce-feat-point p { font-family: var(--font-body); font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.65); margin: 0; }
+  .ce-feat-foot { display: flex; align-items: center; justify-content: space-between; gap: 32px; margin-top: clamp(40px, 5vw, 56px); }
+  .ce-feat-quote { margin: 0; padding-left: 20px; border-left: 3px solid #C42A74; max-width: 640px; }
+  .ce-feat-quote p { font-family: var(--font-body); font-size: 16px; font-style: italic; line-height: 1.6; color: rgba(255,255,255,0.85); margin: 0 0 8px; }
+  .ce-feat-quote cite { font-family: var(--font-body); font-size: 13px; font-style: normal; font-weight: 600; color: rgba(255,255,255,0.5); }
+  .ce-feat-link { flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; background: #fff; color: #0b0a10; font-family: var(--font-body); font-size: 15px; font-weight: 700; padding: 14px 26px; border-radius: 100px; text-decoration: none; transition: gap 0.2s ease; }
+  .ce-feat-link:hover { gap: 12px; text-decoration: none; }
+  @media (max-width: 900px) {
+    .ce-feat-inner { grid-template-columns: 1fr; }
+    .ce-feat-points { grid-template-columns: repeat(2, 1fr); }
+    .ce-feat-foot { flex-direction: column; align-items: flex-start; }
+  }
+  @media (max-width: 560px) {
+    .ce-feat-stats { grid-template-columns: repeat(2, 1fr); }
+    .ce-feat-points { grid-template-columns: 1fr; }
+    .ce-feat-img-b { border-width: 4px; }
+    .ce-feat-link { width: 100%; justify-content: center; }
   }
 
   /* CTA */
