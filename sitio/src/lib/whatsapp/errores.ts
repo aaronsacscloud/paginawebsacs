@@ -99,6 +99,10 @@ const KAPSO: { re: RegExp; def: Def }[] = [
   { re: /media.*(too large|exceeds)/i, def: META['131053'] },
   { re: /recipient.*(invalid|not.*whatsapp)/i, def: META['131026'] },
   { re: /fetch failed|ECONNRESET|ETIMEDOUT|network/i, def: D('Sin conexión con Kapso', 'La petición no llegó a Kapso (red o caída).', 'Reintenta en un momento.', 'red', true) },
+  // Al final: KAPSO[3] y KAPSO[4] se usan por posición en explicarError.
+  // Kapso cobra las plantillas con saldo prepagado por proyecto; sin saldo
+  // responde { error: "Your Kapso balance doesn't cover Meta's fee…", code: "insufficient_credits" }.
+  { re: /insufficient_credits|balance doesn'?t cover|insufficient (credit|balance)/i, def: D('Sin saldo en Kapso', 'El saldo de Kapso no alcanza para pagarle a Meta este mensaje de plantilla.', 'Recarga saldo en Kapso (Billing) o mándalo por otra línea con «Sale por».', 'cuenta') },
 ];
 
 const GENERICO: Def = D('No se pudo enviar', 'WhatsApp devolvió un error que no tenemos catalogado.', 'Reintenta; si vuelve a fallar, manda el detalle técnico a soporte.', 'otro', true);
