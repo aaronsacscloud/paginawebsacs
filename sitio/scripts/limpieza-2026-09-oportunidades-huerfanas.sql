@@ -1,13 +1,13 @@
 -- ═══ Oportunidades huérfanas: pipeline que no existe ══════════════════════
 --
--- Reporte del dueño (3-sep-2026): «aquí está duplicada muchas veces karina,
+-- Reporte del dueño (3-sep-2026): «aquí está duplicada muchas veces [la lead],
 -- elimina, creo que ni es real». Tenía razón, y el problema es más grande que
--- Karina.
+-- [la lead].
 --
 -- LO MEDIDO. 11 oportunidades ABIERTAS cuelgan de una cotización que ya no
 -- existe o está archivada — $122,680 de pipeline sin ningún documento detrás:
 --
---   karina                          6 · $77,100  · las seis el 28-ago, 19:34 a 20:32
+--   (lead 8ce44a23)                 6 · $77,100  · las seis el 28-ago, 19:34 a 20:32
 --   Andrea                          1 · $10,440
 --   Andrea Gutierrez Araujo         1 · $10,440
 --   Mirelle Ibarra García           1 · $11,700
@@ -21,7 +21,7 @@
 -- monto contando en el forecast y su `quote_id` apuntando a una fila que ya no
 -- está. Arreglado en el mismo commit; esto limpia lo que ya quedó.
 --
--- ESTE SCRIPT SOLO TOCA LAS 6 DE KARINA. Son inequívocas: mismo contacto, seis
+-- ESTE SCRIPT SOLO TOCA LAS 6 DE ESA LEAD (8ce44a23). Son inequívocas: mismo contacto, seis
 -- cotizaciones en menos de una hora con montos escalando (10,800 → 13,000 →
 -- 14,900 → 16,800), todas borradas, cero aperturas del cliente. Es alguien
 -- probando el cotizador.
@@ -29,7 +29,7 @@
 -- oportunidad viva de cada uno: archivarlas los saca del embudo por completo.
 -- Eso lo decide el dueño, no este script.
 --
--- NO se borra el contacto: karina llegó por tiktok-lead-form el 23-ago con
+-- NO se borra el contacto: la lead llegó por tiktok-lead-form el 23-ago con
 -- correo y WhatsApp propios. Lo falso son las oportunidades, no la persona.
 --
 -- Se ARCHIVA (archived_at), no se borra: si alguna resulta buena, se revive
@@ -51,7 +51,7 @@ where d.quote_id is not null
   and d.archived_at is null
   and d.stage not in ('cerrada_ganada','cerrada_perdida')
   and (q.id is null or q.estado = 'deleted')
-  and c.id = '8ce44a23-aec9-4000-a7e8-c4f8c32ab241';   -- karina, por id: el nombre se repite
+  and c.id = '8ce44a23-aec9-4000-a7e8-c4f8c32ab241';   -- la lead, por id: el nombre se repite
 
 insert into respaldo_huerfanas_20260903 (deal_id, contact_id, nombre, stage, valor_total, quote_id, archived_at_ant)
 select d.id, d.contact_id, d.nombre, d.stage, d.valor_total, d.quote_id, d.archived_at
