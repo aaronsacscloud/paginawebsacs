@@ -12,7 +12,7 @@ const TOUCH = `(()=>{ if(document.getElementById('__t'))return; const t=document
  document.documentElement.appendChild(t); })()`;
 const ease = x => x < .5 ? 4*x*x*x : 1 - Math.pow(-2*x + 2, 3) / 2;
 async function abrir(vw, vh){
-  const ctx = await chromium.launchPersistentContext(D+'/perfil-'+CUENTA, { executablePath: process.env.HOME+'/.cache/ms-playwright/chromium-1234/chrome-linux64/chrome', args:['--no-sandbox','--hide-scrollbars'], viewport:{width:vw,height:vh}, deviceScaleFactor:2 });
+  const ctx = await chromium.launchPersistentContext(D+'/perfil-'+CUENTA+(process.env.PERFIL||''), { executablePath: process.env.HOME+'/.cache/ms-playwright/chromium-1234/chrome-linux64/chrome', args:['--no-sandbox','--hide-scrollbars'], viewport:{width:vw,height:vh}, deviceScaleFactor:2 });
   const fijos = fs.existsSync(D+'/fijos.local.json') ? fs.readFileSync(D+'/fijos.local.json','utf8') : '{}';
   await ctx.addInitScript(`window.__SCRUB_FIJOS = ${fijos};`);
   await ctx.addInitScript({ path: D+'/scrub.js' });
@@ -22,11 +22,11 @@ async function abrir(vw, vh){
   const st = { dir:null, n:0, lista:[], x: vw/2, y: vh/2, vis:0, esc:1 };
   const api = {
     ctx, p, st, vw, vh,
-    async hayTexto(texto){ return p.evaluate(t=>{ let ok=false; const walk=root=>root.querySelectorAll('*').forEach(el=>{ if(ok) return; if(el.shadowRoot) walk(el.shadowRoot); for(const c of el.childNodes){ if(c.nodeType===3 && c.textContent.toLowerCase().includes(t.toLowerCase())){ const b=el.getBoundingClientRect(); if(b.width>0) ok=true; } } }); walk(document); return ok; }, texto); },
+    async hayTexto(texto){ return p.evaluate(t=>{ let ok=false; const walk=root=>root.querySelectorAll('*').forEach(el=>{ if(ok) return; if(el.shadowRoot) walk(el.shadowRoot); for(const c of el.childNodes){ if(c.nodeType===3 && c.textContent.toLowerCase().includes(t.toLowerCase())){ const b=el.getBoundingClientRect(); if(b.width>0) ok=true; } } }); walk(document); return ok; }, texto).catch(()=>false); },
     async esperaTexto(texto, max=150000){ const t0=Date.now(); while(Date.now()-t0<max){ if(await api.hayTexto(texto)) { await p.waitForTimeout(1500); return; } await p.waitForTimeout(400); } await p.screenshot({path:D+'/fail-espera.png'}); throw new Error('No apareció «'+texto+'»'); },
     // primer uso del perfil: inicia sesión con U / P del entorno (nunca escribir credenciales aquí)
     async login(texto){ let hay=false;
-      for (let i=0;i<30 && !hay;i++){
+      for (let i=0;i<90 && !hay;i++){
         const ent = await p.locator('text=Entrar ahora').locator('visible=true').count().catch(()=>0);
         if (ent) { await p.locator('text=Entrar ahora').locator('visible=true').first().click().catch(()=>{}); await p.waitForTimeout(3000); continue; }
         hay = (await p.locator('input[type="password"]').locator('visible=true').count().catch(()=>0)) > 0;

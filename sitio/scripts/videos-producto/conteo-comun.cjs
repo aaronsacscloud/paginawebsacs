@@ -1,0 +1,3 @@
+const prep = require('./prep.cjs');
+module.exports.abrirConteos = async (r) => { await r.go('dashboard/list/index', 'Ingresos'); await prep.abrirMenu(r, 'Inventarios', 'Conteo físico', 'Nuevo Conteo'); await prep.menuColapsado(r); await prep.ocultarFlotantes(r); await r.p.waitForTimeout(1500); };
+module.exports.listo = async (r, texto) => { const { p } = r; if (texto) await r.esperaTexto(texto, 150000); for (let i=0;i<120;i++){ const c = await r.hayTexto('Cargando') || await r.hayTexto('Analizando'); if(!c) break; await p.waitForTimeout(1000);} await p.waitForTimeout(2500); await prep.ocultarFlotantes(r); };

@@ -3495,12 +3495,124 @@ export const pageContent: Record<string, any> = {
     ]
   },
   "conteo-fisico": {
+    "enSacs": {
+      "modulo": "Conteo físico",
+      "nota": "Capturas del módulo Conteo físico de Sacs (octubre de 2026) con una boutique de ejemplo.",
+      "pantallas": [
+        {
+          "id": "lista",
+          "img": "/images/producto/conteo-fisico/lista.webp",
+          "h": 1300,
+          "t": "Conteo físico",
+          "alt": "Lista de conteos físicos en Sacs con su estado"
+        },
+        {
+          "id": "resumen",
+          "img": "/images/producto/conteo-fisico/resumen.webp",
+          "h": 1500,
+          "t": "Resumen de conteo",
+          "alt": "Resumen de un conteo en Sacs: cada prenda con su foto, existencia, contado y diferencia en piezas y en pesos"
+        },
+        {
+          "id": "analisis",
+          "img": "/images/producto/conteo-fisico/analisis.webp",
+          "h": 2162,
+          "t": "Análisis de conteos",
+          "alt": "Análisis de conteos en Sacs: faltante, exactitud, tendencia por mes, faltante por categoría y prendas reincidentes"
+        }
+      ],
+      "pasos": [
+        {
+          "p": "lista",
+          "r": [
+            100,
+            196,
+            1414,
+            724
+          ],
+          "t": "Todos tus conteos, con su estado",
+          "d": "Pendientes y completados, por tienda y almacén. Exporta la lista a Excel."
+        },
+        {
+          "p": "resumen",
+          "r": [
+            90,
+            128,
+            1416,
+            200
+          ],
+          "t": "Lo que no cuadra, en piezas y en pesos",
+          "d": "Un clic y te quedas solo con las prendas con diferencia: −21 piezas, −$17,650.",
+          "rz": [
+            860,
+            128,
+            1416,
+            200
+          ]
+        },
+        {
+          "p": "resumen",
+          "r": [
+            90,
+            240,
+            1416,
+            920
+          ],
+          "t": "Cada prenda con su foto, talla y color",
+          "d": "Existencia del sistema contra lo contado, y lo que vale cada diferencia."
+        },
+        {
+          "p": "analisis",
+          "r": [
+            118,
+            180,
+            1386,
+            285
+          ],
+          "t": "Cuánto pierdes, de un vistazo",
+          "d": "Faltante, sobrantes y exactitud de todos tus conteos del periodo."
+        },
+        {
+          "p": "analisis",
+          "r": [
+            118,
+            665,
+            1386,
+            1036
+          ],
+          "t": "Dónde se va el dinero",
+          "d": "Pantalones, camisetas, bufandas: el faltante por categoría y por tienda.",
+          "rz": [
+            758,
+            665,
+            1386,
+            1036
+          ]
+        },
+        {
+          "p": "analisis",
+          "r": [
+            118,
+            1052,
+            1386,
+            1455
+          ],
+          "t": "Las prendas que faltan una y otra vez",
+          "d": "Con un clic armas un conteo parcial solo con ellas."
+        }
+      ]
+    },
     "hero": {
       "eyebrow": "Sacs Conteo Físico",
-      "title": "Cuenta tu inventario, cuádralo con la realidad y ajusta en un clic.",
-      "subtitle": "Elige el almacén, busca por código de barras o SKU y captura lo físico. Sacs lo compara contra el teórico, te muestra cada diferencia en unidades y en dinero, y al finalizar genera los ajustes en el Kardex automáticamente.",
+      "title": "Cuenta cada prenda, cuádrala con el sistema y ve cuánto te cuesta la diferencia.",
+      "subtitle": "Cuenta por talla y color con el celular o con Excel. Sacs compara lo contado contra lo que dice el sistema y te muestra cada diferencia en piezas y en pesos, con la foto de la prenda. Y te avisa qué productos faltan una y otra vez.",
       "image": "/images/conteo-fisico-sistema.webp",
-      "imageAlt": "Módulo de conteo fisico en Sacs"
+      "imageAlt": "Resumen de conteo físico de prendas en Sacs",
+      "video": {
+        "mp4": "/videos/conteo-hero.mp4",
+        "webm": "/videos/conteo-hero.webm"
+      },
+      "videoPoster": "/videos/conteo-hero-poster.webp"
     },
     "features": [
       {
@@ -3530,49 +3642,105 @@ export const pageContent: Record<string, any> = {
         "title": "El celular que ya traes en la bolsa es tu lector.",
         "description": "Abres la app de Sacs, entras al conteo asignado y empiezas a escanear. La cámara reconoce código de barras, QR y hasta el código interno que tú imprimes en etiquetas. No invertiste un peso en hardware nuevo.",
         "image": "/images/conteo-fisico-escaneo.webp",
-        "imageAlt": "Empleado con celular escaneando etiqueta de código de barras en Sacs",
+        "imageAlt": "Vendedora contando suéteres con el celular en una boutique",
         "link": null,
         "featured": true,
         "variant": "count-scan-live",
-        "cardSize": "sm"
+        "cardSize": "sm",
+        "bullets": [
+          {
+            "label": "Escaneo continuo",
+            "detail": "Quick Scan cuenta pieza por pieza sin tocar la pantalla entre escaneos."
+          },
+          {
+            "label": "Busca por código, SKU o nombre",
+            "detail": "Si una prenda perdió la etiqueta, la encuentras por nombre."
+          },
+          {
+            "label": "O importa un Excel",
+            "detail": "La plantilla trae el código de barras; solo llenas la existencia."
+          }
+        ]
       },
       {
-        "title": "Zonas asignadas. Responsables claros.",
-        "description": "Antes de empezar divides la tienda en zonas — anaquel A1, bodega trasera, escaparate — y asignas quién cuenta cada una. El sistema muestra el avance en vivo para que sepas cuánto falta y quién va atrasado.",
+        "title": "Lo que sobra y lo que falta, en piezas y en pesos.",
+        "description": "Al revisar el conteo ves cada prenda con su foto, su talla y su color: cuántas había en el sistema, cuántas contaste y cuánto vale la diferencia. Filtras las que no coinciden y lo exportas a Excel.",
         "image": "/images/conteo-fisico-zonas.webp",
-        "imageAlt": "Pantalla de asignación de zonas de conteo en Sacs",
+        "imageAlt": "Equipo contando abrigos y bolsas con el celular en una boutique",
         "link": null,
         "featured": true,
         "variant": "count-zones-progress",
-        "cardSize": "lg"
+        "cardSize": "lg",
+        "bullets": [
+          {
+            "label": "Coinciden y no coinciden",
+            "detail": "Un clic y te quedas solo con las prendas que no cuadran."
+          },
+          {
+            "label": "Diferencia en costo",
+            "detail": "El total del conteo en piezas y en pesos, con impuestos."
+          },
+          {
+            "label": "Excel e impresión",
+            "detail": "El resumen sale tal cual para el contador o la auditoría."
+          }
+        ]
       },
       {
-        "title": "Diferencia a la vista. Antes de ajustar nada.",
-        "description": "Al cerrar el conteo Sacs muestra un reporte: qué sobra, qué falta, dónde y quién contó. Tú decides qué ajustas y qué mandas a segundo conteo. Nada se aplica al inventario hasta que lo autorizas con PIN.",
+        "title": "Los cambios mientras contabas, conciliados.",
+        "description": "Contar toma tiempo y la tienda sigue vendiendo. Sacs detecta las ventas y entradas que pasaron desde que empezaste el conteo y te deja aplicarlas para que la diferencia sea real. Al finalizar, el ajuste queda en el Kardex con el folio del conteo.",
         "image": "/images/conteo-fisico-diferencias.webp",
-        "imageAlt": "Reporte de diferencias de conteo físico en Sacs",
+        "imageAlt": "Equipo revisando el ajuste de inventario tras el conteo",
         "link": {
           "label": "Ver inventario omnicanal",
           "href": "/producto/inventario-omnicanal"
         },
         "featured": true,
-        "variant": "count-variance-report"
+        "variant": "count-variance-report",
+        "bullets": [
+          {
+            "label": "Ventas durante el conteo",
+            "detail": "Se aplican solas o producto por producto."
+          },
+          {
+            "label": "Ajuste con un clic",
+            "detail": "Entradas y salidas por la diferencia, ligadas al folio."
+          },
+          {
+            "label": "Todo en el Kardex",
+            "detail": "Cada movimiento queda registrado para auditar."
+          }
+        ]
       },
       {
-        "title": "Conteos cíclicos para no parar la tienda.",
-        "description": "En lugar de cerrar por inventario general, programas conteos cíclicos por zona o familia. Cada semana cuentas un bloque, y en el año tocaste toda la mercancía sin cerrar un solo día. El conteo programado con rotación automática de zonas está en el roadmap; por ahora lo configuras manual.",
+        "title": "Los faltantes que se repiten, a la vista.",
+        "description": "El análisis junta todos tus conteos: cuánto has perdido, en qué tienda y en qué categoría, y qué prendas faltan en dos o más conteos. Con un clic armas un conteo parcial solo con esas prendas para vigilarlas.",
         "image": "/images/conteo-fisico-ciclico.webp",
-        "imageAlt": "Calendario de conteos cíclicos en Sacs",
+        "imageAlt": "Vendedora contando una sección de accesorios con la tienda abierta",
         "link": null,
         "featured": true,
-        "variant": "promo-schedule"
+        "variant": "count-recurrent",
+        "bullets": [
+          {
+            "label": "Exactitud de inventario",
+            "detail": "Qué tan cerca está tu sistema de lo que hay en piso."
+          },
+          {
+            "label": "Faltante por categoría",
+            "detail": "Pantalones, camisetas, bufandas: dónde se va el dinero."
+          },
+          {
+            "label": "Conteo parcial dirigido",
+            "detail": "Solo las prendas reincidentes, sin contar toda la tienda."
+          }
+        ]
       }
     ],
     "testimonial": {
-      "quote": "Antes cerrábamos la tienda un domingo completo cada dos meses. Entre imprimir listados, contar con pluma y capturar al sistema se iban 14 horas. Ahora con la app repartimos zonas, escaneamos y en tres horas estamos cerrando con diferencias bajo control.",
+      "quote": "Antes cerrábamos la tienda un domingo completo cada dos meses. Entre imprimir listados, contar con pluma y capturar al sistema se iban 14 horas. Ahora contamos con el celular, revisamos solo lo que no coincide y en tres horas cerramos el conteo.",
       "name": "Ignacio Peralta",
       "role": "Gerente de Tienda",
-      "company": "Deportes Arenal",
+      "company": "Atelier Arenal",
       "stat": "40%",
       "statLabel": "menos tiempo que con hoja y pluma"
     },
@@ -3580,122 +3748,122 @@ export const pageContent: Record<string, any> = {
     "interruptStrike": "tiene que ser parte de tu rutina.",
     "showcaseTabs": [
       {
-        "label": "Tipos de conteo",
-        "title": "Completo, parcial, manual o sorpresa",
-        "description": "Cuenta todo el catálogo o solo lo que te importa: filtra el conteo parcial por categoría, marca, proveedor o etiqueta. El modo manual te deja agregar productos al vuelo y el modo sorpresa lo arrancas sin avisar. Eliges sucursal y almacén antes de empezar.",
+        "label": "Diferencias al instante",
+        "title": "Cada prenda: lo que había, lo que contaste y lo que cuesta.",
+        "description": "El resumen del conteo muestra cada variante con su foto, la existencia del sistema, lo contado y la diferencia en piezas y en pesos. Filtras las que no coinciden y lo bajas a Excel.",
         "image": "/images/conteo-fisico-sistema-tab.webp",
-        "imageAlt": "App de Sacs en celular escaneando producto",
+        "imageAlt": "Resumen de conteo con diferencias por prenda en Sacs",
         "link": null,
         "details": [
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"5\" y=\"2\" width=\"14\" height=\"20\" rx=\"2\"/><path d=\"M12 18h.01\"/></svg>",
-            "title": "Android e iPhone",
-            "description": "La app corre en cualquier celular moderno. No necesitas comprar lectores ni equipos dedicados."
+            "title": "Foto, talla y color",
+            "description": "Cada renglón es una variante con su imagen: «Blusa cuello alto · M · Negro». Sin adivinar de qué prenda se habla."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"12\" rx=\"2\"/><path d=\"M7 20h10M12 16v4\"/></svg>",
-            "title": "Modo offline",
-            "description": "Si la bodega no tiene señal, la app guarda el conteo local y lo sube cuando vuelves a tener WiFi. No pierdes ni un escaneo."
+            "title": "Coinciden / No coinciden",
+            "description": "Separa en un clic las prendas que cuadran de las que no, para revisar solo lo importante."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
-            "title": "Conteo en vivo",
-            "description": "A medida que escaneas, el contador sube en pantalla. Si cuentas de más, la app te avisa con el teórico para que verifiques."
+            "title": "Diferencia en piezas",
+            "description": "Existencia contra contado, prenda por prenda, con el total de unidades del conteo."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 20h9\"/><path d=\"M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z\"/></svg>",
-            "title": "Captura manual",
-            "description": "Si un producto perdió etiqueta, lo capturas por nombre o SKU y anotas la cantidad. Queda marcado para imprimir etiqueta nueva."
+            "title": "Diferencia en pesos",
+            "description": "El impacto de cada faltante o sobrante a costo con impuestos, y el total del conteo."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 4l16 16M4 20L20 4\"/></svg>",
-            "title": "Corrige antes de cerrar",
-            "description": "Si te equivocas, deshaces el último escaneo o entras al detalle y ajustas. Nada se vuelve definitivo hasta cerrar la zona."
+            "title": "Excel e impresión",
+            "description": "El resumen sale a Excel o a impresión con las mismas columnas que ves en pantalla."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/></svg>",
-            "title": "Ubicación por zona",
-            "description": "Cada escaneo se asocia a la zona que te tocó. Así, al revisar diferencias sabes si el faltante está en anaquel o en bodega."
+            "title": "Ventas durante el conteo",
+            "description": "Lo vendido mientras contabas se concilia para que la diferencia sea la real."
           }
         ]
       },
       {
-        "label": "Control durante el conteo",
-        "title": "Bloquea existencias y controla quién contó",
-        "description": "Oculta las existencias de ese almacén en todos los módulos mientras cuentas, para que nadie se base en el teórico. Decide si consideras apartados y revisa en cada producto quién lo contó y cuándo. Para los no contados eliges omitir o contabilizar a cero.",
+        "label": "Análisis de faltantes",
+        "title": "Cuánto pierdes, dónde y en qué categoría.",
+        "description": "Un análisis que junta todos tus conteos: valor faltante, sobrantes, exactitud, la tendencia de los últimos meses y el faltante por tienda y por categoría.",
         "image": "/images/conteo-fisico-sistema-tab.webp",
-        "imageAlt": "Panel de supervisión de conteo en Sacs",
+        "imageAlt": "Análisis de faltantes por categoría y sucursal en Sacs",
         "link": null,
         "details": [
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M9 3v18M3 9h18\"/></svg>",
-            "title": "Divide por zonas",
-            "description": "Creas zonas libres — anaquel A, bodega, escaparate, vitrina — o usas las que ya tenías definidas en la tienda."
+            "title": "Valor faltante detectado",
+            "description": "Lo que no apareció en los conteos completados del periodo, en pesos."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/></svg>",
-            "title": "Asigna responsables",
-            "description": "Cada zona con su responsable. Dos personas pueden contar la misma zona si quieres contraconteo para zonas críticas."
+            "title": "Exactitud de inventario",
+            "description": "Qué porcentaje de prendas cuadró exacto entre sistema y piso."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l4-4 4 4 5-5\"/></svg>",
-            "title": "Avance en vivo",
-            "description": "Ves el porcentaje contado por zona y el total. Sabes cuánto falta para cerrar y cuál zona se atoró."
+            "title": "Faltante contra ventas",
+            "description": "El faltante como porcentaje de lo vendido en el mismo periodo."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z\"/></svg>",
-            "title": "Notas por zona",
-            "description": "Quien cuenta deja nota: \"caja aplastada\", \"producto sin etiqueta\", \"falta por llegar de proveedor\". Se revisan al cerrar."
+            "title": "Tendencia por mes",
+            "description": "Los últimos seis meses lado a lado para ver si va mejorando o empeorando."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"M21 21l-4.35-4.35\"/></svg>",
-            "title": "Segundo conteo",
-            "description": "Las diferencias fuertes las mandas a segundo conteo sin aplicar ajustes. Otra persona recuenta esa zona para confirmar."
+            "title": "Por tienda y almacén",
+            "description": "Qué sucursal o bodega concentra el faltante."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6L9 17l-5-5\"/></svg>",
-            "title": "Cierre controlado",
-            "description": "El supervisor cierra el conteo. Ahí se aplican los ajustes autorizados y se consolida la diferencia a merma o sobrante."
+            "title": "Por categoría",
+            "description": "Pantalones, camisetas, bufandas, collares: dónde se va el dinero."
           }
         ]
       },
       {
-        "label": "Cierre y trazabilidad",
-        "title": "Resumen, exportación y ajuste registrado",
-        "description": "El resumen muestra la diferencia total en unidades y en costo. Expórtalo a Excel o imprime el PDF configurando qué columnas incluir. Al finalizar, cada ajuste se asienta en el Kardex con motivo y referencia al folio del conteo, listo para auditar.",
+        "label": "Faltantes que se repiten",
+        "title": "Las prendas que faltan una y otra vez.",
+        "description": "El análisis señala las prendas con faltante en dos o más conteos, con sus piezas y su valor. Con un clic armas un conteo parcial solo con ellas.",
         "image": "/images/conteo-fisico-sistema-tab.webp",
-        "imageAlt": "Reporte de diferencias y ajustes de conteo físico en Sacs",
+        "imageAlt": "Prendas con faltante recurrente en Sacs",
         "link": null,
         "details": [
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l4-4 4 4 5-5\"/></svg>",
-            "title": "Reporte de diferencias",
-            "description": "Listado con SKU, teórico, físico, diferencia y valor a precio de costo. Ordenas por impacto monetario para ver lo importante primero."
+            "title": "Productos reincidentes",
+            "description": "Prendas con faltante en dos o más conteos, marcadas para vigilar."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/></svg>",
-            "title": "Diferencia por zona",
-            "description": "Filtras el reporte por zona o por la persona que contó. Si una zona concentra el 80% de las diferencias, ahí investigas."
+            "title": "Piezas y valor",
+            "description": "Cuántas unidades faltaron en total y cuánto valen."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg>",
-            "title": "Motivo de ajuste",
-            "description": "Cada ajuste exige motivo: merma, robo, daño, error de captura, sobrante histórico. Los reportes agrupan por motivo para detectar patrones."
+            "title": "Última vez",
+            "description": "La fecha del último conteo en que faltó, para saber si sigue pasando."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><circle cx=\"8.5\" cy=\"8.5\" r=\"1.5\"/><path d=\"M21 15l-5-5L5 21\"/></svg>",
-            "title": "Foto de evidencia",
-            "description": "Adjuntas foto del producto dañado o del faltante en anaquel. La foto queda ligada al ajuste en bitácora."
+            "title": "Conteo parcial dirigido",
+            "description": "«Crear conteo parcial con estos productos»: cuentas solo lo sospechoso, sin parar la tienda."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M19 8v6M22 11h-6\"/></svg>",
-            "title": "Autorización por rol",
-            "description": "Ajustes pequeños los autoriza el gerente; grandes necesitan dirección. Configuras el umbral en pesos o en piezas."
+            "title": "Top de diferencias",
+            "description": "Las prendas con mayor diferencia del periodo, con su categoría y su conteo."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4\"/><path d=\"M7 10l5 5 5-5M12 15V3\"/></svg>",
-            "title": "Exporta al contador",
-            "description": "El reporte final se exporta a Excel o PDF con todos los movimientos, motivos y autorizadores. Queda como soporte para contabilidad."
+            "title": "Reporte en PDF",
+            "description": "El análisis completo se descarga en PDF para la junta con el equipo."
           }
         ]
       }
@@ -3706,19 +3874,19 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/ignacio-peralta.webp",
         "initials": "IP",
         "color": "#b47a3a",
-        "quote": "Antes cerrábamos la tienda un domingo completo cada dos meses. Ahora con la app repartimos zonas, escaneamos y en tres horas estamos cerrando con diferencias bajo control. Dejamos de perder un día de venta.",
+        "quote": "Antes cerrábamos la tienda un domingo completo cada dos meses. Ahora contamos con el celular, revisamos solo lo que no coincide y en tres horas cerramos el conteo. Dejamos de perder un día de venta.",
         "name": "Ignacio Peralta",
-        "business": "Deportes Arenal",
+        "business": "Atelier Arenal · Moda mujer",
         "location": "Argentina"
       },
       {
         "bg": "#0a0a0a",
         "image": "/images/testimonials/andrea-mondragon.webp",
-        "initials": "VM",
+        "initials": "AM",
         "color": "#4a6aa8",
-        "quote": "Descubrimos que una sucursal tenía mermas consistentemente en la misma categoría. Al verlo por zona y por persona identificamos el problema y lo corregimos. Sin el reporte por responsable nunca lo habríamos visto.",
+        "quote": "Descubrimos que una sucursal tenía faltantes en la misma categoría, conteo tras conteo. El análisis nos marcó las prendas que se repetían; armamos un conteo parcial solo con ellas y encontramos el problema.",
         "name": "Andrea Mondragón",
-        "business": "Bella Novedades del Valle",
+        "business": "Casa Vértice · Ropa y calzado",
         "location": "Costa Rica"
       },
       {
@@ -3726,9 +3894,9 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/rodrigo-tapia.webp",
         "initials": "RT",
         "color": "#5a8a5f",
-        "quote": "Empezamos a hacer conteos cíclicos por familia cada semana y dejamos los inventarios generales anuales. El equipo ya sabe la rutina, y las diferencias son mucho más chicas cuando las atacas en bloques pequeños.",
+        "quote": "Dejamos los inventarios generales anuales y ahora contamos por categoría cada semana. El equipo ya sabe la rutina, y las diferencias son mucho más chicas cuando las atacas en bloques pequeños.",
         "name": "Rodrigo Tapia",
-        "business": "Papelería Pampa",
+        "business": "Pampa Boutique · Accesorios",
         "location": "Argentina"
       }
     ],
@@ -3772,12 +3940,124 @@ export const pageContent: Record<string, any> = {
     ]
   },
   "nivelacion-de-inventario": {
+    "enSacs": {
+      "modulo": "Nivelación de inventario",
+      "nota": "Capturas del módulo de Nivelación de Sacs (octubre de 2026) con una boutique de ejemplo.",
+      "pantallas": [
+        {
+          "id": "tablero",
+          "img": "/images/producto/nivelacion-de-inventario/tablero.webp",
+          "h": 1170,
+          "t": "Tablero del analista",
+          "alt": "Tablero de nivelación de Sacs: dinero parado, mercancía dormida y veredictos ordenados por dinero en juego"
+        },
+        {
+          "id": "nivelaciones",
+          "img": "/images/producto/nivelacion-de-inventario/nivelaciones.webp",
+          "h": 803,
+          "t": "Nivelaciones",
+          "alt": "Lista de nivelaciones en Sacs con folio, origen, destinos y estado"
+        },
+        {
+          "id": "reglas",
+          "img": "/images/producto/nivelacion-de-inventario/reglas.webp",
+          "h": 1700,
+          "t": "Nivelación de moda · Gestor de reglas",
+          "alt": "Gestor de reglas de moda en Sacs: temporadas, configuración al 92 % y preguntas pendientes"
+        }
+      ],
+      "pasos": [
+        {
+          "p": "tablero",
+          "r": [
+            162,
+            69,
+            1342,
+            160
+          ],
+          "t": "Tu analista amanece con el resumen",
+          "d": "Cada madrugada calcula qué se te acaba y cuánta venta está en juego."
+        },
+        {
+          "p": "tablero",
+          "r": [
+            162,
+            174,
+            1342,
+            431
+          ],
+          "t": "El dinero que no se mueve",
+          "d": "Mercancía parada donde no se vende y lotes dormidos, en pesos.",
+          "rz": [
+            162,
+            174,
+            760,
+            300
+          ]
+        },
+        {
+          "p": "tablero",
+          "r": [
+            160,
+            480,
+            1342,
+            1080
+          ],
+          "t": "Cada tarjeta, una decisión",
+          "d": "Liquidar, rebajar, resurtir o traspasar, ordenado por dinero en juego.",
+          "rz": [
+            160,
+            480,
+            560,
+            780
+          ]
+        },
+        {
+          "p": "nivelaciones",
+          "r": [
+            89,
+            401,
+            1415,
+            772
+          ],
+          "t": "Cada nivelación con folio y estado",
+          "d": "De la bodega a varias tiendas: pendiente, en progreso o completada."
+        },
+        {
+          "p": "reglas",
+          "r": [
+            359,
+            301,
+            1009,
+            371
+          ],
+          "t": "Tu configuración de moda, al 92 %",
+          "d": "Sacs te dice qué falta saber de tu catálogo y te lo pregunta."
+        },
+        {
+          "p": "reglas",
+          "r": [
+            98,
+            236,
+            281,
+            554
+          ],
+          "t": "El calendario de moda manda",
+          "d": "Buen Fin, Navidad, Reyes y cada temporada con sus fechas."
+        }
+      ]
+    },
     "hero": {
       "eyebrow": "Sacs Nivelación de Inventario",
-      "title": "El stock donde se está vendiendo. Calculado, no a corazonada.",
-      "subtitle": "Sacs lee la venta real por sucursal, calcula cuánto resurtir con un modelo de inventario serio y arma la propuesta de traspaso. La talla parada en una tienda se va a la que sí la vende: tú apruebas en la mesa de decisión y el sistema genera las transferencias.",
+      "title": "Tu analista revisa cada tienda cada madrugada y te dice qué mover.",
+      "subtitle": "Sacs lee la venta real de cada tienda y la bodega, y amanece con veredictos ordenados por dinero en juego: qué básicos se te acaban, qué mercancía está parada donde no se vende, qué liquidar al cierre de temporada y qué traspasos salvan venta. Nada se mueve sin que tú lo decidas.",
       "image": "/images/nivelacion-de-inventario-sistema.webp",
-      "imageAlt": "Módulo de nivelacion de inventario en Sacs"
+      "imageAlt": "Tablero de nivelación de inventario de moda en Sacs",
+      "video": {
+        "mp4": "/videos/nivelacion-hero.mp4",
+        "webm": "/videos/nivelacion-hero.webm"
+      },
+      "videoPoster": "/videos/nivelacion-hero-poster.webp"
     },
     "features": [
       {
@@ -3813,7 +4093,21 @@ export const pageContent: Record<string, any> = {
           "href": "/planeacion-de-demanda"
         },
         "featured": true,
-        "variant": "control-central"
+        "variant": "control-central",
+        "bullets": [
+          {
+            "label": "Dinero parado",
+            "detail": "Mercancía en tiendas donde no se vende, en pesos."
+          },
+          {
+            "label": "Lote dormido",
+            "detail": "Lo que no vende en toda la red, candidato a rebaja."
+          },
+          {
+            "label": "Venta que se salva",
+            "detail": "Cuánto recuperas si mueves las piezas a tiempo."
+          }
+        ]
       },
       {
         "title": "Tú apruebas. Nadie mueve una caja sin tu luz verde.",
@@ -3823,7 +4117,21 @@ export const pageContent: Record<string, any> = {
         "link": null,
         "featured": true,
         "variant": "reposicion-approval",
-        "cardSize": "lg"
+        "cardSize": "lg",
+        "bullets": [
+          {
+            "label": "Propuesta con detalle",
+            "detail": "Prenda, talla, piezas, de dónde a dónde."
+          },
+          {
+            "label": "Apruebas o ajustas",
+            "detail": "Total, parcial o cambias cantidades antes de mover."
+          },
+          {
+            "label": "Nada se mueve solo",
+            "detail": "Sin tu visto bueno no sale ninguna caja."
+          }
+        ]
       },
       {
         "title": "Orden de traspaso lista para bodega.",
@@ -3835,16 +4143,44 @@ export const pageContent: Record<string, any> = {
           "href": "/producto/inventario-omnicanal"
         },
         "featured": true,
-        "variant": "apartado-transfer"
+        "variant": "apartado-transfer",
+        "bullets": [
+          {
+            "label": "Nivelaciones con folio",
+            "detail": "Origen, destinos y estado: pendiente, en progreso o completada."
+          },
+          {
+            "label": "Transferencias reales",
+            "detail": "Lo aprobado se vuelve traspaso sin capturarlo otra vez."
+          },
+          {
+            "label": "Borradores guardados",
+            "detail": "Retomas una nivelación donde la dejaste."
+          }
+        ]
       },
       {
-        "title": "Reglas que respetan tu operación.",
-        "description": "Configuras topes por sucursal origen, familias excluidas, frecuencia máxima por SKU y sucursales espejo (donde siempre debe haber stock). La nivelación totalmente automatizada con ML por sucursal está en piloto; hoy la propuesta usa reglas de negocio claras que tú controlas.",
+        "title": "Reglas de moda: temporadas, básicos y novedades.",
+        "description": "En Nivelación de moda configuras cómo decide Sacs: qué es básico y qué es novedad, cada temporada con sus fechas (Buen Fin, Navidad, Día de Reyes) y el plazo de entrega de cada proveedor. Te dice qué falta por contestar para que el cálculo sea exacto.",
         "image": "/images/nivelacion-de-inventario-reglas.webp",
-        "imageAlt": "Configurador de reglas de nivelación en Sacs",
+        "imageAlt": "Planeadora de colección organizando la temporada",
         "link": null,
         "featured": true,
-        "variant": "promo-schedule"
+        "variant": "niv-season-rules",
+        "bullets": [
+          {
+            "label": "Temporadas con fecha",
+            "detail": "Otoño-Invierno, Buen Fin, Navidad y Día de Reyes en un calendario."
+          },
+          {
+            "label": "Básicos y novedades",
+            "detail": "Los básicos se resurten; las novedades se miden por cobertura."
+          },
+          {
+            "label": "Configuración al día",
+            "detail": "Qué tan completa está tu configuración y qué falta."
+          }
+        ]
       }
     ],
     "testimonial": {
@@ -3859,122 +4195,122 @@ export const pageContent: Record<string, any> = {
     "interruptStrike": "vive donde se está vendiendo.",
     "showcaseTabs": [
       {
-        "label": "Corrida",
-        "title": "Una corrida, una foto de qué mover.",
-        "description": "El wizard te guía: eliges el objetivo (reabastecer desde CEDIS, entre sucursales o generar orden de compra), defines origen y destino, el horizonte de venta a analizar y los días de cobertura. Sacs corre el análisis y guarda el resultado como un run que puedes retomar.",
+        "label": "Veredictos",
+        "title": "Cada tarjeta, una decisión con dinero en juego.",
+        "description": "El tablero amanece con veredictos ya calculados y ordenados por dinero: liquidación de fin de temporada, lote dormido, quiebre de básicos, venta fuera de lo normal, excedente antes de comprar y temporadas que se acercan.",
         "image": "/images/nivelacion-de-inventario-sistema-tab.webp",
-        "imageAlt": "Pantalla de propuesta de nivelación semanal en Sacs",
+        "imageAlt": "Veredictos del tablero de nivelación en Sacs",
         "link": null,
         "details": [
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M16 2v4M8 2v4M3 10h18\"/></svg>",
-            "title": "Corrida programada",
-            "description": "Configuras cuándo corre el análisis — diario, semanal o a demanda. La propuesta llega por email al responsable para revisión."
+            "title": "Fin de temporada",
+            "description": "Cuánto queda en tiendas, cuántos días faltan y la rebaja escalonada sugerida."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 20V10M18 20V4M6 20v-6\"/></svg>",
-            "title": "Horizonte configurable",
-            "description": "Eliges si la venta reciente son 14, 30 o 60 días. Para temporada alta acortas el horizonte para reaccionar rápido; para línea estable lo alargas."
+            "title": "Lote dormido",
+            "description": "Lo que lleva meses sin vender en toda la red, con sus fotos y piezas."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 12l2 2 4-4\"/><circle cx=\"12\" cy=\"12\" r=\"10\"/></svg>",
-            "title": "Filtro por familia",
-            "description": "Si solo quieres nivelar calzado y dejar ropa como está, filtras la propuesta por familia, categoría o marca antes de revisar."
+            "title": "Quiebre de básicos",
+            "description": "Qué pares producto-tienda se acaban esta semana y cuánta venta está en juego."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l4-4 4 4 5-5\"/></svg>",
-            "title": "Impacto post-movimiento",
-            "description": "Cada línea te muestra cómo queda el stock de las dos tiendas después del traspaso, para que veas que ninguna queda descubierta."
+            "title": "Venta fuera de lo normal",
+            "description": "Picos que el pronóstico no esperaba, para que confirmes si fue un evento."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M9 9h6M9 13h6M9 17h3\"/></svg>",
-            "title": "Comentarios del equipo",
-            "description": "Los gerentes de sucursal pueden comentar líneas de la propuesta — \"esa pieza la tengo apartada para un pedido\" — y tú las excluyes antes de aprobar."
+            "title": "Excedente antes de comprar",
+            "description": "Lo que ya tienes sobrado antes de pedirle más al proveedor."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/></svg>",
-            "title": "Propuesta por región",
-            "description": "Si operas por regiones, puedes nivelar dentro de la región o entre regiones. Controlas el radio con reglas para no mover de una punta del país a la otra sin razón."
+            "title": "Temporada en camino",
+            "description": "Cuántas semanas faltan y si el pedido llega a tiempo."
           }
         ]
       },
       {
-        "label": "Decisión",
-        "title": "La mesa donde decides con datos.",
-        "description": "Resultado paginado y filtrable: producto, sucursal, clase ABC, confianza, cobertura actual, déficit y cantidad sugerida editable. Filtra por excepción (confianza baja, cantidad atípica, monto que excede) y aprueba o excluye por filtro completo.",
+        "label": "Nivelaciones",
+        "title": "Cada nivelación con folio, ruta y estado.",
+        "description": "La lista de nivelaciones muestra el folio, el origen y los destinos, el tipo y el estado de cada una. Filtras en progreso, completadas o borradores y retomas cualquiera donde la dejaste.",
         "image": "/images/nivelacion-de-inventario-sistema-tab.webp",
-        "imageAlt": "Configurador de reglas de nivelación",
+        "imageAlt": "Lista de nivelaciones con estado en Sacs",
         "link": null,
         "details": [
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 15v6M9 18l3 3 3-3M12 3v9\"/></svg>",
-            "title": "Piso mínimo por sucursal",
-            "description": "Defines cuántas piezas deben quedar mínimo en la sucursal origen después del traspaso. Protege a tiendas que venden estable pero bajo."
+            "title": "Folio por corrida",
+            "description": "Cada nivelación queda registrada con su folio y fecha."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 4l16 16M4 20L20 4\"/></svg>",
-            "title": "Familias excluidas",
-            "description": "Joyería, productos de temporada cerrada, exclusivos de una tienda — los marcas como excluidos y la nivelación nunca los toca."
+            "title": "Origen y destinos",
+            "description": "De la bodega a varias tiendas en una misma corrida."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/></svg>",
-            "title": "Tiendas insignia",
-            "description": "Las tiendas flagship siempre deben tener surtido completo. Las marcas como \"receptoras siempre, cedentes nunca\" y Sacs respeta la regla."
+            "title": "Estado a la vista",
+            "description": "Pendiente, en progreso, completada o con errores."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
-            "title": "Frecuencia máxima",
-            "description": "Un SKU no debería brincar entre tiendas cada semana. Pones frecuencia máxima — \"este artículo solo se mueve una vez cada 30 días\" — para evitar ping-pong."
+            "title": "Borradores",
+            "description": "Lo que no terminaste se guarda para retomarlo."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M9 9h6v6H9z\"/></svg>",
-            "title": "Lote mínimo económico",
-            "description": "Mover una sola pieza a veces no se paga la mensajería. Configuras lote mínimo — \"solo propone si son 5 o más piezas\" — para que los traspasos sean rentables."
+            "title": "Explorar el mapa",
+            "description": "Ve la red de tiendas y bodegas antes de decidir."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M19 8v6M22 11h-6\"/></svg>",
-            "title": "Reglas por rol",
-            "description": "El gerente regional puede aprobar traspasos dentro de su región; la dirección aprueba inter-regionales o de monto alto. Controlas con permisos."
+            "title": "Quién la creó",
+            "description": "Cada corrida con su responsable y su hora."
           }
         ]
       },
       {
-        "label": "Ejecución",
-        "title": "De aprobado a en camino.",
-        "description": "Las líneas aprobadas se vuelven transferencias reales en un clic, sin duplicar ni mover dos veces lo mismo. También puedes dejar la nivelación corriendo en automático y programada para que la propuesta esté lista sola.",
+        "label": "Reglas de moda",
+        "title": "El calendario de moda manda en el cálculo.",
+        "description": "En Nivelación de moda defines tus temporadas, qué es básico y qué es novedad, y el plazo real de cada proveedor. Sacs te dice qué tan completa está tu configuración y qué preguntas faltan.",
         "image": "/images/nivelacion-de-inventario-sistema-tab.webp",
-        "imageAlt": "Seguimiento de ejecución de traspaso de nivelación en Sacs",
+        "imageAlt": "Gestor de reglas de moda por temporada en Sacs",
         "link": null,
         "details": [
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M9 9h6M9 13h6M9 17h3\"/></svg>",
-            "title": "Lista de armado ordenada",
-            "description": "La orden sale ordenada por ubicación en la bodega de origen. El personal recoge en una pasada, sin ir y venir por los pasillos."
+            "title": "Temporadas",
+            "description": "Otoño-Invierno, Primavera-Verano, Buen Fin, Navidad y Día de Reyes con sus fechas."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"5\" y=\"2\" width=\"14\" height=\"20\" rx=\"2\"/><path d=\"M12 18h.01\"/></svg>",
-            "title": "Escaneo con el celular",
-            "description": "Quien arma escanea cada pieza contra la orden. Si escanea algo que no estaba, la app le avisa para que corrija antes de despachar."
+            "title": "Básico o novedad",
+            "description": "Los básicos se resurten; las novedades se miden por cobertura."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"2\"/><path d=\"M2 10h20M7 15h4\"/></svg>",
-            "title": "Guía y etiqueta",
-            "description": "Imprimes guía de envío (si usas paquetería) y etiqueta del paquete con contenido. La sucursal receptora sabe qué esperar."
+            "title": "Plazo del proveedor",
+            "description": "Con su plazo real, Sacs calcula el corte de pedido."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h16M4 12h16M4 18h10\"/><path d=\"M18 15l3 3-3 3\"/></svg>",
-            "title": "Estados del traspaso",
-            "description": "Solicitado, armado, en camino, recibido. Cada cambio queda con fecha y responsable. Si un paquete se atrasa, ves cuántos días lleva en tránsito."
+            "title": "Configuración al 92 %",
+            "description": "Un indicador de qué tanto de tu catálogo ya está clasificado."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6L9 17l-5-5\"/></svg>",
-            "title": "Recepción con escaneo",
-            "description": "La sucursal receptora escanea contra la guía. Si recibe todo, se aplica el ajuste automáticamente; si falta algo, se abre la diferencia para investigar."
+            "title": "Preguntas pendientes",
+            "description": "Los modelos sin temporada, ciclo o clima de uso, listos para contestar."
           },
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l4-4 4 4 5-5\"/></svg>",
-            "title": "Reporte de efectividad",
-            "description": "Comparas la lectura de quiebres antes y después del movimiento — el dato queda en el historial para analizar efectividad."
+            "title": "Historial de cambios",
+            "description": "Cada regla que cambias queda registrada."
           }
         ]
       }

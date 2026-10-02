@@ -3,7 +3,7 @@
   if (window.__scrub) return; window.__scrub = true;
   const NOMBRES = ['MARIANA LÓPEZ RÍOS','SOFÍA HERNÁNDEZ CRUZ','DANIELA TORRES VEGA','REGINA DÍAZ ORTEGA','FERNANDA CASTILLO PAZ','REGINA MORALES LUNA','ANDREA GUZMÁN REYES','CAMILA ORTIZ NAVA','LUCÍA MENDOZA ROJAS','PAULINA AGUILAR MEZA','XIMENA VARGAS LEÓN','RENATA SALAZAR DÍAZ','BOUTIQUE ALMA S.A. DE C.V.','TIENDAS LUNA MODA S.A. DE C.V.','NATALIA FLORES IBARRA','ISABELA CRUZ MÁRQUEZ'];
   const FIJOS = Object.assign({}, window.__SCRUB_FIJOS || {}); // pares real→ficticio: fijos.local.json (fuera de git)
-  const mapa = new Map(Object.entries(FIJOS)); const FAKES = new Set(Object.values(FIJOS));
+  const mapa = new Map(Object.entries(FIJOS)); const FAKES = new Set(Object.values(FIJOS)); const SUBS = Object.keys(FIJOS).filter(k => k.length >= 8).sort((a,b)=>b.length-a.length);
   const LIBRES = new Set(['LOMA850312AB1','PUBLICO EN GENERAL','PÚBLICO EN GENERAL','XAXX010101000','XEXX010101000']);
   let n = 0;
   const h = s => { let x = 0; for (const c of s) x = (x * 31 + c.charCodeAt(0)) >>> 0; return x; };
@@ -18,7 +18,10 @@
   const iniciales = s => s.split(/\s+/).filter(w=>w.length>2).slice(0,2).map(w=>w[0]).join('');
   function fixText(node){
     let t = node.textContent; const orig = t; const tr = t.trim(); if (!tr) return;
-    if (FAKES.has(tr)) return; if (mapa.has(tr)) { t = t.replace(tr, mapa.get(tr)); }
+    if (FAKES.has(tr)) return;
+    for (const k of SUBS) if (t.includes(k)) { t = t.split(k).join(FIJOS[k]); }
+    if (t !== orig) { node.textContent = t; return; }
+    if (mapa.has(tr)) { t = t.replace(tr, mapa.get(tr)); }
     else if (CP.test(tr) && tr.length > 18) { t = 'Av. Insurgentes Sur 1458, Col. Actipan, Benito Juárez, CDMX, C.P. 03230'; }
     else {
       t = t.replace(RFC, m => (LIBRES.has(m.toUpperCase()) || FAKES.has(m)) ? m : (mapa.get(m) || (mapa.set(m, rfcFalso(m.toUpperCase())), mapa.get(m))));

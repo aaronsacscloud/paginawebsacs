@@ -1,0 +1,289 @@
+---
+/**
+ * «Así se ve en Sacs» para las páginas /producto/<slug> (2-oct-2026, pedido del dueño: en vez de tres videos largos
+ * abajo, el hero lleva un video corto y aquí va un recorrido por las pantallas REALES del módulo, como el de
+ * /planeacion-de-demanda — src/components/planeacion/PdEnSacs.astro, de donde sale el diseño).
+ *
+ * Escritorio: lista de pasos a la izquierda y una ventana con la captura que se desplaza y resalta la zona de cada
+ * paso. Teléfono: la misma captura hace zoom a la zona del paso (no hacen falta recortes aparte) y el texto va debajo.
+ * Avanza solo mientras está en pantalla y se detiene en cuanto el visitante toca. «Ver la pantalla completa» abre la
+ * captura entera.
+ *
+ * Datos: `content.enSacs` en src/data/product-pages.ts → { modulo, nota, pantallas: [{ id, img, h, t, alt }],
+ * pasos: [{ p, r: [x0, y0, x1, y1], t, d }] }. Las capturas miden 1440 px de ancho (lógicos); `r` está en esos px.
+ * Se generan con scripts/videos-producto/capturar-ensacs.cjs (cuenta demo, solo lectura, datos enmascarados).
+ */
+interface Pantalla { id: string; img: string; h: number; t: string; alt: string }
+interface Paso { p: string; r: [number, number, number, number]; rz?: [number, number, number, number]; t: string; d: string }
+interface Props { modulo: string; nota?: string; pantallas: Pantalla[]; pasos: Paso[]; titulo?: string; bajada?: string }
+const { modulo, nota, pantallas, pasos, titulo = 'Así se ve en Sacs.', bajada = 'Las pantallas reales del módulo, con una boutique de ejemplo. Toca un paso o deja que corra solo.' } = Astro.props;
+
+const ANCHO = 1440, VISTA = 1000, M = 10;
+const porId = Object.fromEntries(pantallas.map((p) => [p.id, p]));
+const pct = (n: number) => +n.toFixed(3);
+const CALC = pasos.map((s, i) => {
+  const h = porId[s.p].h, [x0, y0, x1, y1] = s.r;
+  // escritorio: la ventana (1440×1000) baja lo justo para que la zona quede con aire arriba
+  const ty = Math.max(0, Math.min(y0 - 110, h - VISTA));
+  // teléfono: zoom a la zona (con margen), sin pasar de 2.6×
+  // en el celular las tablas a lo ancho no se leen: se acerca a los primeros ~760 px de la zona (nombre y cifras clave)
+  const [zx0, zy0, zx1] = s.rz || s.r;  // `rz`: la parte de la zona que se acerca en el celular (por defecto, la zona)
+  const zw = Math.min(760, zx1 - zx0 + 48), esc = Math.min(2.6, ANCHO / zw);
+  const zx = Math.max(0, Math.min(zx0 - 24, ANCHO - ANCHO / esc));
+  const zy = Math.max(0, zy0 - 24);
+  return {
+    i, p: s.p, ty: pct((ty / h) * 100),
+    l: pct(((x0 - M) / ANCHO) * 100), tp: pct(((y0 - M) / h) * 100), w: pct(((x1 - x0 + 2 * M) / ANCHO) * 100), hh: pct(((y1 - y0 + 2 * M) / h) * 100),
+    zs: pct(esc), zx: pct((zx / ANCHO) * 100), zy: pct((zy / h) * 100),
+  };
+});
+const primero = (p: string) => CALC.find((c) => c.p === p)!;
+const dos = (n: number) => String(n).padStart(2, '0');
+const PALABRA = Array.from({ length: 4 }, () => 'EN SACS').join(' · ');
+const uid = 'ens-' + modulo.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-');
+---
+<section class="pes" id={uid} aria-labelledby={uid + '-h'} data-pasos={JSON.stringify(CALC)} data-altos={JSON.stringify(Object.fromEntries(pantallas.map((p) => [p.id, p.h])))}>
+  <div class="pes-fondo" aria-hidden="true"><span>{PALABRA}</span><span>{PALABRA}</span></div>
+  <header class="pes-cab">
+    <p class="pes-k">En Sacs · {modulo}</p>
+    <h2 class="pes-h" id={uid + '-h'}>{titulo}</h2>
+    <p class="pes-bajada">{bajada}</p>
+  </header>
+
+  <div class="pes-grid">
+    <ol class="pes-pasos" aria-label={'Recorrido por ' + modulo}>
+      {pasos.map((s, i) => (
+        <li class:list={['pes-paso', { 'is-on': i === 0 }]}>
+          <button type="button" class="pes-paso-b" data-paso={i} aria-current={i === 0 ? 'step' : undefined}>
+            <span class="pes-n">{dos(i + 1)}</span>
+            <span class="pes-txt">
+              <span class="pes-donde">{porId[s.p].t}</span>
+              <span class="pes-t">{s.t}</span>
+              <span class="pes-d">{s.d}</span>
+            </span>
+          </button>
+          <span class="pes-avance" aria-hidden="true"><i></i></span>
+        </li>
+      ))}
+    </ol>
+
+    <div class="pes-escena">
+      <figure class="pes-ventana">
+        <div class="pes-barra" aria-hidden="true"><i></i><i></i><i></i><span>sacs · {modulo} · <b data-pantalla-t>{porId[pasos[0].p].t}</b></span></div>
+        <div class="pes-vista">
+          {pantallas.map((pa) => {
+            const c = primero(pa.id);
+            return c && (
+              <div class:list={['pes-lienzo', { 'is-on': pa.id === pasos[0].p }]} data-pantalla={pa.id} style={`--ty:${c.ty};--zs:${c.zs};--zx:${c.zx};--zy:${c.zy}`}>
+                <img src={pa.img} width="1440" height={pa.h} alt={pa.alt} loading="lazy" decoding="async" />
+                <span class="pes-foco" data-n={c.i + 1} style={`left:${c.l}%;top:${c.tp}%;width:${c.w}%;height:${c.hh}%`}></span>
+              </div>
+            );
+          })}
+        </div>
+        <figcaption class="pes-sr" aria-live="polite" data-vivo>{pasos[0].t}: {pasos[0].d}</figcaption>
+      </figure>
+
+      <div class="pes-pie-tel" aria-hidden="true">
+        <p class="pes-tel-n"><b data-tel-n>01</b> / {dos(pasos.length)}</p>
+        <p class="pes-tel-t" data-tel-t>{pasos[0].t}</p>
+        <p class="pes-tel-d" data-tel-d>{pasos[0].d}</p>
+      </div>
+
+      <div class="pes-ctl">
+        <div class="pes-flechas">
+          <button type="button" class="pes-flecha" data-mueve="-1" aria-label="Paso anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg></button>
+          <button type="button" class="pes-flecha" data-mueve="1" aria-label="Paso siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+        <button type="button" class="pes-completa" data-completa>Ver la pantalla completa
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+        </button>
+      </div>
+
+      <dialog class="pes-dlg" aria-label="Pantalla completa">
+        <div class="pes-dlg-cab">
+          <p class="pes-dlg-t" data-dlg-t>{porId[pasos[0].p].t}</p>
+          <button type="button" class="pes-dlg-x" data-cierra aria-label="Cerrar la pantalla completa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        </div>
+        <div class="pes-dlg-cuerpo"><img alt="" width="1440" decoding="async" data-dlg-img /></div>
+      </dialog>
+    </div>
+  </div>
+
+  {nota && <p class="pes-nota">{nota}</p>}
+</section>
+
+<style>
+  .pes { --azul: #4B7BE5; position: relative; overflow: hidden; padding: 80px 20px 88px; background: var(--azul); color: #fff; }
+  .pes > * { position: relative; max-width: 1160px; margin-left: auto; margin-right: auto; }
+  .pes-fondo { position: absolute; left: 0; right: 0; top: 96px; max-width: none; margin: 0; overflow: hidden; pointer-events: none; display: flex; flex-direction: column; -webkit-mask-image: linear-gradient(#000 45%, rgba(0, 0, 0, 0.35) 72%, transparent 92%); mask-image: linear-gradient(#000 45%, rgba(0, 0, 0, 0.35) 72%, transparent 92%); }
+  .pes-fondo span { display: block; white-space: nowrap; font: 700 clamp(76px, 15vw, 220px)/0.9 'Clash Display', var(--font-display); letter-spacing: -0.02em; color: rgba(255, 255, 255, 0.07); transform: translateX(-4%); }
+  .pes-k { margin: 0 0 14px; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.18em; text-transform: uppercase; color: #fff; }
+  .pes-h { margin: 0; font: 700 clamp(44px, 8.5vw, 104px)/0.95 'Clash Display', var(--font-display); letter-spacing: -0.035em; color: #fff; }
+  .pes-bajada { margin: 18px 0 0; max-width: 60ch; font: 500 clamp(16px, 1.6vw, 19px)/1.45 var(--font-body); color: #fff; }
+  .pes-nota { margin-top: 32px; font: 500 13.5px/1.4 var(--font-body); color: rgba(255, 255, 255, 0.85); }
+  .pes-grid { display: grid; gap: 30px; margin-top: 48px; }
+  .pes-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+  .pes-pasos { margin: 0; padding: 0; list-style: none; border-top: 1px solid rgba(255, 255, 255, 0.35); }
+  .pes-paso { position: relative; border-bottom: 1px solid rgba(255, 255, 255, 0.35); }
+  .pes-paso-b { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; width: 100%; padding: 18px 0 20px; border: 0; background: none; color: #fff; text-align: left; font: inherit; cursor: pointer; }
+  .pes-paso-b:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+  .pes-n { font: 700 24px/1 'Clash Display', var(--font-display); color: #fff; opacity: 0.55; transition: opacity 0.3s; }
+  .pes-txt { display: grid; gap: 6px; min-width: 0; }
+  .pes-donde { font: 600 10.5px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: #fff; }
+  .pes-t { font: 700 19px/1.25 var(--font-display); letter-spacing: -0.01em; color: #fff; }
+  .pes-d { display: none; font: 500 15px/1.5 var(--font-body); color: #fff; max-width: 34ch; }
+  .pes-paso-b:hover .pes-t { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
+  .pes-paso.is-on .pes-n { opacity: 1; }
+  .pes-paso.is-on .pes-d { display: block; }
+  .pes-avance { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; overflow: hidden; }
+  .pes-avance i { display: block; width: 100%; height: 100%; background: #fff; transform: scaleX(0); transform-origin: 0 50%; }
+  .pes.is-corre .pes-paso.is-on .pes-avance i { animation: pesAvance var(--pes-dur, 6.5s) linear forwards; }
+  .pes.is-quieto .pes-paso.is-on .pes-avance i { transform: scaleX(1); }
+  @keyframes pesAvance { to { transform: scaleX(1); } }
+
+  .pes-ventana { margin: 0; border-radius: 12px; overflow: hidden; background: #F4F5F9; box-shadow: 0 50px 90px -50px rgba(4, 12, 48, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.25); }
+  .pes-barra { display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 14px; background: #E9ECF2; border-bottom: 1px solid #DCE0E8; }
+  .pes-barra i { width: 10px; height: 10px; border-radius: 50%; background: #CDD2DC; flex: none; }
+  .pes-barra span { margin-left: 10px; font: 500 12px/1 var(--font-body); color: #5B6270; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pes-barra b { font-weight: 600; color: #20242C; }
+  .pes-vista { position: relative; aspect-ratio: 1440 / 1000; overflow: hidden; background: #F7F8FB; cursor: zoom-in; }
+  .pes-lienzo { position: absolute; left: 0; right: 0; top: 0; opacity: 0; visibility: hidden; transform: translateY(calc(var(--ty) * -1%)); transition: transform 0.95s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s ease, visibility 0s linear 0.5s; }
+  .pes-lienzo.is-on { opacity: 1; visibility: visible; transition: transform 0.95s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s ease, visibility 0s; }
+  .pes-lienzo img { display: block; width: 100%; height: auto; max-width: none; }
+  .pes-foco { position: absolute; border-radius: 10px; box-shadow: 0 0 0 2px var(--azul), 0 0 0 200vmax rgba(10, 22, 72, 0.32); pointer-events: none; transition: left 0.75s cubic-bezier(0.22, 1, 0.36, 1), top 0.75s cubic-bezier(0.22, 1, 0.36, 1), width 0.75s cubic-bezier(0.22, 1, 0.36, 1), height 0.75s cubic-bezier(0.22, 1, 0.36, 1); }
+  .pes-foco::before { content: attr(data-n); position: absolute; left: -15px; top: -15px; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--azul); color: #fff; font: 700 14px/1 'Clash Display', var(--font-display); box-shadow: 0 0 0 3px #fff; }
+
+  .pes-pie-tel { margin: 20px auto 0; max-width: 36ch; text-align: center; }
+  .pes-pie-tel p { margin: 0; }
+  .pes-tel-n { font: 600 12px/1.3 var(--font-display); letter-spacing: 0.16em; color: #fff; }
+  .pes-tel-n b { font: 700 14px/1 'Clash Display', var(--font-display); }
+  .pes-tel-t { margin-top: 8px !important; font: 700 21px/1.2 var(--font-display); letter-spacing: -0.01em; color: #fff; }
+  .pes-tel-d { margin-top: 6px !important; font: 500 15px/1.5 var(--font-body); color: #fff; }
+
+  .pes-ctl { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 22px; }
+  .pes-flechas { display: flex; gap: 8px; }
+  .pes-flecha { display: grid; place-items: center; width: 46px; height: 46px; border: 1.5px solid rgba(255, 255, 255, 0.7); border-radius: 50%; background: none; color: #fff; cursor: pointer; transition: background 0.2s, color 0.2s; }
+  .pes-flecha svg { width: 18px; height: 18px; max-width: none; }
+  .pes-flecha:hover { background: #fff; color: #2F55C4; }
+  .pes-flecha:focus-visible, .pes-completa:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+  .pes-completa { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 0 2px; border: 0; border-bottom: 1.5px solid #fff; background: none; color: #fff; font: 700 15px/1 var(--font-display); cursor: pointer; }
+  .pes-completa svg { width: 16px; height: 16px; max-width: none; }
+  .pes-completa:hover { opacity: 0.8; }
+
+  .pes-dlg { width: min(1180px, 96vw); max-width: none; height: 92vh; max-height: none; margin: auto; padding: 0; border: 0; border-radius: 14px; background: #F4F5F9; color: #1A1A1A; overflow: hidden; }
+  .pes-dlg::backdrop { background: rgba(10, 22, 72, 0.72); }
+  .pes-dlg[open] { display: flex; flex-direction: column; }
+  .pes-dlg-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px 10px 20px; background: #E9ECF2; border-bottom: 1px solid #DCE0E8; }
+  .pes-dlg-t { margin: 0; font: 600 13px/1.3 var(--font-display); color: #20242C; }
+  .pes-dlg-x { display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: none; color: #20242C; cursor: pointer; }
+  .pes-dlg-x svg { width: 20px; height: 20px; max-width: none; }
+  .pes-dlg-x:hover { background: #DCE0E8; }
+  .pes-dlg-cuerpo { flex: 1; overflow: auto; overscroll-behavior: contain; }
+  .pes-dlg-cuerpo img { display: block; width: 100%; height: auto; max-width: none; }
+
+  /* teléfono y tableta: la lista se esconde; la ventana hace zoom a la zona del paso y el texto va debajo */
+  @media (max-width: 1023px) {
+    .pes { padding: 64px 16px 72px; }
+    .pes-pasos { display: none; }
+    .pes-vista { aspect-ratio: 3 / 3.3; }
+    .pes-lienzo { transform-origin: 0 0; transform: scale(var(--zs)) translate(calc(var(--zx) * -1%), calc(var(--zy) * -1%)); }
+    .pes-foco::before { display: none; }
+    .pes-ctl { justify-content: center; gap: 22px; }
+    .pes-completa { display: none; }
+  }
+  @media (min-width: 1024px) {
+    .pes-grid { grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.6fr); gap: 56px; align-items: start; }
+    .pes-pie-tel { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pes *, .pes *::before { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('.pes').forEach((sec) => {
+    type Paso = { i: number; p: string; ty: number; l: number; tp: number; w: number; hh: number; zs: number; zx: number; zy: number };
+    const P: Paso[] = JSON.parse(sec.dataset.pasos || '[]');
+    const ALTOS: Record<string, number> = JSON.parse(sec.dataset.altos || '{}');
+    if (!P.length) return;
+    const N = P.length, DUR = 6500;
+    const items = Array.from(sec.querySelectorAll<HTMLElement>('.pes-paso'));
+    const botones = Array.from(sec.querySelectorAll<HTMLButtonElement>('[data-paso]'));
+    const lienzos = new Map(Array.from(sec.querySelectorAll<HTMLElement>('.pes-lienzo')).map((el) => [el.dataset.pantalla!, el]));
+    const pantallaT = sec.querySelector<HTMLElement>('[data-pantalla-t]');
+    const vivo = sec.querySelector<HTMLElement>('[data-vivo]');
+    const telN = sec.querySelector<HTMLElement>('[data-tel-n]'), telT = sec.querySelector<HTMLElement>('[data-tel-t]'), telD = sec.querySelector<HTMLElement>('[data-tel-d]');
+    const titulos = botones.map((b) => ({ t: b.querySelector('.pes-t')?.textContent || '', d: b.querySelector('.pes-d')?.textContent || '', donde: b.querySelector('.pes-donde')?.textContent || '' }));
+    const mqMov = window.matchMedia('(prefers-reduced-motion: no-preference)');
+    let actual = 0, timer = 0, enVista = false, tocado = -1e9;
+
+    function ir(i: number, via: 'auto' | 'clic' | 'flecha' | 'deslizar' | 'teclado') {
+      actual = (i + N) % N;
+      const s = P[actual];
+      items.forEach((li, k) => li.classList.toggle('is-on', k === actual));
+      botones.forEach((b, k) => { if (k === actual) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+      lienzos.forEach((el, id) => el.classList.toggle('is-on', id === s.p));
+      const lz = lienzos.get(s.p);
+      if (lz) {
+        lz.style.setProperty('--ty', String(s.ty)); lz.style.setProperty('--zs', String(s.zs)); lz.style.setProperty('--zx', String(s.zx)); lz.style.setProperty('--zy', String(s.zy));
+        const foco = lz.querySelector<HTMLElement>('.pes-foco');
+        if (foco) { foco.style.left = s.l + '%'; foco.style.top = s.tp + '%'; foco.style.width = s.w + '%'; foco.style.height = s.hh + '%'; foco.dataset.n = String(actual + 1); }
+      }
+      const tx = titulos[actual];
+      if (pantallaT) pantallaT.textContent = tx.donde;
+      if (vivo && via !== 'auto') vivo.textContent = `${tx.t}: ${tx.d}`;
+      if (telN) telN.textContent = String(actual + 1).padStart(2, '0');
+      if (telT) telT.textContent = tx.t;
+      if (telD) telD.textContent = tx.d;
+      sec.classList.remove('is-corre');
+      requestAnimationFrame(() => requestAnimationFrame(() => { if (corriendo()) sec.classList.add('is-corre'); }));
+      programa();
+    }
+    const corriendo = () => mqMov.matches && enVista && !document.hidden && performance.now() - tocado > 10000;
+    function programa() {
+      clearTimeout(timer); timer = 0;
+      sec.classList.toggle('is-quieto', !mqMov.matches);
+      if (!corriendo()) { sec.classList.remove('is-corre'); return; }
+      timer = window.setTimeout(() => ir(actual + 1, 'auto'), DUR);
+    }
+    const toque = () => { tocado = performance.now(); sec.classList.remove('is-corre'); clearTimeout(timer); timer = window.setTimeout(programa, 10100); };
+
+    botones.forEach((b, k) => b.addEventListener('click', () => { toque(); ir(k, 'clic'); }));
+    sec.querySelectorAll<HTMLElement>('[data-mueve]').forEach((b) => b.addEventListener('click', () => { toque(); ir(actual + Number(b.dataset.mueve), 'flecha'); }));
+    sec.addEventListener('keydown', (e) => {
+      if ((e.target as HTMLElement).closest('dialog')) return;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); toque(); ir(actual + (e.key === 'ArrowRight' ? 1 : -1), 'teclado'); }
+    });
+    const vista = sec.querySelector<HTMLElement>('.pes-vista');
+    sec.querySelector('.pes-ventana')?.addEventListener('pointerenter', toque, { passive: true });
+    let x0 = 0, y0 = 0;
+    vista?.addEventListener('pointerdown', (e) => { x0 = e.clientX; y0 = e.clientY; toque(); }, { passive: true });
+
+    const dlg = sec.querySelector<HTMLDialogElement>('.pes-dlg');
+    const dlgImg = sec.querySelector<HTMLImageElement>('[data-dlg-img]'), dlgT = sec.querySelector<HTMLElement>('[data-dlg-t]');
+    function abre() {
+      if (!dlg || !dlgImg || window.matchMedia('(max-width: 1023px)').matches) return;
+      toque();
+      const s = P[actual], img = lienzos.get(s.p)?.querySelector('img');
+      dlgImg.src = img?.getAttribute('src') || ''; dlgImg.height = ALTOS[s.p] || 1500; dlgImg.alt = img?.alt || '';
+      if (dlgT) dlgT.textContent = titulos[actual].donde;
+      if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
+    }
+    vista?.addEventListener('pointerup', (e) => {
+      const dx = e.clientX - x0, dy = e.clientY - y0;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { ir(actual + (dx < 0 ? 1 : -1), 'deslizar'); return; }
+      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) abre();
+    }, { passive: true });
+    sec.querySelector('[data-completa]')?.addEventListener('click', abre);
+    sec.querySelector('[data-cierra]')?.addEventListener('click', () => dlg?.close());
+    dlg?.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+
+    new IntersectionObserver((es) => { enVista = es[0].isIntersecting; programa(); if (enVista && corriendo()) sec.classList.add('is-corre'); }, { threshold: 0.35 }).observe(sec.querySelector('.pes-escena') || sec);
+    document.addEventListener('visibilitychange', programa);
+    mqMov.addEventListener('change', programa);
+    sec.style.setProperty('--pes-dur', DUR + 'ms');
+    programa();
+  });
+</script>

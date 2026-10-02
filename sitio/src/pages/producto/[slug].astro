@@ -3,6 +3,7 @@ import ProductLayout from '../../layouts/ProductLayout.astro';
 import GiroHero from '../../components/giros/GiroHero.astro';
 import ZoomTypo from '../../components/ZoomTypo.astro';
 import ProductFeatureShowcase from '../../components/ProductFeatureShowcase.astro';
+import ProductEnSacs from '../../components/ProductEnSacs.astro';
 import GiroFeatures from '../../components/giros/GiroFeatures.astro';
 import GiroSplitSection from '../../components/giros/GiroSplitSection.astro';
 import GiroStats from '../../components/giros/GiroStats.astro';
@@ -1342,9 +1343,9 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         <div class="sq-fc-header">
                           <span class="sq-fc-badge sq-fc-badge--scan">
                             <span class="sq-fc-dot"></span>
-                            Zona Anaquel A1
+                            Quick Scan
                           </span>
-                          <span class="sq-fc-time">● REC</span>
+                          <span class="sq-fc-time">Conteo de septiembre</span>
                         </div>
                         <div class="sq-fc-scan-frame">
                           <div class="sq-fc-scan-viewport">
@@ -1355,13 +1356,13 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                             <div class="sq-fc-scan-laser"></div>
                           </div>
                           <div class="sq-fc-scan-count">
-                            <span class="sq-fc-scan-num">47</span>
-                            <span class="sq-fc-scan-of">de 62</span>
+                            <span class="sq-fc-scan-num">17</span>
+                            <span class="sq-fc-scan-of">de 19</span>
                           </div>
                         </div>
                         <div class="sq-fc-scan-last">
                           <span class="sq-fc-scan-last-label">Último escaneo</span>
-                          <span class="sq-fc-scan-last-val">Blusa Lino M · SKU #BL-204</span>
+                          <span class="sq-fc-scan-last-val">Blusa cuello alto · M · Negro</span>
                         </div>
                       </div>
                     )}
@@ -1369,33 +1370,29 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                     {block.variant === 'count-zones-progress' && (
                       <div class="sq-featured-card" aria-hidden="true">
                         <div class="sq-fc-header">
-                          <span class="sq-fc-badge sq-fc-badge--zones">
+                          <span class="sq-fc-badge sq-fc-badge--variance">
                             <span class="sq-fc-dot"></span>
-                            Avance por zona
+                            No coinciden · 19
                           </span>
-                          <span class="sq-fc-time">4 zonas</span>
+                          <span class="sq-fc-time">Conteo de septiembre</span>
                         </div>
-                        <div class="sq-fc-zones">
-                          <div class="sq-fc-zone-row">
-                            <span class="sq-fc-zone-name">Anaquel A</span>
-                            <div class="sq-fc-zone-bar"><div class="sq-fc-zone-fill" style="width:82%"></div></div>
-                            <span class="sq-fc-zone-meta">Luis · 82%</span>
+                        <div class="sq-fc-var-list">
+                          <div class="sq-fc-var-row">
+                            <span class="sq-fc-var-sku">Blusa cuello alto · M</span>
+                            <span class="sq-fc-var-nums">11 / 10 · <span class="sq-fc-var-minus">−1</span></span>
                           </div>
-                          <div class="sq-fc-zone-row">
-                            <span class="sq-fc-zone-name">Anaquel B</span>
-                            <div class="sq-fc-zone-bar"><div class="sq-fc-zone-fill" style="width:64%"></div></div>
-                            <span class="sq-fc-zone-meta">Ana · 64%</span>
+                          <div class="sq-fc-var-row">
+                            <span class="sq-fc-var-sku">Camiseta margarita · L</span>
+                            <span class="sq-fc-var-nums">9 / 7 · <span class="sq-fc-var-minus">−2</span></span>
                           </div>
-                          <div class="sq-fc-zone-row">
-                            <span class="sq-fc-zone-name">Bodega</span>
-                            <div class="sq-fc-zone-bar"><div class="sq-fc-zone-fill" style="width:100%"></div></div>
-                            <span class="sq-fc-zone-meta">Pedro · 100%</span>
+                          <div class="sq-fc-var-row">
+                            <span class="sq-fc-var-sku">Camiseta rib · S</span>
+                            <span class="sq-fc-var-nums">6 / 5 · <span class="sq-fc-var-minus">−1</span></span>
                           </div>
-                          <div class="sq-fc-zone-row">
-                            <span class="sq-fc-zone-name">Escaparate</span>
-                            <div class="sq-fc-zone-bar"><div class="sq-fc-zone-fill" style="width:28%"></div></div>
-                            <span class="sq-fc-zone-meta">Elena · 28%</span>
-                          </div>
+                        </div>
+                        <div class="sq-fc-total">
+                          <span>Diferencia del conteo · −21 pzs</span>
+                          <span class="sq-fc-total-val sq-fc-total-val--neg">−$17,650</span>
                         </div>
                       </div>
                     )}
@@ -1405,32 +1402,92 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         <div class="sq-fc-header">
                           <span class="sq-fc-badge sq-fc-badge--variance">
                             <span class="sq-fc-dot"></span>
-                            Diferencias
+                            Ajuste al Kardex
                           </span>
-                          <span class="sq-fc-time">Anaquel A · cerrar</span>
+                          <span class="sq-fc-time">CON - 23</span>
                         </div>
                         <div class="sq-fc-var-list">
                           <div class="sq-fc-var-row">
-                            <span class="sq-fc-var-sku">Blusa Lino M</span>
-                            <span class="sq-fc-var-nums">24 / 26 · <span class="sq-fc-var-plus">+2</span></span>
+                            <span class="sq-fc-var-sku">Ventas durante el conteo</span>
+                            <span class="sq-fc-var-nums"><span class="sq-fc-var-plus">conciliadas</span></span>
                           </div>
                           <div class="sq-fc-var-row">
-                            <span class="sq-fc-var-sku">Jeans Wide S</span>
-                            <span class="sq-fc-var-nums">18 / 17 · <span class="sq-fc-var-minus">−1</span></span>
+                            <span class="sq-fc-var-sku">Diferencia final</span>
+                            <span class="sq-fc-var-nums"><span class="sq-fc-var-minus">−21 pzs</span></span>
                           </div>
                           <div class="sq-fc-var-row">
-                            <span class="sq-fc-var-sku">Sandalia Kira 24</span>
-                            <span class="sq-fc-var-nums">12 / 12 · <span class="sq-fc-var-zero">0</span></span>
+                            <span class="sq-fc-var-sku">Movimientos al Kardex</span>
+                            <span class="sq-fc-var-nums">con folio CON - 23</span>
                           </div>
-                        </div>
-                        <div class="sq-fc-total">
-                          <span>Impacto a costo</span>
-                          <span class="sq-fc-total-val sq-fc-total-val--neg">−$1,340</span>
                         </div>
                         <button class="sq-fc-cobrar sq-fc-cobrar--variance" tabindex="-1">
-                          AUTORIZAR AJUSTE (PIN)
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                          FINALIZAR Y AJUSTAR
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
                         </button>
+                      </div>
+                    )}
+
+                    {block.variant === 'count-recurrent' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--variance">
+                            <span class="sq-fc-dot"></span>
+                            Faltante recurrente
+                          </span>
+                          <span class="sq-fc-time">7 prendas</span>
+                        </div>
+                        <div class="sq-fc-var-list">
+                          <div class="sq-fc-var-row">
+                            <span class="sq-fc-var-sku">Bufanda flecos</span>
+                            <span class="sq-fc-var-nums">2 de 2 conteos · <span class="sq-fc-var-minus">−$5,709</span></span>
+                          </div>
+                          <div class="sq-fc-var-row">
+                            <span class="sq-fc-var-sku">Pantalón bombacho · XS</span>
+                            <span class="sq-fc-var-nums">4 de 7 · <span class="sq-fc-var-minus">−$4,642</span></span>
+                          </div>
+                          <div class="sq-fc-var-row">
+                            <span class="sq-fc-var-sku">Collar espirales</span>
+                            <span class="sq-fc-var-nums">2 de 2 · <span class="sq-fc-var-minus">−$3,441</span></span>
+                          </div>
+                        </div>
+                        <button class="sq-fc-cobrar sq-fc-cobrar--variance" tabindex="-1">
+                          CREAR CONTEO PARCIAL
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                        </button>
+                      </div>
+                    )}
+
+                    {block.variant === 'niv-season-rules' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--zones">
+                            <span class="sq-fc-dot"></span>
+                            Reglas de moda
+                          </span>
+                          <span class="sq-fc-time">92 % configurado</span>
+                        </div>
+                        <div class="sq-fc-zones">
+                          <div class="sq-fc-zone-row">
+                            <span class="sq-fc-zone-name">Otoño-Invierno 2026</span>
+                            <div class="sq-fc-zone-bar"><div class="sq-fc-zone-fill" style="width:100%"></div></div>
+                            <span class="sq-fc-zone-meta">en curso</span>
+                          </div>
+                          <div class="sq-fc-zone-row">
+                            <span class="sq-fc-zone-name">Buen Fin 2026</span>
+                            <div class="sq-fc-zone-bar"><div class="sq-fc-zone-fill" style="width:70%"></div></div>
+                            <span class="sq-fc-zone-meta">7 semanas</span>
+                          </div>
+                          <div class="sq-fc-zone-row">
+                            <span class="sq-fc-zone-name">Navidad 2026</span>
+                            <div class="sq-fc-zone-bar"><div class="sq-fc-zone-fill" style="width:45%"></div></div>
+                            <span class="sq-fc-zone-meta">guía de regalo</span>
+                          </div>
+                          <div class="sq-fc-zone-row">
+                            <span class="sq-fc-zone-name">Día de Reyes 2027</span>
+                            <div class="sq-fc-zone-bar"><div class="sq-fc-zone-fill" style="width:20%"></div></div>
+                            <span class="sq-fc-zone-meta">en planeación</span>
+                          </div>
+                        </div>
                       </div>
                     )}
 
@@ -3395,12 +3452,12 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                           Celular
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                          Cámara
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6v12M8 6v12M12 6v12M16 6v12M20 6v12"/></svg>
+                          Código de barras
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83"/></svg>
-                          En vivo
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/><path d="M14 2v6h6"/></svg>
+                          Excel
                         </div>
                       </Fragment>
                     )}
@@ -3408,16 +3465,16 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                     {block.variant === 'count-zones-progress' && (
                       <Fragment>
                         <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg>
-                          4 zonas
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16M4 15h16M10 3L8 21M16 3l-2 18"/></svg>
+                          Piezas
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                          Responsables
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                          Pesos
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
-                          Avance
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/><path d="M14 2v6h6"/></svg>
+                          Excel
                         </div>
                       </Fragment>
                     )}
@@ -3425,16 +3482,50 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                     {block.variant === 'count-variance-report' && (
                       <Fragment>
                         <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                          Diferencias
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0115-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 01-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+                          Conciliación
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                          PIN
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+                          Kardex
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-                          Autorización
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16M4 15h16M10 3L8 21M16 3l-2 18"/></svg>
+                          Folio
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'count-recurrent' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                          Vigilar
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
+                          Por categoría
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                          Conteo parcial
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'niv-season-rules' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                          Temporadas
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/></svg>
+                          Básico o novedad
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                          Plazo del proveedor
                         </div>
                       </Fragment>
                     )}
@@ -4471,7 +4562,9 @@ for (let i = 0; i <= currentPlanIdx; i++) {
 
       <ZoomTypo text={content.interrupt} strikeText={content.interruptStrike} />
 
-      <ProductFeatureShowcase items={content.showcaseTabs.map((t: any, i: number) => ({ ...t, num: i + 1 }))} />
+      {content.enSacs
+        ? <ProductEnSacs {...content.enSacs} />
+        : <ProductFeatureShowcase items={content.showcaseTabs.map((t: any, i: number) => ({ ...t, num: i + 1 }))} />}
 
       {content.comparison && (
         <section class="pf-compare reveal-section">
@@ -8056,7 +8149,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
   .sq-fc-var-plus { color: #2a8a5f; font-weight: 800; }
   .sq-fc-var-minus { color: #c25a4a; font-weight: 800; }
   .sq-fc-var-zero { color: #6b6b75; font-weight: 800; }
-  .sq-fc-total-val--neg { color: #8a3a2a; }
+  .sq-fc-total-val--neg { color: #8a3a2a; white-space: nowrap; }
 
   /* oc-receive-scan */
   .sq-fc-rec-progress { margin-top: 4px; }
