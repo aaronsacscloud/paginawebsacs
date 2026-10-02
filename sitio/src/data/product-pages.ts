@@ -2770,7 +2770,12 @@ export const pageContent: Record<string, any> = {
       "title": "Factura al cobro. Sin hoja aparte.",
       "subtitle": "CFDI 4.0 desde el POS con integración a PACs certificados (Facturama, Quadrum). Notas de crédito, complementos de pago y portal de autofacturación con tu marca. DIAN, SRI y demás países entran por orden de demanda.",
       "image": "/images/factura-hero.webp",
-      "imageAlt": "Vendedora emitiendo factura electrónica desde el POS Sacs"
+      "imageAlt": "Vendedora emitiendo factura electrónica desde el POS Sacs",
+      "video": {
+        "mp4": "/videos/factura-hero.mp4",
+        "webm": "/videos/factura-hero.webm"
+      },
+      "videoPoster": "/videos/factura-hero-poster.webp"
     },
     "features": [
       {
@@ -2803,7 +2808,21 @@ export const pageContent: Record<string, any> = {
         "imageAlt": "Pantalla de emisión CFDI al momento del cobro en Sacs POS",
         "link": null,
         "featured": true,
-        "variant": "invoice-issue"
+        "variant": "invoice-issue",
+        "bullets": [
+          {
+            "label": "Cliente pre-llenado",
+            "detail": "Si ya está en tu CRM, RFC, régimen fiscal y uso del CFDI se llenan solos."
+          },
+          {
+            "label": "Timbrado con tu PAC",
+            "detail": "Sacs arma el CFDI 4.0 y lo timbra al momento con Facturama o Quadrum."
+          },
+          {
+            "label": "XML y PDF al correo",
+            "detail": "El cliente recibe sus archivos sin que nadie los envíe a mano."
+          }
+        ]
       },
       {
         "title": "El cliente factura solo. Tu cajero ni se entera.",
@@ -2812,7 +2831,21 @@ export const pageContent: Record<string, any> = {
         "imageAlt": "Cliente escaneando QR de autofacturación desde ticket Sacs",
         "link": null,
         "featured": true,
-        "variant": "invoice-portal"
+        "variant": "invoice-portal",
+        "bullets": [
+          {
+            "label": "Código y PIN en el ticket",
+            "detail": "Con el folio y el PIN impresos, el cliente factura desde su celular."
+          },
+          {
+            "label": "Portal de autofacturación",
+            "detail": "Captura su RFC y descarga XML y PDF sin pasar por la caja."
+          },
+          {
+            "label": "Factura global del periodo",
+            "detail": "Lo que nadie facturó se integra a la factura global, sin capturas."
+          }
+        ]
       },
       {
         "title": "Notas de crédito y complementos de pago. Ligados, sin hoja suelta.",
@@ -2824,7 +2857,21 @@ export const pageContent: Record<string, any> = {
           "href": "/producto/cuentas-por-pagar"
         },
         "featured": true,
-        "variant": "invoice-credit"
+        "variant": "invoice-credit",
+        "bullets": [
+          {
+            "label": "Ligada a la factura original",
+            "detail": "La nota toma folio, UUID y conceptos de la factura que se ajusta."
+          },
+          {
+            "label": "Solo lo que regresó",
+            "detail": "Eliges prendas y cantidades; el importe y el IVA se calculan solos."
+          },
+          {
+            "label": "Complementos de pago",
+            "detail": "Cada abono de una venta a crédito genera su complemento timbrado."
+          }
+        ]
       },
       {
         "title": "Hoy México. Mañana Colombia, Ecuador, Perú, Argentina.",
@@ -2833,7 +2880,21 @@ export const pageContent: Record<string, any> = {
         "imageAlt": "Mapa de LatAm con estándares fiscales cubiertos por Sacs",
         "link": null,
         "featured": true,
-        "variant": "invoice-country"
+        "variant": "invoice-country",
+        "bullets": [
+          {
+            "label": "México · CFDI 4.0",
+            "detail": "Operando hoy con PACs certificados."
+          },
+          {
+            "label": "Colombia y Ecuador",
+            "detail": "DIAN y SRI entran con los primeros clientes de cada país."
+          },
+          {
+            "label": "Perú y Argentina",
+            "detail": "SUNAT y AFIP en evaluación."
+          }
+        ]
       }
     ],
     "testimonial": {
@@ -2852,6 +2913,12 @@ export const pageContent: Record<string, any> = {
         "title": "Timbrado en línea. Sin software externo.",
         "description": "Integración directa con Facturama y Quadrum (PACs autorizados por el SAT). Prodigia, FinKok y Edicom entran bajo demanda conforme los piden nuestros clientes.",
         "image": "/images/factura-hero.webp",
+        "video": {
+          "mp4": "/videos/tab-factura-emision.mp4",
+          "webm": "/videos/tab-factura-emision.webm",
+          "poster": "/videos/tab-factura-emision-poster.webp",
+          "aspectRatio": "1372 / 720"
+        },
         "imageAlt": "Pantalla de emisión CFDI 4.0 en Sacs",
         "link": null,
         "details": [
@@ -2892,6 +2959,12 @@ export const pageContent: Record<string, any> = {
         "title": "Tu cliente hace el trabajo. Con tu marca.",
         "description": "Portal de autofacturación con tu logo, tus colores y tu dominio. El cliente escanea el QR del ticket, captura datos, recibe el CFDI.",
         "image": "/images/factura-hero.webp",
+        "video": {
+          "mp4": "/videos/tab-factura-autofacturacion.mp4",
+          "webm": "/videos/tab-factura-autofacturacion.webm",
+          "poster": "/videos/tab-factura-autofacturacion-poster.webp",
+          "aspectRatio": "1436 / 720"
+        },
         "imageAlt": "Portal de autofacturación con marca del comercio en Sacs",
         "link": null,
         "details": [
@@ -2932,6 +3005,12 @@ export const pageContent: Record<string, any> = {
         "title": "Devoluciones y pagos parciales, cubiertos.",
         "description": "Nota de crédito ligada a la factura madre, complemento de pago por cada abono en crédito, y un reporte que tu contador exporta sin armar pivotes.",
         "image": "/images/factura-hero.webp",
+        "video": {
+          "mp4": "/videos/tab-factura-notas-credito.mp4",
+          "webm": "/videos/tab-factura-notas-credito.webm",
+          "poster": "/videos/tab-factura-notas-credito-poster.webp",
+          "aspectRatio": "1372 / 720"
+        },
         "imageAlt": "Pantalla de notas de crédito y complementos de pago en Sacs",
         "link": null,
         "details": [

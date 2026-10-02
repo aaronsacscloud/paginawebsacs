@@ -1,0 +1,26 @@
+const { abrir } = require('./rec.cjs'); const prep = require('./prep.cjs');
+(async()=>{
+  const r = await abrir(1436, 720); const { p } = r;
+  await r.go('dashboard/list/index', 'Ingresos totales');
+  const [cx,cy] = await r.punto('settings', { xmax: 120 }); await p.mouse.click(cx,cy); await r.esperaTexto('Kiosko de Facturación');
+  await p.evaluate(()=>{ let hit=null; const walk=root=>root.querySelectorAll('*').forEach(el=>{ if(hit) return; if(el.shadowRoot) walk(el.shadowRoot); const own=[...el.childNodes].filter(c=>c.nodeType===3).map(c=>c.textContent).join('').trim(); if(own==='Kiosko de Facturación'){ const b=el.getBoundingClientRect(); if(b.width>0 && b.x<300) hit=el; } }); walk(document); hit.scrollIntoView({block:'center'}); hit.click(); }); await r.esperaTexto('URL del kiosko'); await p.waitForTimeout(1500);
+  await p.mouse.move(850, 450);
+  await r.iniciar('tab-autofacturacion');
+  await r.quieto(0.9);
+  const [sx,sy] = await r.punto('Activar Kiosko de Facturación', { xmin: 480 }); await r.toque(sx-50, sy, { clic:false }); await r.quieto(0.5);
+  const [ux,uy] = await r.punto('https://mibellapandita.sacscloud.com/'); await r.toque(ux, uy, { clic:false }); await r.quieto(0.4);
+  await r.transicion(async()=>{ await p.goto('https://mibellapandita.sacscloud.com/', { waitUntil:'networkidle' }); await p.evaluate(()=>document.documentElement.style.zoom='0.7'); }, 'Código del ticket', { fundido: 0.4, extra: 1500 });
+  await prep.ocultarFlotantes(r);
+  await r.quieto(0.7);
+  await r.quieto(0.3);
+  const campo = async ph => { const b = await p.locator(`input[placeholder="${ph}"]`).first().boundingBox(); return [b.x + 120, b.y + b.height/2]; };
+  let [fx,fy] = await campo('XXX000000YYY'); await r.toque(fx,fy); await r.teclear('LOMA850312AB1');
+  [fx,fy] = await campo('Ejemplo: s-RMM-1782002492810'); await r.toque(fx,fy); await r.teclear('s-RMM-1782004417305', { porLetra: 1 });
+  [fx,fy] = await campo('12345'); await r.toque(fx,fy); await r.teclear('48213');
+  await r.quieto(0.4);
+  const sb2 = await p.locator('button:has-text("Siguiente")').first().boundingBox();
+  await r.toque(sb2.x + sb2.width/2, sb2.y + sb2.height/2, { clic:false }); await r.quieto(1.2);
+  await r.ocultar(); await r.quieto(0.3);
+  await r.terminar('tab-autofacturacion', { recorteIzq: 0, salida: [1436, 720] });
+  await r.cerrar();
+})().catch(async e=>{ console.error('FALLO', e.message); process.exit(1); });
