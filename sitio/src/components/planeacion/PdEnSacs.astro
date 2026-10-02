@@ -9,33 +9,41 @@
  * Capturas: sistema local (sacs3) con la red Polanco Boutique — demo ficticia con fotos gpt-image —, sin la red de
  * MAJA (es un prospecto: nada suyo en la web) y con un proveedor ficticio. Script: scripts/planeacion-capturas/.
  * Forecasting no sale: en el sistema todavía dice «en construcción» (nota al pie).
+ * Mismo día, del dueño: «faltan partes del proceso, cómo se ve el resurtido y todo eso» → nueve pasos en tres fases:
+ * Configura (reglas) · Planea (temporadas) · Resurte (tus nivelaciones, la Mesa, talla × tienda y lo que se crea al
+ * aprobar: el traspaso y el borrador de compra). En la lista de nivelaciones se quitó la de MAJA (con sus totales).
  */
 const D = '/images/planeacion/sacs/';
 const PANTALLAS: Record<string, { h: number; ch: number; t: string; alt: string }> = {
   resumen: { h: 1760, ch: 3791, t: 'Gestor de reglas · Resumen', alt: 'Pantalla Gestor de reglas de Sacs: la configuración al 86 %, las preguntas pendientes del diccionario y cómo decide Sacs cuando a una tienda le falta mercancía' },
   reglas: { h: 1400, ch: 3791, t: 'Gestor de reglas · Reglas', alt: 'Pantalla de reglas de Sacs: cada regla de compra con su número y su modo Automático, Te pregunta o Apagada' },
   temporadas: { h: 1300, ch: 3791, t: 'Temporadas', alt: 'Pantalla Temporadas de Sacs: una tarjeta por temporada o evento con el paso en que va' },
-  mesa: { h: 1400, ch: 2591, t: 'Temporadas · Mesa de la nivelación', alt: 'Mesa de una nivelación en Sacs: modelos, piezas, costo y curvas rotas, y cada modelo con su curva de tallas para aprobar' },
+  nivelaciones: { h: 1000, ch: 1000, t: 'En temporada · Tus nivelaciones', alt: 'Lista de nivelaciones en Sacs: cada resurtido con su tipo, su estado, sus modelos, piezas y costo' },
+  mesa: { h: 1400, ch: 2591, t: 'En temporada · Mesa de la nivelación', alt: 'Mesa de una nivelación en Sacs: modelos, piezas, costo y curvas rotas, y cada modelo con su curva de tallas para aprobar' },
+  talla: { h: 1200, ch: 1200, t: 'Mesa · Talla × tienda', alt: 'Detalle de un modelo en Sacs: cada tienda y cada talla con lo que hay, lo que vende por semana y lo que le llega del CEDIS; el porqué y los documentos que se crean' },
 };
 // zona a resaltar (x0, y0, x1, y1 en px de la captura de 1440) y cuánto se desplaza la ventana (ty, px)
 const PASOS = [
-  { p: 'resumen', ty: 132, r: [336, 280, 1032, 984], t: 'Tu diccionario, al 86 %', d: 'Sacs dice qué le falta saber de tu catálogo y te lo pregunta con un clic.' },
-  { p: 'resumen', ty: 750, r: [336, 1008, 1402, 1491], t: 'Cómo decide cuando falta mercancía', d: 'Primero espera lo que viene; luego traspasa, resurte del CEDIS y, al final, compra.' },
-  { p: 'reglas', ty: 316, r: [336, 384, 1402, 1248], t: 'Cada regla, en una línea', d: 'Automático, Te pregunta o Apagada. El número lo pones tú.' },
-  { p: 'temporadas', ty: 252, r: [336, 365, 1402, 1139], t: 'Una tarjeta por temporada', d: 'Buen Fin, Navidad, Reyes: cada una con el paso en que va.' },
-  { p: 'mesa', ty: 0, r: [326, 243, 1411, 376], t: 'La nivelación, en cifras', d: 'Modelos, piezas, costo y curvas rotas: de 14 a 0.' },
-  { p: 'mesa', ty: 364, r: [326, 480, 1411, 1248], t: 'Apruebas modelo por modelo', d: 'Con la curva de tallas de la red y de cada grupo de tiendas.' },
+  { fase: 'Configura', p: 'resumen', cel: 'resumen', ty: 132, r: [336, 280, 1032, 984], t: 'Tu diccionario, al 86 %', d: 'Sacs dice qué le falta saber de tu catálogo y te lo pregunta con un clic.' },
+  { fase: 'Configura', p: 'resumen', cel: 'escalera', ty: 750, r: [336, 1008, 1402, 1491], t: 'Cómo decide cuando falta mercancía', d: 'Primero espera lo que viene; luego traspasa, resurte del CEDIS y, al final, compra.' },
+  { fase: 'Configura', p: 'reglas', cel: 'reglas', ty: 316, r: [336, 384, 1402, 1248], t: 'Cada regla, en una línea', d: 'Automático, Te pregunta o Apagada. El número lo pones tú.' },
+  { fase: 'Planea', p: 'temporadas', cel: 'temporadas', ty: 252, r: [336, 365, 1402, 1139], t: 'Una tarjeta por temporada', d: 'Buen Fin, Navidad, Reyes: cada una con el paso en que va.' },
+  { fase: 'Resurte', p: 'nivelaciones', cel: 'nivelaciones', ty: 0, r: [328, 293, 1408, 864], t: 'Cada resurtido, con su estado', d: 'Reposición de la semana o preparar un evento: lo que mueve y si ya lo aprobaste.' },
+  { fase: 'Resurte', p: 'mesa', cel: 'cifras', ty: 0, r: [326, 243, 1411, 376], t: 'La nivelación, en cifras', d: 'Modelos, piezas, costo y curvas rotas: de 14 a 0.' },
+  { fase: 'Resurte', p: 'mesa', cel: 'modelos', ty: 364, r: [326, 480, 1411, 1248], t: 'Apruebas modelo por modelo', d: 'Con la curva de tallas de la red y de cada grupo de tiendas.' },
+  { fase: 'Resurte', p: 'talla', cel: 'talla', ty: 89, r: [326, 378, 1408, 800], t: 'Tienda por tienda, talla por talla', d: 'Lo que hay, lo que vende cada una por semana y cuánto le llega del CEDIS.' },
+  { fase: 'Resurte', p: 'talla', cel: 'documentos', ty: 200, r: [326, 816, 1408, 1072], t: 'Lo que se crea al aprobar', d: 'Un traspaso por tienda, listo para surtir, y el borrador de compra al proveedor. Con su porqué.' },
 ];
 const pct = (n: number) => +(n).toFixed(3);
 const CALC = PASOS.map((s, i) => {
   const h = PANTALLAS[s.p].h, [x0, y0, x1, y1] = s.r, M = 10;
-  return { i, p: s.p, ty: pct((s.ty / h) * 100), l: pct(((x0 - M) / 1440) * 100), tp: pct(((y0 - M) / h) * 100), w: pct(((x1 - x0 + 2 * M) / 1440) * 100), hh: pct(((y1 - y0 + 2 * M) / h) * 100) };
+  return { i, p: s.p, fase: s.fase, ty: pct((s.ty / h) * 100), l: pct(((x0 - M) / 1440) * 100), tp: pct(((y0 - M) / h) * 100), w: pct(((x1 - x0 + 2 * M) / 1440) * 100), hh: pct(((y1 - y0 + 2 * M) / h) * 100) };
 });
 const primero = (p: string) => CALC.find((c) => c.p === p)!;
 const dos = (n: number) => String(n).padStart(2, '0');
 const PALABRA = Array.from({ length: 4 }, () => 'EN SACS').join(' · ');
 ---
-<section class="pda ens pd-azul" id="pd-ensacs" aria-labelledby="pd-ensacs-h" data-pasos={JSON.stringify(CALC)}>
+<section class="pda ens pd-azul" id="pd-ensacs" aria-labelledby="pd-ensacs-h" data-pasos={JSON.stringify(CALC)} data-pantallas={JSON.stringify(Object.fromEntries(Object.entries(PANTALLAS).map(([k, v]) => [k, v.ch])))}>
   <div class="pda-fondo" aria-hidden="true"><span>{PALABRA}</span><span>{PALABRA}</span></div>
   <header class="pda-cab">
     <p class="pda-k">En Sacs · Demand Planning</p>
@@ -46,7 +54,7 @@ const PALABRA = Array.from({ length: 4 }, () => 'EN SACS').join(' · ');
   <div class="ens-grid">
     <ol class="ens-pasos" aria-label="Recorrido por el módulo">
       {PASOS.map((s, i) => (
-        <li class:list={['ens-paso', { 'is-on': i === 0 }]} data-i={i}>
+        <li class:list={['ens-paso', { 'is-on': i === 0, 'is-fase': i === 0 || PASOS[i - 1].fase !== s.fase }]} data-i={i} data-fase={s.fase}>
           <button type="button" class="ens-paso-b" data-ens-paso={i} aria-current={i === 0 ? 'step' : undefined}>
             <span class="ens-n">{dos(i + 1)}</span>
             <span class="ens-txt">
@@ -81,11 +89,11 @@ const PALABRA = Array.from({ length: 4 }, () => 'EN SACS').join(' · ');
       <!-- teléfono: el marco con un recorte por paso -->
       <div class="ens-tel" data-ens-tel>
         <div class="ens-tel-vista">
-          {PASOS.map((s, i) => <img class:list={[{ 'is-on': i === 0 }]} src={`${D}cel-${i + 1}.webp`} width="780" height="1520" alt={PANTALLAS[s.p].alt} loading="lazy" decoding="async" data-i={i} />)}
+          {PASOS.map((s, i) => <img class:list={[{ 'is-on': i === 0 }]} src={`${D}cel-${s.cel}.webp`} width="780" height="1520" alt={PANTALLAS[s.p].alt} loading="lazy" decoding="async" data-i={i} />)}
         </div>
       </div>
       <div class="ens-pie-tel" aria-hidden="true">
-        <p class="ens-tel-n"><b data-ens-n>01</b> / {dos(PASOS.length)}</p>
+        <p class="ens-tel-n"><span data-ens-fase>{PASOS[0].fase}</span> · <b data-ens-n>01</b> / {dos(PASOS.length)}</p>
         <p class="ens-tel-t" data-ens-t>{PASOS[0].t}</p>
         <p class="ens-tel-d" data-ens-d>{PASOS[0].d}</p>
       </div>
@@ -118,14 +126,18 @@ const PALABRA = Array.from({ length: 4 }, () => 'EN SACS').join(' · ');
   .ens-grid { display: grid; gap: 36px; margin-top: 56px; }
 
   /* ── los pasos: renglones entre filetes, el activo con su descripción y su avance ── */
-  .ens-pasos { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--pd-filete); }
+  .ens-pasos { margin: 0; padding: 0; list-style: none; }
+  /* cada fase abre con su rótulo (Configura · Planea · Resurte) y un filete grueso */
+  .ens-paso.is-fase { margin-top: 26px; border-top: 2px solid #fff; }
+  .ens-paso.is-fase:first-child { margin-top: 0; }
+  .ens-paso.is-fase::before { content: attr(data-fase); display: block; padding: 10px 0 0; font: 700 11px/1.3 var(--font-display); letter-spacing: 0.2em; text-transform: uppercase; color: #fff; }
   .ens-paso { position: relative; border-bottom: 1px solid var(--pd-filete); }
-  .ens-paso-b { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; width: 100%; padding: 18px 0 20px; border: 0; background: none; color: #fff; text-align: left; font: inherit; cursor: pointer; }
+  .ens-paso-b { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; width: 100%; padding: 14px 0 16px; border: 0; background: none; color: #fff; text-align: left; font: inherit; cursor: pointer; }
   .ens-paso-b:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
   .ens-n { font: 700 24px/1 var(--pd-clash); color: #fff; opacity: 0.55; transition: opacity 0.3s; }
   .ens-txt { display: grid; gap: 6px; min-width: 0; }
   .ens-donde { font: 600 10.5px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: #fff; }
-  .ens-t { font: 700 19px/1.25 var(--font-display); letter-spacing: -0.01em; color: #fff; }
+  .ens-t { font: 700 18px/1.25 var(--font-display); letter-spacing: -0.01em; color: #fff; }
   .ens-d { display: none; font: 500 15px/1.5 var(--font-body); color: #fff; max-width: 34ch; }
   .ens-paso-b:hover .ens-t { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
   .ens-paso.is-on .ens-n { opacity: 1; }
@@ -195,6 +207,7 @@ const PALABRA = Array.from({ length: 4 }, () => 'EN SACS').join(' · ');
   @media (min-width: 1024px) {
     .ens-grid { grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.6fr); gap: 56px; align-items: start; }
     .ens-ventana { display: block; }
+    .ens-escena { position: sticky; top: 24px; }
     .ens-tel, .ens-pie-tel { display: none; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -208,7 +221,7 @@ const PALABRA = Array.from({ length: 4 }, () => 'EN SACS').join(' · ');
   (() => {
     const sec = document.getElementById('pd-ensacs');
     if (!sec) return;
-    type Paso = { i: number; p: string; ty: number; l: number; tp: number; w: number; hh: number };
+    type Paso = { i: number; p: string; fase: string; ty: number; l: number; tp: number; w: number; hh: number };
     const P: Paso[] = JSON.parse(sec.dataset.pasos || '[]');
     if (!P.length) return;
     const N = P.length, DUR = 6500;
@@ -218,7 +231,7 @@ const PALABRA = Array.from({ length: 4 }, () => 'EN SACS').join(' · ');
     const telImgs = Array.from(sec.querySelectorAll<HTMLImageElement>('.ens-tel-vista img'));
     const pantallaT = sec.querySelector<HTMLElement>('[data-ens-pantalla]');
     const vivo = sec.querySelector<HTMLElement>('[data-ens-vivo]');
-    const telN = sec.querySelector<HTMLElement>('[data-ens-n]'), telT = sec.querySelector<HTMLElement>('[data-ens-t]'), telD = sec.querySelector<HTMLElement>('[data-ens-d]');
+    const telN = sec.querySelector<HTMLElement>('[data-ens-n]'), telT = sec.querySelector<HTMLElement>('[data-ens-t]'), telD = sec.querySelector<HTMLElement>('[data-ens-d]'), telF = sec.querySelector<HTMLElement>('[data-ens-fase]');
     const titulos = botones.map((b) => ({ t: b.querySelector('.ens-t')?.textContent || '', d: b.querySelector('.ens-d')?.textContent || '', donde: b.querySelector('.ens-donde')?.textContent || '' }));
     const mqMov = window.matchMedia('(prefers-reduced-motion: no-preference)');
     let actual = 0, timer = 0, enVista = false, tocado = -1e9;   // «nunca tocado» (con 0, los primeros 10 s de la página contaban como toque)
@@ -240,6 +253,7 @@ const PALABRA = Array.from({ length: 4 }, () => 'EN SACS').join(' · ');
       if (pantallaT) pantallaT.textContent = tx.donde;
       if (vivo && via !== 'auto') vivo.textContent = `${tx.t}: ${tx.d}`;
       if (telN) telN.textContent = String(actual + 1).padStart(2, '0');
+      if (telF) telF.textContent = s.fase;
       if (telT) telT.textContent = tx.t;
       if (telD) telD.textContent = tx.d;
       // reinicia la barrita de avance del paso
@@ -279,7 +293,7 @@ const PALABRA = Array.from({ length: 4 }, () => 'EN SACS').join(' · ');
     /* la pantalla completa */
     const dlg = sec.querySelector<HTMLDialogElement>('#ens-dlg');
     const dlgImg = sec.querySelector<HTMLImageElement>('[data-ens-dlg-img]'), dlgT = sec.querySelector<HTMLElement>('[data-ens-dlg-t]');
-    const ALTOS: Record<string, number> = { resumen: 3791, reglas: 3791, temporadas: 3791, mesa: 2591 };
+    const ALTOS: Record<string, number> = JSON.parse(sec.dataset.pantallas || '{}');
     function abre() {
       if (!dlg || !dlgImg) return;
       toque();
