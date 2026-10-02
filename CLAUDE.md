@@ -1,5 +1,16 @@
 # Reglas de paginawebsacs (www.sacscloud.com + CRM)
 
+## 🚫 Nombres prohibidos: «Karina» y «Valeria» (regla del dueño, 2026-10-02)
+
+Aplica a TODOS los proyectos (sacs3, sacs_api, paginawebsacs/sitio y el CRM, sacs4, etc.):
+- NUNCA usar los nombres **Karina** ni **Valeria**, ni sus variantes de escritura (Karyna,
+  Carina, Kary, Valery, «Vale» usado como nombre, etc.), en NADA: ejemplos, datos demo y de
+  seed, placeholders, textos de la interfaz, copys de la página web, plantillas de mensajes
+  (WhatsApp, correo), prompts y respuestas de los agentes de IA, tests, documentación,
+  comentarios de código ni mensajes de commit.
+- Para ejemplos usa cualquier otro nombre.
+- Si al tocar un archivo encuentras uno de estos nombres, cámbialo en ese mismo cambio.
+
 El sitio y el CRM viven en `sitio/` (Astro 6 + React, `output: 'static'`,
 adaptador de Vercel). Se despliega **en cada push a `main`**.
 
