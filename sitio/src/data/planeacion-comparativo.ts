@@ -1,5 +1,5 @@
 /**
- * El comparativo de /planeacion-de-demanda (2-oct-2026): Sacs frente a AnalyticAlways, Celes y Sizes and Colors.
+ * El comparativo de /planeacion-de-demanda (2-oct-2026): Sacs frente a Analyticalways, Celes y Sizes and Colors.
  *
  * De dónde sale cada celda:
  *  - Sacs: el motor de Demand Planning de sacs_api — el catálogo de reglas (lib/moda/reglas.lib.js) y el Forecasting
@@ -8,9 +8,9 @@
  *    (el acto de Resultado de la página también va en obra).
  *  - Competidores: solo lo que publican en sus sitios y materiales, consultados el 2-oct-2026 (análisis completo con
  *    citas en la sesión; las páginas principales van en FUENTES). Si no lo dicen, 'nd' (sin información pública): no se
- *    adivina ni se pone «No» por no encontrarlo. AnalyticAlways y Celes no son punto de venta ni tienda en línea
+ *    adivina ni se pone «No» por no encontrarlo. Analyticalways y Celes no son punto de venta ni tienda en línea
  *    («se integra con el ERP y el TPV del retailer», «una capa de AI sobre tu stack actual»).
- *  - Filas justas: hay dos donde otro gana (el plan financiero semanal de AnalyticAlways y la exactitud medida de
+ *  - Filas justas: hay dos donde otro gana (el plan financiero semanal de Analyticalways y la exactitud medida de
  *    Celes). Una comparativa que solo gana es una que nadie cree.
  *  - Nada de los clientes de los competidores en la página (uno de los casos publicados de Celes es un prospecto de
  *    Sacs: la web no lo nombra).
@@ -20,7 +20,7 @@
 export type Celda = 'full' | 'partial' | 'none' | 'obra' | 'nd';
 export type Fila = { t: string; n?: string; v: [Celda, Celda, Celda, Celda] };
 
-export const COLUMNAS = ['Sacs', 'AnalyticAlways', 'Celes', 'Sizes and Colors'] as const;
+export const COLUMNAS = ['Sacs', 'Analyticalways', 'Celes', 'Sizes and Colors'] as const;
 
 export const GRUPOS: { t: string; filas: Fila[] }[] = [
   { t: 'Antes de la temporada', filas: [
@@ -54,7 +54,7 @@ export const GRUPOS: { t: string; filas: Fila[] }[] = [
 // Qué es cada uno, dónde gana y dónde se queda corto para una cadena de moda (de sus propios sitios).
 export const PERFILES: { n: string; que: string; gana: string; corto: string }[] = [
   {
-    n: 'AnalyticAlways',
+    n: 'Analyticalways',
     que: 'Software español (Madrid, 2015) de IA para planear y reponer inventario en moda, calzado y joyería. Se conecta a tu ERP y a tu punto de venta.',
     gana: 'La planeación financiera de la temporada (OTB y plan semanal), el pronóstico por modelo, talla y tienda, los modelos nuevos y los clústeres de tiendas.',
     corto: 'No vende ni cobra: sus recomendaciones se ejecutan en tu ERP y tu punto de venta. Pide de uno a dos años de historia y no publica precios.',
@@ -86,7 +86,7 @@ export const MODA: { t: string; d: string }[] = [
 ];
 
 export const FUENTES: { n: string; ls: { n: string; url: string }[] }[] = [
-  { n: 'AnalyticAlways', ls: [
+  { n: 'Analyticalways', ls: [
     { n: 'soluciones', url: 'https://analyticalways.com/soluciones-retail/' },
     { n: 'planificación', url: 'https://analyticalways.com/planificacion-inventarios/' },
     { n: 'compras', url: 'https://analyticalways.com/software-de-compras-retail/' },
@@ -110,7 +110,7 @@ export const FUENTES: { n: string; ls: { n: string; url: string }[] }[] = [
 
 export const COMPARATIVO = {
   titulo: 'Sacs frente a las otras opciones',
-  dek: 'AnalyticAlways y Celes son plataformas de IA que planean sobre tu ERP; Sizes and Colors es un punto de venta para zapaterías y boutiques. Así se comparan con Sacs, función por función, en una cadena de moda.',
+  dek: 'Analyticalways y Celes son plataformas de IA que planean sobre tu ERP; Sizes and Colors es un punto de venta para zapaterías y boutiques. Así se comparan con Sacs, función por función, en una cadena de moda.',
   columnas: COLUMNAS,
   grupos: GRUPOS,
   hayNd: GRUPOS.some((g) => g.filas.some((f) => f.v.includes('nd'))),

@@ -337,7 +337,7 @@ export const pageContent: Record<string, any> = {
       "subtitle": "Lo que separa a Sacs de los POS y ERPs que ya conoces.",
       "competitors": [
         "Sacs",
-        "AnalyticAlways",
+        "Analyticalways",
         "Celes",
         "Sizes and Colors",
         "Shopify",
@@ -486,7 +486,7 @@ export const pageContent: Record<string, any> = {
           "note": "AXO responde con tu inventario y ventas reales, sin entrenamiento manual."
         }
       ],
-      "nota": "AnalyticAlways y Celes son plataformas de planeación que se conectan a tu ERP, no puntos de venta. Lo de ellas y lo de Sizes and Colors sale de sus sitios públicos, consultados el 2 de octubre de 2026."
+      "nota": "Analyticalways y Celes son plataformas de planeación que se conectan a tu ERP, no puntos de venta. Lo de ellas y lo de Sizes and Colors sale de sus sitios públicos, consultados el 2 de octubre de 2026."
     },
     "faqs": [
       {
@@ -806,7 +806,7 @@ export const pageContent: Record<string, any> = {
       "subtitle": "Lo que separa a Sacs de los POS y ERPs cuando se trata de descuentos: la promo que corre en piso, en línea y en WhatsApp es la misma — con las mismas reglas, la misma validación de margen y el mismo reporte de lift.",
       "competitors": [
         "Sacs",
-        "AnalyticAlways",
+        "Analyticalways",
         "Celes",
         "Sizes and Colors",
         "Shopify",
@@ -972,7 +972,7 @@ export const pageContent: Record<string, any> = {
           ]
         }
       ],
-      "nota": "AnalyticAlways y Celes son plataformas de planeación que se conectan a tu ERP, no puntos de venta. Lo de ellas y lo de Sizes and Colors sale de sus sitios públicos, consultados el 2 de octubre de 2026."
+      "nota": "Analyticalways y Celes son plataformas de planeación que se conectan a tu ERP, no puntos de venta. Lo de ellas y lo de Sizes and Colors sale de sus sitios públicos, consultados el 2 de octubre de 2026."
     },
     "testimonials": [
       {
@@ -1373,7 +1373,7 @@ export const pageContent: Record<string, any> = {
       "subtitle": "Lo que separa a Sacs de los POS y ERPs cuando se trata de apartar, abonar y entregar — sin perder la venta ni el cliente.",
       "competitors": [
         "Sacs",
-        "AnalyticAlways",
+        "Analyticalways",
         "Celes",
         "Sizes and Colors",
         "Shopify",
@@ -1556,7 +1556,7 @@ export const pageContent: Record<string, any> = {
           "note": "Los apartados son pasivo, no venta. Sacs los muestra aparte para que el cierre del mes no los confunda."
         }
       ],
-      "nota": "AnalyticAlways y Celes son plataformas de planeación que se conectan a tu ERP, no puntos de venta. Lo de ellas y lo de Sizes and Colors sale de sus sitios públicos, consultados el 2 de octubre de 2026."
+      "nota": "Analyticalways y Celes son plataformas de planeación que se conectan a tu ERP, no puntos de venta. Lo de ellas y lo de Sizes and Colors sale de sus sitios públicos, consultados el 2 de octubre de 2026."
     },
     "faqs": [
       {
@@ -1925,7 +1925,7 @@ export const pageContent: Record<string, any> = {
       "subtitle": "Lo que separa a Sacs de los POS, ERPs y plataformas e-commerce cuando se trata de vender en TikTok, Instagram, Facebook y WhatsApp — sin sincronizaciones rotas ni stock desfasado.",
       "competitors": [
         "Sacs",
-        "AnalyticAlways",
+        "Analyticalways",
         "Celes",
         "Sizes and Colors",
         "Shopify",
@@ -2108,7 +2108,7 @@ export const pageContent: Record<string, any> = {
           "note": "Atribución real por publicación y conversación — para saber qué contenido convierte y qué no."
         }
       ],
-      "nota": "AnalyticAlways y Celes son plataformas de planeación que se conectan a tu ERP, no puntos de venta. Lo de ellas y lo de Sizes and Colors sale de sus sitios públicos, consultados el 2 de octubre de 2026."
+      "nota": "Analyticalways y Celes son plataformas de planeación que se conectan a tu ERP, no puntos de venta. Lo de ellas y lo de Sizes and Colors sale de sus sitios públicos, consultados el 2 de octubre de 2026."
     },
     "faqs": [
       {

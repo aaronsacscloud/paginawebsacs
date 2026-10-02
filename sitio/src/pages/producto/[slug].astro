@@ -4579,7 +4579,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                   <tr>
                     <th class="pf-compare-row-label" scope="col"></th>
                     {content.comparison.competitors.map((c: string, i: number) => (
-                      <th scope="col" class={`pf-compare-col${i === 0 ? ' pf-compare-col--us' : ''}`}>{c.split(/(?<=[a-z])(?=[A-Z])/).map((p: string, k: number) => <>{k > 0 && <wbr />}{p}</>)}</th>
+                      <th scope="col" class={`pf-compare-col${i === 0 ? ' pf-compare-col--us' : ''}`} style={c.length > 12 && !c.includes(' ') ? 'width: 116px' : undefined}>{c.split(/(?<=[a-z])(?=[A-Z])/).map((p: string, k: number) => <>{k > 0 && <wbr />}{p}</>)}</th>
                     ))}
                   </tr>
                 </thead>

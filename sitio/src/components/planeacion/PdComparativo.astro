@@ -1,7 +1,7 @@
 ---
 /**
  * Comparativo de /planeacion-de-demanda (2-oct-2026, pedido del dueño: «agrega el comparativo de funciones como en
- * la sección de funciones con los competidores; aquí agrega a AnalyticAlways y a Celes para que sea relevante… haz un
+ * la sección de funciones con los competidores; aquí agrega a Analyticalways y a Celes para que sea relevante… haz un
  * análisis muy profundo y de ahí agrega la data y la especialización que tenemos en moda»).
  *
  * Formato editorial (sin tarjetas): tabla por fases entre filetes sobre negro, con la columna de Sacs marcada; debajo,
@@ -17,8 +17,6 @@ import { COMPARATIVO } from '../../data/planeacion-comparativo';
 const C = COMPARATIVO;
 const ETIQUETA: Record<string, string> = { full: 'Sí', partial: 'Parcial', none: 'No', obra: 'En construcción', nd: 'Sin información pública' };
 const MARCA: Record<string, string> = { full: '✓', partial: '–', none: '×', obra: '*', nd: '○' };
-// AnalyticAlways puede partirse en su mayúscula interna (sin guion) cuando la columna es angosta
-const partes = (n: string) => n.split(/(?<=[a-z])(?=[A-Z])/);
 ---
 <section class="pdx pd-negro" id="pd-comparativo" aria-labelledby="pdx-h">
   <div class="pdx-in">
@@ -32,7 +30,7 @@ const partes = (n: string) => n.split(/(?<=[a-z])(?=[A-Z])/);
         <thead role="rowgroup">
           <tr role="row">
             <th scope="col" role="columnheader" class="pdx-fila-t"><span class="sr-only">Función</span></th>
-            {C.columnas.map((c, i) => <th scope="col" role="columnheader" class:list={['pdx-col', { 'is-sacs': i === 0 }]}>{partes(c).map((p, k) => <>{k > 0 && <wbr />}{p}</>)}</th>)}
+            {C.columnas.map((c, i) => <th scope="col" role="columnheader" class:list={['pdx-col', { 'is-sacs': i === 0 }]}>{c}</th>)}
           </tr>
         </thead>
         {C.grupos.map((g) => (
@@ -132,7 +130,8 @@ const partes = (n: string) => n.split(/(?<=[a-z])(?=[A-Z])/);
   @media (max-width: 767px) {
     .pdx-tabla-wrap { overflow: visible; margin-top: 36px; }
     .pdx-tabla, .pdx-tabla thead, .pdx-tabla tbody { display: block; }
-    .pdx-tabla tr { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    /* en el orden de COLUMNAS: «Analyticalways» es una sola palabra y no se parte, así que su columna va más ancha */
+    .pdx-tabla tr { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr) minmax(0, 0.85fr) minmax(0, 1fr); }
     .pdx-tabla thead { position: sticky; top: 0; z-index: 2; background: var(--pd-fondo); }
     .pdx-tabla thead th { padding: 12px 4px; font-size: 12.5px; }
     .pdx-tabla thead th.pdx-fila-t { display: none; }
