@@ -821,6 +821,7 @@ export const navLinks: NavLink[] = [
   { label: 'Planeación de demanda', corto: 'Planeación', href: '/producto/planeacion-de-demanda' },
   {
     label: 'Giros de negocio',
+    corto: 'Giros',
     href: '/giros',
     sectors: menuSectors,
   },
@@ -828,10 +829,16 @@ export const navLinks: NavLink[] = [
   // (2026-09-08). La página /extraordinarios sigue viva por URL; para reponerla, volver a
   // agregar aquí { label: 'Temporada e IA', href: '/planes', temporada: cicloTemporada,
   // extraordinarios: modulosExtraordinarios }.
-  { label: 'Partners', href: '/partners' },
-  { label: 'Planes', href: '/planes' },
+  // 2-oct-2026 (dueño): la fila principal queda para lo que busca una marca. Partners y MCP suben a la barra negra
+  // de arriba (utilLinks), siempre visibles pero sin competir con el producto.
   { label: 'Casos de éxito', href: '/casos-de-exito' },
-  // 1-oct-2026 (dueño): pestaña propia para el MCP de Sacscloud.
+  { label: 'Planes', href: '/planes' },
+];
+
+/** Barra negra de arriba del header (y enlaces secundarios del menú del teléfono). MCP: pestaña propia desde el
+ *  1-oct-2026; el 2-oct-2026 subió aquí junto con Partners para descargar la fila principal. */
+export const utilLinks: { label: string; href: string }[] = [
+  { label: 'Partners', href: '/partners' },
   { label: 'MCP', href: '/mcp' },
 ];
 

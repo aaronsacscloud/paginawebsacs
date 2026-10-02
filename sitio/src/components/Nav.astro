@@ -1,5 +1,5 @@
 ---
-import { navLinks, modelosNegocio, type BusinessSector } from '../data/navigation';
+import { navLinks, utilLinks, modelosNegocio, type BusinessSector } from '../data/navigation';
 import { giroIcons } from '../data/giro-icons';
 import { giroVinetas } from '../data/giro-vinetas';
 import { waDemoGiro, waLink } from '../lib/whatsapp';
@@ -56,6 +56,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
           fueran espejo 1:1 de la página actual, y hoy solo existen 6 páginas
           reales en inglés, con slugs distintos a los del español. Un link
           simple al hub (/en/) no promete una traducción que no existe. */}
+      {utilLinks.map((l) => <a href={getLocalizedUrl(l.href, locale)} class="nt-login">{l.label}</a>)}
       <a href="/en/" class="nt-login" title="View this site in English">EN</a>
       <a href="https://app.sacscloud.com/" class="nt-login">Iniciar sesión</a>
     </div>
@@ -379,6 +380,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
         </>
       ))}
       <div class="mobile-divider"></div>
+      {utilLinks.map((l) => <a href={getLocalizedUrl(l.href, locale)} class="mobile-link mobile-link-secondary">{l.label}</a>)}
       <a href="/en/" class="mobile-link mobile-link-secondary">English (EN)</a>
       <a href="https://app.sacscloud.com/" class="mobile-link mobile-link-secondary">{t('nav.login', locale)}</a>
       <div class="mobile-cta-group">
@@ -535,15 +537,23 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     background: rgba(0, 0, 0, 0.04);
   }
 
-  /* 2-oct-2026: con «Planeación de demanda» en el menú, el header no cabía a 1280–1440 px. En escritorio angosto
-     los enlaces se compactan y esa pestaña usa su etiqueta corta (el nombre completo queda en aria-label). */
+  /* 2-oct-2026: la fila principal quedó en 5 pestañas (Partners y MCP subieron a la barra negra). En escritorio
+     angosto los enlaces se compactan y, por debajo de 1280 px, las pestañas con etiqueta corta la usan
+     (el nombre completo queda en aria-label). */
   .nav-l-corto { display: none; }
   @media (min-width: 1024px) and (max-width: 1599px) {
-    .nav-link { padding: 8px 9px; font-size: 0.875rem; }
+    .nav-link { padding: 8px 10px; font-size: 0.875rem; }
   }
-  @media (min-width: 1024px) and (max-width: 1439px) {
+  @media (min-width: 1024px) and (max-width: 1279px) {
     .nav-l-largo { display: none; }
     .nav-l-corto { display: inline; }
+  }
+  /* 1024–1179 px (ya iba justo antes): un poco menos de aire en enlaces y botones para que quepa todo */
+  @media (min-width: 1024px) and (max-width: 1179px) {
+    .nav-link { padding: 8px 7px; font-size: 0.8125rem; }
+    .btn-nav-secondary { padding: 9px 12px; font-size: 0.8125rem; }
+    .btn-nav-cta { padding: 10px 13px; font-size: 0.8125rem; }
+    .nav-inner { padding-inline: 20px; }
   }
 
   .nav-link.active {
