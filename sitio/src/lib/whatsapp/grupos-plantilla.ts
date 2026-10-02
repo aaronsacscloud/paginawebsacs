@@ -8,4 +8,5 @@ export const GRUPO_PL: Record<string, string> = {
   apertura: 'Apertura de conversación',
   seguimiento: 'Seguimiento de consultoría',
   llamada: 'Llamadas',
+  promocion: 'Promociones',
 };
