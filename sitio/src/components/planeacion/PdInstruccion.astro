@@ -63,7 +63,7 @@ const CANDADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
       </div>
     </div>
 
-    <form class="pdi-ficha pd-claro" aria-labelledby="pdi-ficha-t" action="#pd-pre">
+    <form class="pdi-ficha" aria-labelledby="pdi-ficha-t" action="#pd-pre">
       <p class="pdi-ficha-k" id="pdi-ficha-t"><i aria-hidden="true"></i>Sacs entendió tu temporada</p>
       <dl>
         <div class="pdi-f">
@@ -162,8 +162,9 @@ const CANDADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
   .pdi-tiempo { flex-shrink: 0; font: 500 13px var(--font-display); font-variant-numeric: tabular-nums; color: var(--pd-apagado); }
 
   /* la ficha de la temporada: limpia, renglones con línea fina */
-  .pdi-ficha { position: relative; z-index: 2; margin: 20px 20px 0; padding: 20px 20px 22px; border-radius: 20px; background: #fff; border: 1px solid var(--pd-linea); }
-  .pdi-ficha-k { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font: 700 15px/1.3 var(--font-display); letter-spacing: -0.01em; color: var(--pd-texto); }
+  /* v3.1 «editorial»: la ficha es una hoja sobre el marfil (filete grueso arriba y rótulo), no una tarjeta */
+  .pdi-ficha { position: relative; z-index: 2; margin: 28px 20px 0; padding: 14px 0 0; background: var(--pd-fondo); border-top: 2px solid var(--pd-texto); }
+  .pdi-ficha-k { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font: 600 11px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--pd-texto); }
   .pdi-ficha-k i { width: 8px; height: 8px; border-radius: 50%; background: var(--pd-ok); }
   .pdi-ficha dl { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 16px; margin: 0; }
   .pdi-f { grid-column: 1 / -1; display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-top: 1px solid var(--pd-linea); }
@@ -185,11 +186,12 @@ const CANDADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
   .pdi-cand-i { flex-shrink: 0; width: 15px; height: 15px; margin-top: 3px; color: var(--pd-apagado); }
   .pdi-cand-i :global(svg) { display: block; width: 100%; height: 100%; max-width: none; }
 
-  .pdi-modos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 12px; background: var(--pd-tarjeta); }
+  .pdi-modos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; padding: 0; border: 1px solid var(--pd-texto); }
   .pdi-modo { position: relative; display: grid; cursor: pointer; }
   .pdi-modo input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
-  .pdi-modo span { display: grid; place-items: center; min-height: 40px; padding: 6px 4px; border-radius: 9px; font: 600 13px/1.2 var(--font-display); text-align: center; color: var(--pd-tenue); transition: background 0.2s, color 0.2s, box-shadow 0.2s; }
-  .pdi-modo input:checked + span { background: #fff; color: var(--pd-texto); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); }
+  .pdi-modo span { display: grid; place-items: center; min-height: 40px; padding: 6px 4px; font: 600 13px/1.2 var(--font-display); text-align: center; color: var(--pd-texto); transition: background 0.2s, color 0.2s; }
+  .pdi-modo + .pdi-modo span { border-left: 1px solid var(--pd-texto); }
+  .pdi-modo input:checked + span { background: var(--pd-texto); color: var(--pd-fondo); }
   .pdi-modo input:focus-visible + span { outline: 2px solid var(--pd-azul); outline-offset: 2px; }
   .pdi-modo-s { min-height: 2.9em; }
   /* con «.pdi-ficha» delante: «.pdi-ficha small { display: block }» pesaba más y se veían las tres descripciones */
@@ -231,7 +233,7 @@ const CANDADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
   /* la ficha se llena campo por campo: antes de llenarse, una raya gris que late en el que se está escribiendo */
   .pdi.is-js .pdi-ficha { transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
   .pdi.is-js .pdi-f dd > * { opacity: 0; transform: translateY(6px); transition: opacity 0.45s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
-  .pdi.is-js .pdi-f dd::before { content: ''; position: absolute; left: 0; top: 5px; width: 58%; height: 10px; border-radius: 6px; background: #E9E9E6; opacity: 1; transition: opacity 0.3s; }
+  .pdi.is-js .pdi-f dd::before { content: ''; position: absolute; left: 0; top: 5px; width: 58%; height: 10px; border-radius: 2px; background: #E4E0D6; opacity: 1; transition: opacity 0.3s; }
   .pdi.is-js .pdi-f.is-sig dd::before { animation: pdiPulso 0.8s ease-in-out infinite alternate; }
   .pdi:not(.is-visible) .pdi-f dd::before { animation-play-state: paused; }
   .pdi.is-js .pdi-f.is-lleno dd::before { opacity: 0; animation: none; }
@@ -269,7 +271,7 @@ const CANDADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
   .pdi.is-escena .pdi-ella { left: 50%; height: 90vh; transform: translateX(-50%) scale(calc(1 + var(--q, 0) * 0.05)); }
   .pdi.is-escena .pdi-voz { position: absolute; left: 4vw; bottom: 7vh; width: min(31vw, 480px); margin: 0; }
   .pdi.is-escena .pdi-frase { font-size: clamp(19px, min(1.75vw, 3.1vh), 30px); }
-  .pdi.is-escena .pdi-ficha { position: absolute; right: 3.5vw; top: 50%; width: min(31vw, 470px); margin: 0; padding: 18px 20px 20px; transform: translateY(calc(-50% + 4vh)); max-height: calc(100vh - 110px); overflow: auto; scrollbar-width: thin; box-shadow: 0 24px 50px -36px rgba(0, 0, 0, 0.45); }
+  .pdi.is-escena .pdi-ficha { position: absolute; right: 3.5vw; top: 50%; width: min(28vw, 440px); margin: 0; padding: 14px 0 0; transform: translateY(calc(-50% + 4vh)); max-height: calc(100vh - 110px); overflow: auto; scrollbar-width: thin; }
   .pdi.is-escena:not(.is-ficha) .pdi-ficha { opacity: 0; transform: translateY(calc(-50% + 4vh + 30px)); pointer-events: none; visibility: hidden; transition: opacity 0.35s, transform 0.5s, visibility 0s linear 0.5s; }
   .pdi.is-escena .pdi-f { padding: min(10px, 1.2vh) 0; grid-template-columns: 92px minmax(0, 1fr); }
   .pdi.is-escena .pdi-f--mitad { grid-column: auto; grid-template-columns: 1fr; gap: 2px; }
@@ -290,7 +292,8 @@ const CANDADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
   .pdi.is-escena.is-azul .pdi-azul-h { opacity: 1; transform: none; transition-delay: 0.08s; }
   .pdi.is-escena.is-azul .pdi-azul-p { opacity: 1; transform: none; transition-delay: 0.2s; }
   .pdi.is-escena.is-azul .pdi-sigue { opacity: 1; transform: none; transition-delay: 0.6s; }
-  .pdi.is-escena .pdi-saltar { display: inline-flex; position: absolute; left: 50%; bottom: 3vh; z-index: 4; align-items: center; gap: 8px; padding: 6px 2px 3px; border-bottom: 1.5px solid currentColor; font: 600 14px var(--font-display); color: var(--pd-texto); text-decoration: none; transform: translateX(-50%); transition: opacity 0.3s; }
+  /* abajo a la derecha, sobre el marfil: al centro quedaba encima de la foto y, sin pastilla, no se leía */
+  .pdi.is-escena .pdi-saltar { display: inline-flex; position: absolute; right: 3.5vw; bottom: 3vh; z-index: 4; align-items: center; gap: 8px; padding: 6px 2px 3px; border-bottom: 1.5px solid currentColor; font: 600 14px var(--font-display); color: var(--pd-texto); text-decoration: none; transition: opacity 0.3s; }
   .pdi.is-escena .pdi-saltar:hover { opacity: 0.7; text-decoration: none; }
   .pdi.is-escena.is-azul .pdi-saltar { opacity: 0; pointer-events: none; }
 

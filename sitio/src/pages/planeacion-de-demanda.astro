@@ -17,11 +17,11 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PdInstruccion from '../components/planeacion/PdInstruccion.astro';
 import PdConsola from '../components/planeacion/PdConsola.astro';
-import BeforeAfter from '../components/BeforeAfter.astro';
+import PdAntesDespues from '../components/planeacion/PdAntesDespues.astro';
 import GiroFAQ from '../components/giros/GiroFAQ.astro';
 import FinalCTA from '../components/FinalCTA.astro';
 import StructuredData from '../components/StructuredData.astro';
-import { ANTES_DESPUES, PREGUNTAS } from '../data/planeacion-demo';
+import { PREGUNTAS } from '../data/planeacion-demo';
 import { seccionesPropias } from '../data/product';
 import { SITIO, PRODUCTO_ID } from '../data/entidad';
 import { breadcrumbList } from '../lib/breadcrumb';
@@ -53,7 +53,6 @@ const faqSchema = {
     acceptedAnswer: { '@type': 'Answer', text: p.answer },
   })),
 };
-const { antes, despues } = ANTES_DESPUES;
 ---
 <BaseLayout
   title={title}
@@ -70,17 +69,7 @@ const { antes, despues } = ANTES_DESPUES;
   <div class="pd">
     <PdInstruccion />
     <PdConsola />
-    <BeforeAfter
-      title={ANTES_DESPUES.titulo}
-      beforeLabel={antes.label}
-      beforeHeading={antes.h}
-      painPoints={antes.puntos}
-      afterLabel={despues.label}
-      afterHeading={despues.h}
-      benefits={despues.puntos}
-      ctaHref="/prueba-gratis"
-      ctaText="Pruébalo gratis"
-    />
+    <PdAntesDespues />
   </div>
 
   <GiroFAQ title="Preguntas frecuentes sobre planeación de demanda" faqs={PREGUNTAS} />
@@ -89,6 +78,6 @@ const { antes, despues } = ANTES_DESPUES;
 
 <script>
   import { ph } from '../scripts/planeacion/estado';
-  document.querySelectorAll<HTMLElement>('.ba-btn').forEach((a) => a.addEventListener('click', () => ph('planeacion_cta_antes_despues')));
+  document.querySelector('.pad-cta')?.addEventListener('click', () => ph('planeacion_cta_antes_despues'));
   document.querySelector('.final-cta-btn')?.addEventListener('click', () => ph('planeacion_cta_prueba'));
 </script>

@@ -1,8 +1,8 @@
 ---
 /**
  * Acto 1 · Pretemporada y pronóstico. v3 «color» (2-oct-2026): fondo azul Sacs, como el paso «Vende» del home, con la
- * palabra gigante detrás del encabezado; ocho pasos de una línea y las gráficas en tarjetas blancas, sin etiquetas
- * «ejemplo» ni leyendas de más. Un panel «Sacs está analizando…» escribe sus pasos uno por uno, con palomita, y junto
+ * palabra gigante detrás del encabezado; ocho pasos de una línea y las gráficas sin etiquetas «ejemplo» ni leyendas
+ * de más. v3.1 «editorial»: sin tarjetas; las gráficas van en blanco directo sobre el azul, cada una con su folio. Un panel «Sacs está analizando…» escribe sus pasos uno por uno, con palomita, y junto
  * a cada paso aparece su gráfica (en escritorio, todas en el mismo escenario a la derecha; en el teléfono, debajo de
  * su paso). Al terminar salen 3 tarjetas y la vista previa del primer reparto (CEDIS → 100 tiendas). Si en la ficha
  * se apagó algo de «Analiza», ese paso sale «omitido». Lo anima src/scripts/planeacion/consola.ts.
@@ -64,8 +64,8 @@ const PALABRA = Array.from({ length: 3 }, () => 'PRETEMPORADA').join(' · ');
             </button>
 
             {p.id === 'catalogo' && (
-              <figure class="pre-fig pre-fig--arbol pd-hoja" id="pre-fig-arbol" data-fig="arbol">
-                <figcaption class="pre-cap">Tu catálogo: 64 modelos</figcaption>
+              <figure class="pre-fig pre-fig--arbol" id="pre-fig-arbol" data-fig="arbol">
+                <figcaption class="pre-cap pd-folio"><span>Tu catálogo: 64 modelos</span><span>Fig. 01</span></figcaption>
                 <div class="pre-arbol">
                   {ARBOL.map((d) => (
                     <div class="pre-dep">
@@ -78,8 +78,8 @@ const PALABRA = Array.from({ length: 3 }, () => 'PRETEMPORADA').join(' · ');
             )}
 
             {p.id === 'historia' && (
-              <figure class="pre-fig pre-fig--curvas pd-hoja" id="pre-fig-curvas" data-fig="curvas">
-                <figcaption class="pre-cap">Día del Padre · piezas por semana</figcaption>
+              <figure class="pre-fig pre-fig--curvas" id="pre-fig-curvas" data-fig="curvas">
+                <figcaption class="pre-cap pd-folio"><span>Día del Padre · piezas por semana</span><span>Fig. 02</span></figcaption>
                 <div class="pre-svg">
                   <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Piezas vendidas por semana en los Días del Padre de 2024, 2025 y 2026, en curvas tenues, y encima el pronóstico 2027 con su banda de más y menos 12 por ciento. La semana del evento vende 2.3 veces lo normal.">
                     <rect class="pre-evt" x={xEv - anchoSem / 2} y="6" width={anchoSem} height={H - 12} rx="6" />
@@ -102,8 +102,8 @@ const PALABRA = Array.from({ length: 3 }, () => 'PRETEMPORADA').join(' · ');
             )}
 
             {p.id === 'nuevos' && (
-              <figure class="pre-fig pre-fig--nuevos pd-hoja" id="pre-fig-nuevos" data-fig="nuevos">
-                <figcaption class="pre-cap">Un modelo nuevo, con sus 3 parecidos</figcaption>
+              <figure class="pre-fig pre-fig--nuevos" id="pre-fig-nuevos" data-fig="nuevos">
+                <figcaption class="pre-cap pd-folio"><span>Un modelo nuevo, con sus 3 parecidos</span><span>Fig. 03</span></figcaption>
                 <div class="pre-svg">
                   <svg viewBox={`0 0 ${WN} ${HN}`} role="img" aria-label={`La venta por semana de tres modelos parecidos, en curvas tenues, y el pronóstico del ${NUEVO.modelo}: ${miles(NUEVO.total)} piezas en la temporada.`}>
                     {parecidos.map((p) => <path class="pre-par" d={p.d} pathLength="1" />)}
@@ -118,8 +118,8 @@ const PALABRA = Array.from({ length: 3 }, () => 'PRETEMPORADA').join(' · ');
             )}
 
             {p.id === 'tallas' && (
-              <figure class="pre-fig pre-fig--tallas pd-hoja" id="pre-fig-tallas" data-fig="tallas">
-                <figcaption class="pre-cap">La curva de tallas por región</figcaption>
+              <figure class="pre-fig pre-fig--tallas" id="pre-fig-tallas" data-fig="tallas">
+                <figcaption class="pre-cap pd-folio"><span>La curva de tallas por región</span><span>Fig. 04</span></figcaption>
                 <div class="pre-curvas">
                   {CURVAS.map((c) => (
                     <div class="pre-curva">
@@ -134,8 +134,8 @@ const PALABRA = Array.from({ length: 3 }, () => 'PRETEMPORADA').join(' · ');
             )}
 
             {p.id === 'cortes' && (
-              <figure class="pre-fig pre-fig--cortes pd-hoja" id="pre-fig-cortes" data-fig="cortes">
-                <figcaption class="pre-cap">Cuándo pedirle a cada proveedor</figcaption>
+              <figure class="pre-fig pre-fig--cortes" id="pre-fig-cortes" data-fig="cortes">
+                <figcaption class="pre-cap pd-folio"><span>Cuándo pedirle a cada proveedor</span><span>Fig. 05</span></figcaption>
                 <div class="pre-gantt">
                   <div class="pre-meses" aria-hidden="true">{MESES.map((m) => <span style={`left:${DIA(m.d)}`}>{m.t}</span>)}</div>
                   {CORTES.proveedores.map((pr) => {
@@ -159,8 +159,8 @@ const PALABRA = Array.from({ length: 3 }, () => 'PRETEMPORADA').join(' · ');
             )}
 
             {p.id === 'compra' && (
-              <figure class="pre-fig pre-fig--compra pd-hoja" id="pre-fig-compra" data-fig="compra">
-                <figcaption class="pre-cap">La compra<span class="pd-ast" aria-hidden="true">*</span></figcaption>
+              <figure class="pre-fig pre-fig--compra" id="pre-fig-compra" data-fig="compra">
+                <figcaption class="pre-cap pd-folio"><span>La compra<span class="pd-ast" aria-hidden="true">*</span></span><span>Fig. 06</span></figcaption>
                 <div class="pre-cuenta">
                   <span><b data-cuenta={COMPRA.pronostico}>{miles(COMPRA.pronostico)}</b><small>pronosticadas</small></span>
                   <em aria-hidden="true">+</em>
@@ -185,13 +185,13 @@ const PALABRA = Array.from({ length: 3 }, () => 'PRETEMPORADA').join(' · ');
 
   <div class="pre-final">
     <div class="pda-tarjetas">
-      <p class="pda-tarjetas-k">Lo que toca hacer</p>
-      <ul class="pda-lista pre-lista pd-hoja">{TARJETAS_PRE.map((t) => <PdTarjeta t={t} />)}</ul>
+      <p class="pda-tarjetas-k pd-folio"><span>Lo que toca hacer</span><span>{TARJETAS_PRE.length} tarjetas</span></p>
+      <ul class="pda-lista pre-lista">{TARJETAS_PRE.map((t) => <PdTarjeta t={t} />)}</ul>
     </div>
-    <figure class="pre-reparto pd-hoja" data-reparto>
-      <figcaption class="pre-cap">Primer reparto<span class="pd-ast" aria-hidden="true">*</span></figcaption>
+    <figure class="pre-reparto" data-reparto>
+      <figcaption class="pre-cap pd-folio"><span>Primer reparto<span class="pd-ast" aria-hidden="true">*</span></span><span>60 / 40</span></figcaption>
+      <p class="pre-rep-l"><span><b data-rep-salen>18,100</b>a las 100 tiendas</span><span><b data-rep-quedan>12,100</b>se quedan en el CEDIS</span></p>
       <div class="pre-rep-barra" aria-hidden="true"><span class="pre-rep-a"></span></div>
-      <p class="pre-rep-l"><span><b data-rep-salen>18,100</b> a las tiendas</span><span><b data-rep-quedan>12,100</b> se quedan en el CEDIS</span></p>
       <p class="pre-rep-cedis" aria-hidden="true">En el CEDIS: <span data-rep-cedis>12,100</span></p>
     </figure>
   </div>
@@ -222,96 +222,93 @@ const PALABRA = Array.from({ length: 3 }, () => 'PRETEMPORADA').join(' · ');
   .pre-paso-t b { display: block; font: 600 17px/1.4 var(--font-display); letter-spacing: -0.015em; color: var(--pd-texto); }
   .pre-omitida { display: none !important; }
 
-  /* ── las figuras: tarjetas blancas (pd-hoja), sin etiquetas ── */
-  .pre-fig { margin: 4px 0 18px; padding: 22px; border-radius: var(--pd-radio); background: var(--pd-tarjeta); }
-  .pre-cap { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px; margin: 0 0 16px; font: 700 16px/1.3 var(--font-display); letter-spacing: -0.01em; color: var(--pd-texto); }
+  /* ── las figuras: directo sobre el azul, en blanco, con su folio (v3.1: sin tarjeta) ── */
+  .pre-fig { margin: 8px 0 24px; padding: 0; }
+  .pre-cap { margin: 0 0 20px; }
   .pre-svg { position: relative; }
   .pre-svg svg { display: block; width: 100%; height: auto; max-width: none; overflow: visible; }
 
-  .pre-arbol { display: grid; gap: 14px; }
-  .pre-dep-t { display: block; margin-bottom: 8px; font: 600 13px/1.2 var(--font-display); color: var(--pd-apagado); }
-  .pre-dep ul { margin: 0; padding: 0 0 0 14px; list-style: none; border-left: 1px solid #CFCFCA; display: grid; gap: 6px; }
-  .pre-dep li { position: relative; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
-  .pre-dep li::before { content: ''; position: absolute; left: -14px; top: 0.72em; width: 10px; height: 1px; background: #CFCFCA; }
-  .pre-cat { display: inline-flex; align-items: baseline; gap: 6px; font: 600 14px/1.3 var(--font-display); color: var(--pd-texto); }
-  .pre-cat em { font-style: normal; font-weight: 500; font-size: 13px; color: var(--pd-apagado); }
-  .pre-dep small { font: 400 13px/1.3 var(--font-body); color: var(--pd-tenue); }
+  .pre-arbol { display: grid; gap: 18px; }
+  .pre-dep-t { display: block; margin-bottom: 10px; font: 600 11px/1.2 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: #fff; }
+  .pre-dep ul { margin: 0; padding: 0 0 0 16px; list-style: none; border-left: 1px solid rgba(255, 255, 255, 0.5); display: grid; gap: 8px; }
+  .pre-dep li { position: relative; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
+  .pre-dep li::before { content: ''; position: absolute; left: -16px; top: 0.75em; width: 11px; height: 1px; background: rgba(255, 255, 255, 0.5); }
+  .pre-cat { display: inline-flex; align-items: baseline; gap: 8px; font: 700 clamp(17px, 1.5vw, 21px)/1.25 var(--pd-clash); letter-spacing: 0.005em; color: #fff; }
+  .pre-cat em { font: 600 13px/1 var(--font-display); font-style: normal; color: #fff; }
+  .pre-dep small { font: 400 13.5px/1.3 var(--font-body); color: #fff; }
 
-  /* curvas: años en gris, pronóstico en azul Sacs; las etiquetas son texto, sin pastilla */
-  .pre-evt { fill: rgba(75, 123, 229, 0.1); }
+  /* curvas: años en blanco tenue, el pronóstico en blanco pleno */
+  .pre-evt { fill: rgba(255, 255, 255, 0.1); }
   .pre-ano-pico, .pre-ano-limpia, .pre-pron, .pre-par { fill: none; stroke-linecap: round; stroke-linejoin: round; }
-  .pre-ano-pico, .pre-ano-limpia { stroke: #BDBDB8; stroke-width: 2; }
+  .pre-ano-pico, .pre-ano-limpia { stroke: rgba(255, 255, 255, 0.5); stroke-width: 2; }
   .pre-ano-limpia { opacity: 0; }
-  .pre-pico { fill: none; stroke: var(--pd-falta); stroke-width: 1.8; opacity: 0; }
-  .pre-banda { fill: rgba(75, 123, 229, 0.12); }
-  .pre-pron { stroke: var(--pd-azul); stroke-width: 4; }
-  .pre-par { stroke: #BDBDB8; stroke-width: 2; }
-  .pre-alza-et, .pre-pico-et { position: absolute; transform: translate(-50%, -150%); white-space: nowrap; pointer-events: none; }
-  .pre-alza-et { font: 700 22px/1 var(--pd-clash); color: #2F55C4; }
-  .pre-pico-et { font: 600 12px/1.2 var(--font-display); color: #A23333; opacity: 0; transform: translate(-50%, -210%); }
-  .pre-eje { display: flex; justify-content: space-between; margin: 8px 0 0; font: 500 12.5px/1.2 var(--font-display); color: var(--pd-apagado); }
-  .pre-eje-ev { color: var(--pd-texto); }
-  .pre-leyenda { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 12px 0 0; font: 500 12.5px/1.2 var(--font-body); color: var(--pd-tenue); }
-  .pre-leyenda span::before { content: ''; display: inline-block; width: 14px; height: 2px; margin-right: 6px; vertical-align: middle; border-radius: 2px; }
-  .pre-leyenda .g::before { background: #BDBDB8; }
-  .pre-leyenda .p::before { background: var(--pd-azul); height: 3px; }
+  .pre-pico { fill: none; stroke: #fff; stroke-width: 1.8; opacity: 0; }
+  .pre-banda { fill: rgba(255, 255, 255, 0.16); }
+  .pre-pron { stroke: #fff; stroke-width: 4; }
+  .pre-par { stroke: rgba(255, 255, 255, 0.5); stroke-width: 2; }
+  .pre-alza-et, .pre-pico-et { position: absolute; transform: translate(-50%, -150%); white-space: nowrap; pointer-events: none; color: #fff; }
+  .pre-alza-et { font: 700 26px/1 var(--pd-clash); }
+  .pre-pico-et { font: 600 12px/1.2 var(--font-display); opacity: 0; transform: translate(-50%, -210%); }
+  .pre-eje { display: flex; justify-content: space-between; margin: 10px 0 0; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.5); font: 600 12.5px/1.2 var(--font-display); color: #fff; }
+  .pre-leyenda { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 14px 0 0; font: 500 12.5px/1.2 var(--font-body); color: #fff; }
+  .pre-leyenda span::before { content: ''; display: inline-block; width: 16px; height: 2px; margin-right: 7px; vertical-align: middle; border-radius: 2px; }
+  .pre-leyenda .g::before { background: rgba(255, 255, 255, 0.5); }
+  .pre-leyenda .p::before { background: #fff; height: 4px; }
 
-  .pre-fotos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 14px 0 0; padding: 0; list-style: none; }
-  .pre-fotos li { display: grid; gap: 3px; align-content: start; font: 600 12.5px/1.3 var(--font-display); color: var(--pd-texto); }
-  .pre-fotos img { width: 100%; height: auto; aspect-ratio: 1; border-radius: 12px; background: #F5F5F3; object-fit: contain; padding: 4px; margin-bottom: 4px; }
-  .pre-fotos small { font: 400 12px/1.3 var(--font-body); color: var(--pd-tenue); }
-  .pre-fotos .is-nuevo img { box-shadow: inset 0 0 0 2px var(--pd-azul); }
+  .pre-fotos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 18px 0 0; padding: 0; list-style: none; }
+  .pre-fotos li { display: grid; gap: 4px; align-content: start; font: 600 12.5px/1.3 var(--font-display); color: #fff; }
+  .pre-fotos img { width: 100%; height: auto; aspect-ratio: 1; border-radius: 3px; background: #fff; object-fit: contain; padding: 4px; margin-bottom: 6px; }
+  .pre-fotos small { font: 700 13px/1.3 var(--pd-clash); color: #fff; }
 
-  .pre-curvas { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-  .pre-curva p { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; margin: 0 0 10px; font: 600 14px/1.2 var(--font-display); color: var(--pd-texto); }
-  .pre-curva p span { font: 400 13px/1.2 var(--font-body); color: var(--pd-tenue); }
-  .pre-curva ul { display: flex; align-items: flex-end; gap: 6px; height: 150px; margin: 0; padding: 0; list-style: none; border-bottom: 1px solid #CFCFCA; }
-  .pre-curva li { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 5px; font: 500 12px/1 var(--font-display); color: var(--pd-tenue); }
-  .pre-curva li i { order: 1; display: block; width: 100%; height: var(--h); border-radius: 6px 6px 0 0; background: #CFCFCA; transform-origin: 50% 100%; }
-  .pre-curva li.is-top i { background: var(--pd-azul); }
-  .pre-curva li b { order: 0; font-weight: 600; color: var(--pd-texto); }
+  .pre-curvas { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  .pre-curva p { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; margin: 0 0 12px; font: 700 18px/1.2 var(--pd-clash); color: #fff; }
+  .pre-curva p span { font: 500 13px/1.2 var(--font-body); color: #fff; }
+  .pre-curva ul { display: flex; align-items: flex-end; gap: 6px; height: 150px; margin: 0; padding: 0; list-style: none; border-bottom: 1px solid rgba(255, 255, 255, 0.6); }
+  .pre-curva li { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 6px; font: 600 12px/1 var(--font-display); color: #fff; }
+  .pre-curva li i { order: 1; display: block; width: 100%; height: var(--h); border-radius: 2px 2px 0 0; background: rgba(255, 255, 255, 0.35); transform-origin: 50% 100%; }
+  .pre-curva li.is-top i { background: #fff; }
+  .pre-curva li b { order: 0; font-weight: 600; color: #fff; }
   .pre-curva li span { order: 2; padding-top: 4px; }
 
-  .pre-gantt { position: relative; padding-top: 22px; }
+  .pre-gantt { position: relative; padding-top: 24px; }
   .pre-meses { position: absolute; left: 0; right: 0; top: 0; height: 100%; pointer-events: none; }
-  .pre-meses span { position: absolute; top: 0; height: 100%; padding-left: 4px; border-left: 1px dashed #D5D5D0; font: 500 11.5px/1 var(--font-display); color: var(--pd-apagado); }
-  .pre-fila { position: relative; margin-top: 12px; }
-  .pre-fila > p { margin: 0 0 6px; font: 400 13.5px/1.45 var(--font-body); color: var(--pd-tenue); }
-  .pre-fila > p b { display: block; font: 600 14px/1.3 var(--font-display); color: var(--pd-texto); }
-  .pre-fila > p em { font-style: normal; font-weight: 600; color: #B23A3A; }
-  .pre-carril { position: relative; height: 26px; }
-  .pre-barra { position: absolute; top: 0; height: 26px; display: flex; justify-content: space-between; align-items: center; padding: 0 9px; border-radius: 8px; background: var(--pd-texto); font: 600 11.5px/1 var(--font-display); color: #fff; white-space: nowrap; overflow: hidden; transform-origin: 100% 50%; }
+  .pre-meses span { position: absolute; top: 0; height: 100%; padding-left: 5px; border-left: 1px dashed rgba(255, 255, 255, 0.4); font: 600 11px/1 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: #fff; }
+  .pre-fila { position: relative; margin-top: 14px; }
+  .pre-fila > p { margin: 0 0 8px; font: 400 13.5px/1.45 var(--font-body); color: #fff; }
+  .pre-fila > p b { display: block; font: 600 15px/1.3 var(--font-display); color: #fff; }
+  .pre-fila > p em { font-style: normal; font-weight: 700; color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+  .pre-carril { position: relative; height: 28px; }
+  .pre-barra { position: absolute; top: 0; height: 28px; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; border-radius: 2px; background: #fff; font: 700 11.5px/1 var(--font-display); color: #2F55C4; white-space: nowrap; overflow: hidden; transform-origin: 100% 50%; }
   .pre-barra i { font-style: normal; }
-  .pre-fila.is-urgente .pre-barra { background: var(--pd-falta); }
-  .pre-fila--hitos .pre-carril { height: 40px; }
-  .pre-hito { position: absolute; top: 4px; display: grid; justify-items: start; gap: 4px; font: 600 11.5px/1.2 var(--font-display); color: var(--pd-tenue); white-space: nowrap; }
-  .pre-hito i { width: 10px; height: 10px; border-radius: 50%; background: var(--pd-apagado); margin-left: -5px; }
-  .pre-hito.is-hoy i { background: var(--pd-texto); }
-  .pre-hito.is-meta { transform: translateX(-50%); justify-items: center; color: var(--pd-texto); }
-  .pre-hito.is-meta i { margin: 0; background: var(--pd-ok); }
-  .pre-hito.is-ev { transform: translateX(-100%); justify-items: end; color: var(--pd-texto); }
-  .pre-hito.is-ev i { margin: 0 -5px 0 0; background: var(--pd-azul); }
+  .pre-fila.is-urgente .pre-barra { background: #141414; color: #fff; }
+  .pre-fila--hitos .pre-carril { height: 42px; }
+  .pre-hito { position: absolute; top: 4px; display: grid; justify-items: start; gap: 5px; font: 600 11.5px/1.2 var(--font-display); color: #fff; white-space: nowrap; }
+  .pre-hito i { width: 10px; height: 10px; border-radius: 50%; background: #fff; margin-left: -5px; }
+  .pre-hito.is-meta { transform: translateX(-50%); justify-items: center; }
+  .pre-hito.is-meta i { margin: 0; background: none; box-shadow: inset 0 0 0 2px #fff; }
+  .pre-hito.is-ev { transform: translateX(-100%); justify-items: end; }
+  .pre-hito.is-ev i { margin: 0 -5px 0 0; }
 
-  .pre-cuenta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
-  .pre-cuenta span { display: grid; gap: 3px; }
-  .pre-cuenta b { font: 700 clamp(22px, 2.1vw, 31px)/1 var(--pd-clash); letter-spacing: -0.01em; font-variant-numeric: tabular-nums; color: var(--pd-texto); }
-  .pre-cuenta small { font: 400 12.5px/1.2 var(--font-body); color: var(--pd-tenue); }
-  .pre-cuenta em { font: 500 22px/1 var(--font-display); font-style: normal; color: var(--pd-apagado); }
-  .pre-cuenta .is-total b { color: #2F55C4; }
-  .pre-presu { margin-top: 18px; }
-  .pre-presu p { margin: 0 0 8px; font: 400 14px/1.3 var(--font-body); color: var(--pd-tenue); }
-  .pre-presu p b { font: 700 16px var(--font-display); color: var(--pd-texto); }
-  .pre-presu-b { display: block; height: 8px; border-radius: 6px; background: #E2E2DE; overflow: hidden; }
-  .pre-presu-b i { display: block; width: var(--w); height: 100%; border-radius: 6px; background: var(--pd-texto); transform-origin: 0 50%; }
+  .pre-cuenta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+  .pre-cuenta span { display: grid; gap: 4px; }
+  .pre-cuenta b { font: 700 clamp(24px, 2.3vw, 34px)/1 var(--pd-clash); letter-spacing: -0.01em; font-variant-numeric: tabular-nums; color: #fff; }
+  .pre-cuenta small { font: 500 12.5px/1.2 var(--font-body); color: #fff; }
+  .pre-cuenta em { font: 500 22px/1 var(--font-display); font-style: normal; color: #fff; }
+  .pre-cuenta .is-total b { text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 7px; }
+  .pre-presu { margin-top: 24px; }
+  .pre-presu p { margin: 0 0 10px; font: 500 14px/1.3 var(--font-body); color: #fff; }
+  .pre-presu p b { font: 700 18px var(--pd-clash); color: #fff; }
+  .pre-presu-b { display: block; height: 6px; background: rgba(255, 255, 255, 0.25); overflow: hidden; }
+  .pre-presu-b i { display: block; width: var(--w); height: 100%; background: #fff; transform-origin: 0 50%; }
 
   /* ── tarjetas y primer reparto ── */
-  .pre-final { display: grid; gap: 24px; margin-top: 48px; }
-  .pre-final .pda-tarjetas-k { color: #fff; }
-  .pre-reparto { margin: 0; padding: 22px; border-radius: var(--pd-radio); background: var(--pd-tarjeta); }
-  .pre-rep-barra { display: flex; height: 14px; border-radius: 8px; background: #DADAD5; overflow: hidden; }
-  .pre-rep-a { display: block; width: 60%; height: 100%; background: var(--pd-azul); transform-origin: 0 50%; }
-  .pre-rep-l { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; margin: 14px 0 0; font: 400 14px/1.4 var(--font-body); color: var(--pd-tenue); }
-  .pre-rep-l b { margin-right: 6px; font: 700 20px/1 var(--pd-clash); color: var(--pd-texto); font-variant-numeric: tabular-nums; }
+  .pre-final { display: grid; gap: 40px; margin-top: 64px; }
+  .pre-reparto { margin: 0; }
+  .pre-rep-l { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 0 0 16px; font: 500 14px/1.35 var(--font-body); color: #fff; }
+  .pre-rep-l span + span { padding-left: 16px; border-left: 1px solid var(--pd-filete); }
+  .pre-rep-l b { display: block; margin-bottom: 6px; font: 700 clamp(34px, 3.4vw, 52px)/0.95 var(--pd-clash); letter-spacing: -0.01em; color: #fff; font-variant-numeric: tabular-nums; }
+  .pre-rep-barra { display: flex; height: 10px; background: rgba(255, 255, 255, 0.25); overflow: hidden; }
+  .pre-rep-a { display: block; width: 60%; height: 100%; background: #fff; transform-origin: 0 50%; }
   .pre-rep-cedis { display: none; }
 
   /* ── Con JS: lo que aún no pasa, oculto ── */
@@ -370,11 +367,12 @@ const PALABRA = Array.from({ length: 3 }, () => 'PRETEMPORADA').join(' · ');
   .pre-escenario { display: none; }
   .pre.pd-escenario .pre-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr); gap: 56px; align-items: start; }
   .pre.pd-escenario .pre-escenario { position: sticky; top: 76px; display: grid; align-self: start; }
-  .pre.pd-escenario .pre-escenario > .pre-fig { grid-area: 1 / 1; align-self: start; margin: 0; padding: 26px; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.35s; }
+  .pre.pd-escenario .pre-escenario > .pre-fig { grid-area: 1 / 1; align-self: start; margin: 0; padding: 0; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.35s; }
   .pre.pd-escenario .pre-escenario > .pre-fig.is-sel { opacity: 1; visibility: visible; transform: none; transition: opacity 0.45s ease 0.1s, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s, visibility 0s; }
-  .pre.pd-escenario .pre-paso-b { cursor: pointer; border-radius: 10px; transition: background 0.2s; }
-  .pre.pd-escenario .pre-paso-b:hover { background: var(--pd-tarjeta); }
-  .pre.pd-escenario .pre-paso.is-sel .pre-paso-b { background: var(--pd-tarjeta); }
+  /* el paso cuya gráfica está en el escenario: subrayado, sin caja */
+  .pre.pd-escenario .pre-paso-b { cursor: pointer; }
+  .pre.pd-escenario .pre-paso-b:hover .pre-paso-t b { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 5px; }
+  .pre.pd-escenario .pre-paso.is-sel .pre-paso-t b { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 5px; }
   .pre.is-js:not(.pd-escenario) .pre-fig { display: none; }
   .pre.is-js:not(.pd-escenario) .pre-paso.is-on .pre-fig { display: block; animation: preEntra 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
   @media (min-width: 1024px) {

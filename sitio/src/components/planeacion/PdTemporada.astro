@@ -2,7 +2,7 @@
 /**
  * Acto 2 · La temporada en vivo (3 may – 20 jun 2027). v3 «color» (2-oct-2026): negro con rayas de cebra, como el
  * paso «Controla» del home, y menos cosas en pantalla: sin el ticker de ventas, sin el selector de modo (se elige en
- * la ficha del acto 0), sin pastillas ni burbujas. El calendario corre con su marcador «hoy», tres contadores, la
+ * la ficha del acto 0), sin pastillas ni burbujas. v3.1 «editorial»: sin cajas; cada bloque con su folio. El calendario corre con su marcador «hoy», tres contadores, la
  * curva plan contra real que se corrige sola, la rejilla de las 100 tiendas por región pintada por estado y las
  * tarjetas que van saliendo (se abren: qué mover, por qué y un botón).
  * El HTML trae el estado final (póster y SEO); src/scripts/planeacion/consola.ts lo reproduce en vivo.
@@ -59,7 +59,7 @@ const PALABRA = Array.from({ length: 3 }, () => 'TEMPORADA').join(' · ');
 
     <div class="vivo-main">
       <figure class="vivo-graf">
-        <figcaption class="vivo-cap">Plan contra real<span class="pd-ast"><span aria-hidden="true">*</span><span class="sr-only"> (en construcción)</span></span></figcaption>
+        <figcaption class="vivo-cap pd-folio"><span>Plan contra real<span class="pd-ast"><span aria-hidden="true">*</span><span class="sr-only"> (en construcción)</span></span></span><span>Piezas por semana</span></figcaption>
         <div class="vivo-svg">
           <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Piezas por semana: el plan en línea punteada y la venta real encima. A la semana 6 la venta va 12 por ciento arriba y el pronóstico de la semana pico sube de 5,800 a 6,500 piezas; la semana del Día del Padre vendió 6,600.">
             <rect class="vivo-evt" x={xEv - anchoSem / 2} y="4" width={anchoSem} height={H - 8} rx="6" />
@@ -74,7 +74,7 @@ const PALABRA = Array.from({ length: 3 }, () => 'TEMPORADA').join(' · ');
       </figure>
 
       <figure class="vivo-red" data-red>
-        <figcaption class="vivo-cap">Tus 100 tiendas</figcaption>
+        <figcaption class="vivo-cap pd-folio"><span>Tus 100 tiendas</span><span>5 regiones</span></figcaption>
         <p class="vivo-nodos"><span class="vivo-nodo" data-nodo="CEDIS"><b>CEDIS</b><span data-cedis>6,436</span> piezas</span><span class="vivo-nodo vivo-nodo--prov" data-nodo="Proveedor"><b>Proveedor</b>playeras</span></p>
         <div class="vivo-regs">
           {regiones.map((r) => (
@@ -96,8 +96,8 @@ const PALABRA = Array.from({ length: 3 }, () => 'TEMPORADA').join(' · ');
 
     <div class="vivo-tarjetas">
       <div class="vivo-tar-cab">
-        <p class="pda-tarjetas-k">Acciones de hoy</p>
-        <button type="button" class="vivo-rutina" data-rutina-btn data-total={RUTINA.total} data-traspasos={RUTINA.traspasos}><span data-rutina-t>Mandar las {RUTINA.total} de rutina</span></button>
+        <p class="pda-tarjetas-k pd-folio"><span>Acciones de hoy</span><span>{TARJETAS_VIVO.length} tarjetas</span></p>
+        <button type="button" class="vivo-rutina" data-rutina-btn data-total={RUTINA.total} data-traspasos={RUTINA.traspasos}><span data-rutina-t>Mandar las {RUTINA.total} de rutina</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
       </div>
       <ul class="pda-lista vivo-lista">{TARJETAS_VIVO.map((t) => <PdTarjeta t={t} />)}</ul>
     </div>
@@ -144,8 +144,9 @@ const PALABRA = Array.from({ length: 3 }, () => 'TEMPORADA').join(' · ');
 
   /* plan contra real y la red de tiendas */
   .vivo-main { display: grid; gap: 16px; min-width: 0; }
-  .vivo-graf, .vivo-red { position: relative; margin: 0; padding: 22px; border-radius: var(--pd-radio); background: var(--pd-tarjeta); min-width: 0; }
-  .vivo-cap { display: flex; align-items: baseline; gap: 2px; margin: 0 0 14px; font: 700 16px/1.3 var(--font-display); color: #fff; }
+  /* v3.1: sin caja; cada bloque con su folio */
+  .vivo-graf, .vivo-red { position: relative; margin: 0; padding: 0; min-width: 0; }
+  .vivo-main { gap: 48px; }
   .vivo-svg { position: relative; }
   .vivo-svg svg { display: block; width: 100%; height: auto; max-width: none; overflow: visible; }
   .vivo-evt { fill: rgba(255, 255, 255, 0.06); }
@@ -190,12 +191,14 @@ const PALABRA = Array.from({ length: 3 }, () => 'TEMPORADA').join(' · ');
 
   /* las tarjetas */
   .vivo-tarjetas { min-width: 0; }
-  .vivo-tar-cab { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-bottom: 14px; }
+  .vivo-tar-cab { display: grid; gap: 0; }
   .vivo-tar-cab .pda-tarjetas-k { margin: 0; }
-  .vivo-rutina { min-height: 44px; padding: 10px 18px; border-radius: 12px; border: 1.5px solid rgba(255, 255, 255, 0.5); background: none; color: #fff; font: 700 14px/1.2 var(--font-display); cursor: pointer; transition: border-color 0.2s, background 0.2s; }
-  .vivo-rutina:hover { border-color: #fff; background: rgba(255, 255, 255, 0.06); }
-  .vivo-rutina:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-  .vivo-rutina[disabled] { cursor: default; border-color: transparent; padding-left: 0; padding-right: 0; color: var(--pd-ok-t); }
+  /* «mandar las de rutina»: una acción de texto, no un botón con caja */
+  .vivo-rutina { display: inline-flex; align-items: center; gap: 10px; width: max-content; min-height: 44px; margin: 6px 0 4px; padding: 0; border: 0; border-bottom: 1.5px solid #fff; border-radius: 0; background: none; color: #fff; font: 700 15px/1.2 var(--font-display); cursor: pointer; transition: opacity 0.2s; }
+  .vivo-rutina:hover { opacity: 0.75; }
+  .vivo-rutina:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+  .vivo-rutina[disabled] { cursor: default; border-bottom-color: transparent; color: var(--pd-ok-t); opacity: 1; }
+  .vivo-rutina[disabled] svg { display: none; }
   .vivo-lista { gap: 10px; }
 
   /* ── Con JS: lo que todavía no pasa no se ve ── */

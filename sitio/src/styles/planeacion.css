@@ -40,28 +40,39 @@
   --pd-fondo: #F5F3EE; --pd-fondo-t: #E9E5DA; --pd-trazo: rgba(20, 20, 20, 0.14);
   --pd-texto: #141414; --pd-tenue: #45433E; --pd-apagado: #6B6862; --pd-linea: rgba(20, 20, 20, 0.12);
   --pd-tarjeta: #FFFFFF; --pd-acento: #3A62C4; --pd-boton: #141414; --pd-boton-t: #FFFFFF; --pd-obra: #8A5A00; --pd-ok-t: #17804F;
+  --pd-filete: rgba(20, 20, 20, 0.22);
 }
 .pd-azul {
   --pd-fondo: #4470D8; --pd-fondo-t: #5B86EA; --pd-trazo: rgba(255, 255, 255, 0.34);
   --pd-texto: #FFFFFF; --pd-tenue: #FFFFFF; --pd-apagado: #FFFFFF; --pd-linea: rgba(255, 255, 255, 0.3);
   --pd-tarjeta: rgba(255, 255, 255, 0.14); --pd-acento: #FFFFFF; --pd-boton: #FFFFFF; --pd-boton-t: #141414; --pd-obra: #FFFFFF; --pd-ok-t: #FFFFFF;
+  --pd-filete: rgba(255, 255, 255, 0.55);
 }
 .pd-negro, .pd-oscuro {
   --pd-fondo: #0B0B0C; --pd-fondo-t: #1C1C1F; --pd-trazo: rgba(255, 255, 255, 0.26);
   --pd-texto: #FFFFFF; --pd-tenue: rgba(255, 255, 255, 0.74); --pd-apagado: rgba(255, 255, 255, 0.58); --pd-linea: rgba(255, 255, 255, 0.12);
   --pd-tarjeta: #18181A; --pd-acento: #7FA3F0; --pd-boton: #FFFFFF; --pd-boton-t: #0B0B0C; --pd-obra: #F2C46B; --pd-ok-t: #6FD3A3;
+  --pd-filete: rgba(255, 255, 255, 0.3);
 }
 .pd-fucsia {
   --pd-fondo: #D03A70; --pd-fondo-t: #DC5689; --pd-trazo: rgba(255, 255, 255, 0.36);
   --pd-texto: #FFFFFF; --pd-tenue: #FFFFFF; --pd-apagado: #FFFFFF; --pd-linea: rgba(255, 255, 255, 0.35);
   --pd-tarjeta: rgba(255, 255, 255, 0.16); --pd-acento: #FFFFFF; --pd-boton: #FFFFFF; --pd-boton-t: #141414; --pd-obra: #FFFFFF; --pd-ok-t: #FFFFFF;
+  --pd-filete: rgba(255, 255, 255, 0.6);
 }
 .pd-marino {
   --pd-fondo: #0A1648; --pd-fondo-t: #14267A; --pd-trazo: rgba(127, 163, 240, 0.45);
   --pd-texto: #FFFFFF; --pd-tenue: rgba(255, 255, 255, 0.78); --pd-apagado: rgba(255, 255, 255, 0.62); --pd-linea: rgba(127, 163, 240, 0.24);
   --pd-tarjeta: #13215C; --pd-acento: #9DB8F5; --pd-boton: #FFFFFF; --pd-boton-t: #0A1648; --pd-obra: #F2C46B; --pd-ok-t: #6FD3A3;
+  --pd-filete: rgba(157, 184, 245, 0.45);
 }
 .pd-claro, .pd-marfil, .pd-azul, .pd-negro, .pd-oscuro, .pd-fucsia, .pd-marino { background: var(--pd-fondo); color: var(--pd-texto); }
+
+/* v3.1 «editorial» (2-oct-2026, «no uses este tipo de cards, se ve muy AI slop; hazlo más limpio, dale mucho más
+   formato»): nada de tarjetas redondeadas. Todo va directo sobre el color del acto, separado por filetes, con rótulos
+   en mayúsculas como el folio de «La orden» de la portada. */
+.pd .pd-folio { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 16px; margin: 0 0 20px; padding: 0 0 12px; border-bottom: 1px solid var(--pd-filete, var(--pd-linea)); font: 600 11px/1.35 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--pd-texto); }
+.pd .pd-folio > span + span { font-weight: 500; }
 
 /* «en construcción»: un asterisco junto a lo que aún no hace el motor y una sola nota al pie por acto (antes era una
    etiqueta en cada tarjeta) */

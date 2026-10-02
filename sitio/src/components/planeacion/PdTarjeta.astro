@@ -4,6 +4,7 @@
  * póster; con JS abre el detalle en un diálogo (panel lateral en escritorio, hoja desde abajo en el teléfono).
  * v3 «color» (2-oct-2026, «no pongas tantos pills ni tanto texto»): solo el tipo, el título y la foto. Sin hora ni
  * «Por revisar»: el estado aparece cuando ya se mandó; «en construcción» es un asterisco (nota al pie del acto).
+ * v3.1 «editorial»: un renglón entre filetes, directo sobre el color del acto (sin tarjeta ni punto de color).
  */
 import type { Tarjeta } from '../../data/planeacion-demo';
 
@@ -24,31 +25,28 @@ const CLASE: Record<string, string> = {
 </li>
 
 <style>
+  /* v3.1 «editorial»: un renglón entre filetes, sin caja (antes, tarjeta redondeada) */
   .pdt { position: relative; list-style: none; }
-  .pdt-b { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 56px; grid-template-rows: auto auto auto; column-gap: 16px; row-gap: 6px; align-items: start; min-height: 48px; padding: 16px 16px 16px 18px; border-radius: 16px; background: var(--pd-tarjeta); border: 1.5px solid transparent; color: var(--pd-texto); text-decoration: none; transition: border-color 0.2s, transform 0.2s; }
-  .pdt-b:hover { border-color: var(--pd-texto); color: var(--pd-texto); text-decoration: none; transform: translateY(-1px); }
-  .pdt-b:focus-visible { outline: 2px solid var(--pd-azul); outline-offset: 2px; }
-  .pdt-tipo { grid-column: 1; display: inline-flex; align-items: center; gap: 8px; font: 600 11px/1.3 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--pd-tenue); }
-  .pdt-tipo::before { content: ''; flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--pdt-c, var(--pd-azul)); }
-  .pdt-t { grid-column: 1; font: 600 15.5px/1.35 var(--font-display); letter-spacing: -0.01em; color: var(--pd-texto); }
+  .pdt-b { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 64px; grid-template-rows: auto auto auto; column-gap: 20px; row-gap: 6px; align-items: start; min-height: 48px; padding: 18px 0 20px; border-top: 1px solid var(--pd-filete, var(--pd-linea)); color: var(--pd-texto); text-decoration: none; transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+  .pdt:last-child .pdt-b { border-bottom: 1px solid var(--pd-filete, var(--pd-linea)); }
+  /* el primer renglón ya tiene encima el filete del folio de la lista */
+  .pdt:first-child .pdt-b { border-top: 0; padding-top: 8px; }
+  .pdt-b:hover { color: var(--pd-texto); text-decoration: none; }
+  .pdt-b:hover .pdt-t { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
+  .pdt-b:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+  .pdt-tipo { grid-column: 1; font: 600 11px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--pd-tenue); }
+  .pdt-t { grid-column: 1; font: 600 18px/1.3 var(--font-display); letter-spacing: -0.015em; color: var(--pd-texto); }
   .pdt-estado { grid-column: 1; font: 600 13px/1.3 var(--font-display); color: var(--pd-ok-t, var(--pd-ok)); }
   .pdt-estado:empty { display: none; }
-  .pdt-foto { grid-column: 2; grid-row: 1 / 4; width: 56px; height: 56px; border-radius: 12px; background: #fff; object-fit: contain; padding: 4px; }
-
-  .pdt--traspaso { --pdt-c: #4B7BE5; }
-  .pdt--resurtido { --pdt-c: #1F9D63; }
-  .pdt--compra { --pdt-c: #E09B2D; }
-  .pdt--esperar { --pdt-c: #9A9A96; }
-  .pdt--talla { --pdt-c: #D64545; }
-  .pdt--evento { --pdt-c: #A970D6; }
-  .pdt--reparto { --pdt-c: #4B7BE5; }
+  .pdt-foto { grid-column: 2; grid-row: 1 / 4; width: 64px; height: 64px; border-radius: 3px; background: #fff; object-fit: contain; padding: 4px; }
 
   /* estados (los pone el script) */
-  .pdt.is-hecho .pdt-b { opacity: 0.86; }
-  /* «Ábreme»: sin pastilla; el borde late en la tarjeta pendiente más nueva */
-  .pdt.is-abreme .pdt-b { border-color: var(--pd-texto); animation: pdtLate 1s ease-in-out infinite alternate; }
+  .pdt.is-hecho .pdt-b { opacity: 0.72; }
+  /* «Ábreme»: sin pastilla; el renglón pendiente más nuevo se asoma */
+  .pdt.is-abreme .pdt-b { animation: pdtLate 0.9s ease-in-out infinite alternate; }
+  .pdt.is-abreme .pdt-t { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
   .pdt.is-nueva { animation: pdtEntra 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
-  @keyframes pdtLate { to { transform: translateY(-2px); } }
+  @keyframes pdtLate { to { transform: translateX(6px); } }
   @keyframes pdtEntra { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { .pdt.is-abreme .pdt-b, .pdt.is-nueva { animation: none; } }
 </style>
