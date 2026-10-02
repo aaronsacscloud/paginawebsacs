@@ -52,6 +52,7 @@ const PALABRA = Array.from({ length: 3 }, () => 'PRETEMPORADA').join(' · ');
     <p class="pda-fecha">Lunes 8 de febrero de 2027 · ejemplo</p>
   </header>
 
+  <div class="pre-riel">
   <div class="pre-grid">
     <div class="pre-panel">
       <p class="pre-panel-k"><span class="pre-punto" aria-hidden="true"></span><span class="pre-estado-t">Sacs está analizando…</span><span class="pre-estado-f">Listo</span></p>
@@ -181,6 +182,7 @@ const PALABRA = Array.from({ length: 3 }, () => 'PRETEMPORADA').join(' · ');
       </ol>
     </div>
     <div class="pre-escenario"></div>
+  </div>
   </div>
 
   <div class="pre-final">
@@ -366,6 +368,10 @@ const PALABRA = Array.from({ length: 3 }, () => 'PRETEMPORADA').join(' · ');
   /* ── Escritorio con JS: pasos a la izquierda y un escenario pegado a la derecha, adonde el script muda las
      gráficas (.pd-escenario); en el teléfono, sin JS y en el póster, cada gráfica va debajo de su paso ── */
   .pre-escenario { display: none; }
+  /* escritorio guiado por el scroll (2-oct-2026, «tenía su efecto: mientras hacías scroll te iba mostrando»): la
+     parrilla se queda pegada y el riel, más alto, reparte los pasos a lo largo del scroll (alto del riel: script) */
+  .pre.is-guiado .pre-grid { position: sticky; top: 82px; }
+  .pre.is-guiado .pre-escenario { position: static !important; }
   .pre.pd-escenario .pre-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr); gap: 56px; align-items: start; }
   .pre.pd-escenario .pre-escenario { position: sticky; top: 76px; display: grid; align-self: start; }
   .pre.pd-escenario .pre-escenario > .pre-fig { grid-area: 1 / 1; align-self: start; margin: 0; padding: 0; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.35s; }

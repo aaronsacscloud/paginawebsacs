@@ -7,7 +7,8 @@
  * «Otra vez» lo repite. Si el visitante no toca nada en 6 segundos, la tarjeta pendiente más nueva late («Ábreme»).
  * Ir al paso de quien baja (2-oct-2026, «no termina de verse la info mientras voy bajando, está desfasado»): cada acto
  * declara sus «metas» (bloques); en cuanto una entra en pantalla, la simulación se adelanta hasta ella. Si te quedas
- * quieto sigue sola; si bajas, lo que ves ya está completo.
+ * quieto sigue sola; si bajas, lo que ves ya está completo. La Pretemporada en escritorio va GUIADA por el scroll
+ * (riel con la parrilla pegada, reversible); la Temporada corre en vivo y se completa al dejarla atrás.
  * Con «reducir movimiento» no se anima nada: cada acto queda en su estado final (póster), pero las tarjetas se abren
  * y se envían igual. Sin JS, el HTML ya es el póster.
  */
@@ -28,6 +29,11 @@ type Acto = {
   pendientes?(): HTMLElement[];
   /** Bloques que, al entrar en pantalla, adelantan el acto hasta su beat (o hasta el final). */
   metas?: Meta[];
+  /** Acto guiado por el scroll (no corre por reloj): lo pinta su propio riel. */
+  guiado?(): boolean;
+  repinta?(): void;
+  alAvanzar?(a: number): void;
+  alTerminar?(): void;
 };
 type Meta = { el: HTMLElement; k: number | 'fin'; solo?: 'movil' | 'escritorio' };
 type Como = 'click' | 'auto' | 'rutina';
@@ -92,6 +98,9 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
     const enviados = new Set<string>();
     let manual = false;
     const DUR = [4400, 3200, 2800, 2800, 3400, 3200, 3400, 3800];
+    const riel = $(el, '.pre-riel'), parrilla = $(el, '.pre-grid');
+    const mqGuiado = window.matchMedia('(min-width: 1024px) and (min-height: 680px) and (prefers-reduced-motion: no-preference)');
+    let kGuiado = -1, completado = false, rielRaf = 0, altoParrilla = 0, rielEnVista = false;
 
     const omitido = (i: number) => { const c = pasos[i].dataset.clave; return !!c && !estado.analiza.has(c); };
     function selecciona(i: number) {
@@ -160,16 +169,61 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
     beats.push({ t: t + 500, fn: apareceTarjetas });
     beats.push({ t: t + 2000, fn: () => reparte() });
 
+    /* ── escritorio: el scroll dicta el análisis (la parrilla pegada; los pasos se reparten a lo largo del riel) ── */
+    const TOPE = 82;
+    function mideRiel() {
+      if (!mqGuiado.matches) { riel.style.height = ''; return; }
+      altoParrilla = parrilla.offsetHeight;
+      riel.style.height = Math.round(altoParrilla + pasos.length * 0.34 * window.innerHeight) + 'px';
+    }
+    function pintaGuiado() {
+      rielRaf = 0;
+      if (!mqGuiado.matches || !el.classList.contains('is-js')) return;
+      const r = riel.getBoundingClientRect();
+      const rango = riel.offsetHeight - altoParrilla;
+      const p = rango > 0 ? Math.min(1, Math.max(0, (TOPE - r.top) / rango)) : 1;
+      const N = pasos.length;
+      const k = completado ? N : Math.min(N, Math.floor((p / 0.86) * N) + 1);   // al pegarse ya se ve el 1.º
+      if (k !== kGuiado) {
+        if (k > kGuiado) for (let i = Math.max(0, kGuiado); i < k; i++) muestra(i);
+        else {
+          for (let i = k; i < N; i++) pasos[i].classList.remove('is-on', 'is-ahora', 'is-omitida', 'is-sel');
+          figs.forEach((f) => f.classList.remove('f-on', 'f-ya', 'f-historia', 'f-picos', 'f-alza'));
+          for (let i = 0; i < k; i++) if (!omitido(i)) estadoFig(i, true);
+          const ult = [...Array(k).keys()].reverse().find((i) => !omitido(i) && !!pasos[i].dataset.fig);
+          if (ult !== undefined) selecciona(ult);
+          omiteFiguras();
+        }
+        kGuiado = k;
+      }
+      const listo = completado || p >= 0.9;
+      el.classList.toggle('is-terminado', listo);
+      pasos.forEach((q, j) => q.classList.toggle('is-ahora', !listo && j === k - 1));
+      if ((completado || p >= 0.94) && !final.classList.contains('is-on')) { apareceTarjetas(); reparte(!movimiento); }
+      acto.alAvanzar?.(p);
+      if (p >= 0.98) acto.alTerminar?.();
+    }
+    const alScrollRiel = () => { if (!rielRaf) rielRaf = requestAnimationFrame(pintaGuiado); };
+    new IntersectionObserver((es) => {
+      rielEnVista = es[0].isIntersecting;
+      if (rielEnVista && mqGuiado.matches) { window.addEventListener('scroll', alScrollRiel, { passive: true }); alScrollRiel(); }
+      else window.removeEventListener('scroll', alScrollRiel);
+    }, { rootMargin: '200px 0px' }).observe(riel);
+    function modoGuiado() { el.classList.toggle('is-guiado', mqGuiado.matches); mideRiel(); if (rielEnVista) alScrollRiel(); }
+    mqGuiado.addEventListener('change', modoGuiado);
+    window.addEventListener('resize', () => { if (mqGuiado.matches) { mideRiel(); alScrollRiel(); } }, { passive: true });
+    document.fonts?.ready.then(mideRiel);
+
     // clic en un paso ya hecho: su gráfica al escenario (escritorio)
     pasos.forEach((p, i) => p.querySelector('.pre-paso-b')?.addEventListener('click', () => {
       if (!p.classList.contains('is-on') || p.classList.contains('is-omitida')) return;
       manual = true; selecciona(i); ph('planeacion_paso', { id: PASOS[i].id });
     }));
 
-    return {
+    const acto: Acto = {
       id: 'pre', el, dur: t + 4200, beats,
       reset() {
-        manual = false; enviados.clear();
+        manual = false; enviados.clear(); kGuiado = -1; completado = false;
         el.classList.remove('is-terminado');
         pasos.forEach((p) => p.classList.remove('is-on', 'is-ahora', 'is-omitida', 'is-sel'));
         figs.forEach((f) => f.classList.remove('is-sel', 'is-omitida', 'f-on', 'f-ya', 'f-historia', 'f-picos', 'f-alza'));
@@ -178,6 +232,7 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
         tarjetas.forEach((li) => { li.classList.remove('is-on'); marcaTarjeta(li, null); });
       },
       final() {
+        completado = true; kGuiado = pasos.length;
         pasos.forEach((_, i) => muestra(i, true));
         const ultimo = [...pasos.keys()].reverse().find((i) => !omitido(i) && !!pasos[i].dataset.fig);
         if (ultimo !== undefined && !manual) selecciona(ultimo);
@@ -192,10 +247,14 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
         if (id === 'reparto') { reparto.classList.add('is-enviado'); if (!reparto.classList.contains('is-reparte')) reparte(!movimiento); }
       },
       pendientes: () => tarjetas.filter((li) => li.classList.contains('is-on') && !li.classList.contains('is-hecho')),
-      // teléfono: cada paso (con su gráfica debajo) se alcanza al bajar; en escritorio los pasos caben en pantalla y
-      // se dejan correr. Las tarjetas del final, en los dos: si llegas a ellas, el análisis termina.
-      metas: [...pasos.map((p, i): Meta => ({ el: p, k: i, solo: 'movil' })), { el: final, k: 'fin' }],
+      // teléfono: cada paso (con su gráfica debajo) se alcanza al bajar y, si llegas a las tarjetas, el análisis
+      // termina. En escritorio lo guía el riel (guiado/repinta).
+      metas: [...pasos.map((p, i): Meta => ({ el: p, k: i, solo: 'movil' })), { el: final, k: 'fin', solo: 'movil' }],
+      guiado: () => mqGuiado.matches,
+      repinta: () => { mideRiel(); alScrollRiel(); },
     };
+    modoGuiado();
+    return acto;
   }
 
   /* ───────── Acto 2 · La temporada en vivo ───────── */
@@ -214,7 +273,6 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
     const cedisNodo = $(red, '[data-nodo="CEDIS"]'), cedisT = $(red, '[data-cedis]'), prov = $(red, '[data-nodo="Proveedor"]');
     const resumen = $(red, '[data-resumen]');
     const lista = $(el, '.vivo-lista');
-    const colTarjetas = $(el, '.vivo-tarjetas'), notaPie = $(el, '.pda-nota');
     const orden = $$(lista, '.pdt');
     const tarjeta = (id: string) => orden.find((li) => li.dataset.tarjeta === id);
     const rutinaBtn = $<HTMLButtonElement>(el, '[data-rutina-btn]'), rutinaT = $(el, '[data-rutina-t]');
@@ -380,9 +438,8 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
         setTimeout(() => { pintaCeldas(di); cedis(di); contadores(d); }, movimiento ? 1000 : 0);
       },
       pendientes: () => orden.filter((li) => li.classList.contains('is-on') && !li.classList.contains('is-hecho')),
-      // teléfono: las tarjetas van debajo del tablero; si bajas hasta ellas, la temporada se completa. En escritorio
-      // van junto a la gráfica: se completa al llegar al pie del acto.
-      metas: [{ el: colTarjetas, k: 'fin', solo: 'movil' }, { el: notaPie, k: 'fin', solo: 'escritorio' }],
+      // (2-oct-2026) sin metas: la temporada corre en vivo mientras se ve y se completa al dejarla atrás
+      // (antes, el pie del acto la completaba a los pocos segundos y se perdía el efecto).
     };
 
     rutinaBtn.addEventListener('click', () => {
@@ -467,13 +524,15 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
     actoCierre($(consola, '#pd-cierre')), actoResultado($(consola, '#pd-resultado')),
   ];
   const estadoActo = new Map(actos.map((a) => [a.id, { t: 0, sig: 0, iniciado: false, terminado: false, preparado: false }]));
+  // los actos guiados por scroll mueven la barrita de su fase y se marcan hechos al terminar su riel
+  actos.forEach((a) => { a.alAvanzar = (x) => avance(a.id, x); a.alTerminar = () => { const e = estadoActo.get(a.id)!; if (!e.terminado) termina(a); }; });
   const fases = new Map($$(consola, '.pdc-fases li').map((li) => [li.dataset.fase!, li]));
   const btnPausa = $(consola, '[data-ctl="pausa"]'), btnVel = $(consola, '[data-ctl="vel"]');
   let actual: Acto | null = null, vel = 1, pausa = false, dialogo = false, oculto = document.hidden, enVista = false;
   let raf = 0, ultimo = 0, ultimoToque = performance.now(), ultimaAparicion = 0, ultimoAbreme = 0;
 
   function tocaAparicion() { ultimaAparicion = performance.now(); }
-  const detenido = () => !movimiento || pausa || dialogo || oculto || !enVista || !actual || estadoActo.get(actual.id)!.terminado;
+  const detenido = () => !movimiento || pausa || dialogo || oculto || !enVista || !actual || !!actual.guiado?.() || estadoActo.get(actual.id)!.terminado;
 
   function corre(now: number) {
     raf = 0;
@@ -508,6 +567,7 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
     e.preparado = true;
     a.el.classList.add('is-js');
     a.reset();
+    a.repinta?.();
   }
   function empieza(a: Acto) {
     const e = estadoActo.get(a.id)!;
@@ -520,6 +580,7 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
     if (actual === a) return;
     para();
     actual = a;
+    consola.classList.toggle('is-guiado', !!a.guiado?.());
     fases.forEach((li, id) => li.classList.toggle('is-actual', id === a.id));
     fases.get('instruccion')?.classList.add('is-hecha');
     if (movimiento) empieza(a);
@@ -640,6 +701,7 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
     if (!en.isIntersecting || !movimiento) return;
     const a = porEl.get(en.target as HTMLElement)!, e = estadoActo.get(a.id)!;
     if (e.preparado || e.iniciado) return;
+    if (a.guiado?.()) { prepara(a); e.iniciado = true; return; }   // lo pinta su riel, llegue por donde llegue
     if (en.boundingClientRect.top > 0) prepara(a);
     else { a.final(); e.iniciado = true; e.terminado = true; fases.get(a.id)?.classList.add('is-hecha'); }
   }), { rootMargin: '0px 0px 35% 0px' });
@@ -655,6 +717,13 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
     alcanza(x.a, x.m.k);
   }), { rootMargin: '0px 0px -12% 0px' });
   metaDe.forEach((_, el) => ioMeta.observe(el));
+  // un acto que se deja atrás (sale por arriba) sin haber terminado se completa: al regresar ya está completo
+  const ioSale = new IntersectionObserver((es) => es.forEach((en) => {
+    if (en.isIntersecting || !movimiento || en.boundingClientRect.bottom > 0) return;
+    const a = porEl.get(en.target as HTMLElement)!, e = estadoActo.get(a.id)!;
+    if (e.iniciado && !e.terminado) completa(a);
+  }), { threshold: 0 });
+  actos.forEach((a) => ioSale.observe(a.el));
   const ioConsola = new IntersectionObserver((es) => {
     enVista = es[0].isIntersecting;
     activa('consola', enVista);

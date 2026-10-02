@@ -87,6 +87,8 @@ import PdResultado from './PdResultado.astro';
   .pdc-b[data-ctl="pausa"][aria-pressed="true"] .pdc-i-pausa { display: none; }
   .pdc-b[data-ctl="pausa"][aria-pressed="true"] .pdc-i-play { display: block; }
   .pdc:not(.is-js) .pdc-ctl, .pdc.is-quieta .pdc-ctl { display: none; }
+  /* acto guiado por el scroll (la Pretemporada en escritorio): no corre por reloj, así que sin pausa ni ×2 */
+  .pdc.is-guiado .pdc-b[data-ctl="pausa"], .pdc.is-guiado .pdc-b[data-ctl="vel"] { display: none; }
 
   /* teléfono: solo el número de cada fase (el acto ya dice su nombre) y botones grandes */
   @media (max-width: 767px) {
