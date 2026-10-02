@@ -5,6 +5,9 @@
  * solo corre uno a la vez. Se detiene con la pausa, al abrir una tarjeta, fuera de vista o con la pestaña oculta
  * (un solo requestAnimationFrame, nada de setInterval). «×2» acelera, «Saltar» deja el acto en su estado final y
  * «Otra vez» lo repite. Si el visitante no toca nada en 6 segundos, la tarjeta pendiente más nueva late («Ábreme»).
+ * Ir al paso de quien baja (2-oct-2026, «no termina de verse la info mientras voy bajando, está desfasado»): cada acto
+ * declara sus «metas» (bloques); en cuanto una entra en pantalla, la simulación se adelanta hasta ella. Si te quedas
+ * quieto sigue sola; si bajas, lo que ves ya está completo.
  * Con «reducir movimiento» no se anima nada: cada acto queda en su estado final (póster), pero las tarjetas se abren
  * y se envían igual. Sin JS, el HTML ya es el póster.
  */
@@ -23,7 +26,10 @@ type Acto = {
   tick?(t: number): void;
   envia?(id: string, como: Como): void;
   pendientes?(): HTMLElement[];
+  /** Bloques que, al entrar en pantalla, adelantan el acto hasta su beat (o hasta el final). */
+  metas?: Meta[];
 };
+type Meta = { el: HTMLElement; k: number | 'fin'; solo?: 'movil' | 'escritorio' };
 type Como = 'click' | 'auto' | 'rutina';
 
 const pd = document.querySelector<HTMLElement>('.pd');
@@ -186,6 +192,9 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
         if (id === 'reparto') { reparto.classList.add('is-enviado'); if (!reparto.classList.contains('is-reparte')) reparte(!movimiento); }
       },
       pendientes: () => tarjetas.filter((li) => li.classList.contains('is-on') && !li.classList.contains('is-hecho')),
+      // teléfono: cada paso (con su gráfica debajo) se alcanza al bajar; en escritorio los pasos caben en pantalla y
+      // se dejan correr. Las tarjetas del final, en los dos: si llegas a ellas, el análisis termina.
+      metas: [...pasos.map((p, i): Meta => ({ el: p, k: i, solo: 'movil' })), { el: final, k: 'fin' }],
     };
   }
 
@@ -205,6 +214,7 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
     const cedisNodo = $(red, '[data-nodo="CEDIS"]'), cedisT = $(red, '[data-cedis]'), prov = $(red, '[data-nodo="Proveedor"]');
     const resumen = $(red, '[data-resumen]');
     const lista = $(el, '.vivo-lista');
+    const colTarjetas = $(el, '.vivo-tarjetas'), notaPie = $(el, '.pda-nota');
     const orden = $$(lista, '.pdt');
     const tarjeta = (id: string) => orden.find((li) => li.dataset.tarjeta === id);
     const rutinaBtn = $<HTMLButtonElement>(el, '[data-rutina-btn]'), rutinaT = $(el, '[data-rutina-t]');
@@ -370,6 +380,9 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
         setTimeout(() => { pintaCeldas(di); cedis(di); contadores(d); }, movimiento ? 1000 : 0);
       },
       pendientes: () => orden.filter((li) => li.classList.contains('is-on') && !li.classList.contains('is-hecho')),
+      // teléfono: las tarjetas van debajo del tablero; si bajas hasta ellas, la temporada se completa. En escritorio
+      // van junto a la gráfica: se completa al llegar al pie del acto.
+      metas: [{ el: colTarjetas, k: 'fin', solo: 'movil' }, { el: notaPie, k: 'fin', solo: 'escritorio' }],
     };
 
     rutinaBtn.addEventListener('click', () => {
@@ -414,6 +427,7 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
       ],
       reset() { pasos.forEach((p) => p.classList.remove('is-on')); el.classList.remove('is-rebaja'); btn.disabled = false; btn.textContent = 'Armar la rebaja'; },
       final() { pasos.forEach((p) => p.classList.add('is-on')); total.textContent = miles(+total.dataset.cuenta!); },
+      metas: pasos.map((p, i): Meta => ({ el: p, k: i })),
     };
   }
 
@@ -443,6 +457,7 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
       ],
       reset() { pasos.forEach((p) => p.classList.remove('is-on')); el.classList.remove('is-aplicado'); btn.disabled = false; btn.textContent = 'Aplicar a Navidad 2027'; [...kpis, exacta].forEach((k) => { if (k) k.textContent = k.dataset.kpi!; }); },
       final() { pasos.forEach((p) => p.classList.add('is-on')); [...kpis, exacta].forEach((k) => { if (k) k.textContent = k.dataset.kpi!; }); },
+      metas: pasos.map((p, i): Meta => ({ el: p, k: i })),
     };
   }
 
@@ -534,13 +549,34 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
     btnVel.setAttribute('aria-pressed', String(vel === 2));
     ph('planeacion_velocidad', { vel });
   });
+  /** Deja un acto en su estado final (lo usan «Saltar» y las metas con k = 'fin'). */
+  function completa(a: Acto) {
+    if (a === actual) para();
+    const e = estadoActo.get(a.id)!;
+    e.iniciado = true; e.preparado = true; e.sig = a.beats.length; e.t = a.dur;
+    a.el.classList.add('is-js');
+    a.final();
+    termina(a);
+  }
+  /** Adelanta un acto hasta su beat k (lo que acaba de entrar en pantalla). Nunca lo regresa. */
+  function alcanza(a: Acto, k: number | 'fin') {
+    if (!movimiento) return;
+    const e = estadoActo.get(a.id)!;
+    if (e.terminado) return;
+    if (k === 'fin') { completa(a); return; }
+    const meta = a.beats[k]?.t;
+    if (meta === undefined) return;
+    if (!e.iniciado) empieza(a);
+    if (e.t >= meta) return;
+    e.t = meta;
+    while (e.sig < a.beats.length && a.beats[e.sig].t <= e.t) { a.beats[e.sig].fn(); e.sig++; }
+    a.tick?.(e.t);
+    avance(a.id, e.t / a.dur);
+    if (e.t >= a.dur) termina(a);
+  }
   $(consola, '[data-ctl="saltar"]').addEventListener('click', () => {
     if (!actual) return;
-    para();
-    const e = estadoActo.get(actual.id)!;
-    e.iniciado = true; e.sig = actual.beats.length; e.t = actual.dur;
-    actual.final();
-    termina(actual);
+    completa(actual);
     ph('planeacion_saltar', { acto: actual.id });
   });
   $(consola, '[data-ctl="otra"]').addEventListener('click', () => {
@@ -608,6 +644,17 @@ function iniciar(pd: HTMLElement, consola: HTMLElement) {
     else { a.final(); e.iniciado = true; e.terminado = true; fases.get(a.id)?.classList.add('is-hecha'); }
   }), { rootMargin: '0px 0px 35% 0px' });
   actos.forEach((a) => ioPrepara.observe(a.el));
+  // las metas: en cuanto un bloque entra en pantalla (por encima del 88 % del alto), su acto se adelanta hasta él
+  const mqEscritorio = window.matchMedia('(min-width: 1024px)');
+  const metaDe = new Map<Element, { a: Acto; m: Meta }>();
+  actos.forEach((a) => a.metas?.forEach((m) => metaDe.set(m.el, { a, m })));
+  const ioMeta = new IntersectionObserver((es) => es.forEach((en) => {
+    if (!en.isIntersecting) return;
+    const x = metaDe.get(en.target);
+    if (!x || (x.m.solo === 'movil' && mqEscritorio.matches) || (x.m.solo === 'escritorio' && !mqEscritorio.matches)) return;
+    alcanza(x.a, x.m.k);
+  }), { rootMargin: '0px 0px -12% 0px' });
+  metaDe.forEach((_, el) => ioMeta.observe(el));
   const ioConsola = new IntersectionObserver((es) => {
     enVista = es[0].isIntersecting;
     activa('consola', enVista);

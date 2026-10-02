@@ -311,8 +311,9 @@ const PALABRA = Array.from({ length: 3 }, () => 'PRETEMPORADA').join(' · ');
   .pre-rep-a { display: block; width: 60%; height: 100%; background: #fff; transform-origin: 0 50%; }
   .pre-rep-cedis { display: none; }
 
-  /* ── Con JS: lo que aún no pasa, oculto ── */
-  .pre.is-js .pre-paso:not(.is-on) { display: none; }
+  /* ── Con JS: lo que aún no pasa, oculto PERO en su lugar (2-oct-2026: antes era display:none y la página brincaba al
+     aparecer; además el motor necesita verlo entrar en pantalla para adelantarse cuando el visitante baja) ── */
+  .pre.is-js .pre-paso:not(.is-on) { visibility: hidden; }
   .pre.is-js .pre-paso.is-ahora .pre-check { border: 2px solid rgba(255, 255, 255, 0.4); border-top-color: #fff; background: none; animation: preGira 0.9s linear infinite; }
   .pre.is-js .pre-paso.is-on > .pre-paso-b { animation: preEntra 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
   .pre.is-js .pre-paso.is-omitida .pre-check { background: rgba(255, 255, 255, 0.35); }
@@ -354,7 +355,7 @@ const PALABRA = Array.from({ length: 3 }, () => 'PRETEMPORADA').join(' · ');
   /* el reparto: la barra crece cuando sale la mercancía */
   .pre.is-js .pre-reparto .pre-rep-a { transform: scaleX(0); transition: transform 1.4s cubic-bezier(0.16, 1, 0.3, 1); }
   .pre.is-js .pre-reparto.is-reparte .pre-rep-a { transform: none; }
-  .pre.is-js .pre-final:not(.is-on) { display: none; }
+  .pre.is-js .pre-final:not(.is-on) { visibility: hidden; opacity: 0; }
   .pre.is-js .pre-final.is-on { animation: preEntra 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
   @keyframes preGira { to { transform: rotate(360deg); } }
@@ -373,8 +374,7 @@ const PALABRA = Array.from({ length: 3 }, () => 'PRETEMPORADA').join(' · ');
   .pre.pd-escenario .pre-paso-b { cursor: pointer; }
   .pre.pd-escenario .pre-paso-b:hover .pre-paso-t b { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 5px; }
   .pre.pd-escenario .pre-paso.is-sel .pre-paso-t b { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 5px; }
-  .pre.is-js:not(.pd-escenario) .pre-fig { display: none; }
-  .pre.is-js:not(.pd-escenario) .pre-paso.is-on .pre-fig { display: block; animation: preEntra 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .pre.is-js:not(.pd-escenario) .pre-paso.is-on .pre-fig { animation: preEntra 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
   @media (min-width: 1024px) {
     .pre-final { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr); gap: 56px; align-items: start; }
   }
