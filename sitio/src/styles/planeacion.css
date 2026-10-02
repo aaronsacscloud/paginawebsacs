@@ -1,4 +1,4 @@
-/* /producto/planeacion-de-demanda (2-oct-2026, v2 «limpio»): el dueño pidió menos saturado, estilo Squarespace,
+/* /planeacion-de-demanda (2-oct-2026, v2 «limpio»): el dueño pidió menos saturado, estilo Squarespace,
    blanco y negro alternados, menos datos y nada de «AI slop» (sin brillos, contornos neón ni degradados).
    Cada sección elige su tema con .pd-claro o .pd-oscuro; los componentes solo usan estas variables.
    Contraste AA medido: --pd-tenue 8.6:1 y --pd-apagado 5.1:1 sobre blanco; 10.4:1 y 6.6:1 sobre negro. */
@@ -46,9 +46,6 @@
 .pd .pd-obra { color: var(--pd-obra); }
 .pd .pd-obra::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
 .pd .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
-
-/* la barra de WhatsApp y el submenú de producto no tapan la escena mientras está pegada */
-body.planeacion-activo .product-subnav.nav-hidden { transform: translateY(-100%); }
 
 /* ── los actos (comunes a los 4) ── */
 .pd .pda { position: relative; padding: 72px 20px 80px; scroll-margin-top: 56px; }

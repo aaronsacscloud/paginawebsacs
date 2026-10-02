@@ -14,7 +14,7 @@
  * esta página solo las pinta.
  */
 import { GIRO_RELACIONES } from '../../data/relaciones-giro';
-import { getFeatureBySlug } from '../../data/product';
+import { enlaceFuncion } from '../../data/product';
 
 interface Props {
   /** Clave del giro en GIRO_RELACIONES, p.ej. 'zapateria'. */
@@ -35,11 +35,11 @@ const rel = GIRO_RELACIONES[giro];
           <p class="ge-col-kicker">Funciones que resuelven esto</p>
           <ul class="ge-lista">
             {rel.funciones.map((f) => {
-              const feature = getFeatureBySlug(f.slug);
+              const enlace = enlaceFuncion(f.slug);
               return (
                 <li>
-                  <a href={`/producto/${f.slug}`} class="ge-link">
-                    <span class="ge-link-title">{feature?.label || f.slug}</span>
+                  <a href={enlace.href} class="ge-link">
+                    <span class="ge-link-title">{enlace.label}</span>
                     <span class="ge-link-desc">{f.ancla}</span>
                   </a>
                 </li>

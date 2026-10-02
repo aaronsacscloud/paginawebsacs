@@ -1,5 +1,5 @@
 /**
- * El motor de la consola de /producto/planeacion-de-demanda (actos 1–4 de la temporada simulada).
+ * El motor de la consola de /planeacion-de-demanda (actos 1–4 de la temporada simulada).
  *
  * Cada acto tiene una línea de tiempo (beats) que se reproduce sola cuando el acto ocupa el centro de la pantalla;
  * solo corre uno a la vez. Se detiene con la pausa, al abrir una tarjeta, fuera de vista o con la pestaña oculta

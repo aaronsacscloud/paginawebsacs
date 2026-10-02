@@ -1,5 +1,5 @@
 /**
- * Gráficas de /producto/planeacion-de-demanda: SVG inline calculado en el build (sin librerías de gráficas).
+ * Gráficas de /planeacion-de-demanda: SVG inline calculado en el build (sin librerías de gráficas).
  * Todo sale como `d` de un <path> o como coordenadas; el navegador solo anima (stroke-dashoffset, opacidad).
  */
 

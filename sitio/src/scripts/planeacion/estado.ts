@@ -1,5 +1,5 @@
 /**
- * Estado compartido de la temporada simulada (/producto/planeacion-de-demanda): lo que el visitante eligió en la
+ * Estado compartido de la temporada simulada (/planeacion-de-demanda): lo que el visitante eligió en la
  * ficha (qué analizar y el modo) y quién tiene la escena en pantalla (para esconder la barra de WhatsApp).
  * Un solo módulo para el acto 0 y la consola: Vite lo empaqueta una vez y ambos ven el mismo objeto.
  */

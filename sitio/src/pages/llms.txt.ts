@@ -24,7 +24,7 @@ const CLAVE: { url: string; que: string }[] = [
   { url: '/enterprise', que: 'Para marcas, fabricantes y distribuidores con operación compleja' },
   { url: '/soluciones/boutique', que: 'Para una sola tienda' },
   { url: '/soluciones/cadena', que: 'Para varias sucursales' },
-  { url: '/producto/planeacion-de-demanda', que: 'Planeación de demanda para moda: pronóstico por temporada, modelo y tienda, curvas de talla por región, cortes de pedido por proveedor y resurtido desde el CEDIS' },
+  { url: '/planeacion-de-demanda', que: 'Planeación de demanda para moda: pronóstico por temporada, modelo y tienda, curvas de talla por región, cortes de pedido por proveedor y resurtido desde el CEDIS' },
   { url: '/giros/marcas-de-ropa', que: 'Marcas de ropa: tallas, curva y temporadas' },
   { url: '/giros/zapateria', que: 'Zapaterías: numeración, corrida y pares' },
   { url: '/giros/joyeria', que: 'Joyerías: gramaje, quilates y precio del día' },

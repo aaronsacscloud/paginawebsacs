@@ -375,20 +375,6 @@ export const pillars: Pillar[] = [
         status: 'live',
       },
       {
-        // 1-oct-2026: página dedicada en src/pages/producto/planeacion-de-demanda.astro (la ruta estática gana a [slug]).
-        slug: 'planeacion-de-demanda',
-        pillarId: 'automatiza',
-        label: 'Planeación de demanda',
-        title: 'Planeación de demanda para moda: pronóstico y resurtido',
-        description: 'Pronóstico de ventas para tiendas de ropa por temporada, modelo y tienda, con la curva de tallas de cada región. Sacs calcula el corte de pedido de cada proveedor y resurte desde el CEDIS, con candados.',
-        hero: {
-          eyebrow: 'Automatiza',
-          headline: 'Planeación de demanda para moda',
-          subtitle: 'Qué comprar, cuánto, para qué tienda, en qué talla y color, y cuándo.',
-        },
-        status: 'live',
-      },
-      {
         slug: 'workflows',
         pillarId: 'automatiza',
         label: 'Workflows',
@@ -457,7 +443,38 @@ export const pillars: Pillar[] = [
   },
 ];
 
+// ─── Secciones propias ───
+
+/** Lo que tiene página y pestaña propias en el header, FUERA de los pilares: no sale en el submenú ni en el
+ *  mega-menú de ningún pilar, y [slug].astro no le genera página. 2-oct-2026: «Planeación de demanda» salió de
+ *  Automatiza a pedido del dueño («si aparece en el header, llévalo a una sección normal fuera de eso»); vive en
+ *  src/pages/planeacion-de-demanda.astro y la ruta vieja /producto/… redirige con 301. */
+export interface SeccionPropia {
+  slug: string;
+  label: string;
+  href: string;
+  title: string;
+  description: string;
+}
+
+export const seccionesPropias: SeccionPropia[] = [
+  {
+    slug: 'planeacion-de-demanda',
+    label: 'Planeación de demanda',
+    href: '/planeacion-de-demanda',
+    title: 'Planeación de demanda para moda: pronóstico y resurtido',
+    description: 'Pronóstico de ventas para tiendas de ropa por temporada, modelo y tienda, con la curva de tallas de cada región. Sacs calcula el corte de pedido de cada proveedor y resurte desde el CEDIS, con candados.',
+  },
+];
+
 // ─── Helpers ───
+
+/** A dónde lleva y cómo se llama el enlace a una función (o a una sección propia) desde giros y casos. */
+export function enlaceFuncion(slug: string): { href: string; label: string } {
+  const seccion = seccionesPropias.find((s) => s.slug === slug);
+  if (seccion) return { href: seccion.href, label: seccion.label };
+  return { href: `/producto/${slug}`, label: getFeatureBySlug(slug)?.label || slug };
+}
 
 export function getAllSlugs(): string[] {
   return pillars.flatMap((p) => p.features.map((f) => f.slug));

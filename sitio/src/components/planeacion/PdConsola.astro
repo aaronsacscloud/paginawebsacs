@@ -1,10 +1,12 @@
 ---
 /**
- * La consola de la temporada simulada (actos 1–4) de /producto/planeacion-de-demanda. Una barra pegada arriba con
+ * La consola de la temporada simulada (actos 1–4) de /planeacion-de-demanda. Una barra pegada arriba con
  * las fases (Instrucción · Pretemporada · Temporada · Cierre · Resultado), pausa, ×2, «Saltar» y «Otra vez»; cada
  * acto se reproduce solo al entrar en pantalla (src/scripts/planeacion/consola.ts) y abrir una tarjeta lo pausa.
  * El detalle de cada tarjeta se abre en un <dialog> (panel lateral en escritorio, hoja desde abajo en el teléfono).
  * «Reducir movimiento» o sin JS: póster con cada acto completo y estático.
+ * La barra es el único header pegado de la página (2-oct-2026): el menú principal solo se ve hasta arriba
+ * (BaseLayout navSoloArriba), por eso va opaca y nada la tapa.
  */
 import { FASES } from '../../data/planeacion-demo';
 import PdPretemporada from './PdPretemporada.astro';
@@ -57,7 +59,7 @@ import PdResultado from './PdResultado.astro';
   .pdc { position: relative; }
 
   /* ── la barra de la consola: blanca, fina, con las fases como pestañas ── */
-  .pdc-barra { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; background: rgba(255, 255, 255, 0.97); border-bottom: 1px solid #E7E7E4; color: #1A1A1A; }
+  .pdc-barra { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; background: #fff; border-bottom: 1px solid #E7E7E4; color: #1A1A1A; }
   .pdc-fases { min-width: 0; flex: 1; }
   .pdc-fases ol { display: flex; gap: 2px; margin: 0; padding: 0; list-style: none; }
   .pdc-fases li { position: relative; flex: 1; min-width: 0; }

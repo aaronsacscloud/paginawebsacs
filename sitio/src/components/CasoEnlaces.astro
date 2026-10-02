@@ -9,7 +9,7 @@
  *
  * Va antes del CTA de cierre (cs-cta), no en el pie.
  */
-import { getFeatureBySlug } from '../data/product';
+import { enlaceFuncion } from '../data/product';
 
 interface FuncionUsada {
   slug: string;
@@ -37,11 +37,11 @@ const { giroHref, giroNombre, giroAncla, funciones } = Astro.props;
     <p class="ce-col-kicker">Las funciones que usa</p>
     <ul class="ce-lista">
       {funciones.map((f) => {
-        const feature = getFeatureBySlug(f.slug);
+        const enlace = enlaceFuncion(f.slug);
         return (
           <li>
-            <a href={`/producto/${f.slug}`} class="ce-link">
-              <span class="ce-link-title">{feature?.label || f.slug}</span>
+            <a href={enlace.href} class="ce-link">
+              <span class="ce-link-title">{enlace.label}</span>
               <span class="ce-link-desc">{f.ancla}</span>
             </a>
           </li>

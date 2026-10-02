@@ -441,6 +441,8 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.35s ease;
   }
   .nav.nav-oculto { transform: translateY(-100%); }
+  /* escondido, su sombra no debe asomarse: dejaba una franja gris de ~25 px sobre la página */
+  .nav.nav-oculto, .nav.scrolled.nav-oculto { box-shadow: none; }
   .nav.nav-oculto.mega-open { transform: none; }
 
   .nav.scrolled {
@@ -1806,6 +1808,15 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   // ─── Scroll: toggle transparent ↔ white ───
   let ticking = false;
   let ultimoY = window.scrollY;
+  // Páginas con header propio (BaseLayout navSoloArriba, p. ej. /planeacion-de-demanda): el menú solo se ve hasta
+  // arriba; al bajar se va y no regresa al subir, así el único header pegado es el de la página (dueño, 02-oct-2026:
+  // «solo queda un solo header sticky en estas secciones, para que no se corte la experiencia»). Mismo criterio que
+  // ProductSubnav en /producto/*. La altura se cachea fuera del scroll (cambia cuando se pliega la barra negra).
+  const soloArriba = document.body.dataset.nav === 'solo-arriba';
+  let altoNav = 71; // el observador la corrige al arrancar
+  if (soloArriba && nav && 'ResizeObserver' in window) {
+    new ResizeObserver(([e]) => { altoNav = Math.round(e.borderBoxSize?.[0]?.blockSize ?? e.contentRect.height) || altoNav; }).observe(nav);
+  }
 
   function updateNav() {
     const isMobileOpen = hamburger?.getAttribute('aria-expanded') === 'true';
@@ -1819,10 +1830,13 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     }
     // se esconde al bajar y vuelve al subir (Aaron: el sticky estorba)
     const y = window.scrollY;
-    if (y > 120 && y > ultimoY + 4) nav?.classList.add('nav-oculto');
+    if (soloArriba) nav?.classList.toggle('nav-oculto', y > altoNav);
+    else if (y > 120 && y > ultimoY + 4) nav?.classList.add('nav-oculto');
     else if (y < ultimoY - 4 || y <= 120) nav?.classList.remove('nav-oculto');
     ultimoY = y;
   }
+  // con teclado: si el foco entra al menú escondido, se muestra (si no, el foco quedaría fuera de la pantalla)
+  nav?.addEventListener('focusin', () => nav?.classList.remove('nav-oculto'));
 
   window.addEventListener('scroll', () => {
     if (!ticking) {

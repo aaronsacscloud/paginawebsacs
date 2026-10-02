@@ -64,7 +64,7 @@ ${[...porArea.entries()].map(([area, mods]) => `### ${area}\n${mods.map(m => `- 
 
 ## Planeación de demanda para moda
 
-${SITIO}/producto/planeacion-de-demanda — pronóstico de ventas para tiendas de
+${SITIO}/planeacion-de-demanda — pronóstico de ventas para tiendas de
 ropa por temporada, modelo y tienda, con la curva de tallas de cada región. Antes
 de mover nada revisa lo que viene en camino; luego traspasa desde la tienda donde
 sobra, resurte desde el CEDIS y solo compra lo que falta en toda la red, con el

@@ -1,5 +1,5 @@
 /**
- * La temporada SIMULADA de /producto/planeacion-de-demanda (1-oct-2026).
+ * La temporada SIMULADA de /planeacion-de-demanda (1-oct-2026).
  *
  * Todo es un EJEMPLO: una cadena ficticia de ropa deportiva (100 tiendas en 5 regiones, un CEDIS y tienda en
  * línea) que planea su Día del Padre 2027. Guion de la sesión «Nivelación moda flujo completo» (copia en

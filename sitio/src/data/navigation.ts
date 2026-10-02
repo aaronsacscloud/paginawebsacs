@@ -102,7 +102,7 @@ export const cicloTemporada: EtapaTemporada[] = [
     clave: '01',
     label: 'Antes · la compra',
     description: 'Decides con seis meses de anticipación qué comprar y para qué tienda.',
-    href: '/producto/planeacion-de-demanda',
+    href: '/planeacion-de-demanda',
     items: [
       'Presupuesto de compra por temporada (OTB) · pronto',
       'Plan de surtido: cuánto de cada modelo a cada tienda · pronto',
@@ -807,7 +807,6 @@ export const navLinks: NavLink[] = [
         items: [
           { label: 'Especialista IA dedicado', href: '/producto/especialista-ia' },
           { label: 'AXO · Copiloto IA', href: '/producto/axo-copiloto-ia' },
-          { label: 'Planeación de demanda', href: '/producto/planeacion-de-demanda' },
           { label: 'Workflows', href: '/producto/workflows' },
           { label: 'Alertas de quiebre y estancados', href: '/producto/alertas-inteligentes' },
           { label: 'Forecast de demanda', href: '/producto/reportes-predictivos' },
@@ -818,7 +817,9 @@ export const navLinks: NavLink[] = [
     ],
   },
   // 2-oct-2026 (dueño): «Planeación de demanda» en el menú principal: es lo que buscan las marcas grandes.
-  { label: 'Planeación de demanda', corto: 'Planeación', href: '/producto/planeacion-de-demanda' },
+  // Es una sección propia (/planeacion-de-demanda), ya no una función de Automatiza: «si aparece en el header,
+  // llévalo a una sección normal fuera de eso» — por eso tampoco sale en el mega-menú ni en el pie de Automatiza.
+  { label: 'Planeación de demanda', corto: 'Planeación', href: '/planeacion-de-demanda' },
   {
     label: 'Giros de negocio',
     corto: 'Giros',
@@ -874,7 +875,6 @@ export const footerLinks = {
   automatiza: [
     { label: 'Especialista IA dedicado', href: '/producto/especialista-ia' },
     { label: 'AXO · Copiloto IA', href: '/producto/axo-copiloto-ia' },
-    { label: 'Planeación de demanda', href: '/producto/planeacion-de-demanda' },
     { label: 'Workflows', href: '/producto/workflows' },
     { label: 'Alertas de quiebre y estancados', href: '/producto/alertas-inteligentes' },
     { label: 'Forecast de demanda', href: '/producto/reportes-predictivos' },
@@ -884,6 +884,7 @@ export const footerLinks = {
   empresa: [
     { label: 'Giros de negocio', href: '/giros' },
     { label: 'Enterprise · marcas y fabricantes', href: '/enterprise' },
+    { label: 'Planeación de demanda', href: '/planeacion-de-demanda' },
     { label: 'Nosotros', href: '/nosotros' },
     { label: 'Manifiesto', href: '/manifiesto' },
     { label: 'Casos de éxito', href: '/casos-de-exito' },

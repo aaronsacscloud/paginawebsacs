@@ -3810,7 +3810,7 @@ export const pageContent: Record<string, any> = {
         "imageAlt": "Pantalla de propuesta de nivelación generada por Sacs",
         "link": {
           "label": "Ver planeación de demanda: qué comprar, cuánto y cuándo",
-          "href": "/producto/planeacion-de-demanda"
+          "href": "/planeacion-de-demanda"
         },
         "featured": true,
         "variant": "control-central"

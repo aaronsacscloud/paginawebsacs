@@ -1,0 +1,94 @@
+---
+/**
+ * /planeacion-de-demanda — «Planeación de demanda para moda» (1-oct-2026).
+ *
+ * La página es UNA TEMPORADA SIMULADA que el visitante vive y toca (guion de la sesión «Nivelación moda flujo
+ * completo», en COLA.md): la directora le da la instrucción a Sacs (acto 0), y una consola reproduce la
+ * pretemporada, la temporada en vivo, el cierre y el resultado con lo que aprendió (actos 1–4). v2 «limpio»
+ * (2-oct-2026, pedido del dueño): estilo Squarespace, blanco y negro alternados, menos datos, sin brillos. Todo es un ejemplo (src/data/planeacion-demo.ts); lo que el motor todavía
+ * no hace va marcado «en construcción», sin fecha.
+ *
+ * Sección propia, fuera de Automatiza (2-oct-2026, pedido del dueño: «si aparece en el header, llévalo a una
+ * sección normal fuera de eso; no pongas ese otro header porque confunde»): sin el submenú de producto, y el menú
+ * principal solo se ve hasta arriba (navSoloArriba), así el único header pegado es la barra de la consola. La ruta
+ * vieja /producto/planeacion-de-demanda redirige aquí con 301. Aquí van su SoftwareApplication, su miga de pan
+ * (Inicio › Planeación de demanda) y el FAQPage de las preguntas frecuentes.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PdInstruccion from '../components/planeacion/PdInstruccion.astro';
+import PdConsola from '../components/planeacion/PdConsola.astro';
+import BeforeAfter from '../components/BeforeAfter.astro';
+import GiroFAQ from '../components/giros/GiroFAQ.astro';
+import FinalCTA from '../components/FinalCTA.astro';
+import StructuredData from '../components/StructuredData.astro';
+import { ANTES_DESPUES, PREGUNTAS } from '../data/planeacion-demo';
+import { seccionesPropias } from '../data/product';
+import { SITIO, PRODUCTO_ID } from '../data/entidad';
+import { breadcrumbList } from '../lib/breadcrumb';
+import '../styles/planeacion.css';
+
+const seccion = seccionesPropias.find((s) => s.slug === 'planeacion-de-demanda')!;
+const title = seccion.title;
+const description = 'Pronóstico de ventas para tiendas de ropa por temporada, modelo y tienda, y software de resurtido para cadenas de ropa: qué comprar, cuánto y cuándo.';
+
+const softwareSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  '@id': `${SITIO}${seccion.href}#app`,
+  name: `Sacs — ${seccion.label}`,
+  description: seccion.description,
+  applicationCategory: 'BusinessApplication',
+  applicationSubCategory: 'Retail Management Software',
+  operatingSystem: 'Web',
+  isPartOf: { '@id': PRODUCTO_ID },
+};
+const migas = breadcrumbList([{ name: 'Inicio', url: `${SITIO}/` }, { name: seccion.label }]);
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: PREGUNTAS.map((p) => ({
+    '@type': 'Question',
+    name: p.question,
+    acceptedAnswer: { '@type': 'Answer', text: p.answer },
+  })),
+};
+const { antes, despues } = ANTES_DESPUES;
+---
+<BaseLayout
+  title={title}
+  description={description}
+  image="/images/planeacion/og.jpg"
+  preloadImage="/images/planeacion/directora.webp"
+  preloadSrcset="/images/planeacion/directora-640.webp 640w, /images/planeacion/directora.webp 1024w"
+  preloadSizes="(min-width: 1024px) 58vh, 78vw"
+  structuredData={[softwareSchema, migas]}
+  navSoloArriba
+>
+  <StructuredData data={faqSchema} />
+
+  <div class="pd">
+    <PdInstruccion />
+    <PdConsola />
+    <BeforeAfter
+      title={ANTES_DESPUES.titulo}
+      beforeLabel={antes.label}
+      beforeHeading={antes.h}
+      painPoints={antes.puntos}
+      afterLabel={despues.label}
+      afterHeading={despues.h}
+      benefits={despues.puntos}
+      ctaHref="/prueba-gratis"
+      ctaText="Pruébalo gratis"
+    />
+  </div>
+
+  <GiroFAQ title="Preguntas frecuentes sobre planeación de demanda" faqs={PREGUNTAS} />
+  <FinalCTA />
+</BaseLayout>
+
+<script>
+  import { ph } from '../scripts/planeacion/estado';
+  document.querySelectorAll<HTMLElement>('.ba-btn').forEach((a) => a.addEventListener('click', () => ph('planeacion_cta_antes_despues')));
+  document.querySelector('.final-cta-btn')?.addEventListener('click', () => ph('planeacion_cta_prueba'));
+</script>

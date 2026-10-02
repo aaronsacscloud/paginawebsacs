@@ -30,9 +30,12 @@ interface Props {
   manifestUrl?: string;
   /** Color del theme PWA (status bar). Default azul SACS. */
   themeColor?: string;
+  /** El menú principal solo se ve hasta arriba: al bajar se esconde y ya no regresa al subir, para que el header
+      propio de la página sea el único pegado arriba (2-oct-2026, /planeacion-de-demanda). */
+  navSoloArriba?: boolean;
 }
 
-const { title, description, image, type, noindex, structuredData, preloadImage, preloadSrcset, preloadSizes, bareLayout = false, manifestUrl, themeColor = '#4B7BE5' } = Astro.props;
+const { title, description, image, type, noindex, structuredData, preloadImage, preloadSrcset, preloadSizes, bareLayout = false, manifestUrl, themeColor = '#4B7BE5', navSoloArriba = false } = Astro.props;
 const locale = Astro.props.locale || getLangFromUrl(Astro.url);
 // Hreflang REACTIVADO (19-sep-2026): se había quitado el 18-sep porque no
 // existía ni una sola página en /en/, /fr/, /it/, /pt/ y cualquier
@@ -600,7 +603,7 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
       </>
     )}
   </head>
-  <body class={bareLayout ? 'is-bare' : undefined}>
+  <body class={bareLayout ? 'is-bare' : undefined} data-nav={navSoloArriba ? 'solo-arriba' : undefined}>
     {!bareLayout && (
       <a href="#main-content" class="skip-link">{t('common.skipToContent', locale)}</a>
     )}
