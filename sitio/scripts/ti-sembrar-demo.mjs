@@ -54,7 +54,7 @@ if (limpiar) {
 
 // ── Los 10 contactos demo ──
 const DEMO = [
-  ['Demo Valeria', 'Nueva', 'nuevo'],        // T1 llamada P2 (speed-to-lead)
+  ['Demo Andrea', 'Nueva', 'nuevo'],        // T1 llamada P2 (speed-to-lead)
   ['Demo Sugar', 'Plantilla', 'sin_respuesta'], // T3 wa_plantilla
   ['Demo Mónica', 'Correo', 'sin_respuesta'],   // T5 correo
   ['Demo Gabriela', 'Promesa', 'contactado'],   // promesa rota (transformación)
@@ -88,7 +88,7 @@ const cad = (nombre, paso, extra = {}) => supabase.from('ti_cadencias').insert({
   contact_id: ids[nombre], paso, estado: 'activa', siguiente_at: iso(ahora),
   iniciada_at: iso(new Date(ahora.getTime() - 3 * 86400e3)), ...extra,
 });
-await cad('Demo Valeria', 'T1', { iniciada_at: iso(ahora) });
+await cad('Demo Andrea', 'T1', { iniciada_at: iso(ahora) });
 await cad('Demo Sugar', 'T3', { intentos_llamada: 2 });
 await cad('Demo Mónica', 'T5', { intentos_llamada: 3 });
 // Los demás: cadencia en conversación/pausa — existen para el candado, sus

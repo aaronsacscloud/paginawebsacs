@@ -11,7 +11,7 @@
  * procesos por etapas (el taller), perfil de cliente (Fideliza). NADA de
  * renta: no está verificado en el producto y no se promete.
  *
- * Padrón: la casa tiene un piso de muestras y un taller. Personajes: Valeria
+ * Padrón: la casa tiene un piso de muestras y un taller. Personajes: Andrea
  * (novia, boda 14 de marzo) y Ximena (XV años). Vestido ejemplo: $28,000 con
  * 30% de anticipo.
  */
@@ -22,9 +22,9 @@ export const cortinaNovias = {
   fotoDespues: '/images/suite-novia-resuelto.webp',
   altAntes: 'Dueña de una casa de novias hojeando un cuaderno de citas y abonos entre vestidos enfundados',
   altDespues: 'La misma dueña mostrando en su tablet el plan de abonos y las pruebas de un vestido',
-  libreta: ['Valeria — ¿cuánto debe?', '1ª prueba… ¿el 25 o el 29?'],
+  libreta: ['Andrea — ¿cuánto debe?', '1ª prueba… ¿el 25 o el 29?'],
   filas: [
-    { que: 'Valeria · boda 14 mar', donde: 'Abonado', dato: '$19,290 de $28,000' },
+    { que: 'Andrea · boda 14 mar', donde: 'Abonado', dato: '$19,290 de $28,000' },
     { que: 'Vestido corte sirena · talla 8', donde: 'En camino', dato: 'llega 20 ene' },
     { que: '1ª prueba', donde: 'Taller', dato: '25 ene' },
   ],
@@ -127,7 +127,7 @@ export const seccionesNovias: SuiteSeccion[] = [
       'La fecha del evento manda: todo se cuenta hacia atrás desde ella',
     ],
     visual: `<div style="${est.wrap}">
-      <p style="${est.h}">Apartado · Valeria · boda 14 de marzo</p>
+      <p style="${est.h}">Apartado · Andrea · boda 14 de marzo</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
         ${[['Vestido','$28,000'],['Anticipo (30%)','$8,400'],['Abonado','$19,290'],['Resta','$8,710']]
           .map(([k,v])=>`<div style="border:1px solid #E7EAF0;border-radius:10px;padding:10px;background:#fff;">
@@ -150,7 +150,7 @@ export const seccionesNovias: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Corte sirena · pedidos vivos</p>
-      ${[['Valeria · talla 8','Llega 20 ene · boda 14 mar','ok'],['Fernanda · talla 4','Llega 2 feb · boda 21 feb','lo'],['Muestra piso · talla 6','Marcada · fuera de línea','ok']]
+      ${[['Andrea · talla 8','Llega 20 ene · boda 14 mar','ok'],['Fernanda · talla 4','Llega 2 feb · boda 21 feb','lo'],['Muestra piso · talla 6','Marcada · fuera de línea','ok']]
         .map(([p,e,t])=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 12px;border:1px solid #E7EAF0;border-radius:10px;margin-bottom:6px;background:#fff;">
           <span style="font-size:12px;font-weight:700;color:var(--color-text-primary);">${p}</span>
           <span style="${t==='ok'?est.ok:est.lo}font-size:11px;font-weight:800;border-radius:999px;padding:3px 10px;">${e}</span>
@@ -171,7 +171,7 @@ export const seccionesNovias: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Taller · hoy</p>
-      ${[['Valeria · sirena 8','1ª prueba · 25 ene','ok'],['Ximena · XV años','Ajuste de talle','ok'],['Sofía · fiesta','Prueba final · va tarde','lo']]
+      ${[['Andrea · sirena 8','1ª prueba · 25 ene','ok'],['Ximena · XV años','Ajuste de talle','ok'],['Sofía · fiesta','Prueba final · va tarde','lo']]
         .map(([p,e,t])=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 12px;border:1px solid #E7EAF0;border-radius:10px;margin-bottom:6px;background:#fff;">
           <span style="font-size:12px;font-weight:700;color:var(--color-text-primary);">${p}</span>
           <span style="${t==='ok'?est.ok:est.lo}font-size:11px;font-weight:800;border-radius:999px;padding:3px 10px;">${e}</span>
@@ -192,13 +192,13 @@ export const seccionesNovias: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Familia Herrera</p>
-      ${[['2023','XV de Regina · vestido y accesorios'],['2024','Graduación · vestido de fiesta'],['Hoy','Boda de Valeria en taller · y el XV de Ximena en ajuste']]
+      ${[['2023','XV de Regina · vestido y accesorios'],['2024','Graduación · vestido de fiesta'],['Hoy','Boda de Andrea en taller · y el XV de Ximena en ajuste']]
         .map(([a,e])=>`<div style="display:flex;gap:10px;padding:7px 12px;border:1px solid #E7EAF0;border-radius:10px;margin-bottom:5px;background:#fff;">
           <b style="font-size:11px;color:var(--color-text-tertiary);min-width:34px;">${a}</b>
           <span style="font-size:12px;font-weight:600;color:var(--color-text-primary);">${e}</span>
         </div>`).join('')}
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px;">
-        ${[['Valeria','talla 8'],['Ximena','talla 4'],['Sra. Herrera','talla 12']]
+        ${[['Andrea','talla 8'],['Ximena','talla 4'],['Sra. Herrera','talla 12']]
           .map(([n,t])=>`<div style="border:1px solid #E7EAF0;border-radius:10px;padding:8px;background:#fff;text-align:center;">
           <div style="font-size:10px;font-weight:800;color:var(--color-text-tertiary);text-transform:uppercase;">${n}</div>
           <div style="font-size:12px;font-weight:800;color:var(--color-text-primary);">${t}</div></div>`).join('')}
@@ -219,7 +219,7 @@ export const seccionesNovias: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Semana del 9 de marzo · la lista</p>
-      ${[['Mié 11','Prueba final · Valeria','ok'],['Jue 12','Saldo en $0 desde el 28 de febrero','ok'],['Vie 13','Entrega con funda · 12:00','ok']]
+      ${[['Mié 11','Prueba final · Andrea','ok'],['Jue 12','Saldo en $0 desde el 28 de febrero','ok'],['Vie 13','Entrega con funda · 12:00','ok']]
         .map(([d,e,t])=>`<div style="display:flex;gap:10px;padding:7px 12px;border:1px solid #E7EAF0;border-radius:10px;margin-bottom:5px;background:#fff;">
           <b style="font-size:11px;color:var(--color-text-tertiary);min-width:48px;">${d}</b>
           <span style="font-size:12px;font-weight:600;color:var(--color-text-primary);">${e}</span>
@@ -272,7 +272,7 @@ export const planoNovias = [
     foto: '/images/plano-novia-taller.webp',
     alt: 'Taller de ajustes con máquina de coser, maniquí y vestidos en proceso',
     pie: 'Del vestido que llegó al vestido que le queda: etapas con fecha.',
-    pregunta: '«¿Para cuándo queda el de Valeria?»',
+    pregunta: '«¿Para cuándo queda el de Andrea?»',
     caja: { x: 298, y: 208, w: 128, h: 96 },
     items: [
       { t: 'Órdenes de servicio con tus etapas de ajuste' },

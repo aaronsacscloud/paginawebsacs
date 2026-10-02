@@ -210,7 +210,7 @@ export const GIROS: FichaGiro[] = [
     tamano: { chica: 'Casa chica: cobrar, apartar con la fecha del evento y llevar los abonos sin cuaderno. El taller y el catálogo después.', grande: 'Casa que viste a media ciudad: taller por etapas con fechas y responsable, muestras vs. sobre pedido, la semana de entregas, la familia que vuelve (XV, boda, graduación).' },
     lesImporta: ['No fallarle a una fecha: la boda no se mueve; que el pedido y el taller lleguen a tiempo y lo tardío se vea en rojo.', 'Abonos sin cuaderno ni servilleta: cuánto debe cada familia y que el recibo exista.', 'No vender la muestra única por error.'],
     buscan: ['Salir del cuaderno de abonos.', 'Un sistema que entienda fechas de evento (probó uno donde la venta «se entrega hoy»).', 'Tener página o catálogo para que la novia se lo enseñe a su mamá y al grupo de la boda.', 'Precio.'],
-    tono: ['Con su vocabulario: apartado, abono, anticipo, prueba, muestra, entrega, fecha.', 'Con ejemplos concretos: «Valeria, boda el 14 de marzo, 30 % de anticipo» aterriza mejor que una lista.', 'Sencillo si es una casa chica.'],
+    tono: ['Con su vocabulario: apartado, abono, anticipo, prueba, muestra, entrega, fecha.', 'Con ejemplos concretos: «Andrea, boda el 14 de marzo, 30 % de anticipo» aterriza mejor que una lista.', 'Sencillo si es una casa chica.'],
     incluidoPorGiro: ['Apartado con fecha de evento y abonos con recordatorio, muestras marcadas, pedido contra la fecha y el taller por etapas (órdenes de servicio) se instalan por ser de este giro.'],
     extrasMencionar: [],
     caso: null,

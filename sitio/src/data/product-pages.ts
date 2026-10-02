@@ -3631,11 +3631,11 @@ export const pageContent: Record<string, any> = {
       },
       {
         "bg": "#0a0a0a",
-        "image": "/images/testimonials/valeria-mondragon.webp",
+        "image": "/images/testimonials/andrea-mondragon.webp",
         "initials": "VM",
         "color": "#4a6aa8",
         "quote": "Descubrimos que una sucursal tenía mermas consistentemente en la misma categoría. Al verlo por zona y por persona identificamos el problema y lo corregimos. Sin el reporte por responsable nunca lo habríamos visto.",
-        "name": "Valeria Mondragón",
+        "name": "Andrea Mondragón",
         "business": "Bella Novedades del Valle",
         "location": "Costa Rica"
       },
@@ -6010,7 +6010,7 @@ export const pageContent: Record<string, any> = {
     ],
     "testimonial": {
       "quote": "Usábamos unas tarjetas prepago externas que cobraban 6% por transacción y no sincronizaban saldos entre sucursales. Vendíamos una y media, después venía el escándalo: \"no tengo saldo\" \"sí tiene\" \"no aparece\". Con Sacs la tarjeta es del sistema, canjea donde sea y no pago comisiones externas.",
-      "name": "Valeria Chávez",
+      "name": "Andrea Chávez",
       "role": "Fundadora",
       "company": "Atelier Chávez",
       "stat": "6%",
@@ -6143,11 +6143,11 @@ export const pageContent: Record<string, any> = {
     "testimonials": [
       {
         "bg": "#0a0a0a",
-        "image": "/images/testimonials/valeria-chavez.webp",
+        "image": "/images/testimonials/andrea-chavez.webp",
         "initials": "VC",
         "color": "#b47a3a",
         "quote": "En piloto con Sacs arrancamos a vender tarjetas canjeables entre nuestras 7 boutiques. El saldo deja de estar \"atrapado\" en la tienda donde se compró la tarjeta — el cliente canjea donde quiera, y para nosotros eso es oro.",
-        "name": "Valeria Chávez",
+        "name": "Andrea Chávez",
         "business": "Atelier Chávez",
         "location": "México"
       },
