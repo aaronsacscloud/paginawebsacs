@@ -359,6 +359,9 @@ export async function enviarMediaId(telefono: string, clase: 'image' | 'document
 
 // ── Plantillas (Meta passthrough) ──
 
+/** La cuenta de WhatsApp (WABA) principal: la del entorno. Las plantillas se sincronizan contra esta. */
+export const wabaPrincipal = () => BUSINESS_ACCOUNT_ID;
+
 export async function listarPlantillasMeta(): Promise<any[]> {
   if (!BUSINESS_ACCOUNT_ID) throw new KapsoError(0, 'Falta KAPSO_BUSINESS_ACCOUNT_ID');
   const r = await meta(`/${BUSINESS_ACCOUNT_ID}/message_templates?limit=100&fields=id,name,status,language,category,quality_score,rejected_reason,components`);
@@ -366,8 +369,8 @@ export async function listarPlantillasMeta(): Promise<any[]> {
 }
 
 /** Sube una URL pública a Meta como "resumable asset" y devuelve el handle (h:…) que exige el HEADER de media de una plantilla. */
-export async function ingestarHandle(url: string, mime?: string | null, filename?: string | null): Promise<string> {
-  const r = await platform('/whatsapp/media', { method: 'POST', body: JSON.stringify({ media_ingest: { phone_number_id: PN(), source: url, delivery: 'meta_resumable_asset', ...(mime ? { mime_type: mime } : {}), ...(filename ? { filename } : {}) } }) });
+export async function ingestarHandle(url: string, mime?: string | null, filename?: string | null, phoneNumberId?: string | null): Promise<string> {
+  const r = await platform('/whatsapp/media', { method: 'POST', body: JSON.stringify({ media_ingest: { phone_number_id: phoneNumberId || PN(), source: url, delivery: 'meta_resumable_asset', ...(mime ? { mime_type: mime } : {}), ...(filename ? { filename } : {}) } }) });
   const h = r?.target?.handle || r?.data?.target?.handle || r?.handle || r?.data?.handle;
   if (!h) throw new KapsoError(502, { error: `Kapso no devolvió handle: ${JSON.stringify(r).slice(0, 200)}` });
   return String(h);
@@ -382,8 +385,9 @@ export async function crearPlantillaMeta(p: {
   headerTipo?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'DOCUMENT' | 'LOCATION' | null;
   headerHandle?: string | null;   // h:… (ya ingerido)
   autenticacion?: { expiraMin?: number; recomendacion?: boolean } | null;   // categoría AUTHENTICATION: el cuerpo lo pone Meta
-}) {
-  if (!BUSINESS_ACCOUNT_ID) throw new KapsoError(0, 'Falta KAPSO_BUSINESS_ACCOUNT_ID');
+}, waba?: string | null) {
+  const cuenta = waba || BUSINESS_ACCOUNT_ID;
+  if (!cuenta) throw new KapsoError(0, 'Falta KAPSO_BUSINESS_ACCOUNT_ID');
   const components: any[] = [];
   const ht = (p.headerTipo || 'TEXT').toUpperCase();
   if (ht === 'TEXT' && p.header) {
@@ -418,16 +422,17 @@ export async function crearPlantillaMeta(p: {
       return { type: 'QUICK_REPLY', text: texto.slice(0, 20) };
     }) });
   }
-  return meta(`/${BUSINESS_ACCOUNT_ID}/message_templates`, {
+  return meta(`/${cuenta}/message_templates`, {
     method: 'POST',
     body: JSON.stringify({ name: p.nombre, language: p.idioma, category: p.categoria, components }),
   });
 }
 
 /** Borra una plantilla (por nombre: todas sus traducciones). */
-export async function borrarPlantillaMeta(nombre: string) {
-  if (!BUSINESS_ACCOUNT_ID) throw new KapsoError(0, 'Falta KAPSO_BUSINESS_ACCOUNT_ID');
-  return meta(`/${BUSINESS_ACCOUNT_ID}/message_templates?name=${encodeURIComponent(nombre)}`, { method: 'DELETE' });
+export async function borrarPlantillaMeta(nombre: string, waba?: string | null) {
+  const cuenta = waba || BUSINESS_ACCOUNT_ID;
+  if (!cuenta) throw new KapsoError(0, 'Falta KAPSO_BUSINESS_ACCOUNT_ID');
+  return meta(`/${cuenta}/message_templates?name=${encodeURIComponent(nombre)}`, { method: 'DELETE' });
 }
 
 /**

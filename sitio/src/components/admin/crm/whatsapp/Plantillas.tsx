@@ -88,7 +88,13 @@ export function PlantillasMeta() {
     const r = await fetch('/api/crm/whatsapp/plantillas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) }).then(x => x.json()).catch(e => ({ error: String(e) }));
     setGuardando(false);
     if (r.error) { setMsg({ tono: 'malo', texto: r.error }); return; }
-    setMsg({ tono: 'ok', texto: 'Enviada a Meta. Queda PENDING: la aprobación suele tardar minutos u horas.' });
+    // Cada línea de otra cuenta de WhatsApp recibe su copia: se dice cómo le fue a cada una.
+    const rep: any[] = Array.isArray(r.replicas) ? r.replicas : [];
+    const fallos = rep.filter(x => !x.ok);
+    const otras = rep.length ? ` También se creó para ${rep.filter(x => x.ok).map(x => x.numero).join(', ') || '—'}.` : '';
+    setMsg(fallos.length
+      ? { tono: 'aviso', texto: `Enviada a Meta en la cuenta principal.${otras} No se pudo crear para ${fallos.map(x => `${x.numero} (${x.error})`).join('; ')}.` }
+      : { tono: 'ok', texto: `Enviada a Meta.${otras} Queda PENDING: la aprobación suele tardar minutos u horas.` });
     setForm(null); cargar();
   };
 

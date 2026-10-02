@@ -14,7 +14,7 @@
 //   nombre (_v2) y la vieja se deja morir sola.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
-import { listarPlantillasMeta, crearPlantillaMeta, borrarPlantillaMeta, ingestarHandle, enviarPlantilla, sanearParam, enContexto, KapsoError } from '../../../../lib/whatsapp/kapso-api';
+import { listarPlantillasMeta, crearPlantillaMeta, borrarPlantillaMeta, ingestarHandle, enviarPlantilla, sanearParam, enContexto, KapsoError, wabaPrincipal } from '../../../../lib/whatsapp/kapso-api';
 import { notificar } from '../../../../lib/crm/notificaciones';
 import { telefonoWhatsApp } from '../../../../lib/telefono';
 import { explicarError } from '../../../../lib/whatsapp/errores';
@@ -50,6 +50,27 @@ const MOTIVO_RECHAZO: Record<string, string> = {
   TAG_CONTENT_MISMATCH: 'El contenido no coincide con la categoría elegida.',
   NONE: '',
 };
+/* ══ LAS PLANTILLAS VIVEN EN LA CUENTA, NO EN EL NÚMERO (2-oct-2026) ════════
+   Cada línea de WhatsApp pertenece a una cuenta de Meta (WABA) y cada cuenta
+   tiene su propio catálogo de plantillas. Se creaban solo en la principal, y al
+   mandar por la línea de OTRA cuenta Meta respondía que no existía —el agente
+   veía «No se pudo enviar» con una plantilla que el CRM marcaba aprobada—.
+   Ahora crear y borrar se replica en la cuenta de cada línea activa. */
+async function otrasCuentas(): Promise<{ waba: string; linea: string; numero: string }[]> {
+  const { data } = await supabase.from('wa_numeros').select('phone_number_id, display_phone_number, business_account_id, activo, retirada_at');
+  const principal = wabaPrincipal();
+  const vistas = new Set<string>();
+  const out: { waba: string; linea: string; numero: string }[] = [];
+  for (const n of data || []) {
+    const w = String(n.business_account_id || '').trim();
+    if (!w || w === principal || !n.activo || n.retirada_at || vistas.has(w)) continue;
+    vistas.add(w);
+    out.push({ waba: w, linea: String(n.phone_number_id), numero: n.display_phone_number || String(n.phone_number_id) });
+  }
+  return out;
+}
+const yaExiste = (e: any) => /already exists|ya existe|2388023|2388024/i.test(JSON.stringify(e instanceof KapsoError ? e.detalle : e?.message || e));
+
 export const motivoRechazoLegible = (m?: string | null) => (m && MOTIVO_RECHAZO[m] !== undefined) ? MOTIVO_RECHAZO[m] : (m || '');
 
 /** Sincroniza Meta → espejo; avisa por la campana cuando una plantilla cambia de estado o la pausan. */
@@ -174,6 +195,29 @@ export const POST: APIRoute = async ({ request }) => {
       ejemplos, headerTipo: headerTipo as any, headerHandle,
       autenticacion: esAuth ? { expiraMin: Number(b.otp_expira_min) || 10, recomendacion: b.otp_recomendacion !== false } : null,
     });
+    // La misma plantilla en la cuenta de cada otra línea. Un fallo aquí no
+    // deshace la principal: se informa por cuenta y se puede reintentar con
+    // scripts/clonar-plantillas-waba.mjs.
+    const replicas: { numero: string; ok: boolean; status?: string; error?: string }[] = [];
+    for (const c of await otrasCuentas()) {
+      try {
+        const handle = ['IMAGE', 'VIDEO', 'DOCUMENT'].includes(headerTipo)
+          ? await ingestarHandle(String(b.header_media_url), b.header_mime || null, b.header_filename || null, c.linea) : null;
+        const r = await crearPlantillaMeta({
+          nombre, idioma, categoria, cuerpo,
+          header: headerTipo === 'TEXT' && b.header ? String(b.header).trim() : null,
+          footer: b.footer ? String(b.footer).trim() : null,
+          botones: Array.isArray(b.botones) ? b.botones : [],
+          ejemplos, headerTipo: headerTipo as any, headerHandle: handle,
+          autenticacion: esAuth ? { expiraMin: Number(b.otp_expira_min) || 10, recomendacion: b.otp_recomendacion !== false } : null,
+        }, c.waba);
+        replicas.push({ numero: c.numero, ok: true, status: r?.status || 'PENDING' });
+      } catch (e: any) {
+        if (yaExiste(e)) { replicas.push({ numero: c.numero, ok: true, status: 'ya existía' }); continue; }
+        const x = explicarError(e instanceof KapsoError ? e.detalle : e, e instanceof KapsoError ? e.status : undefined);
+        replicas.push({ numero: c.numero, ok: false, error: `${x.titulo}. ${x.que_hacer}` });
+      }
+    }
     await supabase.from('wa_plantillas').insert({
       meta_template_id: creada?.id ? String(creada.id) : null,
       nombre, idioma, categoria, cuerpo,
@@ -190,7 +234,7 @@ export const POST: APIRoute = async ({ request }) => {
       grupo: b.grupo ? String(b.grupo).trim().toLowerCase().replace(/\s+/g, '_').slice(0, 40) : null,
       tipo_especial: esAuth ? 'otp' : null,
     });
-    return json({ ok: true, status: creada?.status || 'PENDING' });
+    return json({ ok: true, status: creada?.status || 'PENDING', replicas });
   } catch (e: any) {
     { const x = explicarError(e instanceof KapsoError ? e.detalle : e, e instanceof KapsoError ? e.status : undefined); return json({ error: `${x.titulo}. ${x.que_hacer}`, error_detalle: x }, 502); }
   }
@@ -214,6 +258,10 @@ export const DELETE: APIRoute = async ({ request }) => {
   try { await borrarPlantillaMeta(String(b.nombre)); } catch (e: any) {
     const x = explicarError(e instanceof KapsoError ? e.detalle : e, e instanceof KapsoError ? e.status : undefined);
     return json({ error: `${x.titulo}. ${x.que_hacer}`, error_detalle: x }, 502);
+  }
+  // También en las otras cuentas, para que no quede viva donde ya no se ve.
+  for (const c of await otrasCuentas()) {
+    try { await borrarPlantillaMeta(String(b.nombre), c.waba); } catch { /* no existía ahí: nada que borrar */ }
   }
   await supabase.from('wa_plantillas').delete().eq('nombre', String(b.nombre));
   return json({ ok: true });
