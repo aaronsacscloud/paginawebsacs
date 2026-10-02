@@ -81,5 +81,25 @@ const faqSchema = {
 <script>
   import { ph } from '../scripts/planeacion/estado';
   document.querySelector('.pad-cta')?.addEventListener('click', () => ph('planeacion_cta_antes_despues'));
+
+  // La palabra gigante de cada acto cruza la pantalla con el scroll (como el paso a paso del home): --q de 0 a 1
+  // mientras el acto pasa. Un solo rAF y solo para los actos en vista; con «reducir movimiento», quieta.
+  (() => {
+    if (!window.matchMedia('(prefers-reduced-motion: no-preference)').matches) return;
+    const actos = Array.from(document.querySelectorAll<HTMLElement>('.pd .pda')).filter((a) => a.querySelector('.pda-fondo'));
+    const enVista = new Set<HTMLElement>();
+    let raf = 0;
+    const pinta = () => {
+      raf = 0;
+      const vh = window.innerHeight;
+      enVista.forEach((a) => { const r = a.getBoundingClientRect(); const q = Math.min(1, Math.max(0, (vh - r.top) / (vh + r.height))); a.style.setProperty('--q', q.toFixed(4)); });
+    };
+    const alScroll = () => { if (!raf) raf = requestAnimationFrame(pinta); };
+    const io = new IntersectionObserver((es) => {
+      es.forEach((e) => { if (e.isIntersecting) enVista.add(e.target as HTMLElement); else enVista.delete(e.target as HTMLElement); });
+      if (enVista.size) { window.addEventListener('scroll', alScroll, { passive: true }); alScroll(); } else window.removeEventListener('scroll', alScroll);
+    });
+    actos.forEach((a) => io.observe(a));
+  })();
   document.querySelector('.final-cta-btn')?.addEventListener('click', () => ph('planeacion_cta_prueba'));
 </script>

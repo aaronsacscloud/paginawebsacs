@@ -2,57 +2,152 @@
 /**
  * «Lo que cambia en tu temporada» de /planeacion-de-demanda, en formato editorial (v3.1, 2-oct-2026: «no uses este
  * tipo de cards, se ve muy AI slop; hazlo más limpio, dale mucho más formato»). Antes era el BeforeAfter compartido
- * (dos tarjetas redondeadas); aquí es una doble página: «Sin planear» sobre el marfil y «Con Sacs» en un bloque azul
- * a sangre, con filetes entre renglones. El BeforeAfter de las demás páginas no cambia.
+ * (dos tarjetas redondeadas); aquí es una doble página: «Sin planear» sobre el marfil y «Con Sacs» en azul.
+ *
+ * Con scroll (mismo día: «quitaste los efectos al hacer scroll… regrésalos, eso hace interactivo el proceso»): en
+ * escritorio la doble página se queda pegada y, al bajar, cada problema de «Sin planear» se tacha, el azul de «Con
+ * Sacs» barre la página entera y los beneficios entran uno a uno, hasta el botón. En el teléfono cada renglón se tacha
+ * o aparece al entrar en pantalla. Con «reducir movimiento» o sin JS, la doble página va quieta y completa.
+ * El BeforeAfter de las demás páginas no cambia.
  */
 import { ANTES_DESPUES } from '../../data/planeacion-demo';
 
 const { titulo, antes, despues } = ANTES_DESPUES;
 const sinDosPuntos = (t: string) => t.replace(/:\s*$/, '');
 ---
-<section class="pad pd-marfil" aria-labelledby="pad-h">
+<section class="pad pd-marfil" id="pd-antes-despues" aria-labelledby="pad-h">
   <div class="pad-in">
     <p class="pd-folio"><span>Antes y después</span><span>Planeación de demanda</span></p>
     <h2 class="pad-h" id="pad-h">{titulo}</h2>
-    <div class="pad-cols">
-      <div class="pad-col pad-col--antes">
-        <p class="pad-k">{sinDosPuntos(antes.label)}</p>
-        <h3 class="pad-h3">{antes.h}</h3>
-        <ul>{antes.puntos.map((t) => <li>{t}</li>)}</ul>
-      </div>
-      <div class="pad-col pad-col--despues pd-azul">
-        <p class="pad-k">{sinDosPuntos(despues.label)}</p>
-        <h3 class="pad-h3">{despues.h}</h3>
-        <ul>{despues.puntos.map((t) => <li>{t}</li>)}</ul>
-        <a class="pad-cta" href="/prueba-gratis" data-evento="planeacion_cta_antes_despues">Pruébalo gratis
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </a>
+  </div>
+
+  <div class="pad-riel">
+    <div class="pad-escena">
+      <div class="pad-cols">
+        <div class="pad-col pad-col--antes">
+          <p class="pad-k">{sinDosPuntos(antes.label)}</p>
+          <h3 class="pad-h3">{antes.h}</h3>
+          <ul>{antes.puntos.map((t, k) => <li style={`--k:${k}`}><span>{t}</span></li>)}</ul>
+        </div>
+        <div class="pad-azul pd-azul" aria-hidden="true"><span>Con Sacs.</span></div>
+        <div class="pad-col pad-col--despues pd-azul">
+          <p class="pad-k">{sinDosPuntos(despues.label)}</p>
+          <h3 class="pad-h3">{despues.h}</h3>
+          <ul>{despues.puntos.map((t, k) => <li style={`--k:${k}`}>{t}</li>)}</ul>
+          <a class="pad-cta" href="/prueba-gratis" data-evento="planeacion_cta_antes_despues">Pruébalo gratis
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
 <style>
-  .pad { padding: 72px 20px 88px; }
-  .pad-in { max-width: 1160px; margin: 0 auto; }
+  .pad { padding: 72px 0 88px; }
+  .pad-in { max-width: 1160px; margin: 0 auto; padding: 0 20px; }
   .pad-h { margin: 0; max-width: 14ch; font: 700 clamp(40px, 6.4vw, 92px)/0.94 var(--pd-clash); letter-spacing: -0.02em; color: var(--pd-texto); text-wrap: balance; }
-  .pad-cols { display: grid; margin-top: 48px; border-top: 2px solid var(--pd-texto); }
-  .pad-col { padding: 28px 0 36px; }
+  .pad-escena { max-width: 1160px; margin: 0 auto; padding: 0 20px; }
+  .pad-cols { position: relative; display: grid; margin-top: 48px; border-top: 2px solid var(--pd-texto); }
+  /* capas: «Sin planear» abajo, el barrido azul en medio y «Con Sacs» encima */
+  .pad-col { position: relative; padding: 28px 0 36px; }
+  .pad-col--antes { z-index: 1; }
+  .pad-col--despues { z-index: 3; }
   .pad-col--despues { margin: 0 -20px; padding: 32px 20px 40px; }
+  .pad-azul { display: none; }
   .pad-k { margin: 0 0 12px; font: 600 11px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--pd-texto); }
   .pad-h3 { margin: 0 0 22px; font: 700 clamp(28px, 3vw, 40px)/1.02 var(--pd-clash); letter-spacing: -0.01em; color: var(--pd-texto); text-wrap: balance; }
   .pad-col ul { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--pd-filete); }
   .pad-col li { position: relative; padding: 14px 0 14px 28px; border-bottom: 1px solid var(--pd-filete); font: 500 16px/1.45 var(--font-body); color: var(--pd-texto); }
   .pad-col--antes li::before { content: '✕'; position: absolute; left: 0; top: 14px; font-weight: 700; color: #B23A3A; }
   .pad-col--despues li::before { content: '✓'; position: absolute; left: 0; top: 14px; font-weight: 700; color: #fff; }
+  /* el tachado de cada problema: una raya que se dibuja de izquierda a derecha en cada línea del renglón (fondo con
+     box-decoration-break: clone; un ::after no cruzaba bien los renglones de dos líneas) */
+  .pad-col--antes li span { background: linear-gradient(#B23A3A, #B23A3A) no-repeat 0 58% / 0% 2px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
   .pad-cta { display: inline-flex; align-items: center; gap: 10px; min-height: 52px; margin-top: 28px; padding: 0 26px; border-radius: 999px; background: #fff; color: #141414; font: 700 15px/1 var(--font-display); text-decoration: none; transition: transform 0.2s; }
   .pad-cta:hover { color: #141414; text-decoration: none; transform: translateY(-1px); }
   .pad-cta:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 
+  /* ── Teléfono con movimiento: cada renglón se tacha o entra al verse (lo pone el script) ── */
+  .pad.is-js:not(.is-escena) .pad-col--antes li span { transition: background-size 0.7s cubic-bezier(0.65, 0, 0.35, 1) 0.25s; }
+  .pad.is-js:not(.is-escena) .pad-col--antes li.is-on span { background-size: 100% 2px; }
+  .pad.is-js:not(.is-escena) .pad-col--antes li.is-on { color: var(--pd-apagado); transition: color 0.5s ease 0.6s; }
+  .pad.is-js:not(.is-escena) .pad-col--despues li { opacity: 0; transform: translateY(14px); transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+  .pad.is-js:not(.is-escena) .pad-col--despues li.is-on { opacity: 1; transform: none; }
+
   @media (min-width: 768px) {
-    .pad { padding: 112px 5vw 128px; }
+    .pad { padding: 112px 0 128px; }
+    .pad-in, .pad-escena { padding: 0 5vw; }
     .pad-cols { grid-template-columns: 1fr 1fr; }
     .pad-col--antes { padding: 36px 48px 48px 0; }
     .pad-col--despues { margin: 0; padding: 36px 40px 48px; }
   }
+
+  /* ══ Escritorio con movimiento: la doble página se queda pegada y el scroll la cuenta (variables del script:
+     --a tachado, --w barrido azul, --b beneficios; cada renglón con su --k) ══ */
+  .pad.is-escena .pad-riel { height: 240vh; }
+  .pad.is-escena .pad-escena { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; justify-content: center; --a: 0; --w: 0; --b: 0; }
+  .pad.is-escena .pad-cols { margin-top: 0; }
+  .pad.is-escena .pad-col--antes li span { background-size: calc(clamp(0, calc(var(--a) * 4 - var(--k)), 1) * 100%) 2px; }
+  .pad.is-escena .pad-col--antes li { opacity: calc(1 - clamp(0, calc(var(--a) * 4 - var(--k)), 1) * 0.4); }
+  .pad.is-escena .pad-col--antes { opacity: calc(1 - var(--w) * 0.85); transform: scale(calc(1 - var(--w) * 0.03)); transform-origin: 0 50%; }
+  /* el azul: arranca en la mitad derecha y barre hacia la izquierda hasta cubrir la doble página */
+  .pad.is-escena .pad-azul { display: flex; align-items: center; position: absolute; inset: 0; z-index: 2; overflow: hidden; clip-path: inset(0 0 0 calc((1 - var(--w)) * 50%)); }
+  .pad.is-escena .pad-azul span { width: 50%; padding-left: 0; font: 700 clamp(64px, 8vw, 132px)/0.9 var(--pd-clash); letter-spacing: -0.02em; color: #5B86EA; opacity: var(--w); transform: translateX(calc((1 - var(--w)) * -14%)); white-space: nowrap; }
+  .pad.is-escena .pad-col--despues { background: none; }
+  .pad.is-escena .pad-col--despues li { opacity: clamp(0, calc(var(--b) * 4 - var(--k)), 1); transform: translateY(calc((1 - clamp(0, calc(var(--b) * 4 - var(--k)), 1)) * 16px)); }
+  .pad.is-escena .pad-cta { opacity: clamp(0, calc((var(--b) - 0.86) * 7), 1); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pad * { transition: none !important; animation: none !important; }
+  }
 </style>
+
+<script>
+  (() => {
+    const sec = document.getElementById('pd-antes-despues');
+    if (!sec) return;
+    const riel = sec.querySelector<HTMLElement>('.pad-riel')!;
+    const escena = sec.querySelector<HTMLElement>('.pad-escena')!;
+    const filas = Array.from(sec.querySelectorAll<HTMLElement>('.pad-col li'));
+    const mqEscena = window.matchMedia('(min-width: 900px) and (min-height: 640px) and (prefers-reduced-motion: no-preference)');
+    const mqMov = window.matchMedia('(prefers-reduced-motion: no-preference)');
+    const clamp = (x: number) => Math.min(1, Math.max(0, x));
+    const suave = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+    let raf = 0, visible = false, alto = 0;
+
+    function pinta() {
+      raf = 0;
+      const r = riel.getBoundingClientRect();
+      const total = alto - window.innerHeight;
+      const p = total > 0 ? clamp(-r.top / total) : 0;
+      escena.style.setProperty('--a', clamp(p / 0.34).toFixed(3));
+      escena.style.setProperty('--w', suave(clamp((p - 0.28) / 0.4)).toFixed(3));
+      escena.style.setProperty('--b', clamp((p - 0.56) / 0.36).toFixed(3));
+    }
+    const alScroll = () => { if (!raf) raf = requestAnimationFrame(pinta); };
+
+    // teléfono: cada renglón se tacha o entra al verse
+    const ioFila = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-on'); ioFila.unobserve(e.target); } }), { rootMargin: '0px 0px -18% 0px' });
+
+    function modo() {
+      window.removeEventListener('scroll', alScroll);
+      ioFila.disconnect();
+      const escenaOn = mqEscena.matches, js = mqMov.matches;
+      sec!.classList.toggle('is-escena', escenaOn);
+      sec!.classList.toggle('is-js', js);
+      if (escenaOn) { alto = riel.offsetHeight; if (visible) { window.addEventListener('scroll', alScroll, { passive: true }); pinta(); } }
+      else if (js) filas.forEach((f) => { if (!f.classList.contains('is-on')) ioFila.observe(f); });
+    }
+    new IntersectionObserver((es) => {
+      visible = es[0].isIntersecting;
+      if (!mqEscena.matches) return;
+      if (visible) { window.addEventListener('scroll', alScroll, { passive: true }); pinta(); }
+      else window.removeEventListener('scroll', alScroll);
+    }, { rootMargin: '200px 0px' }).observe(riel);
+    window.addEventListener('resize', () => { if (mqEscena.matches) { alto = riel.offsetHeight; alScroll(); } }, { passive: true });
+    mqEscena.addEventListener('change', modo);
+    mqMov.addEventListener('change', modo);
+    modo();
+  })();
+</script>
