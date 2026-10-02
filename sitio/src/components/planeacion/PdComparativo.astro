@@ -1,0 +1,155 @@
+---
+/**
+ * Comparativo de /planeacion-de-demanda (2-oct-2026, pedido del dueño: «agrega el comparativo de funciones como en
+ * la sección de funciones con los competidores; aquí agrega a AnalyticAlways y a Celes para que sea relevante… haz un
+ * análisis muy profundo y de ahí agrega la data y la especialización que tenemos en moda»).
+ *
+ * Formato editorial (sin tarjetas): tabla por fases entre filetes sobre negro, con la columna de Sacs marcada; debajo,
+ * qué es cada competidor, dónde gana y dónde se queda corto para una cadena de moda, y «Lo que Sacs sabe de moda» (las
+ * reglas del motor). En el teléfono la tabla no se desliza de lado: cada función a todo el ancho y sus cuatro marcas
+ * debajo, con los nombres pegados arriba.
+ * Datos y fuentes en src/data/planeacion-comparativo.ts: todo lo de los competidores sale de sus sitios
+ * públicos (fecha de consulta en la nota); lo de Sacs, del motor de Demand Planning (reglas.lib.js y el Forecasting
+ * de DP3 en sacs_api). Lo que en Sacs aún no está se marca «en construcción», nunca como incluido.
+ */
+import { COMPARATIVO } from '../../data/planeacion-comparativo';
+
+const C = COMPARATIVO;
+const ETIQUETA: Record<string, string> = { full: 'Sí', partial: 'Parcial', none: 'No', obra: 'En construcción', nd: 'Sin información pública' };
+const MARCA: Record<string, string> = { full: '✓', partial: '–', none: '×', obra: '*', nd: '○' };
+// AnalyticAlways puede partirse en su mayúscula interna (sin guion) cuando la columna es angosta
+const partes = (n: string) => n.split(/(?<=[a-z])(?=[A-Z])/);
+---
+<section class="pdx pd-negro" id="pd-comparativo" aria-labelledby="pdx-h">
+  <div class="pdx-in">
+    <p class="pd-folio"><span>Comparativo</span><span>Planeación de demanda para moda</span></p>
+    <h2 class="pdx-h" id="pdx-h">{C.titulo}</h2>
+    <p class="pdx-dek">{C.dek}</p>
+
+    <div class="pdx-tabla-wrap" role="region" aria-labelledby="pdx-h" tabindex="0">
+      <!-- roles explícitos: en el teléfono la tabla se acomoda con grid y así no pierde su semántica de tabla -->
+      <table class="pdx-tabla" role="table">
+        <thead role="rowgroup">
+          <tr role="row">
+            <th scope="col" role="columnheader" class="pdx-fila-t"><span class="sr-only">Función</span></th>
+            {C.columnas.map((c, i) => <th scope="col" role="columnheader" class:list={['pdx-col', { 'is-sacs': i === 0 }]}>{partes(c).map((p, k) => <>{k > 0 && <wbr />}{p}</>)}</th>)}
+          </tr>
+        </thead>
+        {C.grupos.map((g) => (
+          <tbody role="rowgroup">
+            <tr role="row" class="pdx-grupo"><th scope="rowgroup" role="rowheader" colspan={C.columnas.length + 1}>{g.t}</th></tr>
+            {g.filas.map((f) => (
+              <tr role="row">
+                <th scope="row" role="rowheader" class="pdx-fila-t"><span class="pdx-t">{f.t}</span>{f.n && <span class="pdx-n">{f.n}</span>}</th>
+                {f.v.map((v, i) => (
+                  <td role="cell" class:list={['pdx-c', `pdx-c--${v}`, { 'is-sacs': i === 0 }]}>
+                    <span class="pdx-marca" aria-hidden="true">{MARCA[v]}</span>
+                    <span class="sr-only">{ETIQUETA[v]}</span>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        ))}
+      </table>
+    </div>
+    <p class="pdx-ley" aria-hidden="true"><span><b>✓</b> Incluido</span><span><b>–</b> Parcial</span><span><b>×</b> No</span><span><b>*</b> En construcción en Sacs</span>{C.hayNd && <span><b>○</b> Sin información pública</span>}</p>
+
+    <div class="pdx-perfiles">
+      {C.perfiles.map((p) => (
+        <section class="pdx-perfil" aria-label={p.n}>
+          <p class="pdx-perfil-k">{p.n}</p>
+          <p class="pdx-perfil-que">{p.que}</p>
+          <p class="pdx-perfil-s"><b>Dónde gana.</b> {p.gana}</p>
+          <p class="pdx-perfil-s"><b>Para una cadena de moda.</b> {p.corto}</p>
+        </section>
+      ))}
+    </div>
+
+    <div class="pdx-solo">
+      <h3 class="pdx-solo-h">{C.modaTitulo}</h3>
+      <p class="pdx-solo-dek">{C.modaDek}</p>
+      <ol>{C.moda.map((m) => <li><b>{m.t}</b><span>{m.d}</span></li>)}</ol>
+    </div>
+
+    <p class="pda-nota pdx-nota">{C.nota} Fuentes: {C.fuentes.map((g, i) => <>{i > 0 && ' · '}{g.n} ({g.ls.map((l, k) => <>{k > 0 && ', '}<a href={l.url} rel="nofollow noopener" target="_blank">{l.n}</a></>)})</>)}.</p>
+  </div>
+</section>
+
+<style>
+  .pdx { padding: 72px 20px 88px; }
+  .pdx-in { max-width: 1160px; margin: 0 auto; }
+  .pdx-h { margin: 0; max-width: 16ch; font: 700 clamp(38px, 6vw, 84px)/0.95 var(--pd-clash); letter-spacing: -0.02em; color: #fff; text-wrap: balance; }
+  .pdx-dek { margin: 20px 0 0; max-width: 60ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+
+  /* ── la tabla: filetes, grupos por fase y la columna de Sacs en azul ── */
+  /* position: relative para que los textos de lector de pantalla (absolutos) queden dentro y no ensanchen la página */
+  .pdx-tabla-wrap { position: relative; margin-top: 48px; overflow-x: auto; overscroll-behavior-x: contain; }
+  .pdx-tabla-wrap:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+  .pdx-tabla { width: 100%; border-collapse: collapse; }
+  .pdx-tabla thead th { padding: 0 8px 14px; border-bottom: 2px solid #fff; font: 700 15px/1.2 var(--font-display); color: #fff; text-align: center; vertical-align: bottom; }
+  .pdx-tabla thead th.pdx-fila-t { text-align: left; }
+  .pdx-col { width: 13%; }
+  .pdx-col.is-sacs { width: 12%; background: #4470D8; padding-top: 14px !important; }
+  .pdx-grupo th { padding: 26px 0 10px; border-bottom: 1px solid var(--pd-filete); font: 700 11px/1.3 var(--font-display); letter-spacing: 0.2em; text-transform: uppercase; color: var(--pd-tenue); text-align: left; }
+  .pdx-tabla tbody tr:not(.pdx-grupo) { border-bottom: 1px solid var(--pd-linea); }
+  .pdx-fila-t { padding: 14px 16px 14px 0; text-align: left; vertical-align: top; }
+  .pdx-t { display: block; font: 600 15px/1.35 var(--font-display); color: #fff; }
+  .pdx-n { display: block; margin-top: 4px; font: 400 13px/1.45 var(--font-body); color: var(--pd-apagado); }
+  .pdx-c { padding: 14px 6px; text-align: center; vertical-align: top; }
+  .pdx-c.is-sacs { background: #4470D8; }
+  .pdx-marca { display: inline-block; min-width: 1.2em; font: 700 18px/1.3 var(--font-display); }
+  .pdx-c--full .pdx-marca { color: #6FD3A3; }
+  .pdx-c--partial .pdx-marca { color: #F2C46B; }
+  .pdx-c--none .pdx-marca { color: rgba(255, 255, 255, 0.4); }
+  .pdx-c--obra .pdx-marca { color: #fff; }
+  .pdx-c--nd .pdx-marca { font-size: 13px; color: rgba(255, 255, 255, 0.45); }
+  .pdx-c.is-sacs .pdx-marca { color: #fff; }
+  .pdx-ley { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 18px 0 0; font: 500 13px/1.4 var(--font-body); color: var(--pd-tenue); }
+  .pdx-ley b { margin-right: 6px; font-family: var(--font-display); color: #fff; }
+
+  /* ── qué es cada competidor: tres columnas entre filetes ── */
+  .pdx-perfiles { display: grid; gap: 32px; margin-top: 64px; }
+  .pdx-perfil { padding-top: 16px; border-top: 2px solid #fff; }
+  .pdx-perfil-k { margin: 0 0 10px; font: 700 22px/1.1 var(--pd-clash); color: #fff; }
+  .pdx-perfil-que { margin: 0 0 12px; font: 500 15px/1.5 var(--font-body); color: #fff; }
+  .pdx-perfil-s { margin: 8px 0 0; font: 400 14.5px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .pdx-perfil-s b { color: #fff; font-weight: 600; }
+
+  /* ── lo que Sacs sabe de moda: las reglas del motor, numeradas ── */
+  .pdx-solo { margin-top: 72px; }
+  .pdx-solo-h { margin: 0; max-width: 18ch; font: 700 clamp(30px, 4vw, 52px)/1 var(--pd-clash); letter-spacing: -0.01em; color: #fff; }
+  .pdx-solo-dek { margin: 14px 0 0; max-width: 56ch; font: 500 16px/1.5 var(--font-body); color: var(--pd-tenue); }
+  .pdx-solo ol { display: grid; gap: 0; margin: 28px 0 0; padding: 0; list-style: none; counter-reset: s; border-top: 1px solid var(--pd-filete); }
+  .pdx-solo li { position: relative; display: grid; align-content: start; gap: 4px; padding: 18px 0 18px 52px; border-bottom: 1px solid var(--pd-filete); counter-increment: s; }
+  .pdx-solo li::before { content: counter(s, decimal-leading-zero); position: absolute; left: 0; top: 16px; font: 700 22px/1 var(--pd-clash); color: #7FA3F0; }
+  .pdx-solo b { font: 600 17px/1.35 var(--font-display); color: #fff; }
+  .pdx-solo span { font: 400 14.5px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .pdx-nota a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ── Teléfono: sin scroll de lado. Cada función a todo el ancho y sus cuatro marcas debajo, alineadas con los
+     nombres, que se quedan pegados arriba mientras bajas por la tabla ── */
+  @media (max-width: 767px) {
+    .pdx-tabla-wrap { overflow: visible; margin-top: 36px; }
+    .pdx-tabla, .pdx-tabla thead, .pdx-tabla tbody { display: block; }
+    .pdx-tabla tr { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .pdx-tabla thead { position: sticky; top: 0; z-index: 2; background: var(--pd-fondo); }
+    .pdx-tabla thead th { padding: 12px 4px; font-size: 12.5px; }
+    .pdx-tabla thead th.pdx-fila-t { display: none; }
+    .pdx-col, .pdx-col.is-sacs { width: auto; }
+    .pdx-col.is-sacs { padding-top: 12px !important; }
+    .pdx-grupo th { grid-column: 1 / -1; padding-top: 30px; }
+    .pdx-tabla tbody .pdx-fila-t { grid-column: 1 / -1; padding: 16px 0 10px; }
+    .pdx-tabla tbody tr:not(.pdx-grupo) { padding-bottom: 16px; }
+    .pdx-c { padding: 7px 0; }
+    .pdx-marca { font-size: 16px; }
+  }
+
+  @media (min-width: 768px) {
+    .pdx { padding: 112px 5vw 128px; }
+    .pdx-perfiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 56px; }
+    .pdx-perfil { position: relative; }
+    .pdx-perfil + .pdx-perfil::before { content: ''; position: absolute; left: -28px; top: 0; bottom: 0; border-left: 1px solid var(--pd-filete); }
+    .pdx-solo ol { grid-template-columns: 1fr 1fr; column-gap: 40px; }
+  }
+</style>

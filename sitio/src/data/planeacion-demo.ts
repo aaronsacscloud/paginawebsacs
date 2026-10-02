@@ -24,6 +24,10 @@
  * `obra: true` = EN CONSTRUCCIÓN en el motor (revisado el 1-oct-2026 contra sacs_api por la sesión de nivelación):
  * desde el v3 se marca con un asterisco y una sola nota al pie por acto (OBRA_NOTA), sin fecha ni promesa de
  * entrega. Lo demás es lógica viva del motor.
+ * Revisado otra vez el 2-oct-2026 con el Forecasting de Demand Planning (DP3) ya en sacs_api y sacs3: el pronóstico
+ * de los modelos nuevos (con sus parecidos), la compra por proveedor con su corte y el primer reparto con reserva en el
+ * CEDIS dejaron de ser obra. Sigue en obra leer VARIOS años del mismo evento: el pronóstico usa el del año anterior,
+ * alineado por la regla del evento, más la tendencia de las últimas 8 semanas.
  */
 
 export const OBRA = 'En construcción';
@@ -103,10 +107,10 @@ export const PASOS: Paso[] = [
   { id: 'historia', clave: 'ventas', t: 'Leí tus últimos 3 Días del Padre.', obra: true },
   { id: 'picos', clave: 'ventas', t: 'Aparté 3 picos que no son demanda real.' },
   { id: 'alza', clave: 'alza', t: 'El alza del Día del Padre: 2.3 veces lo normal.' },
-  { id: 'nuevos', clave: 'nuevos', t: 'Pronostiqué los 18 modelos nuevos.', obra: true },
+  { id: 'nuevos', clave: 'nuevos', t: 'Pronostiqué los 18 modelos nuevos.' },
   { id: 'tallas', clave: 'tallas', t: 'Repartí por región, tienda, talla y color.' },
   { id: 'cortes', clave: 'entregas', t: 'Calculé el corte de pedido de cada proveedor.' },
-  { id: 'compra', clave: null, t: 'Armé la compra: 26,600 piezas por $7.7 M.', obra: true },
+  { id: 'compra', clave: null, t: 'Armé la compra: 26,600 piezas por $7.7 M.' },
 ];
 
 // a) La taxonomía (el árbol) y las dos dudas.
@@ -245,7 +249,6 @@ export const TARJETAS_PRE: Tarjeta[] = [
     ],
     impacto: ['Ninguna tienda abre la temporada con tallas rotas.', '12,100 piezas listas para ir a donde se vendan.'],
     boton: 'Enviar instrucción', hecho: '✓ Reparto R-0001 · 18,100 piezas salen del CEDIS el 27 de abril',
-    obra: true,
   },
 ];
 
@@ -459,7 +462,7 @@ export const PREGUNTAS = [
   { question: '¿Qué datos necesito para empezar?', answer: 'Tus ventas, tu inventario por tienda y CEDIS, y tus proveedores con su tiempo de entrega. Sacs arma solo el diccionario de moda (categoría, temporada, básico o de temporada, tallas núcleo y colores) y tú confirmas lo que tenga duda.' },
   { question: '¿Cómo decide si traspasa, resurte o compra?', answer: 'Con una escalera. Primero revisa lo que ya viene en camino: si alcanza, espera. Si falta, lo saca de una tienda donde sobra de verdad; después, del CEDIS; y solo compra lo que nadie cubre, ya descontando lo que hay en toda la red. Los faltantes muy chicos no se mueven, porque no vale el flete.' },
   { question: '¿Sacs compra y mueve mercancía solo?', answer: 'Tú eliges. De entrada, todo espera tu aprobación: los traspasos salen «Por enviar» y las compras como orden en borrador, a un clic. Con el modo automático con candados, los resurtidos de rutina del CEDIS salen solos y tienes 4 horas para objetar, y las órdenes de compra respetan tu presupuesto y la aprobación por monto. Los traspasos entre tiendas en automático están en construcción.' },
-  { question: '¿Cómo maneja eventos como el Día del Padre o el Buen Fin?', answer: 'Calcula hacia atrás el corte de pedido de cada proveedor, te avisa con 8 semanas de anticipación y te pregunta si un pico raro fue evento o demanda real, para no inflar el pronóstico. Hoy el calendario de avisos trae Reyes, San Valentín, Día del Niño, Día de las Madres, Regreso a clases, Buen Fin y Navidad; Día del Padre, Hot Sale y Semana Santa están en construcción, y mientras tanto los armas como colección.' },
+  { question: '¿Cómo maneja eventos como el Día del Padre o el Buen Fin?', answer: 'Calcula hacia atrás el corte de pedido de cada proveedor, te avisa con 8 semanas de anticipación y te pregunta si un pico raro fue evento o demanda real, para no inflar el pronóstico. El calendario ya trae Rebajas de enero, Reyes, San Valentín, Semana Santa, Día del Niño, Día de las Madres, Hot Sale, Día del Padre, Regreso a clases, Buen Fin y Navidad, y compara cada evento con el del año anterior: Día del Padre contra Día del Padre, domingo contra domingo.' },
   { question: '¿Cómo maneja las rebajas y lo que sobra?', answer: 'Por escalones: −20 % y, a los 30 días, −40 %, con un recordatorio para el segundo escalón. No toca los básicos ni lo que llegó hace menos de 45 días. Sacs arma la lista y las etiquetas, y el cambio de precio lo confirmas tú.' },
   { question: '¿Los números de esta página son reales?', answer: 'No. Es una temporada de ejemplo de una cadena ficticia de ropa deportiva. Lo marcado «en construcción» todavía no está disponible, y no le ponemos fecha.' },
   { question: '¿En qué plan viene?', answer: 'En el plan Automatiza, junto con los avisos, los reportes y el pronóstico de demanda por modelo y tienda.' },

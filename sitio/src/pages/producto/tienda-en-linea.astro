@@ -225,47 +225,47 @@ const competitorRows = [
   {
     label: 'Mismo catálogo, stock y cliente entre POS físico y tienda online',
     note: 'Una sola base de datos — sin "versión online distinta" ni sincronizaciones rotas.',
-    values: ['full', 'none', 'none', 'none', 'none', 'none', 'partial'] as const,
+    values: ['full', 'none', 'none', 'partial', 'none', 'none', 'none', 'none', 'none', 'partial'] as const,
   },
   {
     label: 'Stock en tiempo real por sucursal en la página de producto',
     note: 'El cliente ve "disponible en Polanco · Santa Fe · CEDIS" antes de comprar.',
-    values: ['full', 'partial', 'none', 'partial', 'none', 'none', 'partial'] as const,
+    values: ['full', 'none', 'none', 'nd', 'partial', 'none', 'partial', 'none', 'none', 'partial'] as const,
   },
   {
     label: 'Ruteo automático de pedidos online a la sucursal más cercana',
     note: 'SACS asigna el pedido a la sucursal con stock + más cerca al CP del cliente.',
-    values: ['full', 'partial', 'none', 'none', 'none', 'none', 'partial'] as const,
+    values: ['full', 'none', 'none', 'nd', 'partial', 'none', 'none', 'none', 'none', 'partial'] as const,
   },
   {
     label: 'Ship-from-store: empacar y enviar desde cualquier piso',
     note: 'Cualquier sucursal con stock se vuelve un mini-CEDIS — sin proyecto de logística aparte.',
-    values: ['full', 'partial', 'none', 'partial', 'none', 'none', 'partial'] as const,
+    values: ['full', 'none', 'none', 'nd', 'partial', 'none', 'partial', 'none', 'none', 'partial'] as const,
   },
   {
     label: 'Click & collect (recoger en tienda) con QR y notificación',
     note: 'Pedido pagado online, QR al cliente, recogida sin filas en piso.',
-    values: ['full', 'partial', 'partial', 'partial', 'none', 'partial', 'partial'] as const,
+    values: ['full', 'none', 'none', 'nd', 'partial', 'partial', 'partial', 'none', 'partial', 'partial'] as const,
   },
   {
     label: 'Reportes integrados online + piso en un solo dashboard',
     note: 'Conversión, ticket promedio, top SKUs y rentabilidad — sin armar GA4 por separado.',
-    values: ['full', 'partial', 'none', 'none', 'none', 'partial', 'partial'] as const,
+    values: ['full', 'none', 'none', 'nd', 'partial', 'none', 'none', 'none', 'partial', 'partial'] as const,
   },
   {
     label: 'Cliente único entre canales (mismo monedero, mismo CRM, misma lealtad)',
     note: 'Compra online, gana puntos, los canjea en piso. O al revés.',
-    values: ['full', 'none', 'none', 'none', 'none', 'none', 'none'] as const,
+    values: ['full', 'none', 'none', 'nd', 'none', 'none', 'none', 'none', 'none', 'none'] as const,
   },
   {
     label: 'Facturación CFDI 4.0 desde el ticket online (timbrado o autofactura)',
     note: 'México nativo — no necesitas un PAC paralelo ni plugin de terceros.',
-    values: ['full', 'none', 'partial', 'none', 'none', 'none', 'partial'] as const,
+    values: ['full', 'none', 'none', 'nd', 'none', 'partial', 'none', 'none', 'none', 'partial'] as const,
   },
   {
     label: 'Onboarding y soporte humano en español de LatAm',
     note: 'Equipo en CDMX que conoce tu vertical — no chat con bot en inglés.',
-    values: ['full', 'partial', 'full', 'partial', 'partial', 'partial', 'partial'] as const,
+    values: ['full', 'partial', 'full', 'full', 'partial', 'full', 'partial', 'partial', 'partial', 'partial'] as const,
   },
 ];
 
@@ -912,8 +912,9 @@ const storeTestimonials = [
   <CompetitorComparison
     title="SACS Tienda en Línea frente al resto."
     subtitle="Lo que separa a SACS de Shopify, TiendaNube y demás: SACS no nace como e-commerce — nace como POS físico que se vuelve omnicanal. Esa es la diferencia."
-    competitors={['SACS', 'Shopify', 'TiendaNube', 'WooCommerce', 'Wix', 'Squarespace', 'VTEX']}
+    competitors={['SACS', 'AnalyticAlways', 'Celes', 'Sizes and Colors', 'Shopify', 'TiendaNube', 'WooCommerce', 'Wix', 'Squarespace', 'VTEX']}
     rows={competitorRows}
+    nota="AnalyticAlways y Celes son plataformas de planeación que se conectan a tu ERP; no son tienda en línea ni punto de venta. Lo de ellas y lo de Sizes and Colors sale de sus sitios públicos, consultados el 2 de octubre de 2026."
   />
 
   <TestimonialStores items={storeTestimonials} />

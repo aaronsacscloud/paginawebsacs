@@ -4574,12 +4574,12 @@ for (let i = 0; i <= currentPlanIdx; i++) {
               <p class="pf-compare-subtitle">{content.comparison.subtitle}</p>
             </div>
             <div class="pf-compare-table-wrap">
-              <table class="pf-compare-table">
+              <table class="pf-compare-table" style={`--cols:${content.comparison.competitors.length}`}>
                 <thead>
                   <tr>
                     <th class="pf-compare-row-label" scope="col"></th>
                     {content.comparison.competitors.map((c: string, i: number) => (
-                      <th scope="col" class={`pf-compare-col${i === 0 ? ' pf-compare-col--us' : ''}`}>{c}</th>
+                      <th scope="col" class={`pf-compare-col${i === 0 ? ' pf-compare-col--us' : ''}`}>{c.split(/(?<=[a-z])(?=[A-Z])/).map((p: string, k: number) => <>{k > 0 && <wbr />}{p}</>)}</th>
                     ))}
                   </tr>
                 </thead>
@@ -4601,6 +4601,9 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                           {v === 'none' && (
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-label="No"><path d="M6 6l12 12M18 6L6 18"/></svg>
                           )}
+                          {v === 'nd' && (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-label="Sin información pública"><circle cx="12" cy="12" r="7"/></svg>
+                          )}
                         </td>
                       ))}
                     </tr>
@@ -4612,7 +4615,11 @@ for (let i = 0; i <= currentPlanIdx; i++) {
               <span class="pf-compare-legend-item"><span class="pf-compare-legend-dot pf-compare-legend-dot--full"></span> Incluido</span>
               <span class="pf-compare-legend-item"><span class="pf-compare-legend-dot pf-compare-legend-dot--partial"></span> Parcial / con add-ons</span>
               <span class="pf-compare-legend-item"><span class="pf-compare-legend-dot pf-compare-legend-dot--none"></span> No</span>
+              {content.comparison.rows.some((r: any) => r.values.includes('nd')) && (
+                <span class="pf-compare-legend-item"><span class="pf-compare-legend-dot pf-compare-legend-dot--nd"></span> Sin información pública</span>
+              )}
             </div>
+            {content.comparison.nota && <p class="pf-compare-nota">{content.comparison.nota}</p>}
           </div>
         </section>
       )}
@@ -11180,7 +11187,8 @@ for (let i = 0; i <= currentPlanIdx; i++) {
 
   .pf-compare-table {
     width: 100%;
-    min-width: 1320px;
+    /* ~100 px por competidor además de la columna de funciones (28 %): con 11 columnas ya no se enciman los nombres */
+    min-width: max(1320px, calc(var(--cols, 9) * 100px / 0.72));
     border-collapse: collapse;
     border-spacing: 0;
     table-layout: fixed;
@@ -11266,6 +11274,11 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     color: #d4d4d4;
   }
 
+  /* «sin información pública»: el competidor no lo publica (no es lo mismo que «No») */
+  .pf-compare-cell--nd {
+    color: #c4c4c4;
+  }
+
   .pf-compare-cell svg {
     display: inline-block;
     vertical-align: middle;
@@ -11301,6 +11314,16 @@ for (let i = 0; i <= currentPlanIdx; i++) {
   .pf-compare-legend-dot--full { background: #2A8F5F; }
   .pf-compare-legend-dot--partial { background: #c89a3c; }
   .pf-compare-legend-dot--none { background: #d4d4d4; }
+  .pf-compare-legend-dot--nd { background: transparent; box-shadow: inset 0 0 0 1.5px #b0b0b0; }
+
+  .pf-compare-nota {
+    max-width: 760px;
+    margin: 14px auto 0;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--color-text-tertiary, #8c8c8c);
+    text-align: center;
+  }
 
   @media (max-width: 767px) {
     .pf-compare-row-label {
