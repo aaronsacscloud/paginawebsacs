@@ -70,6 +70,102 @@ function resumenAudiencia(c: any): string {
   return partes.join(' · ');
 }
 
+// ═══════════════════════ CARRUSEL (contenido.slides) ═══════════════════════
+// 2-6 diapositivas { imagen, titulo?, texto? } que sacs3 pinta como carrusel
+// en el modal (y compacto en la tarjeta de inicio). Validación real en
+// lib/outbound/slides.ts; aquí solo se edita.
+
+const urlSacsOk = (u: string) => {
+  try { const x = new URL(String(u || '')); return x.protocol === 'https:' && (x.hostname === 'sacscloud.com' || x.hostname.endsWith('.sacscloud.com')); } catch { return false; }
+};
+
+function EditorSlides({ ct, lim, setCt }: { ct: any; lim: any; setCt: (p: any) => void }) {
+  const inputS = { ...S.inp } as any;
+  const lblS = { display: 'block', fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.06em', margin: '16px 0 5px' };
+  const max = lim?.max || 6, min = lim?.min || 2, tMax = lim?.titulo_max || 60, xMax = lim?.texto_max || 180;
+  const slides: any[] = Array.isArray(ct.slides) ? ct.slides : [];
+  const setSlides = (n: any[]) => setCt({ slides: n });
+  const mover = (i: number, d: number) => {
+    const j = i + d; if (j < 0 || j >= slides.length) return;
+    const n = [...slides]; [n[i], n[j]] = [n[j], n[i]]; setSlides(n);
+  };
+  const setS = (i: number, patch: any) => { const n = [...slides]; n[i] = { ...n[i], ...patch }; setSlides(n); };
+  const mini = { ...S.btnG, padding: '5px 9px', fontSize: '0.7rem' };
+  return (
+    <div style={{ border: '1px solid #eef0f3', borderRadius: 10, padding: '10px 12px', marginTop: 12, background: '#fafafc' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ ...lblS as any, margin: 0, flex: 1 }}>Carrusel de imágenes (opcional · {min} a {max})</span>
+        {slides.length > 0 && (
+          <select style={{ ...inputS, width: 'auto', padding: '5px 8px', fontSize: '0.72rem' }} value={String(ct.slides_auto_seg || 0)}
+            onChange={e => setCt({ slides_auto_seg: Number(e.target.value) || undefined })} title="Avance automático (se pausa con el mouse encima)">
+            <option value="0">Sin avance automático</option>
+            {[5, 7, 10].map(n => <option key={n} value={n}>Avanza cada {n} s</option>)}
+          </select>
+        )}
+      </div>
+      <div style={{ fontSize: '0.66rem', color: '#9c99a6', fontWeight: 600, margin: '4px 0 8px' }}>
+        Imágenes WebP 16:9 (1200×675) en https de sacscloud.com, p. ej. https://app.sacscloud.com/images/promos/2026-10/archivo.webp. Con carrusel, la «Imagen» de arriba no se usa.
+      </div>
+      {slides.map((sl: any, i: number) => {
+        const malo = !!sl.imagen && !urlSacsOk(sl.imagen);
+        return (
+          <div key={i} style={{ display: 'grid', gridTemplateColumns: '84px 1fr auto', gap: 10, alignItems: 'start', borderTop: i ? '1px solid #eef0f3' : 'none', padding: '8px 0' }}>
+            <div style={{ width: 84, aspectRatio: '16 / 9', borderRadius: 6, overflow: 'hidden', background: '#eceef3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', color: '#9c99a6', fontWeight: 700 }}>
+              {urlSacsOk(sl.imagen) ? <img src={sl.imagen} alt="" width={84} height={47} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : `#${i + 1}`}
+            </div>
+            <div style={{ display: 'grid', gap: 6 }}>
+              <input style={{ ...inputS, borderColor: malo ? '#C0554E' : undefined }} placeholder="URL de la imagen (https://…sacscloud.com/…webp)" value={sl.imagen || ''} onChange={e => setS(i, { imagen: e.target.value })} />
+              <input style={inputS} maxLength={tMax} placeholder={`Título (opcional, máx. ${tMax})`} value={sl.titulo || ''} onChange={e => setS(i, { titulo: e.target.value })} />
+              <input style={inputS} maxLength={xMax} placeholder={`Texto (opcional, máx. ${xMax})`} value={sl.texto || ''} onChange={e => setS(i, { texto: e.target.value })} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <button style={mini} disabled={i === 0} title="Subir" aria-label={`Subir diapositiva ${i + 1}`} onClick={() => mover(i, -1)}>↑</button>
+              <button style={mini} disabled={i === slides.length - 1} title="Bajar" aria-label={`Bajar diapositiva ${i + 1}`} onClick={() => mover(i, 1)}>↓</button>
+              <button style={mini} title="Quitar" aria-label={`Quitar diapositiva ${i + 1}`} onClick={() => { const n = slides.filter((_: any, j: number) => j !== i); setCt(n.length ? { slides: n } : { slides: undefined, slides_auto_seg: undefined }); }}>✕</button>
+            </div>
+          </div>
+        );
+      })}
+      {slides.length > 0 && slides.length < min && (
+        <div style={{ fontSize: '0.68rem', color: '#9A6B15', fontWeight: 700, marginTop: 4 }}>Agrega al menos {min} diapositivas (con una sola, usa el campo Imagen).</div>
+      )}
+      {slides.length < max && (
+        <button style={{ ...S.btnG, marginTop: 6 }} onClick={() => setSlides([...slides, { imagen: '' }])}>+ Agregar diapositiva</button>
+      )}
+    </div>
+  );
+}
+
+/** Carrusel del preview: imagen real, flechas y puntos (sin auto-avance). */
+function PreviewCarrusel({ slides, compacto }: { slides: any[]; compacto?: boolean }) {
+  const [i, setI] = useState(0);
+  const n = slides.length;
+  const k = n ? Math.min(i, n - 1) : 0;
+  const sl = slides[k] || {};
+  const fl = (d: number) => setI((k + d + n) % n);
+  const flS: any = { position: 'absolute', top: '50%', transform: 'translateY(-50%)', width: compacto ? 18 : 22, height: compacto ? 18 : 22, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,.94)', fontWeight: 800, fontSize: '0.7rem', cursor: 'pointer', padding: 0, lineHeight: 1 };
+  return (
+    <div>
+      <div style={{ position: 'relative', aspectRatio: '16 / 9', background: '#eceef3' }}>
+        {urlSacsOk(sl.imagen)
+          ? <img src={sl.imagen} alt="" width={1200} height={675} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          : <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.62rem', color: '#9c99a6', fontWeight: 700 }}>[ imagen {k + 1} ]</div>}
+        {n > 1 && <button style={{ ...flS, left: 6 }} onClick={() => fl(-1)} aria-label="Anterior">‹</button>}
+        {n > 1 && <button style={{ ...flS, right: 6 }} onClick={() => fl(1)} aria-label="Siguiente">›</button>}
+      </div>
+      {(sl.titulo || sl.texto) && (
+        <div style={{ padding: compacto ? '7px 10px 0' : '10px 18px 0' }}>
+          {sl.titulo && <div style={{ fontWeight: 800, fontSize: compacto ? '0.66rem' : '0.8rem' }}>{sl.titulo}</div>}
+          {sl.texto && <div style={{ fontSize: compacto ? '0.58rem' : '0.68rem', color: '#666', lineHeight: 1.45 }}>{sl.texto}</div>}
+        </div>
+      )}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 4, paddingTop: 7 }}>
+        {slides.map((_: any, j: number) => <span key={j} onClick={() => setI(j)} style={{ cursor: 'pointer', width: j === k ? 16 : 6, height: 6, borderRadius: 99, background: j === k ? '#4536BE' : '#D5D9E2' }} />)}
+      </div>
+    </div>
+  );
+}
+
 // ═══════════════════════ PREVIEW (simulador de SACS3) ═══════════════════════
 
 function PreviewSacs3({ c }: { c: any }) {
@@ -77,10 +173,12 @@ function PreviewSacs3({ c }: { c: any }) {
   const ct = c.contenido || {};
   const botones = (ct.botones || []).filter((b: any) => b.texto);
   const movil = dev === 'movil';
+  const slides: any[] = Array.isArray(ct.slides) && ct.slides.length >= 2 ? ct.slides : [];
 
   const cuerpoModal = (
-    <div style={{ background: '#fff', borderRadius: 14, maxWidth: movil ? 230 : 320, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,.3)' }}>
-      {ct.imagen && <div style={{ height: movil ? 70 : 110, background: 'linear-gradient(135deg,#4536BE,#7DA6F5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '0.7rem' }}>[ imagen ]</div>}
+    <div style={{ background: '#fff', borderRadius: 14, maxWidth: movil ? 230 : (slides.length ? 380 : 320), width: slides.length ? '100%' : undefined, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,.3)' }}>
+      {slides.length > 0 && <PreviewCarrusel slides={slides} />}
+      {ct.imagen && !slides.length && <div style={{ height: movil ? 70 : 110, background: 'linear-gradient(135deg,#4536BE,#7DA6F5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '0.7rem' }}>[ imagen ]</div>}
       <div style={{ padding: movil ? '12px 14px' : '16px 18px' }}>
         <div style={{ fontWeight: 800, fontSize: movil ? '0.8rem' : '0.95rem', marginBottom: 6 }}>{ct.titulo || 'Título del mensaje'}</div>
         <div style={{ fontSize: movil ? '0.66rem' : '0.75rem', color: '#666', lineHeight: 1.5, marginBottom: 12 }}>{ct.mensaje || 'El mensaje que verá el cliente.'}</div>
@@ -123,10 +221,13 @@ function PreviewSacs3({ c }: { c: any }) {
             )}
             <div style={{ height: 10, width: '40%', borderRadius: 5, background: '#e3e4ea', margin: '6px 0 12px' }} />
             {c.formato === 'tarjeta_inicio' && (
-              <div style={{ background: '#fff', border: '1.5px solid #d9d2fb', borderRadius: 10, padding: '10px 12px', marginBottom: 8 }}>
-                <div style={{ fontSize: '0.72rem', fontWeight: 800 }}>{ct.titulo || 'Título'}</div>
-                <div style={{ fontSize: '0.64rem', color: '#666', margin: '3px 0 8px' }}>{ct.mensaje || 'Mensaje'}</div>
-                {botones[0] && <span style={{ background: '#9B8CFA', color: '#fff', borderRadius: 99, padding: '4px 10px', fontSize: '0.6rem', fontWeight: 800 }}>{botones[0].texto}</span>}
+              <div style={{ background: '#fff', border: '1.5px solid #d9d2fb', borderRadius: 10, marginBottom: 8, overflow: 'hidden', maxWidth: slides.length ? 240 : undefined }}>
+                {slides.length > 0 && <PreviewCarrusel slides={slides} compacto />}
+                <div style={{ padding: '10px 12px' }}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 800 }}>{ct.titulo || 'Título'}</div>
+                  <div style={{ fontSize: '0.64rem', color: '#666', margin: '3px 0 8px' }}>{ct.mensaje || 'Mensaje'}</div>
+                  {botones[0] && <span style={{ background: '#9B8CFA', color: '#fff', borderRadius: 99, padding: '4px 10px', fontSize: '0.6rem', fontWeight: 800 }}>{botones[0].texto}</span>}
+                </div>
               </div>
             )}
             <div style={{ height: 46, borderRadius: 9, background: '#fff', border: '1px solid #ececec', marginBottom: 8 }} />
@@ -407,6 +508,9 @@ function Editor({ inicial, catalogo, onClose, onSaved, show }: { inicial: any; c
           <div><span style={lblS as any}>Video (URL de sacscloud.com)</span>
             <input style={inputS} value={c.contenido?.video || ''} onChange={e => setCt({ video: e.target.value })} /></div>
         </div>
+        {(catalogo?.slides?.formatos || ['modal', 'tarjeta_inicio']).includes(c.formato) && (
+          <EditorSlides ct={c.contenido || {}} lim={catalogo?.slides} setCt={setCt} />
+        )}
         {c.formato === 'encuesta' ? (<>
           <span style={lblS as any}>Tipo de pregunta (estándares de encuesta)</span>
           <select style={inputS} value={c.contenido?.encuesta?.escala || 'nps'} onChange={e => {

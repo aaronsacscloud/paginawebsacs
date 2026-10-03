@@ -9,6 +9,7 @@ import crypto from 'node:crypto';
 import { supabase } from '../supabase';
 import { cuentasPorEmpresa, normCuenta } from '../crm/sacs-cuentas';
 import { usaVariables, valoresPorCuenta, contenidoResuelto } from './variables';
+import { validarSlides, normalizarSlides } from './slides';
 import { urlSacsValida, DESTINOS_MODULO, ACCIONES_BOTON, FORMATOS, MODULOS_PUENTE, slugAgendaValido, type AudienciaDef, type CondicionUso } from './catalogo';
 
 const SACS_API = import.meta.env.SACS_API_URL || 'https://sacs-api-819604817289.us-central1.run.app/v1';
@@ -209,6 +210,9 @@ export function validarCampana(c: any): string[] {
   if (/[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}]/u.test(texto.replace(/⚠/gu, ''))) {
     errores.push('El contenido lleva emojis decorativos; el estándar de SACS es tipografía limpia.');
   }
+  // Carrusel (contenido.slides): 2-6 imágenes https de sacscloud.com, solo
+  // en modal / tarjeta de inicio. Ver slides.ts.
+  errores.push(...validarSlides(c.formato, ct));
   if (c.formato === 'agenda') {
     if (!slugAgendaValido(ct.agenda_slug)) {
       errores.push('El formato "Agendar cita" necesita un tipo de reunión del catálogo (slug inválido o vacío).');
@@ -252,6 +256,10 @@ export function validarCampana(c: any): string[] {
 /** Doc que viaja a sacs3_global.campanas_inapp (lo que sacs_api sirve tal cual). */
 export function docParaSacs(c: any, cuentas: string[], porCuenta?: Record<string, any>) {
   const nivel = c.nivel || { tipo: 'todos' };
+  // El carrusel viaja recortado y limpio (sin slides vacías); fuera de modal /
+  // tarjeta de inicio se quita. El resto del contenido pasa intacto.
+  const porCuentaN: Record<string, any> = {};
+  for (const [cta, ctc] of Object.entries(porCuenta || {})) porCuentaN[cta] = normalizarSlides(c.formato, ctc);
   return {
     campana_id: c.id,
     nombre: c.nombre,
@@ -266,10 +274,10 @@ export function docParaSacs(c: any, cuentas: string[], porCuenta?: Record<string
       desde: c.vigencia_desde ? new Date(c.vigencia_desde).toISOString() : null,
       hasta: c.vigencia_hasta ? new Date(c.vigencia_hasta).toISOString() : null,
     },
-    contenido: c.contenido || {},
+    contenido: normalizarSlides(c.formato, c.contenido || {}),
     // Contenido POR CUENTA cuando el texto usa variables: el servidor de
     // entrega elige el de la cuenta y, si no hay, cae al genérico de arriba.
-    contenido_por_cuenta: porCuenta && Object.keys(porCuenta).length ? porCuenta : null,
+    contenido_por_cuenta: Object.keys(porCuentaN).length ? porCuentaN : null,
     comportamiento: c.comportamiento || {},
     objetivo: {
       cuentas,

@@ -6,6 +6,7 @@
 // ataque. Por eso las acciones de botón son de LISTA BLANCA y los destinos de
 // módulo se validan contra los `case` reales del router de dashboard-list.
 import { MODULOS_SACS } from '../crm/modulos-sacs';
+import { SLIDES_MIN, SLIDES_MAX, SLIDE_TITULO_MAX, SLIDE_TEXTO_MAX, SLIDES_AUTO_MIN, SLIDES_AUTO_MAX, FORMATOS_CON_SLIDES } from './slides';
 
 export const FORMATOS = [
   { id: 'banner_superior', etiqueta: 'Banner superior', desc: 'Barra arriba del módulo', interruptivo: true },
@@ -291,5 +292,10 @@ export function catalogoCompleto() {
     plantillas: PLANTILLAS,
     escalas_encuesta: ESCALAS_ENCUESTA,
     drivers_default: DRIVERS_DEFAULT,
+    // Carrusel (contenido.slides): límites que el editor muestra y el motor valida.
+    slides: {
+      min: SLIDES_MIN, max: SLIDES_MAX, titulo_max: SLIDE_TITULO_MAX, texto_max: SLIDE_TEXTO_MAX,
+      auto_min: SLIDES_AUTO_MIN, auto_max: SLIDES_AUTO_MAX, formatos: FORMATOS_CON_SLIDES,
+    },
   };
 }
