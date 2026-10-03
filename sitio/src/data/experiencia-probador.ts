@@ -55,13 +55,18 @@ export const FOTO = {
   nota: 'Con la misma foto se prueba otro color. Tú pones cuántas pruebas al día tiene cada persona.',
 };
 
-// La pantalla grande del piso (ProbPasos): lo que busca, su talla, la prenda puesta y otro color.
-export const PASOS = [
+// La pantalla del piso (ProbPasos, v3 3-oct-2026): lo que busca, su talla, la prenda puesta EN LA TIENDA (el probador
+// conserva el fondo de su foto: «Keep the same framing and background as image 1»), otro color y — en construcción —
+// cambiar el fondo por uno de fantasía (hoy el probador no cambia el fondo).
+export const PASOS: { n: string; t: string; d: string; obra?: boolean }[] = [
   { n: '01', t: 'Lo que busca, en su talla', d: 'La pantalla le enseña solo lo que hay en su talla y lo que está buscando: vestidos de satén, en M.' },
   { n: '02', t: '¿Cuál es mi talla?', d: 'Pone sus medidas y le dice qué talla le queda, con la tabla de medidas de esa prenda.' },
-  { n: '03', t: 'Se ve con la prenda puesta', d: 'Con una foto, en menos de un minuto se ve en grande con el vestido puesto.' },
+  { n: '03', t: 'Se ve con la prenda puesta', d: 'Se toma una foto ahí mismo y en menos de un minuto se ve con el vestido puesto, en tu tienda.' },
   { n: '04', t: 'Otro color, y lo aparta', d: 'Se prueba el verde y lo aparta en su talla para llevárselo.' },
+  { n: '05', t: 'Un fondo de locura', d: 'Con un par de toques cambia la tienda por un fondo de fantasía, para compartirlo.', obra: true },
 ];
+
+export const OBRA_PASOS = 'En construcción: hoy el probador conserva el fondo de la foto que se toma; cambiarlo por uno de fantasía todavía no está disponible en Sacs.';
 
 export const CUIDADO = {
   h: 'Su foto, cuidada.',
