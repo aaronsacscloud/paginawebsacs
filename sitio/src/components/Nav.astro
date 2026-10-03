@@ -1,5 +1,6 @@
 ---
 import { navLinks, utilLinks, modelosNegocio, type BusinessSector } from '../data/navigation';
+import { plugins } from '../data/plugins';
 import { giroIcons } from '../data/giro-icons';
 import { giroVinetas } from '../data/giro-vinetas';
 import { waDemoGiro, waLink } from '../lib/whatsapp';
@@ -111,28 +112,19 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
                     </div>
                   ))}
                 </div>
-                <div class="mega-footer">
-                  <div class="mega-footer-cards">
-                    <a href={getLocalizedUrl('/contacto', locale)} class="mega-footer-card">
-                      <div class="mega-footer-card-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
-                      </div>
-                      <div class="mega-footer-card-text">
-                        <span class="mega-footer-card-title">Agenda una demo</span>
-                        <span class="mega-footer-card-desc">Te mostramos Sacs con tus prendas, tus tallas y tu venta real. 30 min.</span>
-                      </div>
-                      <svg class="mega-footer-card-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                    </a>
-                    <a href={getLocalizedUrl('/prueba-gratis', locale)} class="mega-footer-card">
-                      <div class="mega-footer-card-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                      </div>
-                      <div class="mega-footer-card-text">
-                        <span class="mega-footer-card-title">Empieza gratis</span>
-                        <span class="mega-footer-card-desc">Configura tu tienda en 15 minutos. Sin tarjeta.</span>
-                      </div>
-                      <svg class="mega-footer-card-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                    </a>
+                <!-- Plugins (3-oct-2026): lo que se le agrega a Sacs desde «Extiende tu Sacs». Las fotos se piden al abrir el panel. -->
+                <div class="mega-plugins">
+                  <p class="mega-plugins-k"><span>Plugins</span>Extiende tu Sacs</p>
+                  <div class="mega-plugins-cards">
+                    {plugins.map((p) => (
+                      <a href={getLocalizedUrl(p.href, locale)} class="mega-plugin">
+                        <img data-src={p.imagen} alt="" width="360" height="440" decoding="async" />
+                        <span class="mega-plugin-txt">
+                          <span class="mega-plugin-t">{p.nombre}{p.nuevo && <em>Nuevo</em>}</span>
+                          <span class="mega-plugin-d">{p.bajada}</span>
+                        </span>
+                      </a>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -366,6 +358,17 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
                     </div>
                   </div>
                 ))}
+                <div class="mobile-pillar mobile-plugins">
+                  <span class="mobile-pillar-verb">Plugins</span>
+                  <div class="mobile-plugins-cards">
+                    {plugins.map((p) => (
+                      <a href={getLocalizedUrl(p.href, locale)} class="mobile-plugin">
+                        <img data-src={p.imagen} alt="" width="360" height="440" decoding="async" />
+                        <span class="mobile-plugin-txt"><b>{p.nombre}</b>{p.nuevo && <em>Nuevo</em>}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           ) : link.experiencias ? (
@@ -759,82 +762,22 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   /* Left border on hover */
   .mega-pillar-link:hover { border-left-color: var(--color-text-tertiary, #b0b0b0); }
 
-  /* ─── Footer CTA cards ─── */
-  .mega-footer {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(0, 0, 0, 0.06);
-  }
-
-  .mega-footer-cards {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-
-  .mega-footer-card {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
-    border-radius: 10px;
-    background: var(--color-bg-primary, #FAFAF8);
-    text-decoration: none;
-    transition: background 0.2s ease, box-shadow 0.2s ease;
-  }
-
-  .mega-footer-card:hover {
-    background: rgba(0, 0, 0, 0.04);
-    text-decoration: none;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  }
-
-  .mega-footer-card-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    background: #fff;
-    color: var(--color-text-primary, #1a1a2e);
-    flex-shrink: 0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  }
-
-  .mega-footer-card-text {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-width: 0;
-  }
-
-  .mega-footer-card-title {
-    font-family: var(--font-display, 'Sora', sans-serif);
-    font-size: 0.8125rem;
-    font-weight: 700;
-    color: var(--color-text-primary, #1a1a2e);
-    line-height: 1.2;
-  }
-
-  .mega-footer-card-desc {
-    font-size: 0.6875rem;
-    font-weight: 500;
-    color: var(--color-text-tertiary, #9ca3af);
-    line-height: 1.3;
-    margin-top: 1px;
-  }
-
-  .mega-footer-card-arrow {
-    color: var(--color-text-tertiary, #9ca3af);
-    flex-shrink: 0;
-    transition: transform 0.2s ease, color 0.2s ease;
-  }
-
-  .mega-footer-card:hover .mega-footer-card-arrow {
-    transform: translateX(3px);
-    color: var(--color-text-primary, #1a1a2e);
-  }
+  /* ─── Plugins (3-oct-2026): una fila de tarjetas alineada con las 4 columnas de arriba ─── */
+  .mega-plugins { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 18px; padding-top: 18px; border-top: 1px solid rgba(0, 0, 0, 0.06); }
+  .mega-plugins-k { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 10px; margin: 0 0 12px; font: 500 0.8125rem/1 var(--font-body, 'Plus Jakarta Sans', sans-serif); color: var(--color-text-tertiary, #9ca3af); }
+  .mega-plugins-k span { font: 800 0.9375rem/1 var(--font-display, 'Sora', sans-serif); letter-spacing: -0.01em; color: var(--color-text-primary, #1a1a2e); }
+  .mega-plugins-cards { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+  .mega-plugin { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 10px 28px 10px 0; border-right: 1px solid rgba(0, 0, 0, 0.06); text-decoration: none; transition: opacity 0.2s ease; }
+  .mega-plugin + .mega-plugin { padding-left: 28px; }
+  .mega-plugin:last-child { border-right: none; padding-right: 0; }
+  .mega-plugin:hover { text-decoration: none; opacity: 0.85; }
+  .mega-plugin img { flex: none; width: 56px; height: 68px; border-radius: 10px; object-fit: cover; background: #EEEDEA; transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
+  .mega-plugin:hover img { transform: scale(1.04); }
+  .mega-plugin-txt { display: grid; gap: 4px; min-width: 0; }
+  .mega-plugin-t { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font: 700 0.875rem/1.2 var(--font-display, 'Sora', sans-serif); color: var(--color-text-primary, #1a1a2e); }
+  .mega-plugin-t em { padding: 3px 7px; border-radius: 99px; background: #E0457B; color: #fff; font: 700 0.625rem/1 var(--font-display, 'Sora', sans-serif); font-style: normal; letter-spacing: 0.04em; text-transform: uppercase; }
+  .mega-plugin-d { font-size: 0.75rem; line-height: 1.4; color: var(--color-text-secondary, #4A4A4A); }
+  .mega-plugin:focus-visible { outline: 2px solid var(--color-text-primary, #1a1a2e); outline-offset: 3px; border-radius: 10px; }
 
   /* ─── Backdrop ─── */
   .mega-backdrop {
@@ -1340,6 +1283,15 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   .exp-card:focus-visible { outline: 3px solid var(--ac, #E0457B); outline-offset: 3px; }
   /* teléfono: la tarjeta vertical a lo ancho del menú */
   .mobile-exp { display: flex; gap: 12px; padding: 4px 16px 14px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 16px; overscroll-behavior-x: contain; }
+  /* Plugins en el acordeón de Plataforma: tarjetas chicas que se deslizan */
+  .mobile-plugins-cards { display: flex; gap: 10px; padding: 6px 0 4px; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; }
+  .mobile-plugins-cards::-webkit-scrollbar { display: none; }
+  .mobile-plugin { position: relative; flex: 0 0 auto; width: 132px; aspect-ratio: 360 / 440; overflow: hidden; border-radius: 12px; background: #1a1a1f; color: #fff; text-decoration: none; scroll-snap-align: start; }
+  .mobile-plugin img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .mobile-plugin::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 10, 14, 0) 40%, rgba(10, 10, 14, 0.82) 100%); }
+  .mobile-plugin-txt { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 1; display: grid; gap: 4px; }
+  .mobile-plugin-txt b { font: 800 0.875rem/1.12 var(--font-display, 'Sora', sans-serif); }
+  .mobile-plugin-txt em { justify-self: start; padding: 3px 6px; border-radius: 99px; background: #E0457B; font: 700 0.5625rem/1 var(--font-display, 'Sora', sans-serif); font-style: normal; letter-spacing: 0.04em; text-transform: uppercase; }
   .mobile-exp-card { position: relative; flex: 0 0 auto; scroll-snap-align: start; width: 62%; max-width: 240px; aspect-ratio: 2 / 3; overflow: hidden; border-radius: 12px; background: #1a1a1f; color: #fff; text-decoration: none; }
   .mobile-exp-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .mobile-exp-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 10, 14, 0) 45%, rgba(10, 10, 14, 0.8) 100%); }

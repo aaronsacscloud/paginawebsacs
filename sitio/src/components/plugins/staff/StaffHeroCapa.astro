@@ -1,0 +1,38 @@
+---
+/**
+ * La capa de la portada de /plugins/staff (va en el slot de ExpHero): el «Estado de hoy» real de la app del
+ * colaborador (SACSMobile, cuenta dibujotecnico) flotando sobre la foto, y la cuenta del día del Dashboard de RH.
+ * En el teléfono, solo una notificación chica arriba (la tarjeta taparía a la persona de la foto).
+ */
+const I = '/images/plugins/staff/';
+---
+<div class="shc" aria-hidden="true">
+  <div class="shc-tarjeta">
+    <img src={`${I}tel-estado.webp`} width="780" height="580" alt="" decoding="async" />
+  </div>
+  <p class="shc-dia"><i></i><b>9 de 24</b> ya marcaron hoy</p>
+</div>
+<p class="shc-aviso" aria-hidden="true"><b>✓</b><span><strong>Entrada · 08:55</strong><small>A tiempo · Matriz Centro</small></span></p>
+
+<style>
+  .shc { display: none; }
+  /* a la derecha, sobre los racks: a la izquierda tapaba la cara de la vendedora en los teléfonos bajitos */
+  .shc-aviso { position: absolute; z-index: 1; left: auto; right: 16px; top: 84px; display: flex; align-items: center; gap: 10px; margin: 0; padding: 9px 14px 9px 9px; border-radius: 16px; background: rgba(255, 255, 255, 0.95); color: #141414; box-shadow: 0 14px 28px -16px rgba(0, 0, 0, 0.6); animation: shcEntra 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.6s both; }
+  .shc-aviso b { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #E3F4EA; color: #17804F; font: 800 15px/1 var(--font-display); }
+  .shc-aviso span { display: grid; gap: 2px; }
+  .shc-aviso strong { font: 700 14px/1.1 var(--font-display); }
+  .shc-aviso small { font: 600 11.5px/1.1 var(--font-display); color: #17804F; }
+  @keyframes shcEntra { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+  @media (min-width: 768px) {
+    .shc-aviso { display: none; }
+    .shc { display: grid; gap: 12px; justify-items: end; position: absolute; z-index: 1; right: 4vw; bottom: 9vh; width: min(320px, 26vw); }
+    .shc-tarjeta { width: 100%; overflow: hidden; border-radius: 20px; background: #F4F6FA; padding: 6px; box-shadow: 0 30px 60px -28px rgba(0, 0, 0, 0.7); animation: shcEntra 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both; }
+    .shc-tarjeta img { display: block; width: 100%; height: auto; border-radius: 15px; }
+    .shc-dia { display: inline-flex; align-items: center; gap: 8px; margin: 0; padding: 9px 14px; border-radius: 99px; background: rgba(255, 255, 255, 0.95); color: #141414; font: 600 13px/1 var(--font-display); box-shadow: 0 14px 28px -16px rgba(0, 0, 0, 0.6); animation: shcEntra 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.9s both; }
+    .shc-dia i { width: 9px; height: 9px; border-radius: 50%; background: #1F9D63; box-shadow: 0 0 0 4px rgba(31, 157, 99, 0.22); }
+    .shc-dia b { font-weight: 800; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .shc-aviso, .shc-tarjeta, .shc-dia { animation: none; }
+  }
+</style>

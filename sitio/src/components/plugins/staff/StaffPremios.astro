@@ -1,0 +1,51 @@
+---
+/**
+ * «Quien llega a tiempo, se nota» (/plugins/staff): puntualidad que se premia. La foto del equipo aplaudiendo a una
+ * vendedora, los indicadores REALES del Control de Asistencia (80.6 % de puntualidad en 30 días, 252 días trabajados) y
+ * el ranking REAL (solo los primeros lugares), con los cinco premios de Staff y sus puntos. Negro.
+ */
+import { PREMIOS } from '../../../data/plugin-staff';
+import StaffVentana from './StaffVentana.astro';
+const I = '/images/plugins/staff/';
+---
+<section class="pda spr pd-negro" id="staff-premios" aria-labelledby="spr-h">
+  <p class="pd-folio"><span>{PREMIOS.k}</span><span>Control de Asistencia</span></p>
+  <div class="spr-grid">
+    <figure class="spr-foto rv">
+      <img src={`${I}equipo-1280.webp`} width="1280" height="853" alt="Antes de abrir, el equipo de la boutique aplaude a una vendedora reconocida por su puntualidad" loading="lazy" decoding="async" />
+    </figure>
+    <div class="spr-txt">
+      <h2 class="pda-h" id="spr-h">{PREMIOS.h}</h2>
+      <p class="spr-p">{PREMIOS.p}</p>
+      <ul class="spr-premios" aria-label="Premios y sus puntos">
+        {PREMIOS.premios.map((p, i) => <li class="rv" style={`--i:${i}`}><span aria-hidden="true">🏆</span><b>{p.t}</b><em>{p.p} pts</em></li>)}
+      </ul>
+    </div>
+  </div>
+  <div class="spr-datos">
+    <div class="spr-kpis rv"><StaffVentana src={`${I}control-kpis.webp`} w={2192} h={184} alt="Control de Asistencia: 80.6 % de puntualidad en los últimos 30 días, 252 días trabajados y 11 marcajes en el periodo" /></div>
+    <div class="spr-ranking rv"><StaffVentana src={`${I}control-ranking.webp`} w={952} h={596} alt="Ranking de puntualidad: los primeros lugares con 100 %, 96 % y 92 % en los últimos días" barra="Ranking de puntualidad" /></div>
+  </div>
+</section>
+
+<style>
+  .spr-grid { display: grid; gap: 30px; }
+  .spr-foto { margin: 0; overflow: hidden; border-radius: 22px; }
+  .spr-foto img { display: block; width: 100%; height: auto; }
+  .spr-p { margin: 18px 0 0; max-width: 46ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .spr-premios { display: grid; gap: 8px; margin: 24px 0 0; padding: 0; list-style: none; }
+  .spr-premios li { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 14px; background: #18181A; }
+  .spr-premios b { font: 700 15px/1.2 var(--font-display); color: #fff; }
+  .spr-premios em { font: 700 14px/1 var(--pd-clash); font-style: normal; color: #F2C46B; }
+  .spr-datos { display: grid; gap: 16px; margin-top: 30px; }
+  :global(.js-rv) .spr .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i, 0) * 0.07s); }
+  :global(.js-rv) .spr .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .spr-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 5vw; align-items: center; }
+    .spr-premios { grid-template-columns: 1fr 1fr; }
+    .spr-datos { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: start; margin-top: 44px; gap: 24px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .spr .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>

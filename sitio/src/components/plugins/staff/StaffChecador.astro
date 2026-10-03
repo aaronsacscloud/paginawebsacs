@@ -1,0 +1,294 @@
+---
+/**
+ * «Checa como le quede mejor a tu tienda» (/plugins/staff): el reloj checador con el scroll (data-tramos="3").
+ *  0 · Desde su celular, con GPS: la foto de la tienda y el celular con la pantalla REAL de «Mi Asistencia»
+ *      (SACSMobile, cuenta dibujotecnico).
+ *  1 · En el kiosco, con su PIN: la tablet de la foto con la pantalla del checador público de Sacs encima (sacs3
+ *      asistencia/checador/publico.html: «Teclea tu PIN · El mismo que usas en el punto de venta», el teclado, «Vas a
+ *      registrar» y la palomita), calzada en perspectiva (matrix3d de una homografía a las 4 esquinas de la pantalla de
+ *      la foto) y con el dedo de la foto por encima. En el teléfono, la pantalla sale de frente, grande.
+ *  2 · Los cuatro marcajes y sus estados, con los registros reales del día (Control de Asistencia, solo «A tiempo»).
+ * Sin JS o con «reducir movimiento»: las tres cosas, una debajo de otra, y los pasos en lista.
+ */
+import { CHECADOR } from '../../../data/plugin-staff';
+import StaffVentana from './StaffVentana.astro';
+const I = '/images/plugins/staff/';
+// las 4 esquinas de la pantalla de la tablet en la foto (% de 1536×1024): arriba-izq, arriba-der, abajo-der, abajo-izq
+const ESQUINAS = [[75.243, 34.055], [79.979, 34.641], [76.464, 50.217], [71.841, 48.313]];
+const DIA = [
+  { t: 'Entrada', h: '08:59', i: '→' }, { t: 'Salida a comida', h: '14:36', i: '🍽' },
+  { t: 'Regreso de comida', h: '15:00', i: '↩' }, { t: 'Salida', h: '17:23', i: '←' },
+];
+---
+<section class="sck" id="staff-checador" data-escena data-tramos="3" data-tramo="2" aria-labelledby="sck-h">
+  <div class="sck-riel" data-riel>
+    <div class="sck-escena">
+      <!-- 0 · el celular -->
+      <div class="sck-capa sck-capa--cel" aria-hidden="true">
+        <img class="sck-foto" src={`${I}portada-1536.webp`} srcset={`${I}portada-1280.webp 1280w, ${I}portada-1536.webp 1536w`} sizes="100vw" width="1536" height="1024" alt="" loading="lazy" decoding="async" />
+        <div class="sck-tel"><img src={`${I}tel-checa.webp`} width="780" height="1688" alt="" loading="lazy" decoding="async" /></div>
+      </div>
+
+      <!-- 1 · el kiosco -->
+      <div class="sck-capa sck-capa--kiosco">
+        <div class="sck-lienzo" data-esquinas={JSON.stringify(ESQUINAS)}>
+          <img class="sck-foto" src={`${I}kiosco-1536.webp`} srcset={`${I}kiosco-1280.webp 1280w, ${I}kiosco-1536.webp 1536w`} sizes="100vw" width="1536" height="1024" alt="Un vendedor teclea su PIN en la tablet del checador, junto a la puerta de personal de la boutique" loading="lazy" decoding="async" />
+          <div class="kq" role="img" aria-label="El checador de Sacs en la tablet: teclea su PIN, ve su nombre y lo que va a registrar, y queda su entrada a tiempo">
+            <div class="kq-vidrio">
+              <div class="kq-cab"><span><small>Checador</small><b>Sucursal Polanco</b></span><span class="kq-reloj"><b>10:57</b><small>sáb 3 oct</small></span></div>
+              <div class="kq-v kq-pin">
+                <p class="kq-ask">Teclea tu PIN</p>
+                <p class="kq-sub">El mismo que usas en el punto de venta</p>
+                <p class="kq-dots">{[0, 1, 2, 3].map((d) => <i style={`--d:${d}`}></i>)}</p>
+                <div class="kq-pad">{['1', '2', '3', '4', '5', '6', '7', '8', '9', '⌫', '0', 'OK'].map((k) => <span class:list={[{ 'is-aux': k === '⌫', 'is-go': k === 'OK' }]}>{k}</span>)}</div>
+              </div>
+              <div class="kq-v kq-conf">
+                <div class="kq-card">
+                  <small>Hola</small><b>Diego Paredes</b><span>Vendedor de piso</span>
+                  <div class="kq-accion"><small>Vas a registrar</small><b>Entrada</b><span>Hoy a las 10:57</span></div>
+                  <span class="kq-btn">Registrar</span>
+                </div>
+              </div>
+              <div class="kq-v kq-ok">
+                <span class="kq-ring">✓</span><b>Diego Paredes</b><span class="kq-ac">Entrada</span><span class="kq-hr">10:57</span><span class="kq-badge">A tiempo</span><small>Siguiente persona…</small>
+              </div>
+            </div>
+          </div>
+          <img class="sck-dedo" src={`${I}kiosco-dedo.webp`} width="260" height="342" alt="" aria-hidden="true" loading="lazy" decoding="async" />
+        </div>
+      </div>
+
+      <!-- 2 · los cuatro marcajes y sus estados -->
+      <div class="sck-capa sck-capa--dia">
+        <div class="sck-dia">
+          <ol class="sck-linea" aria-label="Los cuatro marcajes de un día real">
+            {DIA.map((m, i) => <li style={`--i:${i}`}><span class="sck-ico" aria-hidden="true">{m.i}</span><b>{m.t}</b><span class="sck-hr">{m.h}</span></li>)}
+          </ol>
+          <ul class="sck-estados" aria-label="Los estados de cada marcaje">
+            {CHECADOR.estados.map((e, i) => <li class={`is-${e.c}`} style={`--i:${i}`}>{e.t}</li>)}
+          </ul>
+          <div class="sck-registros">
+            <StaffVentana src={`${I}control-registros.webp`} w={1228} h={792} alt="Registros del día en el Control de Asistencia: cada entrada y comida con su hora y «A tiempo»" barra="Control de Asistencia" />
+          </div>
+        </div>
+      </div>
+
+      <div class="sck-txt">
+        <p class="sck-k">{CHECADOR.k}</p>
+        <h2 class="sck-h" id="sck-h">{CHECADOR.h}</h2>
+        <ol class="sck-pasos">
+          {CHECADOR.tramos.map((p, k) => (
+            <li class="sck-paso" data-k={k}>
+              <span class="sck-paso-n">{p.n}</span>
+              <span class="sck-paso-t"><b>{p.t}</b><span>{p.d}</span></span>
+              <i class="sck-barra" aria-hidden="true"><b></b></i>
+            </li>
+          ))}
+        </ol>
+        <ul class="sck-extra">{CHECADOR.extra.map((x) => <li>{x}</li>)}</ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .sck { position: relative; background: #0B0B0C; color: #fff; }
+  .sck-escena { position: relative; overflow: hidden; display: grid; }
+  .sck-foto { display: block; width: 100%; height: auto; }
+
+  /* ── sin escena: una debajo de otra ── */
+  .sck-capa { position: relative; }
+  .sck-capa--cel .sck-tel { position: absolute; right: 6%; bottom: -6%; width: min(34%, 220px); }
+  .sck-tel { padding: 7px; border-radius: 34px; background: #121216; box-shadow: 0 30px 60px -28px rgba(0, 0, 0, 0.8), inset 0 0 0 1.5px rgba(255, 255, 255, 0.14); }
+  .sck-tel img { display: block; width: 100%; height: auto; border-radius: 27px; }
+  .sck-lienzo { position: relative; width: 100%; aspect-ratio: 1536 / 1024; }
+  .sck-lienzo .sck-foto { position: absolute; inset: 0; height: 100%; }
+  .sck-dedo { position: absolute; z-index: 3; left: 71.68%; top: 33.789%; width: 8.464%; height: auto; pointer-events: none; }
+
+  /* ── la pantalla del kiosco (diseño de publico.html) ── */
+  .kq { position: absolute; z-index: 2; left: 72%; top: 34.5%; width: 7.5%; height: 15%; padding: 0; background: #0a0b0f; }
+  .kq.is-calzada { left: 0; top: 0; width: 300px; height: 400px; transform-origin: 0 0; outline: 1px solid transparent; backface-visibility: hidden; }
+  .kq-vidrio { position: relative; width: 100%; height: 100%; overflow: hidden; background: #0a0b0f; color: #F4F4F5; container-type: size; font-family: 'DM Sans', var(--font-body); }
+  .kq-cab { position: absolute; left: 0; right: 0; top: 0; display: flex; justify-content: space-between; align-items: flex-start; padding: 5cqw 6cqw 3cqw; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
+  .kq-cab span { display: grid; gap: 1cqw; }
+  .kq-cab small { font: 600 3.4cqw/1 var(--font-display); letter-spacing: 0.09em; text-transform: uppercase; color: #71717A; }
+  .kq-cab b { font: 700 5.2cqw/1.1 var(--font-display); }
+  .kq-reloj { text-align: right; }
+  .kq-reloj b { font: 700 7.6cqw/1 'JetBrains Mono', ui-monospace, monospace; color: #8EB4E6; }
+  .kq-reloj small { letter-spacing: 0; text-transform: none; }
+  .kq-v { position: absolute; left: 0; right: 0; top: 17cqh; bottom: 0; padding: 4cqw 7cqw; opacity: 0; }
+  .kq-pin { opacity: 1; }
+  .kq-ask { margin: 0; text-align: center; font: 600 6.2cqw/1.2 var(--font-display); color: #E4E4E7; }
+  .kq-sub { margin: 1.4cqw 0 0; text-align: center; font: 500 4cqw/1.3 var(--font-body); color: #71717A; }
+  .kq-dots { display: flex; justify-content: center; gap: 3.6cqw; margin: 4.6cqw 0 5cqw; }
+  .kq-dots i { width: 4.4cqw; height: 4.4cqw; border-radius: 50%; border: 0.6cqw solid rgba(255, 255, 255, 0.18); background: #8EB4E6; border-color: #8EB4E6; }
+  .kq-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.6cqw; }
+  .kq-pad span { display: grid; place-items: center; height: 11.4cqh; border-radius: 3.4cqw; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.05); font: 600 7.4cqw/1 var(--font-display); }
+  .kq-pad .is-aux { font-size: 6cqw; color: #A1A1AA; }
+  .kq-pad .is-go { background: rgba(107, 184, 165, 0.18); border-color: rgba(107, 184, 165, 0.45); color: #6BB8A5; font-size: 5.6cqw; font-weight: 700; }
+  .kq-card { display: grid; gap: 1.6cqw; padding: 6cqw; border-radius: 5cqw; background: #14151A; border: 1px solid rgba(255, 255, 255, 0.09); }
+  .kq-card > small { font: 600 3.6cqw/1 var(--font-display); letter-spacing: 0.09em; text-transform: uppercase; color: #71717A; }
+  .kq-card > b { font: 800 8cqw/1.1 var(--font-display); }
+  .kq-card > span { font: 500 4.2cqw/1.2 var(--font-body); color: #A1A1AA; }
+  .kq-accion { display: grid; gap: 1.2cqw; margin-top: 3cqw; padding: 4cqw; border-radius: 4cqw; background: rgba(142, 180, 230, 0.1); border: 1px solid rgba(142, 180, 230, 0.28); }
+  .kq-accion small { font: 700 3.4cqw/1 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: #8EB4E6; }
+  .kq-accion b { font: 800 7.6cqw/1.1 var(--font-display); }
+  .kq-accion span { font: 500 4cqw/1 'JetBrains Mono', ui-monospace, monospace; color: #A1A1AA; }
+  .kq-btn { display: grid; place-items: center; height: 13cqw; margin-top: 4cqw; border-radius: 4cqw; background: #6BB8A5; color: #06281F; font: 700 5.2cqw/1 var(--font-display); }
+  .kq-ok { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.6cqw; padding-bottom: 10cqh; text-align: center; }
+  .kq-ring { display: grid; place-items: center; width: 24cqw; height: 24cqw; margin-bottom: 3cqw; border-radius: 50%; background: rgba(107, 184, 165, 0.14); border: 0.9cqw solid #6BB8A5; color: #6BB8A5; font: 800 12cqw/1 var(--font-display); }
+  .kq-ok > b { font: 800 7.6cqw/1.1 var(--font-display); }
+  .kq-ac { font: 700 5.4cqw/1 var(--font-display); color: #6BB8A5; }
+  .kq-hr { margin: 2cqw 0 1cqw; font: 700 12cqw/1 'JetBrains Mono', ui-monospace, monospace; }
+  .kq-badge { padding: 1.6cqw 4cqw; border-radius: 99px; background: rgba(107, 184, 165, 0.16); color: #6BB8A5; font: 700 4cqw/1 var(--font-display); }
+  .kq-ok > small { margin-top: 3cqw; font: 500 3.8cqw/1 var(--font-body); color: #71717A; }
+
+  /* ── los cuatro marcajes ── */
+  .sck-dia { display: grid; gap: 16px; padding: 28px 20px; }
+  .sck-linea { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .sck-linea::before { content: ''; position: absolute; left: 12%; right: 12%; top: 22px; height: 2px; background: linear-gradient(90deg, #6BB8A5, #8EB4E6); opacity: 0.6; }
+  .sck-linea li { position: relative; display: grid; justify-items: center; gap: 6px; text-align: center; }
+  .sck-ico { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: #1C1C1F; border: 2px solid #6BB8A5; font: 700 17px/1 var(--font-display); }
+  .sck-linea b { font: 700 13px/1.2 var(--font-display); }
+  .sck-hr { font: 700 15px/1 'JetBrains Mono', ui-monospace, monospace; color: #8EB4E6; }
+  .sck-estados { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .sck-estados li { padding: 7px 12px; border-radius: 99px; font: 700 12.5px/1 var(--font-display); }
+  .sck-estados .is-ok { background: rgba(107, 184, 165, 0.16); color: #6FD3A3; }
+  .sck-estados .is-warn { background: rgba(232, 200, 74, 0.16); color: #E8C84A; }
+  .sck-estados .is-bad { background: rgba(248, 113, 113, 0.16); color: #FCA5A5; }
+  .sck-estados .is-mute { background: rgba(255, 255, 255, 0.08); color: #A1A1AA; }
+
+  /* ── el texto ── */
+  .sck-txt { padding: 36px 20px 56px; }
+  .sck-k { margin: 0 0 14px; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: #9DB8F5; }
+  .sck-h { margin: 0; color: #fff; font: 700 clamp(36px, 4vw, 60px)/0.96 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; text-wrap: balance; }
+  .sck-pasos { margin: 22px 0 0; padding: 0; list-style: none; border-top: 1px solid rgba(255, 255, 255, 0.3); }
+  .sck-paso { position: relative; display: grid; grid-template-columns: 40px 1fr; gap: 4px; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.18); }
+  .sck-paso-n { font: 700 19px/1.2 var(--pd-clash, var(--font-display)); color: #9DB8F5; }
+  .sck-paso-t { display: grid; gap: 3px; }
+  .sck-paso-t b { font: 700 16px/1.3 var(--font-display); color: #fff; }
+  .sck-paso-t > span { font: 500 14.5px/1.45 var(--font-body); color: rgba(255, 255, 255, 0.82); }
+  .sck-barra { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; overflow: hidden; }
+  .sck-barra b { display: block; height: 100%; background: #5B86EA; transform: scaleX(0); transform-origin: 0 50%; }
+  .sck-extra { display: grid; gap: 6px; margin: 16px 0 0; padding: 0; list-style: none; }
+  .sck-extra li { position: relative; padding-left: 18px; font: 500 13.5px/1.45 var(--font-body); color: rgba(255, 255, 255, 0.72); }
+  .sck-extra li::before { content: '✓'; position: absolute; left: 0; color: #6FD3A3; font-weight: 700; }
+
+  /* ══ con el scroll ══ */
+  .sck.is-escena .sck-riel { height: 400vh; }
+  .sck.is-escena .sck-escena { position: sticky; top: 0; display: block; height: 100vh; height: 100svh; }
+  .sck.is-escena .sck-capa { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity 0.7s ease, visibility 0s linear 0.7s; }
+  .sck.is-escena[data-tramo="0"] .sck-capa--cel, .sck.is-escena[data-tramo="1"] .sck-capa--kiosco, .sck.is-escena[data-tramo="2"] .sck-capa--dia { opacity: 1; visibility: visible; transition: opacity 0.7s ease, visibility 0s; }
+  .sck.is-escena .sck-capa--cel .sck-foto { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 70% 50%; }
+  .sck.is-escena .sck-lienzo { position: absolute; left: 50%; top: 50%; width: max(100vw, calc(100svh * 1.5)); transform: translate(-50%, -50%); }
+  .sck.is-escena .sck-capa--dia { background: radial-gradient(ellipse at 75% 50%, rgba(68, 112, 216, 0.22), transparent 60%), #0B0B0C; }
+  .sck.is-escena .sck-paso-n { color: rgba(255, 255, 255, 0.45); }
+  .sck.is-escena[data-tramo="0"] .sck-paso[data-k="0"] .sck-paso-n, .sck.is-escena[data-tramo="1"] .sck-paso[data-k="1"] .sck-paso-n, .sck.is-escena[data-tramo="2"] .sck-paso[data-k="2"] .sck-paso-n { color: #9DB8F5; }
+  .sck.is-escena[data-tramo="0"] .sck-paso[data-k="0"] .sck-barra b, .sck.is-escena[data-tramo="1"] .sck-paso[data-k="1"] .sck-barra b, .sck.is-escena[data-tramo="2"] .sck-paso[data-k="2"] .sck-barra b { animation: sckBarra 4.5s linear both; }
+  /* el celular entra */
+  .sck.is-escena[data-tramo="0"] .sck-tel { animation: sckSube 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both; }
+  /* el kiosco: teclea el PIN → «Vas a registrar» → la palomita */
+  .sck.is-escena .kq-dots i { background: transparent; border-color: rgba(255, 255, 255, 0.18); }
+  .sck.is-escena[data-tramo="1"] .kq-dots i { animation: kqDot 0.25s ease both; animation-delay: calc(0.6s + var(--d) * 0.32s); }
+  .sck.is-escena[data-tramo="1"] .kq-pin { animation: kqPin 6.4s linear both; }
+  .sck.is-escena[data-tramo="1"] .kq-conf { animation: kqConf 6.4s linear both; }
+  .sck.is-escena[data-tramo="1"] .kq-ok { animation: kqOk 6.4s linear both; }
+  .sck.is-escena[data-tramo="1"] .kq-ring { animation: kqPop 0.4s cubic-bezier(0.2, 1.3, 0.4, 1) 4.5s both; }
+  /* los marcajes y los estados */
+  .sck.is-escena[data-tramo="2"] .sck-linea li { animation: sckSube 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(0.2s + var(--i) * 0.18s); }
+  .sck.is-escena[data-tramo="2"] .sck-estados li { animation: sckSube 0.5s ease both; animation-delay: calc(1s + var(--i) * 0.08s); }
+  .sck.is-escena[data-tramo="2"] .sck-registros { animation: sckSube 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both; }
+  @keyframes sckBarra { from { transform: scaleX(0); } to { transform: none; } }
+  @keyframes sckSube { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+  @keyframes kqDot { from { background: transparent; border-color: rgba(255, 255, 255, 0.18); transform: scale(1); } to { background: #8EB4E6; border-color: #8EB4E6; transform: scale(1.12); } }
+  @keyframes kqPin { 0%, 36% { opacity: 1; } 40%, 100% { opacity: 0; } }
+  @keyframes kqConf { 0%, 38% { opacity: 0; } 42%, 64% { opacity: 1; } 68%, 100% { opacity: 0; } }
+  @keyframes kqOk { 0%, 66% { opacity: 0; } 70%, 100% { opacity: 1; } }
+  @keyframes kqPop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  @media (min-width: 900px) {
+    .sck.is-escena .sck-escena::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(90deg, rgba(8, 8, 10, 0.9) 0%, rgba(8, 8, 10, 0.62) 26%, rgba(8, 8, 10, 0) 44%); }
+    .sck.is-escena .sck-txt { position: absolute; left: 0; top: 50%; z-index: 4; width: min(34vw, 460px); padding: 0 0 0 4.4vw; transform: translateY(-50%); text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45); }
+    .sck.is-escena .sck-paso-t > span { display: none; }
+    .sck.is-escena[data-tramo="0"] .sck-paso[data-k="0"] .sck-paso-t > span, .sck.is-escena[data-tramo="1"] .sck-paso[data-k="1"] .sck-paso-t > span, .sck.is-escena[data-tramo="2"] .sck-paso[data-k="2"] .sck-paso-t > span { display: block; }
+    .sck.is-escena .sck-capa--cel .sck-tel { position: absolute; left: 40vw; right: auto; bottom: auto; top: 50%; z-index: 2; width: auto; height: min(78vh, 680px); aspect-ratio: 780 / 1688; padding: 9px; border-radius: 44px; transform: translateY(-50%); }
+    .sck.is-escena .sck-capa--cel .sck-tel img { height: 100%; width: auto; border-radius: 36px; }
+    .sck.is-escena[data-tramo="0"] .sck-tel { animation-name: sckSubeCentro; }
+    .sck.is-escena .sck-capa--dia .sck-dia { position: absolute; right: 5vw; top: 50%; z-index: 2; width: min(52vw, 760px); padding: 0; gap: 22px; transform: translateY(-50%); }
+    .sck-linea b { font-size: 14px; }
+    .sck-hr { font-size: 17px; }
+  }
+  @keyframes sckSubeCentro { from { opacity: 0; transform: translateY(calc(-50% + 40px)); } to { opacity: 1; transform: translateY(-50%); } }
+  @media (max-width: 899px) {
+    .sck-capa--kiosco .sck-dedo { display: none; }
+    .sck.is-escena .sck-riel { height: 330vh; }
+    /* el escenario arriba; el paso, abajo */
+    .sck.is-escena .sck-capa--cel .sck-foto { height: 58svh; }
+    .sck.is-escena .sck-capa--cel .sck-tel { left: 50%; right: auto; top: 2.5svh; bottom: auto; width: auto; height: 53svh; aspect-ratio: 780 / 1688; padding: 6px; border-radius: 30px; transform: translateX(-50%); }
+    .sck.is-escena .sck-capa--cel .sck-tel img { height: 100%; width: auto; border-radius: 25px; }
+    .sck.is-escena[data-tramo="0"] .sck-tel { animation: none; }
+    .sck.is-escena .sck-lienzo { top: 0; width: auto; height: 58svh; left: calc(50vw - 58svh * 1.5 * 0.76); transform: none; }
+    .sck.is-escena .sck-capa--kiosco::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 58svh; background: rgba(8, 8, 10, 0.55); }
+    /* la pantalla del kiosco, de frente y grande, sobre la foto */
+    /* centrada en la pantalla: el lienzo empieza en 50vw − 58svh·1.5·0.76, así que dentro de él va en 58svh·1.5·0.76 − la mitad de su ancho */
+    .sck.is-escena .kq.is-calzada { position: absolute; z-index: 3; transform: none !important; left: calc(58svh * 1.5 * 0.76 - 52svh * 0.375); top: 2.5svh; width: auto; height: 52svh; aspect-ratio: 3 / 4; padding: 7px; border-radius: 22px; background: #E9E9EC; box-shadow: 0 18px 30px -16px rgba(0, 0, 0, 0.7); }
+    .sck.is-escena .kq.is-calzada .kq-vidrio { border-radius: 16px; }
+    .sck.is-escena .sck-capa--dia .sck-dia { position: absolute; left: 0; right: 0; top: 2.5svh; padding: 0 16px; gap: 14px; }
+    .sck.is-escena .sck-registros { max-height: calc(58svh - 190px); overflow: hidden; -webkit-mask-image: linear-gradient(#000 70%, transparent); mask-image: linear-gradient(#000 70%, transparent); }
+    .sck.is-escena .sck-txt { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; padding: 26px 20px 18px; background: linear-gradient(180deg, rgba(11, 11, 12, 0) 0, #0B0B0C 24px); }
+    .sck.is-escena .sck-k { margin-bottom: 8px; }
+    .sck.is-escena .sck-h { font-size: clamp(26px, 7.6vw, 36px); }
+    .sck.is-escena .sck-pasos { margin-top: 10px; }
+    .sck.is-escena .sck-paso { display: none; padding: 10px 0 8px; }
+    .sck.is-escena[data-tramo="0"] .sck-paso[data-k="0"], .sck.is-escena[data-tramo="1"] .sck-paso[data-k="1"], .sck.is-escena[data-tramo="2"] .sck-paso[data-k="2"] { display: grid; }
+    .sck.is-escena .sck-extra { display: none; }
+    .sck-linea b { font-size: 11.5px; }
+    .sck-ico { width: 38px; height: 38px; font-size: 15px; }
+    .sck-linea::before { top: 19px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sck * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<script>
+  // Calza la pantalla del kiosco sobre la de la foto: homografía de su tamaño base (300×400) a las 4 esquinas de la
+  // pantalla en la foto (un pelo hacia adentro: así la orilla dentada del 3D cae sobre el negro de la pantalla y no
+  // sobre el marco blanco), como matrix3d. Se recalcula si cambia el
+  // tamaño del lienzo. En el teléfono la pantalla va de frente (el CSS anula la transformación).
+  (() => {
+    const lienzo = document.querySelector<HTMLElement>('.sck-lienzo');
+    const pantalla = lienzo?.querySelector<HTMLElement>('.kq');
+    if (!lienzo || !pantalla) return;
+    const base: [number, number][] = JSON.parse(lienzo.dataset.esquinas || '[]');
+    const cx = base.reduce((s, p) => s + p[0], 0) / 4, cy = base.reduce((s, p) => s + p[1], 0) / 4;
+    const esquinas = base.map(([x, y]) => [cx + (x - cx) * 0.985, cy + (y - cy) * 0.985]);
+    const W0 = 300, H0 = 400;
+    const resuelve = (A: number[][], b: number[]) => {
+      const n = b.length, M = A.map((fila, i) => [...fila, b[i]]);
+      for (let c = 0; c < n; c++) {
+        let p = c; for (let f = c + 1; f < n; f++) if (Math.abs(M[f][c]) > Math.abs(M[p][c])) p = f;
+        [M[c], M[p]] = [M[p], M[c]];
+        for (let f = 0; f < n; f++) if (f !== c) { const k = M[f][c] / M[c][c]; for (let j = c; j <= n; j++) M[f][j] -= k * M[c][j]; }
+      }
+      return M.map((fila, i) => fila[n] / fila[i]);
+    };
+    const calza = () => {
+      const w = lienzo.clientWidth, h = lienzo.clientHeight;
+      if (!w || !h) return;
+      const dst = esquinas.map(([x, y]) => [x / 100 * w, y / 100 * h]);
+      const src = [[0, 0], [W0, 0], [W0, H0], [0, H0]];
+      const A: number[][] = [], b: number[] = [];
+      for (let i = 0; i < 4; i++) {
+        const [x, y] = src[i], [X, Y] = dst[i];
+        A.push([x, y, 1, 0, 0, 0, -X * x, -X * y]); b.push(X);
+        A.push([0, 0, 0, x, y, 1, -Y * x, -Y * y]); b.push(Y);
+      }
+      const [a, bb, c, d, e, f, g, hh] = resuelve(A, b);
+      pantalla.classList.add('is-calzada');
+      pantalla.style.transform = `matrix3d(${a},${d},0,${g},${bb},${e},0,${hh},0,0,1,0,${c},${f},0,1)`;
+    };
+    new ResizeObserver(calza).observe(lienzo);
+    calza();
+  })();
+</script>

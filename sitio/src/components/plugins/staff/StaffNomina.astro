@@ -1,0 +1,72 @@
+---
+/**
+ * «Tu nómina, sin armarla a mano» (/plugins/staff): la prenómina REAL del periodo (Control de Asistencia, con los
+ * nombres difuminados), las tarjetas de riesgo legal del Dashboard de RH (contratos por vencer con nombres difuminados y
+ * documentos vencidos) y el bloque del registro electrónico de jornada obligatorio desde el 1-ene-2027 (los datos son
+ * los verificados para la presentación de Staff: DOF 1-may-2026, art. 132 fr. XXXIV, multa del art. 994 fr. IV Bis).
+ */
+import { NOMINA } from '../../../data/plugin-staff';
+import StaffVentana from './StaffVentana.astro';
+const I = '/images/plugins/staff/';
+const { ley } = NOMINA;
+---
+<section class="pda sno" id="staff-nomina" aria-labelledby="sno-h">
+  <p class="pd-folio"><span>{NOMINA.k}</span><span>Prenómina del periodo</span></p>
+  <div class="sno-cab">
+    <h2 class="pda-h" id="sno-h">{NOMINA.h}</h2>
+    <p class="sno-p">{NOMINA.p}</p>
+  </div>
+  <p class="sno-desliza" aria-hidden="true">Desliza para ver todas las columnas →</p>
+  <div class="sno-prenomina rv">
+    <StaffVentana src={`${I}prenomina.webp`} w={2192} h={1532} alt="La prenómina del 1 al 15 de octubre: por persona, sus días, retardos, faltas, justificantes, comidas excedidas, horas extra planeadas y reales, vacaciones e incapacidades, con su botón CSV" barra="Control de Asistencia · Prenómina" />
+  </div>
+  <div class="sno-ley">
+    <div class="sno-ley-txt">
+      <p class="sno-ley-k">{ley.k}</p>
+      <h3 class="sno-ley-h">{ley.h}</h3>
+      <p class="sno-ley-p">{ley.p}</p>
+      <p class="sno-multa"><b>{ley.multa}</b><span>{ley.multaD}</span></p>
+      <p class="sno-nota">{ley.nota}</p>
+    </div>
+    <div class="sno-riesgo">
+      <p class="sno-riesgo-k">Y en tu Dashboard de RH</p>
+      <div class="rv"><StaffVentana src={`${I}dash-contratos.webp`} w={756} h={388} alt="Contratos por vencer: tres en los próximos 30 días, uno ya vencido" /></div>
+      <div class="rv"><StaffVentana src={`${I}dash-documentos.webp`} w={756} h={340} alt="Documentos vencidos: INE vencidas y documentos del expediente" /></div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .sno { background: #F5F3EE; color: #141414; --pd-texto: #141414; --pd-tenue: #45433E; --pd-filete: rgba(20, 20, 20, 0.16); }
+  .sno-cab { display: grid; gap: 14px; }
+  .sno-p { margin: 0; max-width: 52ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .sno-prenomina { margin-top: 36px; max-height: 560px; overflow: hidden; border-radius: 14px; -webkit-mask-image: linear-gradient(#000 80%, transparent); mask-image: linear-gradient(#000 80%, transparent); }
+  .sno-desliza { display: none; }
+  .sno-ley { display: grid; gap: 24px; margin-top: 36px; }
+  .sno-ley-txt { padding: 26px 24px; border-radius: 22px; background: #0A1648; color: #fff; }
+  .sno-ley-k { margin: 0; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: #9DB8F5; }
+  .sno-ley-h { margin: 10px 0 0; color: #fff; font: 700 clamp(26px, 2.8vw, 40px)/1.05 var(--pd-clash); letter-spacing: -0.015em; text-wrap: balance; }
+  .sno-ley-p { margin: 14px 0 0; font: 500 15.5px/1.55 var(--font-body); color: rgba(255, 255, 255, 0.85); }
+  .sno-multa { display: grid; gap: 6px; margin: 18px 0 0; padding: 16px 18px; border-radius: 16px; background: rgba(255, 255, 255, 0.08); }
+  .sno-multa b { font: 700 clamp(26px, 3vw, 40px)/1 var(--pd-clash); color: #F2C46B; letter-spacing: -0.01em; }
+  .sno-multa span { font: 500 13.5px/1.45 var(--font-body); color: rgba(255, 255, 255, 0.82); }
+  .sno-nota { margin: 14px 0 0; font: 500 12px/1.4 var(--font-body); color: rgba(255, 255, 255, 0.6); }
+  .sno-riesgo { display: grid; gap: 14px; align-content: start; }
+  .sno-riesgo-k { margin: 0; font: 700 13px/1.3 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: #45433E; }
+  :global(.js-rv) .sno .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
+  :global(.js-rv) .sno .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .sno-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .sno-prenomina { margin-top: 52px; max-height: 620px; }
+    .sno-ley { grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: 4vw; margin-top: 52px; align-items: start; }
+    .sno-ley-txt { padding: 36px 36px 30px; }
+  }
+  @media (max-width: 767px) {
+    .sno-desliza { display: block; margin: 28px 0 8px; font: 700 12.5px/1 var(--font-display); color: #2F55C4; }
+    .sno-prenomina { margin-top: 0; max-height: 470px; overflow-x: auto; overscroll-behavior-x: contain; }
+    .sno-prenomina > :global(.sv) { width: 760px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .sno .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>

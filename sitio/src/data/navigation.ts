@@ -894,6 +894,7 @@ export const footerLinks = {
     { label: 'Planeación de demanda', href: '/planeacion-de-demanda' },
     { label: 'Experiencia · Probador virtual', href: '/experiencia/probador-virtual' },
     { label: 'Experiencia · Alta con AXO', href: '/experiencia/alta-de-productos' },
+    { label: 'Plugin · Staff', href: '/plugins/staff' },
     { label: 'Nosotros', href: '/nosotros' },
     { label: 'Manifiesto', href: '/manifiesto' },
     { label: 'Casos de éxito', href: '/casos-de-exito' },

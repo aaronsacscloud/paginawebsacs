@@ -1,0 +1,72 @@
+---
+/**
+ * «Su Sacs, en su celular» (/plugins/staff): la app del colaborador con seis pantallas REALES de SACSMobile (cuenta
+ * dibujotecnico, 3-oct-2026): checa, su historial, cambios de turno y justificantes, sus vacaciones, su contrato y las
+ * encuestas NOM-035, y el organigrama. Escritorio con movimiento: la escena se pega y la fila de teléfonos corre de lado
+ * con el scroll (--p). Teléfono, sin JS o con «reducir movimiento»: un carrusel que se desliza con el dedo.
+ */
+import { APP } from '../../../data/plugin-staff';
+const I = '/images/plugins/staff/';
+const ALT: Record<string, string> = {
+  'tel-checa': 'Mi Asistencia: 9 días de vacaciones, 3 días económicos, 79.2 % de puntualidad, la entrada de hoy a las 08:55 a tiempo y el botón Marcar salida',
+  'tel-historial': 'El historial reciente: cada entrada, salida a comida, regreso y salida con su hora',
+  'tel-turnos': 'Cambios de turno con un cambio aprobado, y justificantes de retardo aprobados',
+  'tel-vacaciones': 'Mis solicitudes: tres vacaciones aprobadas, con su saldo de días',
+  'tel-contrato': 'Mi contrato pendiente de firma digital y encuestas NOM-035 por responder',
+  'tel-organigrama': 'Mi Equipo: el organigrama de la empresa, del director general a cada vendedor',
+};
+---
+<section class="sap pd-fucsia" id="staff-app" data-escena aria-labelledby="sap-h">
+  <div class="sap-cab">
+    <p class="pd-folio"><span>{APP.k}</span><span>Pantallas reales de SACSMobile</span></p>
+    <h2 class="sap-h" id="sap-h">{APP.h}</h2>
+    <p class="sap-p">{APP.p}</p>
+  </div>
+  <div class="sap-riel" data-riel>
+    <div class="sap-escena">
+      <ol class="sap-pista">
+        {APP.pantallas.map((x, i) => (
+          <li class="sap-item">
+            <figure class="sap-tel"><img src={`${I}${x.img}.webp`} width="780" height="1688" alt={ALT[x.img]} loading="lazy" decoding="async" /></figure>
+            <p class="sap-t"><b>{String(i + 1).padStart(2, '0')}</b>{x.t}</p>
+            <p class="sap-d">{x.d}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </div>
+</section>
+
+<style>
+  .sap { position: relative; padding-top: 72px; overflow-x: clip; }
+  .sap-cab { max-width: 1160px; margin: 0 auto; padding: 0 20px 28px; }
+  .sap-h { margin: 0; max-width: 14ch; color: #fff; font: 700 clamp(40px, 6vw, 88px)/0.94 var(--pd-clash); letter-spacing: -0.02em; text-wrap: balance; }
+  .sap-p { margin: 18px 0 0; max-width: 50ch; font: 500 17px/1.55 var(--font-body); color: #fff; }
+  /* sin escena: un carrusel con el dedo */
+  .sap-pista { display: flex; gap: 16px; margin: 0; padding: 4px 20px 64px; list-style: none; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 20px; overscroll-behavior-x: contain; scrollbar-width: none; }
+  .sap-pista::-webkit-scrollbar { display: none; }
+  .sap-item { flex: 0 0 auto; width: min(64vw, 270px); scroll-snap-align: start; }
+  .sap-tel { margin: 0; padding: 7px; border-radius: 36px; background: #141418; box-shadow: 0 14px 28px -16px rgba(60, 0, 20, 0.6), inset 0 0 0 1.5px rgba(255, 255, 255, 0.14); }
+  .sap-tel img { display: block; width: 100%; height: auto; border-radius: 29px; }
+  .sap-t { display: flex; align-items: baseline; gap: 10px; margin: 16px 0 0; font: 700 clamp(19px, 1.6vw, 24px)/1.15 var(--pd-clash); color: #fff; }
+  .sap-t b { font: 700 13px/1 var(--pd-clash); opacity: 0.8; }
+  .sap-d { margin: 6px 0 0; font: 500 14.5px/1.45 var(--font-body); color: rgba(255, 255, 255, 0.92); }
+
+  @media (min-width: 900px) {
+    .sap { padding-top: 112px; }
+    .sap-cab { padding: 0 5vw 36px; max-width: none; }
+    .sap-pista { padding: 4px 5vw 110px; gap: 28px; }
+    .sap-item { width: 260px; }
+  }
+  /* ══ escritorio con movimiento: la fila corre de lado ══ */
+  @media (min-width: 900px) and (min-height: 640px) {
+    /* el ancho de cada teléfono cabe en la altura de la pantalla (teléfono + su texto) */
+    .sap.is-escena { --ancho: min(21vw, 300px, 30svh); }
+    .sap.is-escena .sap-riel { height: 300vh; }
+    .sap.is-escena .sap-escena { position: sticky; top: 0; height: 100vh; height: 100svh; display: flex; align-items: center; overflow: hidden; }
+    .sap.is-escena .sap-pista { overflow: visible; padding: 0 5vw; gap: 3vw; width: max-content; transform: translateX(calc(var(--p, 0) * -1 * (6 * var(--ancho) + 5 * 3vw + 10vw - 100vw))); }
+    .sap.is-escena .sap-item { width: var(--ancho); }
+    .sap.is-escena .sap-tel { padding: 8px; border-radius: 40px; }
+    .sap.is-escena .sap-tel img { border-radius: 32px; }
+  }
+</style>

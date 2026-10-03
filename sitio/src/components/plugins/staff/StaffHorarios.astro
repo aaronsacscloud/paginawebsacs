@@ -1,0 +1,94 @@
+---
+/**
+ * «La semana de cada tienda, sin hojas de cálculo» (/plugins/staff): el Cuadrante de Horarios. Arriba, la barra REAL
+ * de la cuenta dibujotecnico con sus turnos (sin el de prueba) y los botones «Copiar semana anterior» y «Prellenar
+ * desde horarios base»; abajo, una semana de EJEMPLO (la cuenta todavía no publica su cuadrante) con las horas por
+ * semana y el aviso real de la ley («Sin día de descanso en la semana (LFT art. 69)»), y las reglas REALES del cuadrante.
+ */
+import { HORARIOS } from '../../../data/plugin-staff';
+import StaffVentana from './StaffVentana.astro';
+const I = '/images/plugins/staff/';
+const { semana } = HORARIOS;
+---
+<section class="pda sho pd-marino" id="staff-horarios" aria-labelledby="sho-h">
+  <div class="pda-fondo" aria-hidden="true"><span>HORARIOS · TURNOS · HORARIOS</span><span>HORARIOS · TURNOS · HORARIOS</span></div>
+  <p class="pd-folio"><span>{HORARIOS.k}</span><span>Cuadrante de Horarios</span></p>
+  <h2 class="pda-h" id="sho-h">{HORARIOS.h}</h2>
+  <p class="sho-p">{HORARIOS.p}</p>
+  <p class="sho-desliza" aria-hidden="true">Desliza para ver todos los turnos →</p>
+  <div class="sho-turnos rv">
+    <StaffVentana src={`${I}cuadrante-turnos.webp`} w={2704} h={476} alt="El Cuadrante de Horarios con los turnos reales de la cuenta: marketing, oficina, ventas de mostrador, cajera, encargado y horarios especiales" barra="Cuadrante de Horarios" />
+  </div>
+  <div class="sho-grid">
+    <figure class="sho-semana rv" aria-label="Una semana de ejemplo en el cuadrante">
+      <div class="sho-semana-cab"><b>Semana del 5 al 11 de octubre</b><span class="sho-ej">Ejemplo</span></div>
+      <div class="sho-tabla" role="table">
+        <div class="sho-fila sho-fila--h" role="row"><span role="columnheader">Colaborador</span>{semana.dias.map((d) => <span role="columnheader">{d}</span>)}<span role="columnheader">Horas</span></div>
+        {semana.filas.map((f) => (
+          <div class:list={['sho-fila', { 'is-aviso': f.aviso }]} role="row">
+            <span class="sho-quien" role="cell"><b>{f.n}</b><small>{f.p}</small></span>
+            {f.t.map((t) => <span role="cell" class:list={['sho-c', { 'is-a': t === 'A', 'is-c': t === 'C', 'is-d': t === '—' }]}>{t === '—' ? 'Desc.' : t}</span>)}
+            <span role="cell" class="sho-h">{f.h}</span>
+            {f.aviso && <span class="sho-aviso" role="cell">⚠ {f.aviso}</span>}
+          </div>
+        ))}
+      </div>
+      <figcaption><span><i class="is-a"></i>{semana.turnos.A}</span><span><i class="is-c"></i>{semana.turnos.C}</span></figcaption>
+    </figure>
+    <div class="sho-lado">
+      <div class="sho-reglas rv"><img src={`${I}cuadrante-reglas.webp`} width="868" height="864" alt="Reglas del cuadrante: mínimo de personas por día, 12 horas de descanso entre turnos, máximo 3 horas extra por día y 9 por semana" loading="lazy" decoding="async" /></div>
+      <ul class="sho-puntos">{HORARIOS.puntos.map((x, i) => <li class="rv" style={`--i:${i}`}><b>{x.t}</b><span>{x.d}</span></li>)}</ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .sho-p { margin: 18px 0 0; max-width: 52ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .sho-turnos { margin-top: 36px; }
+  .sho-desliza { display: none; }
+  .sho-grid { display: grid; gap: 28px; margin-top: 28px; }
+  .sho-semana { margin: 0; padding: 18px; border-radius: 18px; background: #fff; color: #141414; box-shadow: 0 30px 60px -34px rgba(0, 0, 0, 0.6); }
+  .sho-semana-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; font: 700 15px/1.2 var(--font-display); }
+  .sho-ej { padding: 4px 9px; border-radius: 99px; background: #F2C46B; font: 700 10.5px/1 var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; }
+  .sho-tabla { display: grid; gap: 0; overflow-x: auto; }
+  .sho-fila { display: grid; grid-template-columns: minmax(118px, 1.6fr) repeat(7, minmax(34px, 1fr)) 50px; gap: 4px; align-items: center; padding: 8px 0; border-bottom: 1px solid #EEF0F4; min-width: 520px; }
+  .sho-fila--h { padding-top: 0; font: 700 10.5px/1 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: #7A8090; text-align: center; }
+  .sho-fila--h > :first-child { text-align: left; }
+  .sho-quien { display: grid; gap: 2px; }
+  .sho-quien b { font: 700 13.5px/1.2 var(--font-display); }
+  .sho-quien small { font: 500 11.5px/1.2 var(--font-body); color: #7A8090; }
+  .sho-c { display: grid; place-items: center; height: 30px; border-radius: 8px; font: 700 12px/1 var(--font-display); }
+  .sho-c.is-a { background: #E1EAFE; color: #1F3F99; }
+  .sho-c.is-c { background: #FDE6EE; color: #9B1F4E; }
+  .sho-c.is-d { background: #F2F3F6; color: #9AA0AD; font-weight: 600; }
+  .sho-h { text-align: center; font: 700 13px/1 var(--font-display); }
+  .sho-fila.is-aviso .sho-h { color: #B23A3A; }
+  .sho-aviso { grid-column: 1 / -1; margin-top: 2px; padding: 7px 10px; border-radius: 9px; background: #FDECEC; color: #8C2525; font: 600 12.5px/1.3 var(--font-display); }
+  .sho-semana figcaption { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 12px; font: 600 12px/1 var(--font-display); color: #45433E; }
+  .sho-semana figcaption span { display: inline-flex; align-items: center; gap: 6px; }
+  .sho-semana figcaption i { width: 12px; height: 12px; border-radius: 3px; }
+  .sho-semana figcaption i.is-a { background: #E1EAFE; box-shadow: inset 0 0 0 1px #9DB8F5; }
+  .sho-semana figcaption i.is-c { background: #FDE6EE; box-shadow: inset 0 0 0 1px #F07FA6; }
+  .sho-lado { display: grid; gap: 20px; align-content: start; }
+  .sho-reglas { overflow: hidden; border-radius: 16px; box-shadow: 0 30px 60px -34px rgba(0, 0, 0, 0.6); max-width: 360px; }
+  .sho-reglas img { display: block; width: 100%; height: auto; }
+  .sho-puntos { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; border-top: 2px solid #fff; }
+  .sho-puntos li { display: grid; gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--pd-filete); }
+  .sho-puntos b { font: 700 17px/1.25 var(--font-display); color: #fff; }
+  .sho-puntos span { font: 500 14.5px/1.5 var(--font-body); color: var(--pd-tenue); }
+  :global(.js-rv) .sho .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i, 0) * 0.08s); }
+  :global(.js-rv) .sho .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .sho-grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 4vw; margin-top: 40px; align-items: start; }
+    .sho-semana { padding: 24px; }
+    .sho-lado { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr); align-items: start; }
+  }
+  @media (max-width: 767px) {
+    .sho-desliza { display: block; margin: 28px 0 8px; font: 700 12.5px/1 var(--font-display); color: #9DB8F5; }
+    .sho-turnos { margin-top: 0; overflow-x: auto; overscroll-behavior-x: contain; border-radius: 10px; }
+    .sho-turnos > :global(.sv) { width: 900px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .sho .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>

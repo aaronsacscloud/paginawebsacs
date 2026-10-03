@@ -1,0 +1,70 @@
+---
+/**
+ * «Actas que se sostienen» (/plugins/staff): el flujo REAL de las actas administrativas de Staff (sacs_api
+ * class/actas.js: testigos → aprobación según gravedad → firma o negativa → PDF con QR), en cinco pasos sobre una
+ * línea, y el documento dibujado (sin actas reales: son disciplinarias y llevan nombres). Marfil.
+ */
+import { ACTAS } from '../../../data/plugin-staff';
+---
+<section class="pda sac pd-marfil" id="staff-actas" aria-labelledby="sac-h">
+  <p class="pd-folio"><span>{ACTAS.k}</span><span>Con folio, firmas y QR</span></p>
+  <div class="sac-grid">
+    <div>
+      <h2 class="pda-h" id="sac-h">{ACTAS.h}</h2>
+      <p class="sac-p">{ACTAS.p}</p>
+      <ol class="sac-pasos">
+        {ACTAS.pasos.map((p, i) => <li class="rv" style={`--i:${i}`}><b>{p.n}</b><span><strong>{p.t}</strong>{p.d}</span></li>)}
+      </ol>
+    </div>
+    <figure class="sac-doc rv" aria-label="Un acta administrativa en PDF, con su folio, las firmas de los testigos y el código QR">
+      <div class="sac-hoja">
+        <p class="sac-folio"><span>Acta administrativa</span><b>AA-2026-0012</b></p>
+        <p class="sac-cat"><span>Categoría</span>Retardos reiterados · LFT art. 47</p>
+        <p class="sac-gr"><span class="is-media">Gravedad media</span><span>Aprobó: supervisor y RH</span></p>
+        <div class="sac-lineas" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="sac-firmas">
+          <span><u></u><small>Testigo 1</small></span><span><u></u><small>Testigo 2</small></span><span><u></u><small>Colaborador · de enterado</small></span>
+        </div>
+        <div class="sac-pie"><span class="sac-qr" aria-hidden="true"></span><small>Cada acta con su folio y su código QR. «Firmar de enterado no significa que estés de acuerdo.»</small></div>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<style>
+  .sac-grid { display: grid; gap: 40px; }
+  .sac-p { margin: 18px 0 0; max-width: 48ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .sac-pasos { display: grid; margin: 28px 0 0; padding: 0; list-style: none; border-top: 2px solid var(--pd-texto); }
+  .sac-pasos li { display: grid; grid-template-columns: 44px 1fr; gap: 8px; padding: 14px 0; border-bottom: 1px solid var(--pd-filete); }
+  .sac-pasos b { font: 700 18px/1.3 var(--pd-clash); color: var(--pd-texto); }
+  .sac-pasos span { display: grid; gap: 3px; font: 500 15px/1.5 var(--font-body); color: var(--pd-tenue); }
+  .sac-pasos strong { font: 700 17px/1.25 var(--font-display); color: var(--pd-texto); }
+  .sac-doc { margin: 0; display: grid; place-items: center; }
+  .sac-hoja { position: relative; display: grid; gap: 14px; width: min(100%, 420px); padding: 28px 26px 24px; border-radius: 6px; background: #fff; color: #141414; box-shadow: 0 30px 60px -30px rgba(20, 20, 20, 0.35), 0 0 0 1px rgba(20, 20, 20, 0.06); transform: rotate(-1.5deg); }
+  .sac-folio { display: flex; justify-content: space-between; align-items: baseline; margin: 0; padding-bottom: 12px; border-bottom: 2px solid #141414; }
+  .sac-folio span { font: 700 12px/1 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; }
+  .sac-folio b { font: 700 14px/1 'JetBrains Mono', ui-monospace, monospace; }
+  .sac-cat { display: grid; gap: 4px; margin: 0; font: 600 15px/1.3 var(--font-display); }
+  .sac-cat span { font: 600 10.5px/1 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: #7A8090; }
+  .sac-gr { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; font: 600 12px/1 var(--font-display); color: #45433E; }
+  .sac-gr span { padding: 6px 10px; border-radius: 99px; background: #F2F2EF; }
+  .sac-gr .is-media { background: #FFF4D6; color: #8A5A00; }
+  .sac-lineas { display: grid; gap: 8px; }
+  .sac-lineas i { height: 7px; border-radius: 4px; background: #EEEFF2; }
+  .sac-lineas i:nth-child(2) { width: 92%; } .sac-lineas i:nth-child(4) { width: 86%; } .sac-lineas i:nth-child(5) { width: 58%; }
+  .sac-firmas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 10px; }
+  .sac-firmas span { display: grid; gap: 6px; }
+  .sac-firmas u { height: 30px; border-bottom: 1.5px solid #141414; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 30'%3E%3Cpath d='M6 22c10-14 18-16 22-8s-4 10 2 6 14-14 20-8-2 12 8 6 18-12 24-6 6 8 14 2 10-6 18-4' fill='none' stroke='%23141414' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") center / 92% 80% no-repeat; }
+  .sac-firmas small { font: 600 10px/1.25 var(--font-display); color: #7A8090; }
+  .sac-pie { display: grid; grid-template-columns: 56px 1fr; gap: 12px; align-items: center; padding-top: 12px; border-top: 1px solid #EEEFF2; }
+  .sac-qr { width: 56px; height: 56px; background: conic-gradient(from 90deg, #141414 25%, #fff 0 50%, #141414 0 75%, #fff 0) 0 0 / 14px 14px, #fff; box-shadow: inset 0 0 0 4px #fff, inset 0 0 0 6px #141414; }
+  .sac-pie small { font: 500 11.5px/1.4 var(--font-body); color: #45433E; }
+  :global(.js-rv) .sac .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i, 0) * 0.08s); }
+  :global(.js-rv) .sac .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .sac-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 5vw; align-items: center; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .sac .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>

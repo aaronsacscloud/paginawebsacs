@@ -1,0 +1,34 @@
+---
+/**
+ * Una pantalla real de Sacs en un marco de ventana (los tres puntos y la barra), para las capturas de escritorio de
+ * /plugins/staff. La imagen viene a 2x: `w` y `h` son su tamaño en px de imagen (el marco la escala al ancho).
+ * `movil`: un recorte más angosto para el teléfono (las capturas anchas ahí no se leen).
+ */
+interface Props { src: string; w: number; h: number; alt: string; barra?: string; clase?: string; eager?: boolean; movil?: { src: string; w: number; h: number } }
+const { src, w, h, alt, barra, clase, eager, movil } = Astro.props;
+---
+<figure class:list={['sv', clase]}>
+  <div class="sv-barra" aria-hidden="true"><i></i><i></i><i></i>{barra && <span>{barra}</span>}</div>
+  {movil ? (
+    <picture>
+      <source media="(max-width: 767px)" srcset={movil.src} width={movil.w} height={movil.h} />
+      <img src={src} width={w} height={h} alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" />
+    </picture>
+  ) : (
+    <img src={src} width={w} height={h} alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" />
+  )}
+</figure>
+
+<style>
+  .sv { margin: 0; overflow: hidden; border-radius: 14px; background: #fff; box-shadow: 0 30px 60px -34px rgba(16, 24, 40, 0.45), 0 0 0 1px rgba(16, 24, 40, 0.06); }
+  .sv-barra { display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; background: #F2F3F6; border-bottom: 1px solid #E6E8EE; }
+  .sv-barra i { width: 9px; height: 9px; border-radius: 50%; background: #D7DAE1; }
+  .sv-barra span { margin-left: 10px; font: 600 11.5px/1 var(--font-display); color: #7A8090; letter-spacing: 0.02em; }
+  .sv img { display: block; width: 100%; height: auto; }
+  @media (max-width: 767px) {
+    .sv { border-radius: 10px; box-shadow: 0 12px 24px -14px rgba(16, 24, 40, 0.45), 0 0 0 1px rgba(16, 24, 40, 0.06); }
+    .sv-barra { height: 22px; padding: 0 9px; gap: 5px; }
+    .sv-barra i { width: 7px; height: 7px; }
+    .sv-barra span { display: none; }
+  }
+</style>

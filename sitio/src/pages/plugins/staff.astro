@@ -1,0 +1,104 @@
+---
+/**
+ * /plugins/staff — «Staff», el plugin de Sacs para el equipo de la tienda (3-oct-2026). El primero de la sección
+ * «Plugins» del menú de Plataforma (src/data/plugins.ts).
+ *
+ * Pedido del dueño: «súper visual, como el probador: fotos grandes, explicaciones claras y pantallas reales de Sacs con
+ * la información de dibujotecnico», con todo lo que incluye. Recorrido: portada → todo lo que incluye (el mapa) → el
+ * Dashboard de RH → el reloj checador (celular, kiosco y los cuatro marcajes, con el scroll) → la app del colaborador
+ * (seis pantallas reales) → el expediente (con sus pestañas) → horarios → vacaciones por ley → actas → premios →
+ * prenómina y la ley de 2027 → en automático → lo que deja de pasar → preguntas → cierre.
+ * Qué existe y qué no, y cómo se cuidaron los datos de la cuenta: src/data/plugin-staff.ts.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ExpHero from '../../components/experiencia/ExpHero.astro';
+import ExpLista from '../../components/experiencia/ExpLista.astro';
+import StaffHeroCapa from '../../components/plugins/staff/StaffHeroCapa.astro';
+import StaffIncluye from '../../components/plugins/staff/StaffIncluye.astro';
+import StaffDia from '../../components/plugins/staff/StaffDia.astro';
+import StaffChecador from '../../components/plugins/staff/StaffChecador.astro';
+import StaffApp from '../../components/plugins/staff/StaffApp.astro';
+import StaffExpediente from '../../components/plugins/staff/StaffExpediente.astro';
+import StaffHorarios from '../../components/plugins/staff/StaffHorarios.astro';
+import StaffVacaciones from '../../components/plugins/staff/StaffVacaciones.astro';
+import StaffActas from '../../components/plugins/staff/StaffActas.astro';
+import StaffPremios from '../../components/plugins/staff/StaffPremios.astro';
+import StaffNomina from '../../components/plugins/staff/StaffNomina.astro';
+import StaffAuto from '../../components/plugins/staff/StaffAuto.astro';
+import GiroFAQ from '../../components/giros/GiroFAQ.astro';
+import FinalCTA from '../../components/FinalCTA.astro';
+import StructuredData from '../../components/StructuredData.astro';
+import { STAFF, RESUELVE, PREGUNTAS_STAFF } from '../../data/plugin-staff';
+import { SITIO } from '../../data/entidad';
+import { breadcrumbList } from '../../lib/breadcrumb';
+import '../../styles/planeacion.css';
+
+const href = '/plugins/staff';
+const title = 'Staff: reloj checador, horarios y vacaciones para tu tienda | Sacs';
+const description = 'El plugin de Sacs para tu equipo: checan desde el celular con GPS o en el kiosco con PIN, ven sus turnos, piden vacaciones y firman su contrato. Tú llevas expedientes, cuadrante, vacaciones por la LFT, actas y prenómina.';
+const I = '/images/plugins/staff/';
+
+const pagina = { '@context': 'https://schema.org', '@type': 'WebPage', '@id': `${SITIO}${href}#pagina`, name: 'Staff · Plugin de Sacs', description, url: `${SITIO}${href}`, inLanguage: 'es-MX' };
+const migas = breadcrumbList([{ name: 'Inicio', url: `${SITIO}/` }, { name: 'Staff' }]);
+const faqSchema = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: PREGUNTAS_STAFF.map((p) => ({ '@type': 'Question', name: p.question, acceptedAnswer: { '@type': 'Answer', text: p.answer } })) };
+---
+<BaseLayout
+  title={title}
+  description={description}
+  image={`${I}og.jpg`}
+  preloadImage={`${I}vertical-1024.webp`}
+  preloadMedia="(max-width: 767px)"
+  structuredData={[pagina, migas]}
+  navSoloArriba
+>
+  <StructuredData data={faqSchema} />
+
+  <div class="pd exp">
+    <ExpHero
+      folio={STAFF.folio}
+      etiqueta={STAFF.etiqueta}
+      titulo={STAFF.titulo}
+      bajada={STAFF.bajada}
+      ancha={{ s1280: `${I}portada-1280.webp`, s1920: `${I}portada-1536.webp`, alto1920: 1280 }}
+      vertical={{ src: `${I}vertical-1024.webp`, ancho: 1024, alto: 1536 }}
+      alt="Una vendedora llega temprano a la boutique y checa su entrada desde el celular"
+      ancla="staff-incluye"
+      sigue="Mira todo lo que incluye"
+    >
+      <StaffHeroCapa />
+    </ExpHero>
+    <div id="staff-incluye"><StaffIncluye /></div>
+    <StaffDia />
+    <StaffChecador />
+    <StaffApp />
+    <StaffExpediente />
+    <StaffHorarios />
+    <StaffVacaciones />
+    <StaffActas />
+    <StaffPremios />
+    <StaffNomina />
+    <StaffAuto />
+    <ExpLista id="staff-resuelve" tema="pd-fucsia" palabra="LO QUE RESUELVE" folio={RESUELVE.folio} titulo={RESUELVE.titulo} puntos={RESUELVE.puntos} />
+  </div>
+
+  <GiroFAQ title="Preguntas frecuentes sobre Staff" faqs={PREGUNTAS_STAFF} />
+  <FinalCTA />
+</BaseLayout>
+
+<script>
+  import { iniciaEscenas } from '../../scripts/experiencia/escenas';
+  iniciaEscenas();
+
+  // Lo que entra al verse (sin JS se ve completo).
+  (() => {
+    const rv = Array.from(document.querySelectorAll<HTMLElement>('.exp .rv'));
+    if (!rv.length || !('IntersectionObserver' in window)) return;
+    document.documentElement.classList.add('js-rv');
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-on'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -10% 0px' });
+    rv.forEach((el) => io.observe(el));
+  })();
+
+  const ph = (evento: string, props?: Record<string, unknown>) => { try { (window as any).sacsPH?.(evento, props); } catch { /* sin medición */ } };
+  document.querySelectorAll<HTMLElement>('.exp [data-evento]').forEach((a) => a.addEventListener('click', () => ph(a.dataset.evento!, { plugin: 'staff' })));
+  document.querySelector('.final-cta-btn')?.addEventListener('click', () => ph('plugin_cta_prueba', { plugin: 'staff' }));
+</script>
