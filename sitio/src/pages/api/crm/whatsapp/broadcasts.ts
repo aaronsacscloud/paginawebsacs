@@ -6,7 +6,10 @@
 // GET ?id=…[&status=] → detalle con la tabla por destinatario; el filtro por
 //                      status es NUESTRO (Kapso no filtra recipients).
 // GET ?audiencia=1   → contactos con WhatsApp utilizable, para el wizard.
-// POST {nombre, plantilla_id, destinatarios[]} → crea en Kapso + espejo.
+// GET ?audiencia=clientes_sacs[&estados=activo,vencido,prospecto]
+//                    → preset «Audiencia: clientes de SACS» (ver audienciaClientesSacs).
+// POST {nombre, plantilla_id, destinatarios[], header?{tipo,url,filename?}} → crea en Kapso + espejo.
+//                      header: solo si la plantilla es de imagen/PDF/video (default: su archivo de muestra).
 // POST {accion:'enviar'|'programar', id, scheduled_at?}
 //
 // El "a quién le llegó" que pide el reporte viene del polling on-demand: el
@@ -18,7 +21,8 @@ import {
   agregarDestinatarios, enviarBroadcast, programarBroadcast,
   obtenerBroadcast, listarDestinatarios, KapsoError, limpiarDestinatarios } from '../../../../lib/whatsapp/kapso-api';
 import { telefonoWhatsApp } from '../../../../lib/telefono';
-import { crearMasivo } from '../../../../lib/whatsapp/masivos.lib';
+import { crearMasivo, componentesDestinatario, resolverHeader } from '../../../../lib/whatsapp/masivos.lib';
+import { traerTodo } from '../../../../lib/demanda/paginar';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
@@ -78,7 +82,83 @@ async function sincronizar(b: any, conDestinatarios: boolean) {
   return b;
 }
 
+/* ══ Preset «Audiencia: clientes de SACS» (3-oct-2026) ══════════════════════
+   A quién: los contactos de las empresas que TIENEN cuenta de SACS
+   (companies.sacs_account o una fila en company_sacs_accounts) y cuyo
+   estado_cuenta es de cliente vivo:
+     · activo    → paga.
+     · vencido   → cliente con pago atrasado: sigue usando SACS.
+     · prospecto → con cuenta de SACS = cuenta de prueba (trial).
+   Fuera: cancelado, empresas archivadas y las cuentas internas
+   (tipo_cuenta = 'interna': demos y pruebas del equipo).
+   Por empresa se prefiere al principal (es_principal o rol Dueño); si la
+   empresa no tiene ninguno marcado, entran todos sus contactos. Nunca entra
+   quien pidió no recibir WhatsApp (wa_optout), ni un lead que esté llevando el
+   agente, y un teléfono repetido cuenta una vez (dos envíos = dos cobros). */
+const ESTADOS_CLIENTE = ['activo', 'vencido', 'prospecto'];
+async function audienciaClientesSacs(estadosPedidos?: string | null) {
+  const estados = (estadosPedidos ? estadosPedidos.split(',').map(e => e.trim()).filter(Boolean) : ESTADOS_CLIENTE)
+    .filter(e => e !== 'cancelado');
+  const [empresas, cuentas] = await Promise.all([
+    traerTodo<any>('companies', 'id, nombre, sacs_account, estado_cuenta, tipo_cuenta', q => q.is('archived_at', null)),
+    traerTodo<any>('company_sacs_accounts', 'id, company_id'),
+  ]);
+  const conCuentaMulti = new Set(cuentas.map(c => c.company_id));
+  const conCuenta = empresas.filter(e => (e.sacs_account && String(e.sacs_account).trim()) || conCuentaMulti.has(e.id));
+  const elegibles = new Map<string, any>(conCuenta
+    .filter(e => estados.includes(e.estado_cuenta) && e.tipo_cuenta !== 'interna').map(e => [e.id, e]));
+  const ids = [...elegibles.keys()];
+  const contactos: any[] = [];
+  for (let i = 0; i < ids.length; i += 200) {
+    contactos.push(...await traerTodo<any>('contacts', 'id, nombre, apellido, whatsapp, telefono, tipo, rol, es_principal, company_id, wa_optout',
+      q => q.in('company_id', ids.slice(i, i + 200)).is('archived_at', null)));
+  }
+  const conTel = contactos.map(c => ({ ...c, tel: telefonoWhatsApp(c.whatsapp) || telefonoWhatsApp(c.telefono) })).filter(c => c.tel);
+  const sinOptout = conTel.filter(c => !c.wa_optout);
+  const { enCicloAgente } = await import('../../../../lib/crm/ti/semaforo');
+  const enCiclo = await enCicloAgente(sinOptout.map(c => c.id));
+  const disponibles = sinOptout.filter(c => !enCiclo.has(c.id));
+  const esPrincipal = (c: any) => !!c.es_principal || /due[ñn]o|owner|propietari/i.test(c.rol || '');
+  const porEmpresa = new Map<string, any[]>();
+  for (const c of disponibles) porEmpresa.set(c.company_id, [...(porEmpresa.get(c.company_id) || []), c]);
+  const preferidos: any[] = [];
+  for (const lista of porEmpresa.values()) {
+    const ppal = lista.filter(esPrincipal);
+    preferidos.push(...(ppal.length ? ppal : lista));
+  }
+  const vistos = new Set<string>();
+  const audiencia = preferidos.filter(c => !vistos.has(c.tel) && !!vistos.add(c.tel)).map(c => {
+    const e = elegibles.get(c.company_id);
+    return {
+      contact_id: c.id,
+      nombre: `${c.nombre || ''} ${c.apellido || ''}`.trim() || '(sin nombre)',
+      empresa: e?.nombre || null, company_id: c.company_id, tipo: c.tipo,
+      telefono: c.tel as string, estado_cuenta: e?.estado_cuenta || null, principal: esPrincipal(c),
+    };
+  });
+  const porEstado = (xs: any[], f: (x: any) => string | null) => xs.reduce((m: Record<string, number>, x) => { const k = f(x) || 'sin_estado'; m[k] = (m[k] || 0) + 1; return m; }, {});
+  return {
+    audiencia, total: audiencia.length,
+    resumen: {
+      estados,
+      empresas_con_cuenta_sacs: conCuenta.length,
+      empresas_elegibles: elegibles.size,
+      empresas_elegibles_por_estado: porEstado([...elegibles.values()], e => e.estado_cuenta),
+      empresas_sin_whatsapp: elegibles.size - new Set(conTel.map(c => c.company_id)).size,
+      contactos: contactos.length, con_whatsapp: conTel.length,
+      optout: conTel.length - sinOptout.length, en_ciclo_agente: enCiclo.size,
+      tras_preferir_principal: preferidos.length, final: audiencia.length,
+      final_por_estado: porEstado(audiencia, a => a.estado_cuenta),
+    },
+  };
+}
+
 export const GET: APIRoute = async ({ url }) => {
+  // ── Preset: clientes de SACS ──
+  if (url.searchParams.get('audiencia') === 'clientes_sacs') {
+    try { return json(await audienciaClientesSacs(url.searchParams.get('estados'))); }
+    catch (e: any) { return json({ error: String(e?.message || e) }, 500); }
+  }
   // ── Audiencia para el wizard ──
   if (url.searchParams.get('audiencia') === '1') {
     const { data: contactos } = await supabase.from('contacts')
@@ -169,12 +249,21 @@ export const POST: APIRoute = async ({ request }) => {
     const { data: dests } = await supabase.from('wa_broadcast_destinatarios').select('*').eq('broadcast_id', masivo.id);
     const quedan = (dests || []).filter(d => d.telefono !== tel);
     if (quedan.length === (dests || []).length) return json({ error: 'Ese teléfono no está en el masivo' }, 404);
+    // El encabezado de media va en CADA destinatario: al re-armar se usa el que se guardó al
+    // crear el masivo o, si no hay columna/valor, el archivo de muestra de la plantilla.
+    let header = masivo.header || null;
+    if (!header && masivo.plantilla_nombre) {
+      const { data: pl } = await supabase.from('wa_plantillas').select('nombre, header_tipo, header_media_url').eq('nombre', masivo.plantilla_nombre).limit(1).maybeSingle();
+      const r = resolverHeader(pl);
+      if (r.error) return json({ error: `No puedo re-armar el masivo: ${r.error}` }, 409);
+      header = r.header;
+    }
     try {
       await limpiarDestinatarios(masivo.kapso_broadcast_id);
-      if (quedan.length) await agregarDestinatarios(masivo.kapso_broadcast_id, quedan.map(d => ({
-        phone_number: d.telefono,
-        ...((d.params || []).length ? { template_components: [{ type: 'body', parameters: (d.params as string[]).map(pp => ({ type: 'text', text: pp })) }] } : {}),
-      })));
+      if (quedan.length) await agregarDestinatarios(masivo.kapso_broadcast_id, quedan.map(d => {
+        const components = componentesDestinatario((d.params || []) as string[], header);
+        return { phone_number: d.telefono, ...(components ? { components } : {}) };
+      }));
       // El clear regresó el broadcast a draft: si estaba programado, se reprograma igual.
       if (masivo.status === 'programado' && masivo.scheduled_at && quedan.length) {
         await programarBroadcast(masivo.kapso_broadcast_id, masivo.scheduled_at);

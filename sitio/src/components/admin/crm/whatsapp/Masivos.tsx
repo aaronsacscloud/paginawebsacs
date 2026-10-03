@@ -16,6 +16,12 @@ const TONO: Record<string, string> = {
 const NOMBRE_DEST: Record<string, string> = {
   pending: 'pendiente', sent: 'enviado', failed: 'falló', suppressed: 'no quiere marketing',
 };
+// Encabezado de media de la plantilla → tipo que espera el masivo (null = texto o sin encabezado).
+const MEDIA: Record<string, 'image' | 'document' | 'video'> = { IMAGE: 'image', DOCUMENT: 'document', VIDEO: 'video' };
+const NOMBRE_MEDIA = { image: 'la imagen', document: 'el PDF', video: 'el video' } as const;
+const mediaDe = (p: any) => (p ? MEDIA[String(p.header_tipo || '').toUpperCase()] || null : null);
+// Preset «clientes de SACS»: estados de cuenta que se pueden elegir (cancelado nunca entra).
+const ESTADOS_SACS: Array<[string, string]> = [['activo', 'Activos (pagan)'], ['vencido', 'Con pago vencido'], ['prospecto', 'En prueba']];
 
 export default function Masivos() {
   const [d, setD] = useState<any>(null);
@@ -36,14 +42,27 @@ export default function Masivos() {
 
   // ── Wizard ──
   const [plantillas, setPlantillas] = useState<any[]>([]);
-  const [audiencia, setAudiencia] = useState<any[] | null>(null);
+  const [audienciaTodos, setAudienciaTodos] = useState<any[] | null>(null);
+  const [sacs, setSacs] = useState<any>(null);       // preset clientes de SACS: { audiencia, total, resumen } | { cargando } | { error }
+  const audiencia: any[] | null = wizard?.modo === 'clientes_sacs' ? (sacs?.audiencia ?? null) : audienciaTodos;
+  const cargarSacs = (estados: string[], marcarTodos: boolean) => {
+    setSacs({ cargando: true });
+    fetch(`/api/crm/whatsapp/broadcasts?audiencia=clientes_sacs&estados=${encodeURIComponent(estados.join(','))}`)
+      .then(r => r.json()).then(j => {
+        setSacs(j);
+        // Al elegir el preset se marcan todos: es «mandar a todos los clientes»; se puede desmarcar a mano.
+        if (marcarTodos && !j.error) setWizard((w: any) => w ? { ...w, seleccion: new Set((j.audiencia || []).map((a: any) => a.telefono)) } : w);
+      })
+      .catch(e => setSacs({ error: String(e) }));
+  };
   const [lineas, setLineas] = useState<any[]>([]);   // multilínea: por cuál número sale (con cupo del día)
   const abrirWizard = () => {
-    setWizard({ paso: 1, nombre: '', plantilla: null, seleccion: new Set<string>(), params: [], busca: '' });
+    setWizard({ paso: 1, nombre: '', plantilla: null, seleccion: new Set<string>(), params: [], busca: '', modo: 'todos', estados: ['activo', 'vencido', 'prospecto'], header_url: '', header_filename: '' });
+    setSacs(null);
     fetch('/api/crm/whatsapp/plantillas').then(r => r.json())
       .then(j => setPlantillas((j.plantillas || []).filter((p: any) => p.status === 'APPROVED')));
     fetch('/api/crm/whatsapp/broadcasts?audiencia=1').then(r => r.json())
-      .then(j => setAudiencia(j.audiencia || []));
+      .then(j => setAudienciaTodos(j.audiencia || []));
     fetch('/api/crm/whatsapp/linea?resumen=1').then(r => r.json())
       .then(j => { const ls = (j.lineas || []).filter((l: any) => l.activo); setLineas(ls); setWizard((w: any) => w ? { ...w, linea: w.linea || (ls.find((l: any) => l.id === j.default && !l.pausada) || ls.find((l: any) => !l.pausada) || ls[0])?.id || '' } : w); })
       .catch(() => {});
@@ -57,9 +76,11 @@ export default function Masivos() {
       // [nombre] se sustituye por el nombre de cada contacto.
       params: wizard.params.map((p: string) => p === '[nombre]' ? (a.nombre.split(' ')[0] || a.nombre) : p),
     }));
+    const tipoMedia = mediaDe(wizard.plantilla);
+    const header = tipoMedia ? { tipo: tipoMedia, url: (wizard.header_url || '').trim(), ...(tipoMedia === 'document' && wizard.header_filename?.trim() ? { filename: wizard.header_filename.trim() } : {}) } : null;
     const creado = await fetch('/api/crm/whatsapp/broadcasts', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre: wizard.nombre, plantilla_id: wizard.plantilla.id, destinatarios, phone_number_id: wizard.linea || null, forzar_cupo: !!wizard.forzar_cupo }),
+      body: JSON.stringify({ nombre: wizard.nombre, plantilla_id: wizard.plantilla.id, destinatarios, phone_number_id: wizard.linea || null, forzar_cupo: !!wizard.forzar_cupo, header }),
     }).then(r => r.json()).catch(e => ({ error: String(e) }));
     if (creado.error) {
       setOcupado(false); setMsg({ tono: 'malo', texto: creado.error });
@@ -196,13 +217,14 @@ export default function Masivos() {
             {!plantillas.length && <Aviso tono="aviso">No hay plantillas APPROVED. Crea una en el tab Plantillas y espera la aprobación de Meta.</Aviso>}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {plantillas.map(p => (
-                <button key={p.id} onClick={() => setWizard({ ...wizard, plantilla: p, params: Array(p.variables || 0).fill('') })}
+                <button key={p.id} onClick={() => setWizard({ ...wizard, plantilla: p, params: Array(p.variables || 0).fill(''), header_url: p.header_media_url || '', header_filename: '' })}
                   style={{
                     textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', borderRadius: 10, padding: '10px 13px',
                     border: wizard.plantilla?.id === p.id ? '2px solid #9B8CFA' : '1px solid #e2e4e9',
                     background: wizard.plantilla?.id === p.id ? '#f7f4ff' : '#fff',
                   }}>
                   <b style={{ fontSize: '0.8rem' }}>{p.nombre}</b> <Tag tono={p.categoria === 'MARKETING' ? 'acento' : 'info'}>{p.categoria}</Tag>
+                  {mediaDe(p) && <> <Tag tono="info">{mediaDe(p) === 'image' ? 'con imagen' : mediaDe(p) === 'document' ? 'con PDF' : 'con video'}</Tag></>}
                   <div style={{ fontSize: '0.74rem', color: '#666', marginTop: 4 }}>{p.cuerpo}</div>
                 </button>
               ))}
@@ -214,13 +236,53 @@ export default function Masivos() {
                   onChange={e => { const params = [...wizard.params]; params[i] = e.target.value; setWizard({ ...wizard, params }); }} />
               ))}
             </>)}
+            {mediaDe(wizard.plantilla) && (<>
+              <label style={{ ...S.lbl, marginTop: 12 }}>URL pública de {NOMBRE_MEDIA[mediaDe(wizard.plantilla)!]} del encabezado (https)</label>
+              <input style={S.inp} value={wizard.header_url} placeholder="https://…"
+                onChange={e => setWizard({ ...wizard, header_url: e.target.value })} />
+              {mediaDe(wizard.plantilla) === 'document' && (
+                <input style={{ ...S.inp, marginTop: 8 }} value={wizard.header_filename} placeholder="Nombre del archivo como lo verá el cliente (opcional, p. ej. Catalogo.pdf)"
+                  onChange={e => setWizard({ ...wizard, header_filename: e.target.value })} />
+              )}
+              <p style={{ fontSize: '0.7rem', color: '#8a8a92', margin: '6px 0 0' }}>
+                Meta no guarda el archivo en la plantilla: cada mensaje lo descarga de esta URL. Por defecto es el archivo con el que se aprobó la plantilla.
+              </p>
+            </>)}
             <div style={{ marginTop: 14 }}>
-              <button style={S.btnP} disabled={!wizard.nombre.trim() || !wizard.plantilla}
+              <button style={S.btnP} disabled={!wizard.nombre.trim() || !wizard.plantilla || (!!mediaDe(wizard.plantilla) && !/^https:\/\/\S+$/i.test((wizard.header_url || '').trim()))}
                 onClick={() => setWizard({ ...wizard, paso: 2 })}>Elegir destinatarios</button>
             </div>
           </>)}
 
           {wizard.paso === 2 && (<>
+            <div role="radiogroup" aria-label="Audiencia" style={{ display: 'flex', gap: 7, marginBottom: 10, flexWrap: 'wrap' }}>
+              <button role="radio" aria-checked={wizard.modo === 'todos'} style={chip(wizard.modo === 'todos')}
+                onClick={() => setWizard({ ...wizard, modo: 'todos', seleccion: new Set<string>() })}>Todos los contactos</button>
+              <button role="radio" aria-checked={wizard.modo === 'clientes_sacs'} style={chip(wizard.modo === 'clientes_sacs')}
+                onClick={() => { setWizard({ ...wizard, modo: 'clientes_sacs', seleccion: new Set<string>() }); cargarSacs(wizard.estados, true); }}>
+                Audiencia: clientes de SACS
+              </button>
+            </div>
+            {wizard.modo === 'clientes_sacs' && (
+              <div style={{ background: '#f7f6fb', borderRadius: 10, padding: '10px 12px', marginBottom: 10, fontSize: '0.74rem', color: '#555', lineHeight: 1.55 }}>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
+                  {ESTADOS_SACS.map(([k, et]) => {
+                    const on = wizard.estados.includes(k);
+                    return <button key={k} style={chip(on)} aria-pressed={on} onClick={() => {
+                      const estados = on ? wizard.estados.filter((x: string) => x !== k) : [...wizard.estados, k];
+                      if (!estados.length) return;
+                      setWizard({ ...wizard, estados, seleccion: new Set<string>() }); cargarSacs(estados, true);
+                    }}>{et}{sacs?.resumen?.final_por_estado?.[k] != null ? ` · ${sacs.resumen.final_por_estado[k]}` : ''}</button>;
+                  })}
+                </div>
+                {sacs?.error ? <Aviso tono="malo">{sacs.error}</Aviso> : sacs?.resumen ? (<>
+                  <b>{sacs.total}</b> números de <b>{sacs.resumen.empresas_elegibles}</b> empresas con cuenta de SACS (canceladas y cuentas internas fuera).
+                  {' '}Se prefiere al dueño o contacto principal de cada empresa; sin repetir teléfono.
+                  {sacs.resumen.empresas_sin_whatsapp > 0 && <> {sacs.resumen.empresas_sin_whatsapp} empresas no tienen contacto con WhatsApp.</>}
+                  {sacs.resumen.optout > 0 && <> {sacs.resumen.optout} pidieron no recibir WhatsApp y no entran.</>}
+                </>) : null}
+              </div>
+            )}
             {audiencia === null ? <Cargando texto="Cargando contactos con WhatsApp…" alto={120} /> : (<>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
                 <input style={{ ...S.inp, width: 260 }} placeholder="Buscar contacto o empresa…" value={wizard.busca}
@@ -242,6 +304,7 @@ export default function Masivos() {
                     }} />
                     <span style={{ fontWeight: 600 }}>{a.nombre}</span>
                     {a.empresa && <span style={{ color: '#8a8a92', fontSize: '0.72rem' }}>{a.empresa}</span>}
+                    {a.estado_cuenta && a.estado_cuenta !== 'activo' && <Tag tono={a.estado_cuenta === 'vencido' ? 'aviso' : 'info'}>{a.estado_cuenta === 'prospecto' ? 'en prueba' : a.estado_cuenta}</Tag>}
                     <span style={{ flex: 1 }} />
                     <span style={{ color: '#8a8a92', fontVariantNumeric: 'tabular-nums' }}>{telefonoLegible(a.telefono)}</span>
                   </label>
@@ -268,7 +331,13 @@ export default function Masivos() {
                 <b>{wizard.seleccion.size}</b> destinatarios
                 {wizard.params.some((p: string) => p === '[nombre]') && <> · con nombre personalizado</>}
                 {lineas.length > 1 && wizard.linea && <> · sale por <b>{lineas.find(l => l.id === wizard.linea)?.numero || wizard.linea}</b></>}
+                {wizard.modo === 'clientes_sacs' && <> · audiencia <b>clientes de SACS</b></>}
               </div>
+              {mediaDe(wizard.plantilla) && (
+                <div style={{ fontSize: '0.74rem', color: '#555', marginTop: 6, wordBreak: 'break-all' }}>
+                  Encabezado ({NOMBRE_MEDIA[mediaDe(wizard.plantilla)!]}): <a href={wizard.header_url} target="_blank" rel="noopener noreferrer">{wizard.header_url}</a>
+                </div>
+              )}
               <div style={{ fontSize: '0.76rem', color: '#555', marginTop: 6, whiteSpace: 'pre-wrap' }}>{wizard.plantilla.cuerpo}</div>
             </div>
             {wizard.forzar_cupo && wizard.aviso_cupo && (

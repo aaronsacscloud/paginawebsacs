@@ -441,9 +441,12 @@ export async function borrarPlantillaMeta(nombre: string, waba?: string | null) 
  * nombre+idioma; si el listado de Kapso no está disponible, se intenta con el
  * id de Meta como último recurso.
  */
-export async function resolverTemplateId(nombre: string, idioma: string, metaId?: string | null): Promise<string | null> {
+export async function resolverTemplateId(nombre: string, idioma: string, metaId?: string | null, phoneNumberId?: string | null): Promise<string | null> {
   try {
-    const r = await platform(`/whatsapp/templates?phone_number_id=${PHONE_NUMBER_ID}`);
+    // El catálogo es por cuenta de Meta (WABA): se consulta con la línea por la que
+    // sale el masivo. Con la del entorno, un masivo por una línea de OTRA cuenta
+    // resolvía el id de la plantilla equivocada (o ninguno).
+    const r = await platform(`/whatsapp/templates?phone_number_id=${phoneNumberId || PHONE_NUMBER_ID}`);
     const items = Array.isArray(r) ? r : (r?.templates ?? []);
     const t = items.find((x: any) =>
       (x.name === nombre || x.template_name === nombre) &&

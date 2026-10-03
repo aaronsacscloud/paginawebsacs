@@ -1,0 +1,11 @@
+-- Masivos con encabezado de media (imagen / PDF / video).
+--
+-- Meta no guarda el archivo del encabezado en la plantilla: cada envío lleva el
+-- link. El masivo lo manda por destinatario al crearse, y aquí se guarda para
+-- poder volver a armar los destinatarios igual (Kapso solo sabe borrar TODOS, así
+-- que «quitar uno» = limpiar y volver a agregar a los demás con su encabezado).
+--
+-- Aditivo y opcional: sin esta columna el código guarda el masivo sin ella y,
+-- al re-armar, usa el archivo de muestra de la plantilla (header_media_url).
+-- Forma: {"tipo":"image"|"document"|"video","url":"https://…","filename":"…"|null}
+alter table wa_broadcasts add column if not exists header jsonb;

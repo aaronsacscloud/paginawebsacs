@@ -9,15 +9,56 @@ import { lineaPara, infoLinea, cupoLinea } from './linea';
 
 export interface DestinatarioCrudo { telefono?: string | null; contact_id?: string | null; company_id?: string | null; params?: string[] }
 
+/** Encabezado de media de un masivo. Meta NO lo toma de la plantilla: cada envío
+ *  lleva el link de la imagen/PDF/video; sin él, la plantilla de media se rechaza. */
+export interface HeaderMasivo { tipo: 'image' | 'document' | 'video'; url: string; filename?: string | null }
+
+const TIPOS_MEDIA: Record<string, HeaderMasivo['tipo']> = { IMAGE: 'image', DOCUMENT: 'document', VIDEO: 'video' };
+const NOMBRE_MEDIA: Record<HeaderMasivo['tipo'], string> = { image: 'imagen', document: 'documento (PDF)', video: 'video' };
+
+/** El tipo de media que pide la plantilla (null si su encabezado es texto o no tiene). */
+export const tipoMediaDePlantilla = (headerTipo?: string | null): HeaderMasivo['tipo'] | null =>
+  TIPOS_MEDIA[String(headerTipo || '').toUpperCase()] || null;
+
+/** Los `components` de UN destinatario en el formato de Kapso/Meta: encabezado de media (si hay) + cuerpo. */
+export function componentesDestinatario(params: string[], header?: HeaderMasivo | null): any[] | null {
+  const c: any[] = [];
+  if (header?.url) {
+    const media: any = { link: header.url };
+    if (header.tipo === 'document' && header.filename) media.filename = header.filename;
+    c.push({ type: 'header', parameters: [{ type: header.tipo, [header.tipo]: media }] });
+  }
+  if (params.length) c.push({ type: 'body', parameters: params.map(p => ({ type: 'text', text: p })) });
+  return c.length ? c : null;
+}
+
+/** Resuelve el encabezado de un masivo: el que mandó quien lo crea o, si no, el
+ *  archivo de muestra de la plantilla. Error si la plantilla lo pide y no hay URL. */
+export function resolverHeader(plantilla: any, pedido?: Partial<HeaderMasivo> | null): { header: HeaderMasivo | null; error?: string } {
+  const tipo = tipoMediaDePlantilla(plantilla?.header_tipo);
+  if (!tipo) return { header: null };
+  if (pedido?.tipo && pedido.tipo !== tipo) return { header: null, error: `La plantilla lleva encabezado de ${NOMBRE_MEDIA[tipo]}, no de ${NOMBRE_MEDIA[pedido.tipo] || pedido.tipo}` };
+  const url = String(pedido?.url || plantilla?.header_media_url || '').trim();
+  if (!url) return { header: null, error: `La plantilla «${plantilla?.nombre}» lleva encabezado de ${NOMBRE_MEDIA[tipo]}: falta la URL pública del archivo` };
+  if (!/^https:\/\/\S+$/i.test(url)) return { header: null, error: 'La URL del encabezado debe ser pública y empezar con https://' };
+  const filename = tipo === 'document'
+    ? (String(pedido?.filename || '').trim() || decodeURIComponent(url.split('?')[0].split('/').pop() || '') || 'documento.pdf')
+    : null;
+  return { header: { tipo, url, filename } };
+}
+
 /** Devuelve {status, cuerpo}: el endpoint lo responde tal cual; otros llamadores leen cuerpo.ok / cuerpo.id. */
-export async function crearMasivo(b: { nombre?: string; plantilla_id?: string; destinatarios?: DestinatarioCrudo[]; origen?: string; phone_number_id?: string | null; contexto?: 'masivo' | 'evento' | 'prospeccion'; forzar_cupo?: boolean }): Promise<{ status: number; cuerpo: any }> {
-  const _V = 'v11.1';   // marcador de despliegue (diagnóstico)
+export async function crearMasivo(b: { nombre?: string; plantilla_id?: string; destinatarios?: DestinatarioCrudo[]; origen?: string; phone_number_id?: string | null; contexto?: 'masivo' | 'evento' | 'prospeccion'; forzar_cupo?: boolean; header?: Partial<HeaderMasivo> | null }): Promise<{ status: number; cuerpo: any }> {
+  const _V = 'v11.2';   // marcador de despliegue (diagnóstico)
   const nombre = String(b.nombre || '').trim();
   if (!nombre) return { status: 400, cuerpo: { error: 'Falta el nombre del masivo' } };
   const { data: plantilla } = await supabase.from('wa_plantillas')
     .select('*').eq('id', b.plantilla_id || '').maybeSingle();
   if (!plantilla) return { status: 404, cuerpo: { error: 'Plantilla no encontrada' } };
   if (plantilla.status !== 'APPROVED') return { status: 400, cuerpo: { error: `La plantilla está ${plantilla.status}: solo una APPROVED puede salir en masivo` } };
+  // Plantilla con encabezado de imagen/PDF/video: sin el link en cada envío, Meta rechaza todo el masivo.
+  const { header, error: errHeader } = resolverHeader(plantilla, b.header);
+  if (errHeader) return { status: 400, cuerpo: { error: errHeader } };
 
   const crudos: any[] = Array.isArray(b.destinatarios) ? b.destinatarios : [];
   const vistos = new Set<string>();
@@ -50,33 +91,41 @@ export async function crearMasivo(b: { nombre?: string; plantilla_id?: string; d
   }
 
   try {
-    const templateId = await resolverTemplateId(plantilla.nombre, plantilla.idioma, plantilla.meta_template_id);
+    const templateId = await resolverTemplateId(plantilla.nombre, plantilla.idioma, plantilla.meta_template_id, pn);
     if (!templateId) return { status: 502, cuerpo: { error: 'No pude resolver el id de la plantilla en Kapso' } };
 
     const creado = await crearBroadcast(nombre, templateId, pn);
     const kapsoId = String(creado?.id || '');
     if (!kapsoId) return { status: 502, cuerpo: { error: 'Kapso no devolvió el id del broadcast' } };
 
-    const { data: fila } = await supabase.from('wa_broadcasts').insert({
+    const espejo: any = {
       kapso_broadcast_id: kapsoId, nombre,
       plantilla_nombre: plantilla.nombre, template_id: templateId,
       status: 'borrador', total: listos.length, phone_number_id: pn,
-    }).select('id').single();
+      ...(header ? { header } : {}),
+    };
+    let { data: fila, error: errFila } = await supabase.from('wa_broadcasts').insert(espejo).select('id').single();
+    // Sin la columna `header` (migration-2026-10-03-masivos-header.sql aún no aplicada) se guarda sin
+    // ella: quitar un destinatario después re-arma el encabezado con el archivo de la plantilla.
+    if (errFila && header && /header/i.test(errFila.message || '')) {
+      const { header: _h, ...sinHeader } = espejo;
+      ({ data: fila, error: errFila } = await supabase.from('wa_broadcasts').insert(sinHeader).select('id').single());
+    }
+    if (errFila || !fila) return { status: 500, cuerpo: { error: `No se pudo guardar el masivo: ${errFila?.message || 'sin fila'}`, _v: _V } };
 
-    await supabase.from('wa_broadcast_destinatarios').insert(listos.map(d => ({
+    const { error: errDest } = await supabase.from('wa_broadcast_destinatarios').insert(listos.map(d => ({
       broadcast_id: fila!.id, telefono: d.telefono,
       contact_id: d.contact_id, company_id: d.company_id,
       params: d.params,
     })));
+    if (errDest) return { status: 500, cuerpo: { error: `No se pudieron guardar los destinatarios: ${errDest.message}`, _v: _V } };
 
-    await agregarDestinatarios(kapsoId, listos.map(d => ({
-      phone_number: d.telefono,
-      ...(d.params.length ? {
-        template_components: [{ type: 'body', parameters: d.params.map(p => ({ type: 'text', text: p })) }],
-      } : {}),
-    })));
+    await agregarDestinatarios(kapsoId, listos.map(d => {
+      const components = componentesDestinatario(d.params, header);
+      return { phone_number: d.telefono, ...(components ? { components } : {}) };
+    }));
 
-    return { status: 200, cuerpo: { ok: true, id: fila!.id, total: listos.length, descartados, phone_number_id: pn, _v: _V } };
+    return { status: 200, cuerpo: { ok: true, id: fila!.id, total: listos.length, descartados, phone_number_id: pn, header, _v: _V } };
   } catch (e: any) {
     return { status: 502, cuerpo: { error: e instanceof KapsoError ? e.message : String(e), _v: _V } };
   }
