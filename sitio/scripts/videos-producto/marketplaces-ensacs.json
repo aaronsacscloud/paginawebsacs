@@ -1,0 +1,84 @@
+{
+ "modulo": "Canales de venta",
+ "nota": "Capturas de Canales de venta en Sacs (octubre de 2026) con una boutique de ejemplo.",
+ "pantallas": [
+  {
+   "id": "mercadolibre",
+   "img": "/images/producto/marketplaces/mercadolibre.webp",
+   "h": 1500,
+   "t": "Mercado Libre",
+   "alt": "Canal de Mercado Libre en Sacs: catálogo, pedidos y stock"
+  },
+  {
+   "id": "shein",
+   "img": "/images/producto/marketplaces/shein.webp",
+   "h": 1500,
+   "t": "SHEIN",
+   "alt": "Canal de SHEIN en Sacs: prendas, tallas y colores desde tu catálogo"
+  },
+  {
+   "id": "liverpool",
+   "img": "/images/producto/marketplaces/liverpool.webp",
+   "h": 1500,
+   "t": "Liverpool",
+   "alt": "Canal de Liverpool en Sacs: ropa, calzado y accesorios con tu catálogo"
+  }
+ ],
+ "pasos": [
+  {
+   "p": "mercadolibre",
+   "r": [
+    0,
+    240,
+    200,
+    503
+   ],
+   "t": "Los marketplaces, en tu menú",
+   "d": "Mercado Libre, Amazon, SHEIN, Liverpool y Google, en Canales de venta."
+  },
+  {
+   "p": "mercadolibre",
+   "r": [
+    470,
+    405,
+    1170,
+    520
+   ],
+   "t": "Mercado Libre",
+   "d": "Tu catálogo de Sacs con fotos, variantes, precios y stock."
+  },
+  {
+   "p": "shein",
+   "r": [
+    470,
+    429,
+    1170,
+    544
+   ],
+   "t": "SHEIN",
+   "d": "Tallas, colores y fotos salen de tu catálogo de Sacs."
+  },
+  {
+   "p": "liverpool",
+   "r": [
+    470,
+    429,
+    1170,
+    544
+   ],
+   "t": "Liverpool",
+   "d": "Ropa, calzado y accesorios frente a millones de clientes."
+  },
+  {
+   "p": "liverpool",
+   "r": [
+    470,
+    373,
+    1170,
+    801
+   ],
+   "t": "Te acompañamos a conectarlo",
+   "d": "Lo platicas con un asesor por WhatsApp y lo conectamos contigo."
+  }
+ ]
+}

@@ -9237,6 +9237,402 @@ export const pageContent: Record<string, any> = {
       }
     ]
   },
+  "marketplaces": {
+    "enSacs": {
+      "modulo": "Canales de venta",
+      "nota": "Capturas de Canales de venta en Sacs (octubre de 2026) con una boutique de ejemplo.",
+      "pantallas": [
+        {
+          "id": "mercadolibre",
+          "img": "/images/producto/marketplaces/mercadolibre.webp",
+          "h": 1500,
+          "t": "Mercado Libre",
+          "alt": "Canal de Mercado Libre en Sacs: catálogo, pedidos y stock"
+        },
+        {
+          "id": "shein",
+          "img": "/images/producto/marketplaces/shein.webp",
+          "h": 1500,
+          "t": "SHEIN",
+          "alt": "Canal de SHEIN en Sacs: prendas, tallas y colores desde tu catálogo"
+        },
+        {
+          "id": "liverpool",
+          "img": "/images/producto/marketplaces/liverpool.webp",
+          "h": 1500,
+          "t": "Liverpool",
+          "alt": "Canal de Liverpool en Sacs: ropa, calzado y accesorios con tu catálogo"
+        }
+      ],
+      "pasos": [
+        {
+          "p": "mercadolibre",
+          "r": [
+            0,
+            240,
+            200,
+            503
+          ],
+          "t": "Los marketplaces, en tu menú",
+          "d": "Mercado Libre, Amazon, SHEIN, Liverpool y Google, en Canales de venta."
+        },
+        {
+          "p": "mercadolibre",
+          "r": [
+            470,
+            405,
+            1170,
+            520
+          ],
+          "t": "Mercado Libre",
+          "d": "Tu catálogo de Sacs con fotos, variantes, precios y stock."
+        },
+        {
+          "p": "shein",
+          "r": [
+            470,
+            429,
+            1170,
+            544
+          ],
+          "t": "SHEIN",
+          "d": "Tallas, colores y fotos salen de tu catálogo de Sacs."
+        },
+        {
+          "p": "liverpool",
+          "r": [
+            470,
+            429,
+            1170,
+            544
+          ],
+          "t": "Liverpool",
+          "d": "Ropa, calzado y accesorios frente a millones de clientes."
+        },
+        {
+          "p": "liverpool",
+          "r": [
+            470,
+            373,
+            1170,
+            801
+          ],
+          "t": "Te acompañamos a conectarlo",
+          "d": "Lo platicas con un asesor por WhatsApp y lo conectamos contigo."
+        }
+      ]
+    },
+    "hero": {
+      "eyebrow": "Sacs Marketplaces",
+      "title": "Tu moda en los marketplaces, sin capturar dos veces.",
+      "subtitle": "Mercado Libre, Amazon, SHEIN, Liverpool y Google, en Canales de venta. Te acompañamos a conectar tu catálogo de Sacs, con las fotos que pide cada marketplace ya listas desde el Estudio.",
+      "image": "/images/marketplaces-publica.webp",
+      "imageAlt": "Equipo de una boutique preparando su catálogo para marketplaces"
+    },
+    "interrupt": "Capturar tu catálogo otra vez en cada marketplace no escala,",
+    "interruptStrike": "partir del catálogo que ya tienes, sí.",
+    "showcaseTitle": "Un catálogo, varios marketplaces.",
+    "features": [
+      {
+        "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z\"/><path d=\"M14 2v6h6\"/><path d=\"M9 13l2 2 4-4\"/></svg>",
+        "title": "Canales en tu menú",
+        "description": "Mercado Libre, Amazon, SHEIN, Liverpool y Google."
+      },
+      {
+        "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 12l2 2 4-4\"/><circle cx=\"12\" cy=\"12\" r=\"9\"/></svg>",
+        "title": "Fotos por canal",
+        "description": "1:1 con fondo blanco desde el Estudio."
+      },
+      {
+        "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 12a9 9 0 1015-6.7L21 8\"/><path d=\"M21 3v5h-5\"/></svg>",
+        "title": "Tu catálogo como base",
+        "description": "Tallas, colores, precios y fotos de Sacs."
+      },
+      {
+        "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l3-3 3 3 5-5\"/></svg>",
+        "title": "Con acompañamiento",
+        "description": "Lo conectamos contigo; lo platicas por WhatsApp."
+      }
+    ],
+    "blocks": [
+      {
+        "title": "Fotos listas para cada marketplace.",
+        "description": "El Estudio de Sacs prepara la foto principal que piden Amazon, Mercado Libre y TikTok Shop: 1:1, fondo blanco y la prenda centrada, desde la misma sesión de fotos y sin volver a generar.",
+        "image": "/images/marketplaces-publica.webp",
+        "imageAlt": "Fotografía de producto de moda para marketplaces",
+        "link": null,
+        "featured": true,
+        "variant": "mk-fotos",
+        "cardSize": "sm",
+        "bullets": [
+          {
+            "label": "1:1 con fondo blanco",
+            "detail": "Lo que piden los marketplaces."
+          },
+          {
+            "label": "Desde tu sesión",
+            "detail": "Sin volver a fotografiar."
+          },
+          {
+            "label": "También historias",
+            "detail": "9:16 para tus redes."
+          }
+        ]
+      },
+      {
+        "title": "Tu catálogo de Sacs como base.",
+        "description": "Las prendas que ya tienes en Sacs, con sus tallas, colores, precios y fotos, son el punto de partida para cada marketplace: no capturas otra vez.",
+        "image": "/images/marketplaces-inventario.webp",
+        "imageAlt": "Inventario de moda organizado por talla",
+        "link": null,
+        "featured": true,
+        "variant": "mk-catalogo",
+        "cardSize": "sm",
+        "bullets": [
+          {
+            "label": "Tallas y colores",
+            "detail": "Cada variante, como ya la tienes."
+          },
+          {
+            "label": "Precios",
+            "detail": "Los de tu catálogo."
+          },
+          {
+            "label": "Fotos",
+            "detail": "Las del Estudio, listas."
+          }
+        ]
+      },
+      {
+        "title": "Los marketplaces, en Canales de venta.",
+        "description": "Mercado Libre, Amazon, SHEIN, Liverpool y Google Merchant Center están en tu menú de Canales de venta, junto a Meta y TikTok Shop.",
+        "image": "/images/marketplaces-pedidos.webp",
+        "imageAlt": "Empaque de un pedido de calzado",
+        "link": null,
+        "featured": true,
+        "variant": "mk-canales",
+        "cardSize": "sm",
+        "bullets": [
+          {
+            "label": "Marketplaces",
+            "detail": "Mercado Libre, Amazon, SHEIN, Liverpool."
+          },
+          {
+            "label": "Google",
+            "detail": "Merchant Center."
+          },
+          {
+            "label": "Redes",
+            "detail": "Meta y TikTok Shop, en el mismo menú."
+          }
+        ]
+      },
+      {
+        "title": "Te acompañamos a conectarlo.",
+        "description": "Cada marketplace pide su alta, sus reglas y su catálogo. Lo platicas con un asesor por WhatsApp desde el mismo canal y lo conectamos contigo.",
+        "image": "/images/marketplaces-precios.webp",
+        "imageAlt": "Dueña de boutique revisando su catálogo",
+        "link": null,
+        "featured": true,
+        "variant": "mk-asesor",
+        "cardSize": "sm",
+        "bullets": [
+          {
+            "label": "Desde el canal",
+            "detail": "«Quiero saber más por WhatsApp»."
+          },
+          {
+            "label": "Con un asesor",
+            "detail": "Te dice qué necesita tu marca."
+          },
+          {
+            "label": "Paso a paso",
+            "detail": "Lo conectamos contigo."
+          }
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "question": "¿Sacs ya publica solo en Mercado Libre, Amazon, SHEIN o Liverpool?",
+        "answer": "La conexión la hacemos contigo: desde Canales de venta escribes a un asesor por WhatsApp y te decimos qué necesita tu marca para cada marketplace."
+      },
+      {
+        "question": "¿Qué fotos piden los marketplaces?",
+        "answer": "La foto principal 1:1 con fondo blanco y la prenda centrada. El Estudio de Sacs la prepara desde tu misma sesión de fotos."
+      },
+      {
+        "question": "¿Tengo que capturar mi catálogo otra vez?",
+        "answer": "No: el punto de partida son las prendas que ya tienes en Sacs, con sus tallas, colores, precios y fotos."
+      },
+      {
+        "question": "¿Y Meta y TikTok Shop?",
+        "answer": "Están en el mismo menú de Canales de venta; ahí generas el link de sincronización de tu catálogo."
+      }
+    ],
+    "showcaseTabs": [
+      {
+        "label": "Captura y categorías",
+        "title": "Gasto capturado al momento, nunca al final del mes.",
+        "description": "El equipo de piso tiene la app, sube la foto del comprobante y elige la categoría correcta. Si es recurrente, la plantilla lo deja casi listo con un toque.",
+        "image": "/images/gastos-tab-captura.webp",
+        "imageAlt": "Wizard Nuevo Gasto de Sacs: registrar Manual, con Recibo (foto + IA) o con Factura (XML)",
+        "link": null,
+        "details": [
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2\" width=\"10\" height=\"20\" rx=\"2\"/><path d=\"M11 18h2\"/></svg>",
+            "title": "Captura desde celular",
+            "description": "El gerente no vuelve a la oficina a capturar. Saca el celular en el momento del pago y el gasto queda registrado antes de que el ticket se arrugue."
+          },
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z\"/><circle cx=\"12\" cy=\"13\" r=\"4\"/></svg>",
+            "title": "Foto del comprobante",
+            "description": "Ticket, factura o recibo: tomas la foto y queda adjunta al movimiento. Tu contador revisa con el comprobante al lado — sin perseguir papeles."
+          },
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h16M4 12h16M4 18h10\"/></svg>",
+            "title": "Categorías jerárquicas",
+            "description": "Categoría madre (Servicios), subcategoría (Luz) y detalle (CFE Norte). La profundidad la decides tú — desde 3 cajones hasta un catálogo contable completo."
+          },
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z\"/></svg>",
+            "title": "Plantillas recurrentes",
+            "description": "Renta, internet, luz, nómina: lo que se paga cada mes lo guardas como plantilla. El siguiente movimiento se captura en tres toques."
+          },
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/></svg>",
+            "title": "Sucursal obligatoria",
+            "description": "Ningún gasto queda sin tienda asignada. Si es corporativo, hay una categoría \"Corporativo\" — pero nada cae en un limbo contable."
+          },
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"2\"/><path d=\"M6 10h2M11 10h7M6 15h12\"/></svg>",
+            "title": "Método de pago registrado",
+            "description": "Efectivo de caja chica, tarjeta corporativa, transferencia, débito. Saber con qué se pagó cada gasto te ahorra el cuadre con el estado de cuenta."
+          }
+        ]
+      },
+      {
+        "label": "Autorización y control",
+        "title": "Nada se paga sin la firma correcta.",
+        "description": "Topes por usuario, categoría y sucursal. Arriba del tope, la autorización es obligatoria — con PIN, motivo y bitácora inalterable.",
+        "image": "/images/gastos-tab-autorizacion.webp",
+        "imageAlt": "Detalle de gasto en Sacs: requiere aprobación, alertas de presupuesto y bitácora de actividad",
+        "link": null,
+        "details": [
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/></svg>",
+            "title": "Tope por usuario",
+            "description": "Cada gerente tiene su límite: el de Polanco puede hasta $5,000, el de Santa Fe hasta $3,000. Lo que rebase sube a autorización."
+          },
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
+            "title": "Autorización en línea",
+            "description": "El dueño recibe el aviso por email y aprueba desde el admin (push móvil en roadmap)."
+          },
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"11\" width=\"18\" height=\"11\" rx=\"2\"/><path d=\"M7 11V7a5 5 0 0110 0v4\"/></svg>",
+            "title": "PIN del autorizador",
+            "description": "Cada aprobación pide PIN del dueño o administrador. Nadie aprueba a nombre de otro — la firma digital queda con el movimiento."
+          },
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 11l3 3L22 4\"/><path d=\"M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11\"/></svg>",
+            "title": "Bitácora inalterable",
+            "description": "Quién capturó, quién autorizó, a qué hora, con qué motivo. No hay forma de editar un gasto cerrado — solo emitir una corrección que queda ligada."
+          },
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2L2 7l10 5 10-5-10-5z\"/><path d=\"M2 17l10 5 10-5M2 12l10 5 10-5\"/></svg>",
+            "title": "Reglas por categoría",
+            "description": "Los gastos de marketing arriba de $10,000 requieren aprobación, sin importar el usuario. Configuras reglas por categoría independientes de los topes de usuario."
+          },
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M15 9l-6 6M9 9l6 6\"/></svg>",
+            "title": "Rechazo con motivo",
+            "description": "Si el dueño rechaza, captura el motivo. El gerente lo ve y corrige — no hay \"se rechazó y nadie sabe por qué\"."
+          }
+        ]
+      },
+      {
+        "label": "Reportes y cierre",
+        "title": "Cierre de mes sin la noche del contador.",
+        "description": "Los gastos están categorizados, con comprobante y autorizados. El reporte se exporta a Excel o a tu sistema contable — sin capturar nada dos veces.",
+        "image": "/images/gastos-tab-reportes.webp",
+        "imageAlt": "Listado de gastos en Sacs con totales, filtros y estados — base del cierre de mes",
+        "link": null,
+        "details": [
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l4-4 4 4 5-5\"/></svg>",
+            "title": "Gastos vs. ventas",
+            "description": "Mes a mes cruzas gastos contra ventas por sucursal. El margen real aparece a la vista — no lo estimas, lo ves."
+          },
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M9 9h6M9 13h6M9 17h3\"/></svg>",
+            "title": "Exporta a Excel o al contable",
+            "description": "Descargas el reporte en .xlsx o .csv, listo para pasar al contador. Pronto, integración directa con sistemas contables de LatAm."
+          },
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M16 2v4M8 2v4M3 10h18\"/></svg>",
+            "title": "Periodo flexible",
+            "description": "Semana, quincena, mes, trimestre, año. Cierras gastos con el calendario que tu negocio usa — no con el que el sistema te impone."
+          },
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/></svg>",
+            "title": "Comparativo entre sucursales",
+            "description": "Ves qué tienda gasta más en limpieza, cuál en luz, cuál en mantenimiento. Detectas desvíos sin esperar a auditoría."
+          },
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6\"/></svg>",
+            "title": "Utilidad por sucursal",
+            "description": "Con los gastos y las ventas en el mismo lugar, cada tienda tiene su propio estado de resultados. Ves cuál aporta y cuál quema efectivo."
+          },
+          {
+            "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h9\"/><path d=\"M18 14v7M15 17l3-3 3 3\"/></svg>",
+            "title": "Exportación con comprobantes",
+            "description": "El paquete de cierre lleva el Excel más los comprobantes en PDF de cada movimiento. Tu contador recibe todo en una carpeta — auditable."
+          }
+        ]
+      }
+    ],
+    "testimonials": [
+      {
+        "bg": "#0a0a0a",
+        "image": "/images/testimonials/patricia-nieves.webp",
+        "initials": "PN",
+        "color": "#b47a3a",
+        "quote": "Las fotos con fondo blanco salen de la misma sesión del Estudio; ya no mandamos a hacer otra para cada marketplace.",
+        "name": "Patricia Nieves",
+        "business": "Boutique Milán Nieves · Moda mujer",
+        "location": "República Dominicana"
+      },
+      {
+        "bg": "#0a0a0a",
+        "image": "/images/testimonials/rodrigo-iturbe.webp",
+        "initials": "RI",
+        "color": "#4a6aa8",
+        "quote": "Nuestro catálogo ya estaba en Sacs con tallas y colores; para el marketplace partimos de ahí.",
+        "name": "Rodrigo Iturbe",
+        "business": "Mistral · Calzado",
+        "location": "México"
+      },
+      {
+        "bg": "#0a0a0a",
+        "image": "/images/testimonials/valentina-posse.webp",
+        "initials": "VP",
+        "color": "#5a8a5f",
+        "quote": "Lo platicamos con un asesor por WhatsApp y nos dijo exactamente qué pedía cada canal.",
+        "name": "Valentina Posse",
+        "business": "Naranja Viva · Accesorios",
+        "location": "Argentina"
+      }
+    ],
+    "testimonial": {
+      "quote": "Antes el cierre de mes eran dos días enteros cuadrando tickets con los gerentes por WhatsApp. \"¿Qué fue esto?\" \"No me acuerdo.\" Ahora cada gasto lo capturan ellos con foto al momento. Cuando llega fin de mes, el reporte ya está — yo solo reviso.",
+      "name": "Patricia Nieves",
+      "role": "Directora de Finanzas",
+      "company": "Boutique Milán Nieves",
+      "stat": "2 días",
+      "statLabel": "menos en el cierre contable mensual"
+    }
+  },
   "especialista-ia": {
     "hero": {
       "eyebrow": "Sacs Especialista IA · Programa piloto",
