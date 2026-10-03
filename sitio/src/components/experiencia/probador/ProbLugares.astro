@@ -52,7 +52,8 @@ const { tienda, casa, cierre } = LUGARES;
   .prl-a { position: relative; display: flex; align-items: flex-end; min-height: max(560px, 100svh); overflow: hidden; isolation: isolate; }
   .prl-a picture, .prl-a img { position: absolute; inset: 0; width: 100%; height: 100%; }
   .prl-a picture { z-index: -2; }
-  .prl-a img { object-fit: cover; object-position: 30% 50%; }
+  /* teléfono: centrada en la vendedora y la tablet */
+  .prl-a img { object-fit: cover; object-position: 68% 50%; }
   .prl-a::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(11, 11, 12, 0) 40%, rgba(11, 11, 12, 0.85) 100%); }
   .prl-a-in { width: 100%; max-width: 1160px; margin: 0 auto; padding: 0 20px 56px; }
 
@@ -73,7 +74,7 @@ const { tienda, casa, cierre } = LUGARES;
     .prl-a img { object-position: 50% 40%; }
     .prl-a::after { display: none; }
     .prl-a-in { padding: 0 5vw; }
-    .prl-a-in > * { max-width: 42vw; }
+    .prl-a-in > * { max-width: 31vw; }
     .prl-p { font-size: 19px; }
     .prl-b { padding: 104px 5vw 88px; }
     .prl-b-in { grid-template-columns: 1.2fr 0.8fr; gap: 56px; }
