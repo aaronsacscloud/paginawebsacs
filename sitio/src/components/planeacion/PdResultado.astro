@@ -4,18 +4,19 @@
  * con líneas de neón, como el paso «Automatiza» del home; seis indicadores con solo su número y la comparación que
  * importa (sin explicación por indicador); aciertos, errores y lo que aprendió en tres columnas entre filetes (v3.1
  * «editorial», sin tarjetas): dos aciertos, dos errores (sin esconderlos) y lo que aprendió con la
- * exactitud del pronóstico, que se aplica con tu visto bueno; y el ciclo que vuelve a empezar. Todo esto está EN
- * CONSTRUCCIÓN en el motor: se muestra como ejemplo, sin fecha (asterisco en el encabezado y nota al pie).
+ * exactitud del pronóstico, que se aplica con tu visto bueno; y el ciclo que vuelve a empezar. Desde el 3-oct-2026
+ * es lógica viva (Resultado por temporada, colección y producto, «¿le atinamos?» contra la foto del plan y las mejoras
+ * con un clic); los números son de ejemplo.
  * Lo reproduce src/scripts/planeacion/consola.ts.
  */
-import { RESULTADO, OBRA_NOTA } from '../../data/planeacion-demo';
+import { RESULTADO } from '../../data/planeacion-demo';
 
 const PALABRA = Array.from({ length: 3 }, () => 'RESULTADO').join(' · ');
 ---
 <section class="pda res pd-marino" id="pd-resultado" data-acto="resultado" aria-labelledby="pd-resultado-h">
   <div class="pda-fondo" aria-hidden="true"><span>{PALABRA}</span><span>{PALABRA}</span></div>
   <header class="pda-cab">
-    <p class="pda-k">04 · Resultado<span class="pd-ast"><span aria-hidden="true">*</span><span class="sr-only"> (en construcción)</span></span></p>
+    <p class="pda-k">04 · Resultado</p>
     <h2 class="pda-h" id="pd-resultado-h">La temporada, en números.</h2>
     <p class="pda-fecha">Lunes 2 de agosto de 2027 · ejemplo</p>
   </header>
@@ -56,7 +57,6 @@ const PALABRA = Array.from({ length: 3 }, () => 'RESULTADO').join(' · ');
     <figcaption>{RESULTADO.cicloFin}</figcaption>
   </figure>
 
-  <p class="pda-nota"><span aria-hidden="true">*</span> {OBRA_NOTA}</p>
 </section>
 
 <style>

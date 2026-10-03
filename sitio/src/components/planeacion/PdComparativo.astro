@@ -51,7 +51,7 @@ const MARCA: Record<string, string> = { full: '✓', partial: '–', none: '×',
         ))}
       </table>
     </div>
-    <p class="pdx-ley" aria-hidden="true"><span><b>✓</b> Incluido</span><span><b>–</b> Parcial</span><span><b>×</b> No</span><span><b>*</b> En construcción en Sacs</span>{C.hayNd && <span><b>○</b> Sin información pública</span>}</p>
+    <p class="pdx-ley" aria-hidden="true"><span><b>✓</b> Incluido</span><span><b>–</b> Parcial</span><span><b>×</b> No</span>{C.hayObra && <span><b>*</b> En construcción en Sacs</span>}{C.hayNd && <span><b>○</b> Sin información pública</span>}</p>
 
     <div class="pdx-perfiles">
       {C.perfiles.map((p) => (

@@ -161,7 +161,7 @@ const PALABRA = Array.from({ length: 3 }, () => 'PRETEMPORADA').join(' · ');
 
             {p.id === 'compra' && (
               <figure class="pre-fig pre-fig--compra" id="pre-fig-compra" data-fig="compra">
-                <figcaption class="pre-cap pd-folio"><span>La compra<span class="pd-ast" aria-hidden="true">*</span></span><span>Fig. 06</span></figcaption>
+                <figcaption class="pre-cap pd-folio"><span>La compra</span><span>Fig. 06</span></figcaption>
                 <div class="pre-cuenta">
                   <span><b data-cuenta={COMPRA.pronostico}>{miles(COMPRA.pronostico)}</b><small>pronosticadas</small></span>
                   <em aria-hidden="true">+</em>
@@ -191,7 +191,7 @@ const PALABRA = Array.from({ length: 3 }, () => 'PRETEMPORADA').join(' · ');
       <ul class="pda-lista pre-lista">{TARJETAS_PRE.map((t) => <PdTarjeta t={t} />)}</ul>
     </div>
     <figure class="pre-reparto" data-reparto>
-      <figcaption class="pre-cap pd-folio"><span>Primer reparto<span class="pd-ast" aria-hidden="true">*</span></span><span>60 / 40</span></figcaption>
+      <figcaption class="pre-cap pd-folio"><span>Primer reparto</span><span>60 / 40</span></figcaption>
       <p class="pre-rep-l"><span><b data-rep-salen>18,100</b>a las 100 tiendas</span><span><b data-rep-quedan>12,100</b>se quedan en el CEDIS</span></p>
       <div class="pre-rep-barra" aria-hidden="true"><span class="pre-rep-a"></span></div>
       <p class="pre-rep-cedis" aria-hidden="true">En el CEDIS: <span data-rep-cedis>12,100</span></p>

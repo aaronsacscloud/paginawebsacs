@@ -7,7 +7,7 @@
  * tarjetas que van saliendo (se abren: qué mover, por qué y un botón).
  * El HTML trae el estado final (póster y SEO); src/scripts/planeacion/consola.ts lo reproduce en vivo.
  */
-import { SEMANAS, PLAN_27, REAL_27, REPRONOSTICO_27, TARJETAS_VIVO, REGIONES, AVISO_SEMANA_6, RUTINA, OBRA_NOTA } from '../../data/planeacion-demo';
+import { SEMANAS, PLAN_27, REAL_27, REPRONOSTICO_27, TARJETAS_VIVO, REGIONES, AVISO_SEMANA_6, RUTINA } from '../../data/planeacion-demo';
 import { serie, suave } from '../../lib/planeacion-graficas';
 import PdTarjeta from './PdTarjeta.astro';
 import PdDetalle from './PdDetalle.astro';
@@ -59,7 +59,7 @@ const PALABRA = Array.from({ length: 3 }, () => 'TEMPORADA').join(' · ');
 
     <div class="vivo-main">
       <figure class="vivo-graf">
-        <figcaption class="vivo-cap pd-folio"><span>Plan contra real<span class="pd-ast"><span aria-hidden="true">*</span><span class="sr-only"> (en construcción)</span></span></span><span>Piezas por semana</span></figcaption>
+        <figcaption class="vivo-cap pd-folio"><span>Plan contra real</span><span>Piezas por semana</span></figcaption>
         <div class="vivo-svg">
           <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Piezas por semana: el plan en línea punteada y la venta real encima. A la semana 6 la venta va 12 por ciento arriba y el pronóstico de la semana pico sube de 5,800 a 6,500 piezas; la semana del Día del Padre vendió 6,600.">
             <rect class="vivo-evt" x={xEv - anchoSem / 2} y="4" width={anchoSem} height={H - 8} rx="6" />
@@ -102,8 +102,6 @@ const PALABRA = Array.from({ length: 3 }, () => 'TEMPORADA').join(' · ');
       <ul class="pda-lista vivo-lista">{TARJETAS_VIVO.map((t) => <PdTarjeta t={t} />)}</ul>
     </div>
   </div>
-
-  <p class="pda-nota"><span aria-hidden="true">*</span> {OBRA_NOTA}</p>
 
   <div class="pd-detalles" data-detalles="vivo">
     <h3 class="pd-detalles-h">El detalle de cada tarjeta</h3>

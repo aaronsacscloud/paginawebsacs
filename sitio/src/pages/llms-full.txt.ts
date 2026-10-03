@@ -68,9 +68,11 @@ ${SITIO}/planeacion-de-demanda — pronóstico de ventas para tiendas de
 ropa por temporada, modelo y tienda, con la curva de tallas de cada región. Antes
 de mover nada revisa lo que viene en camino; luego traspasa desde la tienda donde
 sobra, resurte desde el CEDIS y solo compra lo que falta en toda la red, con el
-corte de pedido de cada proveedor. Automático con candados solo para el resurtido
-de rutina del CEDIS. La página es una temporada de ejemplo (Día del Padre); lo que
-está en construcción va marcado.
+corte de pedido de cada proveedor. Automático con candados para el resurtido de
+rutina del CEDIS; el traspaso automático entre tiendas de la misma zona es una regla
+que viene apagada. Al cerrar, el resultado por temporada, colección y producto, y qué
+tan bien pronosticó contra la foto del plan. La página es una temporada de ejemplo
+(Día del Padre); lo que está en construcción va marcado.
 
 ## Planes y precios
 

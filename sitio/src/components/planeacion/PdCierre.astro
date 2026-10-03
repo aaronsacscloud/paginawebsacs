@@ -4,10 +4,11 @@
  * paso «Fideliza» del home. La escalera de rebajas va en grande sobre el color, bajando como escalones (−20 %, −40 %
  * a los 30 días, outlet); los protegidos con candado, en una línea; «lo que quedó» y la vida de un modelo, directo
  * sobre el fucsia con su folio (v3.1 «editorial»: sin tarjetas); y «Armar la rebaja» (Sacs arma la lista y las etiquetas; el precio lo confirmas tú).
- * «Consolidar» salió de la pantalla en el v3 (su plan automático sigue en construcción). Lo reproduce
+ * «Consolidar» salió de la pantalla en el v3 (hoy ya vive en Promociones: junta lo suelto antes de rebajar y crea los
+ * traspasos). «Lo que quedó» dejó de ser obra el 3-oct-2026. Lo reproduce
  * src/scripts/planeacion/consola.ts.
  */
-import { CIERRE, OBRA_NOTA } from '../../data/planeacion-demo';
+import { CIERRE } from '../../data/planeacion-demo';
 import { miles } from '../../lib/planeacion-graficas';
 
 const q = CIERRE.quedo;
@@ -31,7 +32,7 @@ const PALABRA = Array.from({ length: 4 }, () => 'REBAJAS').join(' · ');
 
   <div class="cie-grid">
     <section class="cie-b cie-quedo" data-paso="2" aria-labelledby="cie-quedo-h">
-      <h3 class="cie-k pd-folio" id="cie-quedo-h"><span>Lo que quedó<span class="pd-ast"><span aria-hidden="true">*</span><span class="sr-only"> (en construcción)</span></span></span><span>{q.pct} de lo que llegó</span></h3>
+      <h3 class="cie-k pd-folio" id="cie-quedo-h"><span>Lo que quedó</span><span>{q.pct} de lo que llegó</span></h3>
       <p class="cie-gran"><b data-cuenta={q.total}>{miles(q.total)}</b><span>piezas</span></p>
       <div class="cie-split" aria-hidden="true">
         <span class="is-b" style={`--w:${((q.basicos / q.total) * 100).toFixed(1)}%`}></span>
@@ -58,7 +59,6 @@ const PALABRA = Array.from({ length: 4 }, () => 'REBAJAS').join(' · ');
     <p class="cie-hecho" data-rebaja-hecho><span class="cie-hecho-pre">Al armarla: </span>{CIERRE.hecho}</p>
   </div>
 
-  <p class="pda-nota"><span aria-hidden="true">*</span> {OBRA_NOTA}</p>
 
   <a class="pda-sigue" href="#pd-resultado">Sigue: el resultado de la temporada
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg>

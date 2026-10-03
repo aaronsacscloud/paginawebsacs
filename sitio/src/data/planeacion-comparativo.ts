@@ -4,14 +4,14 @@
  * De dónde sale cada celda:
  *  - Sacs: el motor de Demand Planning de sacs_api — el catálogo de reglas (lib/moda/reglas.lib.js) y el Forecasting
  *    que entró el 2-oct-2026 (DP3: lib/moda/pronostico.lib.js, plan-temporada.lib.js y calendario.lib.js). Lo que aún
- *    no está va como 'obra' (asterisco, «en construcción»), nunca como incluido: hoy, medir la exactitud del pronóstico
- *    (el acto de Resultado de la página también va en obra).
+ *    no está va como 'obra' (asterisco, «en construcción»), nunca como incluido. Desde el 3-oct-2026 medir la
+ *    exactitud del pronóstico («¿le atinamos?», contra la foto del plan) ya está en producción: dejó de ser obra.
  *  - Competidores: solo lo que publican en sus sitios y materiales, consultados el 2-oct-2026 (análisis completo con
  *    citas en la sesión; las páginas principales van en FUENTES). Si no lo dicen, 'nd' (sin información pública): no se
  *    adivina ni se pone «No» por no encontrarlo. Analyticalways y Celes no son punto de venta ni tienda en línea
  *    («se integra con el ERP y el TPV del retailer», «una capa de AI sobre tu stack actual»).
- *  - Filas justas: hay dos donde otro gana (el plan financiero semanal de Analyticalways y la exactitud medida de
- *    Celes). Una comparativa que solo gana es una que nadie cree.
+ *  - Filas justas: el plan financiero semanal de Analyticalways (ahí gana) y la exactitud medida (hasta el 2-oct
+ *    ganaba Celes; desde el 3-oct empatan). Una comparativa que solo gana es una que nadie cree.
  *  - Nada de los clientes de los competidores en la página (uno de los casos publicados de Celes es un prospecto de
  *    Sacs: la web no lo nombra).
  *
@@ -42,7 +42,7 @@ export const GRUPOS: { t: string; filas: Fila[] }[] = [
   ] },
   { t: 'Al cierre', filas: [
     { t: 'Rebajas por escalones, sin tocar básicos ni lo recién llegado', v: ['full', 'partial', 'nd', 'partial'] },
-    { t: 'Mide qué tan bien pronosticó', n: 'Lo pronosticado contra lo vendido, para corregir la siguiente temporada.', v: ['obra', 'nd', 'full', 'nd'] },
+    { t: 'Mide qué tan bien pronosticó', n: 'Lo pronosticado contra lo vendido, para corregir la siguiente temporada.', v: ['full', 'nd', 'full', 'nd'] },
   ] },
   { t: 'La plataforma', filas: [
     { t: 'Tú eliges cuánto decide solo', n: 'Sugerir, aprobar o automático con candados.', v: ['full', 'partial', 'full', 'nd'] },
@@ -114,6 +114,7 @@ export const COMPARATIVO = {
   columnas: COLUMNAS,
   grupos: GRUPOS,
   hayNd: GRUPOS.some((g) => g.filas.some((f) => f.v.includes('nd'))),
+  hayObra: GRUPOS.some((g) => g.filas.some((f) => f.v.includes('obra'))),
   perfiles: PERFILES,
   modaTitulo: 'Lo que Sacs sabe de moda',
   modaDek: 'Son reglas del motor: cada una se prende, se apaga o se ajusta en el Gestor de reglas.',
