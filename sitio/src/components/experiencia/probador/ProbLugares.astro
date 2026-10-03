@@ -1,0 +1,105 @@
+---
+/**
+ * «Dos lugares, el mismo probador» (/experiencia/probador-virtual). Con el scroll: la foto de la tienda a pantalla
+ * completa («En tu tienda») y luego el fucsia barre la pantalla de derecha a izquierda hasta «Y desde su casa», con la
+ * foto que ella se toma en su sala dentro de un celular; al final, «El mismo probador, con el mismo inventario».
+ * Variables del script (escenas.ts): --p de 0 a 1 mientras pasa el riel. Sin JS o con «reducir movimiento», los dos
+ * bloques van uno debajo del otro, completos.
+ */
+import { LUGARES } from '../../../data/experiencia-probador';
+const { tienda, casa, cierre } = LUGARES;
+---
+<section class="prl" id="exp-lugares" data-escena aria-labelledby="prl-h1">
+  <div class="prl-riel" data-riel>
+    <div class="prl-escena">
+      <div class="prl-a">
+        <picture>
+          <source media="(min-width: 768px)" srcset="/images/experiencia/probador-portada-800.webp 800w, /images/experiencia/probador-portada-1080.webp 1080w" sizes="50vw" width="1080" height="1620" />
+          <img src="/images/experiencia/probador-tablet-1280.webp" width="1280" height="850" alt="En la boutique, la clienta ve en su celular cómo le queda un vestido verde que no se ha probado" loading="lazy" decoding="async" />
+        </picture>
+        <div class="prl-a-in">
+          <p class="prl-k">{tienda.k}</p>
+          <h2 class="prl-h" id="prl-h1">{tienda.h}</h2>
+          <p class="prl-p">{tienda.p}</p>
+        </div>
+      </div>
+
+      <div class="prl-b pd-fucsia">
+        <div class="prl-b-in">
+          <div class="prl-b-txt">
+            <p class="prl-k">{casa.k}</p>
+            <h2 class="prl-h">{casa.h}</h2>
+            <p class="prl-p">{casa.p}</p>
+          </div>
+          <figure class="prl-tel">
+            <img src="/images/probador/cam-antes.webp" width="720" height="1080" alt="La clienta en la sala de su casa, de cuerpo completo, como se toma la foto para probarse la prenda" loading="lazy" decoding="async" />
+            <figcaption>Su foto, en su sala</figcaption>
+          </figure>
+        </div>
+        <p class="prl-cierre">{cierre}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .prl { --w: 0; --c: 0; position: relative; background: #0B0B0C; color: #fff; }
+  .prl-k { margin: 0 0 14px; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; }
+  .prl-h { margin: 0; color: #fff; font: 700 clamp(44px, 7.4vw, 112px)/0.92 var(--pd-clash, var(--font-display)); letter-spacing: -0.025em; }
+  .prl-p { margin: 18px 0 0; max-width: 34ch; font: 500 17px/1.5 var(--font-body); }
+
+  /* A · la tienda: la foto a pantalla completa */
+  .prl-a { position: relative; display: flex; align-items: flex-end; min-height: max(560px, 100svh); overflow: hidden; isolation: isolate; }
+  .prl-a picture, .prl-a img { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .prl-a picture { z-index: -2; }
+  .prl-a img { object-fit: cover; object-position: 30% 50%; }
+  .prl-a::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(11, 11, 12, 0) 40%, rgba(11, 11, 12, 0.85) 100%); }
+  .prl-a-in { width: 100%; max-width: 1160px; margin: 0 auto; padding: 0 20px 56px; }
+
+  /* B · su casa: fucsia, con su foto en un celular */
+  .prl-b { position: relative; padding: 72px 20px 64px; }
+  .prl-b-in { display: grid; gap: 36px; max-width: 1160px; margin: 0 auto; align-items: center; }
+  .prl-tel { position: relative; justify-self: center; width: min(62vw, 260px); margin: 0; padding: 8px; border-radius: 34px; background: #121216; box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.6); }
+  /* height: auto, o el atributo height="1080" de la etiqueta manda y la foto sale altísima */
+  .prl-tel img { display: block; width: 100%; height: auto; aspect-ratio: 9 / 16; object-fit: cover; object-position: 50% 30%; border-radius: 26px; }
+  .prl-cierre { color: #fff; }
+  .prl-tel figcaption { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); padding: 7px 14px; border-radius: 999px; background: rgba(255, 255, 255, 0.94); color: #141414; font: 600 12px/1 var(--font-display); white-space: nowrap; }
+  .prl-cierre { max-width: 1160px; margin: 48px auto 0; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, 0.6); font: 700 clamp(22px, 2.6vw, 34px)/1.15 var(--pd-clash, var(--font-display)); }
+
+  @media (min-width: 768px) {
+    /* escritorio: el texto a la izquierda sobre negro y la foto vertical llena la mitad derecha, de arriba a abajo */
+    .prl-a { align-items: center; }
+    .prl-a picture { left: 50%; }
+    .prl-a img { object-position: 50% 40%; }
+    .prl-a::after { display: none; }
+    .prl-a-in { padding: 0 5vw; }
+    .prl-a-in > * { max-width: 42vw; }
+    .prl-p { font-size: 19px; }
+    .prl-b { padding: 104px 5vw 88px; }
+    .prl-b-in { grid-template-columns: 1.2fr 0.8fr; gap: 56px; }
+    .prl-tel { width: auto; }
+    .prl-tel img { width: auto; height: min(56vh, 520px); }
+  }
+
+  /* ══ con el scroll: la escena pegada; el fucsia barre de derecha a izquierda y el cierre entra al final ══ */
+  .prl.is-escena .prl-riel { height: 260vh; }
+  .prl.is-escena .prl-escena { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; --w: clamp(0, calc((var(--p, 0) - 0.34) / 0.3), 1); --c: clamp(0, calc((var(--p, 0) - 0.78) / 0.16), 1); }
+  .prl.is-escena .prl-a { height: 100%; min-height: 0; }
+  .prl.is-escena .prl-a-in { opacity: calc(1 - var(--w) * 1.4); transform: translateX(calc(var(--w) * -40px)); }
+  .prl.is-escena .prl-a img { transform: scale(calc(1.06 - var(--p, 0) * 0.06)); }
+  .prl.is-escena .prl-b { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; clip-path: inset(0 0 0 calc((1 - var(--w)) * 100%)); }
+  .prl.is-escena .prl-b-in { width: 100%; }
+  .prl.is-escena .prl-b-txt { opacity: clamp(0, calc((var(--w) - 0.5) * 2), 1); transform: translateX(calc((1 - var(--w)) * 60px)); }
+  .prl.is-escena .prl-tel { transform: translateY(calc((1 - var(--w)) * 40px)) rotate(calc((1 - var(--w)) * 4deg)); }
+  .prl.is-escena .prl-cierre { width: 100%; opacity: var(--c); transform: translateY(calc((1 - var(--c)) * 16px)); }
+  @media (max-width: 767px) {
+    .prl.is-escena .prl-b { padding: 64px 20px 32px; justify-content: flex-start; }
+    .prl.is-escena .prl-b-in { gap: 22px; }
+    .prl.is-escena .prl-tel { width: min(48vw, 210px); }
+    .prl.is-escena .prl-cierre { margin-top: 22px; }
+  }
+  @media (max-width: 767px) and (max-height: 720px) {
+    .prl.is-escena .prl-tel { width: min(38vw, 160px); }
+    .prl.is-escena .prl-p { font-size: 15px; }
+  }
+</style>

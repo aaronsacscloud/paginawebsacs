@@ -1,0 +1,238 @@
+---
+/**
+ * «Así se lo prueba» (/experiencia/probador-virtual): los cuatro pasos en la ficha de la tienda en línea de Sacs, en un
+ * celular con la tienda de ejemplo Aurea (la misma de la sección de Tienda en línea). Lo que sale en la pantalla es lo
+ * que hace la tienda, con sus textos: «¿Cuál es mi talla?» (sus medidas contra la tabla; «Segura: tus datos caen
+ * dentro de una sola talla»), «Míralo en alguien como tú» (el look en el cuerpo más parecido), «Pruébatelo con tu foto»
+ * (el aviso, «Preparando tu foto… suele tardar de 30 a 60 segundos» y el resultado con su etiqueta de IA) y el color y
+ * la bolsa. Nada de cámara en vivo: el probador trabaja con una foto.
+ * data-tramos="4": el scroll elige el paso; dentro de cada paso, lo que se escribe y se toca son animaciones CSS.
+ */
+import { PASOS } from '../../../data/experiencia-probador';
+const F = '/images/probador/';
+const COLORES = [{ n: 'Rosa', c: '#E0457B', img: 'cat-vestido-rosa-720' }, { n: 'Negro', c: '#141414', img: 'cat-vestido-negro-360' }, { n: 'Verde esmeralda', c: '#1E7A4C', img: 'cat-vestido-verde-360' }];
+---
+<section class="pp pd-marfil" id="exp-pasos" data-escena data-tramos="4" data-tramo="3" aria-labelledby="pp-h">
+  <div class="pp-riel" data-riel>
+    <div class="pp-escena">
+      <div class="pp-in">
+        <div class="pp-txt">
+          <p class="pp-k">En la ficha de cada prenda</p>
+          <h2 class="pp-h" id="pp-h">Así se lo prueba.</h2>
+          <ol class="pp-pasos">
+            {PASOS.map((p, k) => (
+              <li class="pp-paso" data-k={k}>
+                <span class="pp-paso-n">{p.n}</span>
+                <span class="pp-paso-t"><b>{p.t}</b><span>{p.d}</span></span>
+                <i class="pp-barra" aria-hidden="true"><b></b></i>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <div class="pp-tel" role="img" aria-label="En un celular, la ficha de un vestido en la tienda Aurea: la clienta pone sus medidas y le sale talla M, ve el vestido en una modelo parecida a ella, se prueba el vestido con su foto y lo agrega a la bolsa en verde">
+          <div class="pp-pantalla">
+            <div class="pp-estado"><b>9:41</b><span><i></i><i></i><i></i></span></div>
+            <div class="pp-url">aurea.shop</div>
+
+            <!-- 01 · ¿Cuál es mi talla? -->
+            <div class="pp-s pp-s0">
+              <div class="pp-hoja-t">¿Cuál es mi talla?</div>
+              <div class="pp-prod"><img src={`${F}cat-vestido-rosa-360.webp`} alt="" width="360" height="540" loading="lazy" decoding="async" /><span><b>Vestido slip de satén</b><small>Rosa · $1,890</small></span></div>
+              <label class="pp-campo" style="--d:0"><span>Busto</span><b>88</b><small>cm</small></label>
+              <label class="pp-campo" style="--d:1"><span>Cintura</span><b>70</b><small>cm</small></label>
+              <label class="pp-campo" style="--d:2"><span>Cadera</span><b>96</b><small>cm</small></label>
+              <div class="pp-talla">
+                <span class="pp-talla-k">Tu talla</span>
+                <b>M</b>
+                <span class="pp-talla-c"><em>Segura</em> Tus datos caen dentro de una sola talla.</span>
+              </div>
+            </div>
+
+            <!-- 02 · Míralo en alguien como tú -->
+            <div class="pp-s pp-s1">
+              <div class="pp-foto"><img src={`${F}cat-vestido-rosa-720.webp`} alt="" width="720" height="1080" loading="lazy" decoding="async" /></div>
+              <div class="pp-cuerpo">
+                <b>Míralo en alguien como tú</b>
+                <span class="pp-chips"><i>Talla M</i><i>1.65 m</i><i>Complexión media</i></span>
+                <small>La más parecida a ti</small>
+              </div>
+            </div>
+
+            <!-- 03 · Pruébatelo con tu foto -->
+            <div class="pp-s pp-s2">
+              <div class="pp-aviso">
+                <b>Pruébatelo con tu foto</b>
+                <span class="pp-check" style="--d:0"><i></i>La foto es mía</span>
+                <span class="pp-check" style="--d:1"><i></i>Soy mayor de edad</span>
+                <span class="pp-check" style="--d:2"><i></i>Leí para qué se usa: no se guarda</span>
+              </div>
+              <div class="pp-prep"><i class="pp-anillo"></i><b>Preparando tu foto…</b><small>Suele tardar de 30 a 60 segundos</small></div>
+              <img class="pp-res" src={`${F}cam-rosa.webp`} alt="" width="720" height="1080" loading="lazy" decoding="async" />
+              <span class="pp-ia">Prueba virtual generada con IA</span>
+            </div>
+
+            <!-- 04 · el color y la bolsa -->
+            <div class="pp-s pp-s3">
+              <div class="pp-galeria">
+                {COLORES.map((c, i) => <img class="pp-gal" data-c={i} src={`${F}${c.img}.webp`} alt="" width="360" height="540" loading="lazy" decoding="async" />)}
+              </div>
+              <div class="pp-ficha">
+                <div class="pp-ficha-cab"><b>Vestido slip de satén</b><span>$1,890</span></div>
+                <div class="pp-colores">{COLORES.map((c, i) => <i data-c={i} style={`--c:${c.c}`}></i>)}<small class="pp-cn"><em data-c="0">Rosa</em><em data-c="1">Negro</em><em data-c="2">Verde esmeralda</em></small></div>
+                <span class="pp-btn">Agregar a la bolsa · Talla M</span>
+                <span class="pp-recoge">Recógelo en tienda · Polanco</span>
+              </div>
+              <div class="pp-ok">✓ Agregado a tu bolsa</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .pp { position: relative; }
+  .pp-in { display: grid; gap: 36px; max-width: 1160px; margin: 0 auto; padding: 72px 20px 80px; align-items: center; }
+  .pp-k { margin: 0 0 14px; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--pd-texto); }
+  .pp-h { margin: 0; font: 700 clamp(40px, 6vw, 88px)/0.94 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; color: var(--pd-texto); }
+  .pp-pasos { margin: 28px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--pd-filete); }
+  .pp-paso { position: relative; display: grid; grid-template-columns: 44px 1fr; gap: 4px; padding: 16px 0; border-bottom: 1px solid var(--pd-filete); }
+  .pp-paso-n { font: 700 20px/1.2 var(--pd-clash, var(--font-display)); color: #C9C5BC; transition: color 0.3s; }
+  .pp-paso-t { display: grid; gap: 4px; }
+  .pp-paso-t b { font: 700 17px/1.3 var(--font-display); color: var(--pd-texto); }
+  .pp-paso-t span { font: 500 15px/1.5 var(--font-body); color: var(--pd-tenue); }
+  .pp-barra { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; overflow: hidden; }
+  .pp-barra b { display: block; height: 100%; background: #E0457B; transform: scaleX(0); transform-origin: 0 50%; }
+
+  /* ── el celular (todo en unidades del contenedor, como el de Tienda en línea) ── */
+  .pp-tel { position: relative; justify-self: center; width: min(76vw, 320px); aspect-ratio: 9 / 19; padding: 2.6%; border-radius: 13% / 6.2%; background: #16161A; box-shadow: 0 40px 70px -36px rgba(20, 20, 20, 0.55), inset 0 0 0 1.5px rgba(255, 255, 255, 0.12); }
+  .pp-pantalla { position: relative; height: 100%; overflow: hidden; border-radius: 11% / 5.2%; background: #FBFAF7; color: #141414; container-type: size; }
+  .pp-estado { position: absolute; left: 0; right: 0; top: 0; z-index: 5; display: flex; justify-content: space-between; align-items: center; padding: 3.4cqw 8cqw 0; font: 600 3.6cqw/1 var(--font-display); }
+  .pp-estado span { display: flex; gap: 1.2cqw; }
+  .pp-estado i { width: 3.4cqw; height: 2.3cqw; border-radius: 0.6cqw; background: currentColor; }
+  .pp-url { position: absolute; left: 50%; top: 10.5cqw; z-index: 5; padding: 1.2cqw 3.8cqw; border-radius: 99px; background: rgba(20, 20, 20, 0.07); font: 500 3.2cqw/1 var(--font-body); transform: translateX(-50%); }
+  .pp-s { position: absolute; inset: 0; padding: 20cqw 5cqw 6cqw; opacity: 0; visibility: hidden; transition: opacity 0.45s ease, visibility 0s linear 0.45s; }
+
+  /* 01 · la talla */
+  .pp-hoja-t { font: 700 5.6cqw/1.2 var(--font-display); }
+  .pp-prod { display: flex; gap: 3cqw; align-items: center; margin: 4cqw 0 3cqw; padding: 2.4cqw; border-radius: 3cqw; background: #F1EEE7; }
+  .pp-prod img { width: 13cqw; height: 18cqw; object-fit: cover; border-radius: 1.6cqw; }
+  .pp-prod b { display: block; font: 600 3.8cqw/1.3 var(--font-display); }
+  .pp-prod small { font: 500 3.2cqw/1.3 var(--font-body); color: #6B6862; }
+  .pp-campo { display: grid; grid-template-columns: 1fr auto auto; gap: 1.6cqw; align-items: baseline; margin-top: 2.2cqw; padding: 3cqw 3.6cqw; border: 1px solid rgba(20, 20, 20, 0.16); border-radius: 3cqw; background: #fff; font: 500 3.6cqw/1 var(--font-body); }
+  .pp-campo b { font: 700 4.4cqw/1 var(--font-display); }
+  .pp-campo small { color: #6B6862; font-size: 3.2cqw; }
+  .pp-talla { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 4cqw; align-items: center; margin-top: 4cqw; padding: 4cqw; border-radius: 4cqw; background: #141414; color: #fff; }
+  .pp-talla-k { grid-column: 1 / -1; font: 600 3.2cqw/1 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255, 255, 255, 0.7); }
+  .pp-talla b { font: 700 15cqw/1 var(--pd-clash, var(--font-display)); }
+  .pp-talla-c { font: 500 3.3cqw/1.35 var(--font-body); }
+  .pp-talla-c em { display: block; font: 700 3.8cqw/1.3 var(--font-display); font-style: normal; color: #6FD3A3; }
+
+  /* 02 · alguien como ella */
+  .pp-s1 { padding: 0; }
+  .pp-foto { position: absolute; inset: 0; }
+  .pp-foto img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; }
+  .pp-cuerpo { position: absolute; left: 4cqw; right: 4cqw; bottom: 5cqw; display: grid; gap: 2.4cqw; padding: 4cqw; border-radius: 4cqw; background: rgba(255, 255, 255, 0.95); }
+  .pp-cuerpo b { font: 700 4.6cqw/1.2 var(--font-display); }
+  .pp-chips { display: flex; flex-wrap: wrap; gap: 1.6cqw; }
+  .pp-chips i { padding: 1.4cqw 2.8cqw; border-radius: 99px; background: #F1EEE7; font: 600 3.2cqw/1 var(--font-display); font-style: normal; }
+  .pp-cuerpo small { font: 500 3.2cqw/1.3 var(--font-body); color: #1F7A4C; }
+
+  /* 03 · con su foto */
+  .pp-s2 { padding: 0; background: #F1EEE7; }
+  .pp-aviso { position: absolute; left: 4cqw; right: 4cqw; top: 22cqw; display: grid; gap: 3cqw; padding: 5cqw; border-radius: 4cqw; background: #fff; box-shadow: 0 2cqw 6cqw rgba(20, 20, 20, 0.08); }
+  .pp-aviso b { font: 700 5cqw/1.2 var(--font-display); }
+  .pp-check { display: flex; align-items: center; gap: 2.6cqw; font: 500 3.6cqw/1.3 var(--font-body); }
+  .pp-check i { flex: none; width: 5cqw; height: 5cqw; border: 1.5px solid #141414; border-radius: 1.2cqw; }
+  .pp-prep { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.4cqw; padding: 8cqw; text-align: center; opacity: 0; }
+  .pp-prep b { font: 700 4.6cqw/1.2 var(--font-display); }
+  .pp-prep small { font: 500 3.4cqw/1.3 var(--font-body); color: #6B6862; }
+  .pp-anillo { width: 10cqw; height: 10cqw; border-radius: 50%; border: 1cqw solid rgba(20, 20, 20, 0.12); border-top-color: #E0457B; animation: ppGira 1s linear infinite; }
+  .pp-res { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
+  .pp-ia { position: absolute; left: 50%; bottom: 5cqw; padding: 1.8cqw 3.6cqw; border-radius: 99px; background: rgba(20, 20, 20, 0.78); color: #fff; font: 600 3.1cqw/1 var(--font-display); white-space: nowrap; transform: translateX(-50%); opacity: 0; }
+
+  /* 04 · color y bolsa */
+  .pp-s3 { padding: 0; }
+  .pp-galeria { position: absolute; left: 0; right: 0; top: 0; height: 66%; }
+  .pp-gal { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; opacity: 0; }
+  .pp-gal[data-c="0"] { opacity: 1; }
+  .pp-ficha { position: absolute; left: 0; right: 0; bottom: 0; padding: 4cqw 5cqw 6cqw; border-radius: 5cqw 5cqw 0 0; background: #FBFAF7; }
+  .pp-ficha-cab { display: flex; justify-content: space-between; font: 700 4.2cqw/1.3 var(--font-display); }
+  .pp-colores { display: flex; align-items: center; gap: 2.4cqw; margin-top: 2.6cqw; }
+  .pp-colores i { width: 5.4cqw; height: 5.4cqw; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 0.8cqw #FBFAF7, 0 0 0 1.1cqw rgba(20, 20, 20, 0.2); }
+  .pp-cn { position: relative; margin-left: 1.4cqw; min-width: 30cqw; height: 4cqw; font: 600 3.3cqw/4cqw var(--font-display); }
+  .pp-cn em { position: absolute; left: 0; top: 0; font-style: normal; opacity: 0; }
+  .pp-cn em[data-c="0"] { opacity: 1; }
+  .pp-btn { display: flex; justify-content: center; margin-top: 3.6cqw; padding: 3.4cqw 0; border-radius: 99px; background: #141414; color: #fff; font: 700 3.6cqw/1 var(--font-display); }
+  .pp-recoge { display: block; margin-top: 2.6cqw; text-align: center; font: 600 3.2cqw/1.2 var(--font-display); color: #1F7A4C; }
+  .pp-ok { position: absolute; left: 50%; top: 22cqw; padding: 2.4cqw 4.4cqw; border-radius: 99px; background: #1F9D63; color: #fff; font: 700 3.4cqw/1 var(--font-display); white-space: nowrap; transform: translate(-50%, -6cqw); opacity: 0; }
+
+  /* ── el paso que se ve (sin JS: el último, completo) ── */
+  .pp[data-tramo="0"] .pp-s0, .pp[data-tramo="1"] .pp-s1, .pp[data-tramo="2"] .pp-s2, .pp[data-tramo="3"] .pp-s3 { opacity: 1; visibility: visible; transition: opacity 0.45s ease, visibility 0s; }
+  .pp[data-tramo="0"] .pp-paso[data-k="0"] .pp-paso-n, .pp[data-tramo="1"] .pp-paso[data-k="1"] .pp-paso-n, .pp[data-tramo="2"] .pp-paso[data-k="2"] .pp-paso-n, .pp[data-tramo="3"] .pp-paso[data-k="3"] .pp-paso-n { color: #E0457B; }
+  .pp[data-tramo="1"] .pp-paso[data-k="0"] .pp-barra b, .pp[data-tramo="2"] .pp-paso[data-k="0"] .pp-barra b, .pp[data-tramo="2"] .pp-paso[data-k="1"] .pp-barra b, .pp[data-tramo="3"] .pp-paso .pp-barra b { transform: none; }
+  /* sin escena: todo a la vista, ya resuelto */
+  .pp:not(.is-escena) .pp-check i { background: #141414; box-shadow: inset 0 0 0 1cqw #fff; }
+  .pp:not(.is-escena) .pp-ok { opacity: 1; transform: translate(-50%, 0); }
+
+  /* ── con el scroll: cada paso se reproduce al entrar ── */
+  .pp.is-escena[data-tramo="0"] .pp-campo b { animation: ppEscribe 0.5s steps(2) both; animation-delay: calc(0.4s + var(--d) * 0.55s); }
+  .pp.is-escena[data-tramo="0"] .pp-talla { animation: ppEntra 0.6s cubic-bezier(0.16, 1, 0.3, 1) 2.2s both; }
+  .pp.is-escena[data-tramo="1"] .pp-cuerpo { animation: ppEntra 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both; }
+  .pp.is-escena[data-tramo="2"] .pp-check i { animation: ppPalomea 0.3s ease both; animation-delay: calc(0.4s + var(--d) * 0.45s); }
+  .pp.is-escena[data-tramo="2"] .pp-aviso { animation: ppSale 0.4s ease 2.1s both; }
+  .pp.is-escena[data-tramo="2"] .pp-prep { animation: ppPrep 2.2s ease 2.3s both; }
+  .pp.is-escena[data-tramo="2"] .pp-res { animation: ppAparece 0.8s ease 4.2s both; }
+  .pp.is-escena[data-tramo="2"] .pp-ia { animation: ppAparece 0.5s ease 4.8s both; }
+  .pp.is-escena[data-tramo="3"] .pp-gal[data-c="1"] { animation: ppColor 4.8s ease 0.6s both; }
+  .pp.is-escena[data-tramo="3"] .pp-gal[data-c="2"] { animation: ppColorFin 4.8s ease 0.6s both; }
+  .pp.is-escena[data-tramo="3"] .pp-cn em[data-c="0"] { animation: ppNombre0 4.8s ease 0.6s both; }
+  .pp.is-escena[data-tramo="3"] .pp-cn em[data-c="1"] { animation: ppColor 4.8s ease 0.6s both; }
+  .pp.is-escena[data-tramo="3"] .pp-cn em[data-c="2"] { animation: ppColorFin 4.8s ease 0.6s both; }
+  .pp.is-escena[data-tramo="3"] .pp-ok { animation: ppOk 0.5s cubic-bezier(0.16, 1, 0.3, 1) 4.6s both; }
+  .pp.is-escena[data-tramo="0"] .pp-paso[data-k="0"] .pp-barra b,
+  .pp.is-escena[data-tramo="1"] .pp-paso[data-k="1"] .pp-barra b,
+  .pp.is-escena[data-tramo="2"] .pp-paso[data-k="2"] .pp-barra b,
+  .pp.is-escena[data-tramo="3"] .pp-paso[data-k="3"] .pp-barra b { animation: ppBarra 4.8s linear both; }
+  @keyframes ppEscribe { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes ppEntra { from { opacity: 0; transform: translateY(5cqw); } to { opacity: 1; transform: none; } }
+  @keyframes ppPalomea { to { background: #141414; box-shadow: inset 0 0 0 1cqw #fff; } }
+  @keyframes ppSale { to { opacity: 0; transform: translateY(-4cqw); } }
+  @keyframes ppPrep { 0% { opacity: 0; } 12%, 85% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes ppAparece { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes ppColor { 0%, 30% { opacity: 0; } 36%, 64% { opacity: 1; } 70%, 100% { opacity: 0; } }
+  @keyframes ppColorFin { 0%, 64% { opacity: 0; } 70%, 100% { opacity: 1; } }
+  @keyframes ppNombre0 { 0%, 30% { opacity: 1; } 36%, 100% { opacity: 0; } }
+  @keyframes ppOk { from { opacity: 0; transform: translate(-50%, -6cqw); } to { opacity: 1; transform: translate(-50%, 0); } }
+  @keyframes ppBarra { from { transform: scaleX(0); } to { transform: none; } }
+  @keyframes ppGira { to { transform: rotate(360deg); } }
+
+  @media (min-width: 900px) {
+    .pp-in { grid-template-columns: 1fr 0.9fr; gap: 72px; padding: 112px 5vw 120px; }
+    .pp-tel { width: min(30vw, 340px); }
+  }
+
+  /* ══ con el scroll: la escena pegada ══ */
+  .pp.is-escena .pp-riel { height: 420vh; }
+  .pp.is-escena .pp-escena { position: sticky; top: 0; height: 100vh; height: 100svh; display: flex; align-items: center; overflow: hidden; }
+  .pp.is-escena .pp-in { width: 100%; }
+  @media (min-width: 900px) and (max-height: 820px) {
+    .pp.is-escena .pp-tel { width: min(30vw, 300px); }
+    .pp.is-escena .pp-in { padding-top: 64px; padding-bottom: 64px; }
+  }
+  /* teléfono: arriba solo el paso actual, abajo el celular */
+  @media (max-width: 899px) {
+    .pp.is-escena .pp-in { gap: 16px; padding: 28px 20px 20px; align-content: center; }
+    .pp.is-escena .pp-k { display: none; }
+    .pp.is-escena .pp-h { font-size: clamp(30px, 8.6vw, 40px); }
+    .pp.is-escena .pp-pasos { margin-top: 12px; }
+    .pp.is-escena .pp-paso { display: none; padding: 12px 0 10px; }
+    .pp.is-escena[data-tramo="0"] .pp-paso[data-k="0"], .pp.is-escena[data-tramo="1"] .pp-paso[data-k="1"], .pp.is-escena[data-tramo="2"] .pp-paso[data-k="2"], .pp.is-escena[data-tramo="3"] .pp-paso[data-k="3"] { display: grid; }
+    .pp.is-escena .pp-tel { width: auto; height: min(60svh, 560px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pp * { animation: none !important; transition: none !important; }
+  }
+</style>

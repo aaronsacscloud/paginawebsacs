@@ -1,0 +1,34 @@
+---
+/**
+ * «Su foto, cuidada.» (/experiencia/probador-virtual): los candados reales de «Pruébatelo con tu foto»
+ * (sacs_api lib/estudio/probador.lib.js): permiso explícito, revisión de la foto (una persona, adulta, vestida), nada se
+ * guarda y la etiqueta de IA. En azul, como un acto de /planeacion-de-demanda: la palabra gigante detrás del título y
+ * cada renglón entra al verse (.rv → .is-on, lo pone el script de la página).
+ */
+import { CUIDADO } from '../../../data/experiencia-probador';
+---
+<section class="pda prc pd-azul" aria-labelledby="prc-h">
+  <div class="pda-fondo" aria-hidden="true"><span>SU FOTO · SU FOTO · SU FOTO · SU FOTO</span><span>SU FOTO · SU FOTO · SU FOTO · SU FOTO</span></div>
+  <p class="pd-folio"><span>Privacidad</span><span>Pruébatelo con tu foto</span></p>
+  <h2 class="pda-h" id="prc-h">{CUIDADO.h}</h2>
+  <ol class="prc-lista">
+    {CUIDADO.puntos.map((t, i) => <li class="rv" style={`--i:${i}`}><span class="prc-n">{String(i + 1).padStart(2, '0')}</span><span class="prc-t">{t}</span></li>)}
+  </ol>
+  <p class="prc-nota">{CUIDADO.nota}</p>
+</section>
+
+<style>
+  .prc-lista { margin: 48px 0 0; padding: 0; list-style: none; border-top: 2px solid #fff; }
+  .prc-lista li { display: grid; grid-template-columns: 48px 1fr; gap: 8px; padding: 22px 0; border-bottom: 1px solid var(--pd-filete); }
+  .prc-n { font: 700 22px/1.2 var(--pd-clash); color: #fff; }
+  .prc-t { font: 700 clamp(22px, 2.6vw, 34px)/1.2 var(--pd-clash); letter-spacing: -0.01em; color: #fff; text-wrap: balance; }
+  .prc-nota { margin: 28px 0 0; font: 600 16px/1.5 var(--font-display); color: #fff; }
+  :global(.js-rv) .prc-lista .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.08s); }
+  :global(.js-rv) .prc-lista .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 768px) {
+    .prc-lista li { grid-template-columns: 80px 1fr; padding: 26px 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .prc-lista .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>

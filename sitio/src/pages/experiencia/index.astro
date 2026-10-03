@@ -1,0 +1,84 @@
+---
+/**
+ * /experiencia — el índice de las experiencias (2-oct-2026). Es a donde lleva «Experiencia» del menú principal: cada
+ * experiencia en una tarjeta vertical con su foto, la primera en grande (pedido del dueño: «va a aparecer la primera
+ * experiencia en grande, en formato vertical de imagen, porque vamos a poner varias»). Las tarjetas salen de
+ * src/data/experiencias.ts, igual que el panel del menú.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FinalCTA from '../../components/FinalCTA.astro';
+import { experiencias } from '../../data/experiencias';
+import { SITIO } from '../../data/entidad';
+import { breadcrumbList } from '../../lib/breadcrumb';
+import '../../styles/planeacion.css';
+
+const title = 'Experiencia: lo que tu clienta vive con Sacs | Sacs';
+const description = 'Experiencias de compra para tiendas de moda con Sacs, en el piso y en línea: empieza por el probador virtual en tienda.';
+const lista = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Experiencias de Sacs',
+  itemListElement: experiencias.map((e, i) => ({ '@type': 'ListItem', position: i + 1, url: `${SITIO}${e.href}`, name: e.titulo })),
+};
+const migas = breadcrumbList([{ name: 'Inicio', url: `${SITIO}/` }, { name: 'Experiencia' }]);
+const [primera, ...resto] = experiencias;
+---
+<BaseLayout title={title} description={description} image="/images/experiencia/probador-og.jpg" structuredData={[lista, migas]}>
+  <div class="pd">
+    <section class="pda exi pd-negro" aria-labelledby="exi-h">
+      <div class="pda-fondo" aria-hidden="true"><span>EXPERIENCIA · EXPERIENCIA · EXPERIENCIA</span><span>EXPERIENCIA · EXPERIENCIA · EXPERIENCIA</span></div>
+      <p class="pd-folio"><span>Experiencia</span><span>En el piso y en línea</span></p>
+      <div class="exi-grid">
+        <div class="exi-txt">
+          <h1 class="pda-h" id="exi-h">Lo que tu clienta vive con Sacs.</h1>
+          <p class="exi-p">Cada experiencia, con su página: cómo se vive en tu tienda física y en tu tienda en línea, con tu inventario.</p>
+        </div>
+        <div class="exi-cards">
+          <a class="exi-card is-grande" href={primera.href} style={`--ac:${primera.acento};`}>
+            <img src={primera.imagen} width={primera.imagenAncho} height={primera.imagenAlto} alt={primera.alt} loading="eager" fetchpriority="high" decoding="async" />
+            <span class="exi-velo" aria-hidden="true"></span>
+            <span class="exi-num">{primera.num}</span>
+            <span class="exi-card-txt">
+              <span class="exi-t">{primera.titulo}</span>
+              <span class="exi-d">{primera.bajada}</span>
+              <span class="exi-ir">Ver la experiencia →</span>
+            </span>
+          </a>
+          {resto.map((e) => (
+            <a class="exi-card" href={e.href} style={`--ac:${e.acento};`}>
+              <img src={e.imagen} width={e.imagenAncho} height={e.imagenAlto} alt={e.alt} loading="lazy" decoding="async" />
+              <span class="exi-velo" aria-hidden="true"></span>
+              <span class="exi-num">{e.num}</span>
+              <span class="exi-card-txt"><span class="exi-t">{e.titulo}</span><span class="exi-ir">Ver →</span></span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  </div>
+  <FinalCTA />
+</BaseLayout>
+
+<style>
+  .exi { min-height: calc(100svh - 101px); }
+  .exi-grid { display: grid; gap: 36px; margin-top: 8px; align-items: end; }
+  .exi-p { margin: 18px 0 0; max-width: 36ch; font: 500 17px/1.5 var(--font-body); color: var(--pd-tenue); }
+  .exi-cards { display: flex; gap: 16px; align-items: flex-end; overflow-x: auto; padding-bottom: 4px; }
+  .exi-card { position: relative; flex: 0 0 auto; display: block; width: 220px; aspect-ratio: 2 / 3; overflow: hidden; border-radius: 18px; background: #1C1C1F; color: #fff; text-decoration: none; isolation: isolate; }
+  /* en vw, no en %: la columna es «auto» y un % del contenedor daría 0 */
+  .exi-card.is-grande { width: min(420px, calc(100vw - 40px)); }
+  .exi-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1); }
+  .exi-card:hover img { transform: scale(1.04); }
+  .exi-velo { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11, 11, 12, 0) 40%, rgba(11, 11, 12, 0.86) 100%); }
+  .exi-num { position: absolute; top: 18px; left: 20px; font: 700 20px/1 var(--pd-clash); color: #fff; }
+  .exi-card-txt { position: absolute; left: 22px; right: 22px; bottom: 22px; display: grid; gap: 8px; }
+  .exi-t { font: 700 clamp(28px, 3vw, 38px)/1.02 var(--pd-clash); letter-spacing: -0.015em; }
+  .exi-d { font: 500 15px/1.45 var(--font-body); color: rgba(255, 255, 255, 0.86); }
+  .exi-ir { margin-top: 4px; font: 700 15px/1 var(--font-display); color: var(--ac, #E0457B); }
+  .exi-card:hover { color: #fff; text-decoration: none; }
+  .exi-card:focus-visible { outline: 3px solid var(--ac, #E0457B); outline-offset: 4px; }
+  @media (min-width: 900px) {
+    .exi-grid { grid-template-columns: 1fr auto; gap: 64px; align-items: center; }
+    .exi-p { font-size: 19px; }
+  }
+</style>

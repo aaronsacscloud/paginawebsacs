@@ -33,9 +33,11 @@ interface Props {
   /** El menú principal solo se ve hasta arriba: al bajar se esconde y ya no regresa al subir, para que el header
       propio de la página sea el único pegado arriba (2-oct-2026, /planeacion-de-demanda). */
   navSoloArriba?: boolean;
+  /** media del preload de la foto de portada (p. ej. solo en el teléfono, cuando la portada cambia de foto por tamaño) */
+  preloadMedia?: string;
 }
 
-const { title, description, image, type, noindex, structuredData, preloadImage, preloadSrcset, preloadSizes, bareLayout = false, manifestUrl, themeColor = '#4B7BE5', navSoloArriba = false } = Astro.props;
+const { title, description, image, type, noindex, structuredData, preloadImage, preloadSrcset, preloadSizes, bareLayout = false, manifestUrl, themeColor = '#4B7BE5', navSoloArriba = false, preloadMedia } = Astro.props;
 const locale = Astro.props.locale || getLangFromUrl(Astro.url);
 // Hreflang REACTIVADO (19-sep-2026): se había quitado el 18-sep porque no
 // existía ni una sola página en /en/, /fr/, /it/, /pt/ y cualquier
@@ -80,7 +82,7 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
     <!-- La foto de portada YA lleva fetchpriority en su etiqueta. Aquí solo se
          precarga cuando la página declara una propia, porque en el inicio el
          elemento más grande es el título y la fuente tiene que ganar la carrera. -->
-    {preloadImage && <link rel="preload" href={preloadImage} as="image" type="image/webp" fetchpriority="high" imagesrcset={preloadSrcset} imagesizes={preloadSizes} />}
+    {preloadImage && <link rel="preload" href={preloadImage} as="image" type="image/webp" fetchpriority="high" imagesrcset={preloadSrcset} imagesizes={preloadSizes} media={preloadMedia} />}
 
     <SEO
       title={title}

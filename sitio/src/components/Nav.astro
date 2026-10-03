@@ -74,14 +74,14 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
 
     <nav class="nav-links" aria-label="Navegación principal">
       {navLinks.map((link) => (
-        <div class:list={['nav-item', { 'has-dropdown': !!(link.pillars || link.sectors || link.temporada) }]}>
+        <div class:list={['nav-item', { 'has-dropdown': !!(link.pillars || link.sectors || link.temporada || link.experiencias) }]}>
           <a
             href={getLocalizedUrl(link.href, locale)}
             class:list={['nav-link', { active: currentPath.startsWith(link.href) && link.href !== '/' }]}
             aria-label={link.corto ? link.label : undefined}
           >
             {link.corto ? <><span class="nav-l-largo">{link.label}</span><span class="nav-l-corto">{link.corto}</span></> : link.label}
-            {(link.pillars || link.sectors || link.temporada) && (
+            {(link.pillars || link.sectors || link.temporada || link.experiencias) && (
               <svg class="nav-chevron" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true">
                 <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
@@ -192,6 +192,39 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
                     </div>
                   )}
 
+                </div>
+              </div>
+            </div>
+          )}
+
+          {link.experiencias && (
+            <div class="mega-dropdown exp-dropdown">
+              <div class="mega-dropdown-inner container">
+                <div class="exp-split">
+                  <div class="exp-intro">
+                    <span class="exp-eyebrow">Experiencia</span>
+                    <h3 class="exp-title">Lo que tu clienta vive con Sacs.</h3>
+                    <p class="exp-text">En el piso de tu tienda y en línea. Cada experiencia, con su página.</p>
+                    <a href={getLocalizedUrl(link.href, locale)} class="exp-todas">
+                      Ver todas las experiencias
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
+                  </div>
+                  <div class="exp-cards">
+                    {link.experiencias.map((e, i) => (
+                      <a href={getLocalizedUrl(e.href, locale)} class:list={['exp-card', { 'is-grande': i === 0 }]} style={`--ac:${e.acento};`}>
+                        <!-- la foto se pide al abrir el panel (data-src): el menú sale en todas las páginas -->
+                        <img data-src={e.imagen} alt="" width={e.imagenAncho} height={e.imagenAlto} decoding="async" />
+                        <span class="exp-card-velo" aria-hidden="true"></span>
+                        <span class="exp-card-num" aria-hidden="true">{e.num}</span>
+                        <span class="exp-card-txt">
+                          <span class="exp-card-t">{e.titulo}</span>
+                          <span class="exp-card-d">{e.bajada}</span>
+                          <span class="exp-card-ir" aria-hidden="true">Ver la experiencia →</span>
+                        </span>
+                      </a>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -332,6 +365,24 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          ) : link.experiencias ? (
+            <div class="mobile-accordion">
+              <button class="mobile-accordion-trigger" aria-expanded="false">
+                <span>{link.label}</span>
+                <svg class="mobile-accordion-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="mobile-accordion-content">
+                <div class="mobile-exp">
+                  {link.experiencias.map((e) => (
+                    <a href={getLocalizedUrl(e.href, locale)} class="mobile-exp-card" style={`--ac:${e.acento};`}>
+                      <img data-src={e.imagen} alt="" width={e.imagenAncho} height={e.imagenAlto} decoding="async" />
+                      <span class="mobile-exp-txt"><small>{e.num}</small><b>{e.titulo}</b></span>
+                    </a>
+                  ))}
+                </div>
+                <a href={getLocalizedUrl(link.href, locale)} class="mobile-sectors-all">Ver todas las experiencias →</a>
               </div>
             </div>
           ) : link.sectors ? (
@@ -1259,6 +1310,36 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
      derecha, las funciones de ese giro dibujadas como mini-pantallas (viñetas),
      no como bullets ni íconos genéricos. Fondo claro: la versión oscura con la
      ficha de producto "se saturaba" (dueño, 2026-09-08). ─── */
+  /* ─── Experiencia: tarjetas verticales con foto; la primera en grande ─── */
+  .exp-dropdown .mega-dropdown-inner { padding-top: 28px; padding-bottom: 28px; }
+  .exp-split { display: grid; grid-template-columns: 300px 1fr; gap: 56px; align-items: center; }
+  .exp-eyebrow { font: 700 11px/1 var(--font-display, 'Sora', sans-serif); letter-spacing: 0.16em; text-transform: uppercase; color: #E0457B; }
+  .exp-title { margin: 12px 0 0; font: 800 30px/1.05 var(--font-display, 'Sora', sans-serif); letter-spacing: -0.03em; color: var(--color-text-primary, #1a1a2e); }
+  .exp-text { margin: 12px 0 0; font-size: 0.9375rem; line-height: 1.55; color: var(--color-text-secondary, #4A4A4A); }
+  .exp-todas { display: inline-flex; align-items: center; gap: 8px; margin-top: 20px; font: 600 0.875rem/1 var(--font-display, 'Sora', sans-serif); color: var(--color-text-primary, #1a1a2e); text-decoration: none; border-bottom: 1.5px solid currentColor; padding-bottom: 4px; }
+  .exp-todas:hover { color: #E0457B; text-decoration: none; }
+  .exp-cards { display: flex; gap: 16px; align-items: flex-end; }
+  .exp-card { position: relative; display: block; flex: 0 0 auto; width: 200px; aspect-ratio: 2 / 3; overflow: hidden; border-radius: 14px; background: #1a1a1f; color: #fff; text-decoration: none; isolation: isolate; }
+  .exp-card.is-grande { width: min(300px, 24vw); }
+  .exp-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+  .exp-card:hover img { transform: scale(1.04); }
+  .exp-card-velo { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 10, 14, 0) 38%, rgba(10, 10, 14, 0.82) 100%); }
+  .exp-card-num { position: absolute; top: 14px; left: 16px; font: 800 15px/1 var(--font-display, 'Sora', sans-serif); color: #fff; }
+  .exp-card-txt { position: absolute; left: 18px; right: 18px; bottom: 18px; display: grid; gap: 6px; }
+  .exp-card-t { font: 800 22px/1.08 var(--font-display, 'Sora', sans-serif); letter-spacing: -0.02em; }
+  .exp-card-d { font-size: 0.8125rem; line-height: 1.45; color: rgba(255, 255, 255, 0.82); }
+  .exp-card-ir { margin-top: 6px; font: 700 0.8125rem/1 var(--font-display, 'Sora', sans-serif); color: var(--ac, #E0457B); }
+  .exp-card:hover { text-decoration: none; color: #fff; }
+  .exp-card:focus-visible { outline: 3px solid var(--ac, #E0457B); outline-offset: 3px; }
+  /* teléfono: la tarjeta vertical a lo ancho del menú */
+  .mobile-exp { display: flex; gap: 12px; padding: 4px 16px 14px; overflow-x: auto; }
+  .mobile-exp-card { position: relative; flex: 0 0 auto; width: 62%; max-width: 240px; aspect-ratio: 2 / 3; overflow: hidden; border-radius: 12px; background: #1a1a1f; color: #fff; text-decoration: none; }
+  .mobile-exp-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .mobile-exp-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 10, 14, 0) 45%, rgba(10, 10, 14, 0.8) 100%); }
+  .mobile-exp-txt { position: absolute; left: 14px; right: 14px; bottom: 14px; z-index: 1; display: grid; gap: 4px; }
+  .mobile-exp-txt small { font: 800 12px/1 var(--font-display, 'Sora', sans-serif); color: var(--ac, #E0457B); }
+  .mobile-exp-txt b { font: 800 18px/1.1 var(--font-display, 'Sora', sans-serif); letter-spacing: -0.02em; }
+
   .sectors-dropdown {
     background: #FAFAF8;
     border-top-color: rgba(0, 0, 0, 0.06);
@@ -1688,7 +1769,11 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   const dropdownItems = document.querySelectorAll('.nav-item.has-dropdown');
   let closeTimeout: ReturnType<typeof setTimeout> | null = null;
 
+  // Fotos de los paneles que esperan a que se abran (data-src): así no se descargan en cada página.
+  const cargaFotos = (el: Element | null) => el?.querySelectorAll<HTMLImageElement>('img[data-src]').forEach((img) => { img.src = img.dataset.src!; img.removeAttribute('data-src'); });
+
   function openMega(item: Element) {
+    cargaFotos(item);
     if (closeTimeout) {
       clearTimeout(closeTimeout);
       closeTimeout = null;
@@ -1750,6 +1835,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     trigger.addEventListener('click', () => {
       const isOpen = trigger.getAttribute('aria-expanded') === 'true';
       const content = trigger.nextElementSibling as HTMLElement | null;
+      cargaFotos(content);
 
       // Close other accordions
       accordionTriggers.forEach((other) => {

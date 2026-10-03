@@ -14,6 +14,9 @@
  * El scroll elige el paso; dentro de cada paso, los toques y el escaneo son animaciones CSS que se
  * reproducen al entrar (y se reinician al volver).
  *
+ * 3-oct-2026: los textos se alinean con lo que hace el probador de verdad («Pruébatelo con tu foto»: una foto, de 30
+ * a 60 segundos; no es cámara en vivo), igual que /experiencia/probador-virtual, que tiene la experiencia completa.
+ *
  * Fotos (gpt-image-2.5): las tres versiones del vestido salen de la MISMA foto y el «antes» también, para
  * que el cambio quede alineado cuadro a cuadro. Sin JS o con «reducir movimiento»: los pasos en lista y el
  * teléfono quieto con el vestido puesto. Scroll con rAF y listener pasivo solo con la sección en vista.
@@ -22,8 +25,8 @@ const F = '/images/probador/';
 const PASOS = [
   { n: '01', titulo: 'Revisa el inventario', texto: 'Solo ve lo que hay en su talla: tu tienda en línea y tu piso comparten el mismo inventario.' },
   { n: '02', titulo: 'Elige su talla', texto: 'Cada talla con su existencia real. Si en M quedan dos, lo sabe antes de pedirlo.' },
-  { n: '03', titulo: 'Se lo prueba en tiempo real', texto: 'Abre la cámara de su celular y ve cómo le queda, sin ir al probador.' },
-  { n: '04', titulo: 'Cambia de color y compra', texto: 'Rosa, negro o verde: lo cambia al momento y lo agrega a la bolsa en su talla.' },
+  { n: '03', titulo: 'Se lo prueba con una foto', texto: 'Se toma una foto en su celular y en menos de un minuto se ve con la prenda puesta, sin ir al probador.' },
+  { n: '04', titulo: 'Cambia de color y compra', texto: 'Rosa, negro o verde: elige el color y lo agrega a la bolsa en su talla.' },
 ];
 const CATALOGO = [
   { img: 'cat-vestido-rosa', nombre: 'Vestido slip satén', precio: '$1,890' },
@@ -54,7 +57,7 @@ const COLORES = [{ n: 'Rosa', c: '#E0457B' }, { n: 'Negro', c: '#141414' }, { n:
         <div class="pv-texto">
           <p class="pv-kicker"><i aria-hidden="true"></i>Solo para moda · Probador virtual</p>
           <h2 class="pv-h2" id="pv-titulo">Que se lo pruebe <span>antes de comprarlo.</span></h2>
-          <p class="pv-p">Tu tienda en línea trae un probador virtual: tu clienta elige la prenda en su talla, abre la cámara y se ve con ella puesta, en tiempo real.</p>
+          <p class="pv-p">Tu tienda en línea trae un probador virtual: tu clienta elige la prenda en su talla, se toma una foto y se ve con ella puesta antes de comprarla.</p>
           <ol class="pv-pasos">
             {PASOS.map((p, k) => (
               <li class="pv-paso" data-k={k}>
@@ -64,9 +67,12 @@ const COLORES = [{ n: 'Rosa', c: '#E0457B' }, { n: 'Negro', c: '#141414' }, { n:
               </li>
             ))}
           </ol>
+          <a class="pv-mas" href="/experiencia/probador-virtual">Ver la experiencia completa
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
         </div>
 
-        <div class="pv-tel" role="img" aria-label="Demostración en un celular: la clienta filtra el catálogo en su talla, elige el vestido, ve la existencia de su talla, abre la cámara y se ve con el vestido puesto en rosa, negro y verde, y lo agrega a la bolsa">
+        <div class="pv-tel" role="img" aria-label="Demostración en un celular: la clienta filtra el catálogo en su talla, elige el vestido, ve la existencia de su talla, se toma una foto y se ve con el vestido puesto en rosa, negro y verde, y lo agrega a la bolsa">
           <div class="pv-pantalla">
             <div class="pv-estado"><b>9:41</b><span class="pv-estado-i"><i></i><i></i><i></i></span></div>
             <div class="pv-url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>aurea.shop</div>
@@ -113,7 +119,7 @@ const COLORES = [{ n: 'Rosa', c: '#E0457B' }, { n: 'Negro', c: '#141414' }, { n:
                 {Object.values(P).map(([x, y]) => <circle cx={x} cy={y} r="14" />)}
               </svg>
               <i class="pv-scan" aria-hidden="true"></i>
-              <span class="pv-vivo"><i></i>Probador virtual · en vivo</span>
+              <span class="pv-vivo"><i></i>Probador virtual · con su foto</span>
               <div class="pv-cam-pie">
                 <div class="pv-cam-prod"><img src={`${F}cat-vestido-rosa-360.webp`} alt="" width="360" height="540" loading="lazy" decoding="async" /><span><b>Vestido slip satén</b><small>Talla M · <span class="pv-cns"><em class="pv-cn pv-cn--1">Rosa</em><em class="pv-cn pv-cn--2">Negro</em><em class="pv-cn pv-cn--3">Verde</em></span></small></span></div>
                 <div class="pv-cam-colores">{COLORES.map((c) => <i style={`--c:${c.c}`}></i>)}<b class="pv-sel"></b></div>
@@ -153,6 +159,9 @@ const COLORES = [{ n: 'Rosa', c: '#E0457B' }, { n: 'Negro', c: '#141414' }, { n:
   .pv-h2 span { color: var(--pv-azul-c); }
   .pv-p { margin: 16px 0 0; max-width: 44ch; font-size: clamp(15px, 1.1vw, 17px); line-height: 1.55; color: var(--pv-tenue); }
   .pv-pasos { display: grid; gap: 4px; margin: 26px 0 0; padding: 0; list-style: none; }
+  .pv-mas { display: inline-flex; align-items: center; gap: 8px; margin-top: 22px; padding-bottom: 3px; border-bottom: 1.5px solid currentColor; color: var(--pv-blanco); font: 600 15px/1 var(--font-display); text-decoration: none; }
+  .pv-mas:hover { color: var(--pv-blanco); text-decoration: none; opacity: 0.8; }
+  .pv-mas:focus-visible { outline: 2px solid var(--pv-blanco); outline-offset: 4px; }
   .pv-paso { position: relative; display: grid; grid-template-columns: 44px 1fr; gap: 4px 12px; padding: 14px 0 16px; border-top: 1px solid rgba(246, 244, 239, 0.12); transition: opacity 0.4s; }
   .pv-paso-n { font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: 22px; line-height: 1; color: var(--pv-azul-c); }
   .pv-paso-t b { display: block; font-family: var(--font-display); font-size: 16px; font-weight: 600; line-height: 1.3; color: var(--pv-blanco); }
@@ -324,6 +333,7 @@ const COLORES = [{ n: 'Rosa', c: '#E0457B' }, { n: 'Negro', c: '#141414' }, { n:
     .pv.is-escena .pv-h2 { font-size: clamp(30px, 8.4vw, 40px); }
     .pv.is-escena .pv-kicker { margin-bottom: 10px; }
     .pv.is-escena .pv-pasos { position: relative; display: block; min-height: 74px; margin-top: 12px; }
+    .pv.is-escena .pv-mas { display: none; }
     .pv.is-escena .pv-paso { position: absolute; left: 0; right: 0; top: 0; padding: 10px 0 0; opacity: 0 !important; transform: translateY(8px); transition: opacity 0.35s, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
     .pv.is-escena .pv-paso.is-on { opacity: 1 !important; transform: none; }
     .pv.is-escena .pv-paso-t span { font-size: 13px; }

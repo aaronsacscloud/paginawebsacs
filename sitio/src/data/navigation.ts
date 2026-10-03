@@ -1,3 +1,5 @@
+import { experiencias, type Experiencia } from './experiencias';
+
 export interface NavSubItem {
   label: string;
   href: string;
@@ -93,6 +95,8 @@ export interface NavLink {
   temporada?: EtapaTemporada[];
   /** Módulos especializados que se cotizan aparte. */
   extraordinarios?: ModuloExtra[];
+  /** «Experiencia»: tarjetas verticales con foto; la primera va en grande (src/data/experiencias.ts). */
+  experiencias?: Experiencia[];
 }
 
 /** El ciclo de la temporada de moda: lo que pasa antes, durante y después.
@@ -820,6 +824,9 @@ export const navLinks: NavLink[] = [
   // Es una sección propia (/planeacion-de-demanda), ya no una función de Automatiza: «si aparece en el header,
   // llévalo a una sección normal fuera de eso» — por eso tampoco sale en el mega-menú ni en el pie de Automatiza.
   { label: 'Planeación de demanda', corto: 'Planeación', href: '/planeacion-de-demanda' },
+  // 2-oct-2026 (dueño): «Experiencia» — lo que la clienta vive con Sacs, una página por experiencia. Al pasar o dar
+  // clic, el panel enseña la primera en grande, en formato vertical; el enlace lleva al índice /experiencia.
+  { label: 'Experiencia', href: '/experiencia', experiencias },
   {
     label: 'Giros de negocio',
     corto: 'Giros',
@@ -885,6 +892,7 @@ export const footerLinks = {
     { label: 'Giros de negocio', href: '/giros' },
     { label: 'Enterprise · marcas y fabricantes', href: '/enterprise' },
     { label: 'Planeación de demanda', href: '/planeacion-de-demanda' },
+    { label: 'Experiencia · Probador virtual', href: '/experiencia/probador-virtual' },
     { label: 'Nosotros', href: '/nosotros' },
     { label: 'Manifiesto', href: '/manifiesto' },
     { label: 'Casos de éxito', href: '/casos-de-exito' },

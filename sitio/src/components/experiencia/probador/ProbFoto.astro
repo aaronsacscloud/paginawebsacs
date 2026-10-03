@@ -1,0 +1,108 @@
+---
+/**
+ * «De su foto, a la prenda puesta» (/experiencia/probador-virtual): lo que hace «Pruébatelo con tu foto», tal cual.
+ * A la izquierda su foto; a la derecha el resultado, que con el scroll pasa por «Preparando tu foto… suele tardar de
+ * 30 a 60 segundos» (lo que dice la tienda) y luego el vestido en rosa, negro y verde, con su etiqueta de IA.
+ * data-tramos="4": 0 preparando · 1 rosa · 2 negro · 3 verde. Sin JS o con «reducir movimiento»: el resultado en
+ * rosa y los tres colores como muestras.
+ */
+import { FOTO } from '../../../data/experiencia-probador';
+const F = '/images/probador/';
+---
+<section class="prf pd-negro" data-escena data-tramos="4" data-tramo="1" aria-labelledby="prf-h">
+  <div class="prf-riel" data-riel>
+    <div class="prf-escena">
+      <div class="prf-in">
+        <div class="prf-txt">
+          <p class="prf-k">{FOTO.k}</p>
+          <h2 class="prf-h" id="prf-h">{FOTO.h}</h2>
+          <p class="prf-p">{FOTO.p}</p>
+          <ul class="prf-colores" aria-label="Los colores de la prenda">
+            {FOTO.colores.map((c, i) => <li data-c={i + 1} style={`--c:${c.c}`}><i aria-hidden="true"></i>{c.n}</li>)}
+          </ul>
+          <p class="prf-nota">{FOTO.nota}</p>
+        </div>
+
+        <div class="prf-fotos">
+          <figure class="prf-cuadro">
+            <img src={`${F}cam-antes.webp`} width="720" height="1080" alt="Su foto: la clienta en su casa, con playera blanca y jeans" loading="lazy" decoding="async" />
+            <figcaption>Su foto</figcaption>
+          </figure>
+          <span class="prf-flecha" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </span>
+          <figure class="prf-cuadro prf-cuadro--res">
+            {FOTO.colores.map((c, i) => (
+              <img class="prf-res" data-c={i + 1} src={`${F}${c.img}.webp`} width="720" height="1080" alt={`La misma clienta, con el vestido slip de satén en ${c.n.toLowerCase()}, generado con IA`} loading="lazy" decoding="async" />
+            ))}
+            <div class="prf-prep" aria-hidden="true">
+              <i class="prf-anillo"></i>
+              <b>Preparando tu foto…</b>
+              <span>Suele tardar de 30 a 60 segundos</span>
+            </div>
+            <figcaption>Con la prenda <small>· Prueba virtual generada con IA</small></figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .prf { position: relative; }
+  .prf-in { display: grid; gap: 36px; max-width: 1160px; margin: 0 auto; padding: 72px 20px 80px; align-items: center; }
+  .prf-k { margin: 0 0 14px; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: #F07FA6; }
+  .prf-h { margin: 0; max-width: 12ch; font: 700 clamp(40px, 6vw, 88px)/0.94 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; color: #fff; text-wrap: balance; }
+  .prf-p { margin: 18px 0 0; max-width: 34ch; font: 500 17px/1.5 var(--font-body); color: var(--pd-tenue); }
+  .prf-colores { display: flex; flex-wrap: wrap; gap: 10px 22px; margin: 26px 0 0; padding: 18px 0 0; list-style: none; border-top: 1px solid var(--pd-filete); }
+  .prf-colores li { display: inline-flex; align-items: center; gap: 9px; font: 600 14px/1 var(--font-display); color: var(--pd-tenue); transition: color 0.3s; }
+  .prf-colores i { width: 16px; height: 16px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px #0B0B0C, 0 0 0 3px rgba(255, 255, 255, 0.35); transition: box-shadow 0.3s; }
+  .prf-nota { margin: 18px 0 0; max-width: 40ch; font: 500 14px/1.5 var(--font-body); color: var(--pd-apagado); }
+
+  .prf-fotos { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; }
+  .prf-cuadro { position: relative; margin: 0; overflow: hidden; border-radius: 18px; background: #1C1C1F; aspect-ratio: 2 / 3; }
+  .prf-cuadro img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .prf-cuadro figcaption { position: absolute; left: 10px; right: 10px; bottom: 10px; padding: 8px 10px; border-radius: 10px; background: rgba(11, 11, 12, 0.78); color: #fff; font: 600 12px/1.3 var(--font-display); }
+  .prf-cuadro figcaption small { font: 500 11px/1.3 var(--font-body); color: rgba(255, 255, 255, 0.75); }
+  .prf-flecha { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #E0457B; color: #fff; }
+  .prf-flecha svg { width: 18px; height: 18px; }
+  .prf-res { opacity: 0; transition: opacity 0.6s ease; }
+  .prf-prep { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; background: rgba(11, 11, 12, 0.72); text-align: center; opacity: 0; transition: opacity 0.5s ease; }
+  .prf-prep b { font: 700 15px/1.2 var(--font-display); color: #fff; }
+  .prf-prep span { font: 500 12.5px/1.35 var(--font-body); color: rgba(255, 255, 255, 0.8); }
+  .prf-anillo { width: 34px; height: 34px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.25); border-top-color: #fff; animation: prfGira 1s linear infinite; }
+  @keyframes prfGira { to { transform: rotate(360deg); } }
+
+  /* el tramo pinta el resultado (sin JS: rosa) */
+  .prf[data-tramo="0"] .prf-prep { opacity: 1; }
+  .prf[data-tramo="0"] .prf-cuadro--res figcaption { opacity: 0; }
+  .prf-cuadro--res figcaption { transition: opacity 0.4s ease; }
+  .prf[data-tramo="0"] .prf-res[data-c="1"], .prf[data-tramo="1"] .prf-res[data-c="1"], .prf[data-tramo="2"] .prf-res[data-c="2"], .prf[data-tramo="3"] .prf-res[data-c="3"] { opacity: 1; }
+  /* mientras «prepara», el resultado apenas se asoma (sin filter: blur, que pesa en el teléfono) */
+  .prf[data-tramo="0"] .prf-res[data-c="1"] { opacity: 0.18; }
+  .prf[data-tramo="1"] .prf-colores li[data-c="1"], .prf[data-tramo="2"] .prf-colores li[data-c="2"], .prf[data-tramo="3"] .prf-colores li[data-c="3"] { color: #fff; }
+  .prf[data-tramo="1"] .prf-colores li[data-c="1"] i, .prf[data-tramo="2"] .prf-colores li[data-c="2"] i, .prf[data-tramo="3"] .prf-colores li[data-c="3"] i { box-shadow: 0 0 0 2px #0B0B0C, 0 0 0 4px #fff; }
+
+  @media (min-width: 768px) {
+    .prf-in { grid-template-columns: 0.9fr 1.1fr; gap: 64px; padding: 112px 5vw 120px; }
+    .prf-p { font-size: 19px; }
+    .prf-fotos { gap: 18px; }
+    .prf-flecha { width: 42px; height: 42px; }
+  }
+
+  /* ══ con el scroll: la escena pegada ══ */
+  .prf.is-escena .prf-riel { height: 300vh; }
+  .prf.is-escena .prf-escena { position: sticky; top: 0; height: 100vh; height: 100svh; display: flex; align-items: center; overflow: hidden; }
+  .prf.is-escena .prf-in { width: 100%; }
+  @media (max-width: 767px) {
+    .prf.is-escena .prf-in { gap: 18px; padding: 40px 20px 24px; }
+    .prf.is-escena .prf-h { font-size: clamp(32px, 9vw, 44px); }
+    .prf.is-escena .prf-p { margin-top: 10px; font-size: 15px; }
+    .prf.is-escena .prf-colores { margin-top: 14px; padding-top: 12px; }
+    .prf.is-escena .prf-nota { display: none; }
+    .prf.is-escena .prf-fotos { max-width: 360px; margin: 0 auto; width: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .prf-anillo { animation: none; }
+  }
+</style>

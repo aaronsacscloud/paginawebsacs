@@ -1,0 +1,99 @@
+---
+/**
+ * /experiencia/probador-virtual — «Probador virtual en tienda», la Experiencia 01 (2-oct-2026).
+ *
+ * Pedido del dueño: una página propia para el probador, «con el fin de que el usuario entienda que lo puede hacer en su
+ * tienda física o en su tienda online», con la imagen a pantalla completa y los colores de /planeacion-de-demanda, y
+ * que con el scroll se vaya viendo la experiencia. Recorrido: portada (la foto de la tienda) → dos lugares (la tienda y
+ * su casa, con el barrido fucsia) → de su foto a la prenda puesta → así se lo prueba (el celular, 4 pasos) → su foto,
+ * cuidada → lo prendes tú → preguntas → cierre.
+ * Todo lo que dice sale del producto (ver src/data/experiencia-probador.ts): el probador trabaja con una FOTO y tarda de
+ * 30 a 60 segundos; no es un espejo ni es en tiempo real. El menú principal solo se ve hasta arriba (navSoloArriba),
+ * como en Planeación: las escenas ocupan la pantalla entera.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ExpHero from '../../components/experiencia/ExpHero.astro';
+import ProbLugares from '../../components/experiencia/probador/ProbLugares.astro';
+import ProbFoto from '../../components/experiencia/probador/ProbFoto.astro';
+import ProbPasos from '../../components/experiencia/probador/ProbPasos.astro';
+import ProbCuidado from '../../components/experiencia/probador/ProbCuidado.astro';
+import ProbMarca from '../../components/experiencia/probador/ProbMarca.astro';
+import GiroFAQ from '../../components/giros/GiroFAQ.astro';
+import FinalCTA from '../../components/FinalCTA.astro';
+import StructuredData from '../../components/StructuredData.astro';
+import { PROBADOR, PREGUNTAS_PROBADOR } from '../../data/experiencia-probador';
+import { experiencias } from '../../data/experiencias';
+import { SITIO } from '../../data/entidad';
+import { breadcrumbList } from '../../lib/breadcrumb';
+import '../../styles/planeacion.css';
+
+const exp = experiencias.find((e) => e.slug === 'probador-virtual')!;
+const title = 'Probador virtual en tienda para moda | Sacs';
+const description = 'Tu clienta se ve con la prenda puesta antes de comprarla: en el piso de tu tienda, en la tablet o en su celular, y desde tu tienda en línea. Con tu inventario y cuidando su foto.';
+
+const pagina = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  '@id': `${SITIO}${exp.href}#pagina`,
+  name: exp.titulo,
+  description,
+  url: `${SITIO}${exp.href}`,
+  inLanguage: 'es-MX',
+};
+const migas = breadcrumbList([{ name: 'Inicio', url: `${SITIO}/` }, { name: 'Experiencia', url: `${SITIO}/experiencia` }, { name: exp.titulo }]);
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: PREGUNTAS_PROBADOR.map((p) => ({ '@type': 'Question', name: p.question, acceptedAnswer: { '@type': 'Answer', text: p.answer } })),
+};
+---
+<BaseLayout
+  title={title}
+  description={description}
+  image="/images/experiencia/probador-og.jpg"
+  preloadImage="/images/experiencia/probador-portada-1080.webp"
+  preloadMedia="(max-width: 767px)"
+  structuredData={[pagina, migas]}
+  navSoloArriba
+>
+  <StructuredData data={faqSchema} />
+
+  <div class="pd exp">
+    <ExpHero
+      folio={PROBADOR.folio}
+      etiqueta="Probador virtual"
+      titulo={PROBADOR.titulo}
+      bajada={PROBADOR.bajada}
+      ancha={{ s1280: '/images/experiencia/probador-tienda-1280.webp', s1920: '/images/experiencia/probador-tienda-1920.webp', alto1920: 1275 }}
+      vertical={{ src: '/images/experiencia/probador-portada-1080.webp', ancho: 1080, alto: 1620 }}
+      alt="En una boutique, la vendedora le enseña a su clienta en la tablet cómo se ve con un vestido fucsia que no se ha probado"
+      ancla="exp-lugares"
+    />
+    <ProbLugares />
+    <ProbFoto />
+    <ProbPasos />
+    <ProbCuidado />
+    <ProbMarca />
+  </div>
+
+  <GiroFAQ title="Preguntas frecuentes sobre el probador virtual" faqs={PREGUNTAS_PROBADOR} />
+  <FinalCTA />
+</BaseLayout>
+
+<script>
+  import { iniciaEscenas } from '../../scripts/experiencia/escenas';
+  iniciaEscenas();
+
+  // Los renglones de «Su foto, cuidada» y «Lo prendes tú» entran al verse (sin JS se ven completos).
+  (() => {
+    const rv = Array.from(document.querySelectorAll<HTMLElement>('.exp .rv'));
+    if (!rv.length || !('IntersectionObserver' in window)) return;
+    document.documentElement.classList.add('js-rv');
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-on'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -12% 0px' });
+    rv.forEach((el) => io.observe(el));
+  })();
+
+  const ph = (evento: string, props?: Record<string, unknown>) => { try { (window as any).sacsPH?.(evento, props); } catch { /* sin medición */ } };
+  document.querySelectorAll<HTMLElement>('.exp [data-evento]').forEach((a) => a.addEventListener('click', () => ph(a.dataset.evento!, { experiencia: 'probador-virtual' })));
+  document.querySelector('.final-cta-btn')?.addEventListener('click', () => ph('experiencia_cta_prueba', { experiencia: 'probador-virtual' }));
+</script>

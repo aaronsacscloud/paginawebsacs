@@ -1,0 +1,41 @@
+---
+/**
+ * «Lo prendes tú.» (/experiencia/probador-virtual): lo que decide la marca. Viene APAGADO y se enciende en los Ajustes
+ * del Estudio de moda (config tienda.probador.activo), con tope por día de la tienda y por persona; cada prueba usa
+ * créditos de IA de la cuenta. Marino con líneas, como el acto de Resultado de /planeacion-de-demanda.
+ */
+import { MARCA } from '../../../data/experiencia-probador';
+---
+<section class="pda prm pd-marino" aria-labelledby="prm-h">
+  <div class="pda-fondo" aria-hidden="true"><span>TU MARCA · TU MARCA · TU MARCA · TU MARCA</span><span>TU MARCA · TU MARCA · TU MARCA · TU MARCA</span></div>
+  <p class="pd-folio"><span>Para tu marca</span><span>Cómo se enciende</span></p>
+  <h2 class="pda-h" id="prm-h">{MARCA.h}</h2>
+  <div class="prm-cols">
+    {MARCA.cols.map((c, i) => (
+      <div class="prm-col rv" style={`--i:${i}`}>
+        <p class="prm-t">{c.t}</p>
+        <p class="prm-d">{c.d}</p>
+      </div>
+    ))}
+  </div>
+  <a class="pda-sigue" href="/contacto" data-evento="experiencia_cta_marca">Agenda una demo
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+  </a>
+</section>
+
+<style>
+  .prm-cols { display: grid; gap: 0; margin-top: 48px; border-top: 2px solid #fff; }
+  .prm-col { padding: 22px 0; border-bottom: 1px solid var(--pd-filete); }
+  .prm-t { margin: 0; font: 700 clamp(22px, 2.4vw, 30px)/1.15 var(--pd-clash); color: #fff; }
+  .prm-d { margin: 10px 0 0; max-width: 36ch; font: 500 16px/1.55 var(--font-body); color: var(--pd-tenue); }
+  :global(.js-rv) .prm-cols .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.1s); }
+  :global(.js-rv) .prm-cols .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 768px) {
+    .prm-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .prm-col { padding: 26px 32px 30px 0; border-bottom: 0; }
+    .prm-col + .prm-col { padding-left: 32px; border-left: 1px solid var(--pd-filete); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .prm-cols .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>
