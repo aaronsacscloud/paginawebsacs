@@ -1,0 +1,95 @@
+{
+ "modulo": "Clientes",
+ "nota": "Capturas del módulo de Clientes de Sacs (octubre de 2026) con una boutique de ejemplo y clientes ficticios.",
+ "pantallas": [
+  {
+   "id": "lista",
+   "img": "/images/producto/clientes-y-crm/lista.webp",
+   "h": 1500,
+   "t": "Clientes",
+   "alt": "Lista de clientes en Sacs con contacto, sucursal, etiquetas, ventas, nivel de lealtad y cashback"
+  },
+  {
+   "id": "ficha",
+   "img": "/images/producto/clientes-y-crm/ficha.webp",
+   "h": 1430,
+   "t": "Ficha del cliente",
+   "alt": "Ficha de una clienta en Sacs: total gastado, compras, ticket promedio, monedero, membresía y última actividad"
+  },
+  {
+   "id": "productos",
+   "img": "/images/producto/clientes-y-crm/productos.webp",
+   "h": 1600,
+   "t": "Productos más vendidos",
+   "alt": "Prendas que más compra una clienta en Sacs, con foto, SKU, unidades e ingreso"
+  }
+ ],
+ "pasos": [
+  {
+   "p": "lista",
+   "r": [
+    96,
+    24,
+    1408,
+    103
+   ],
+   "t": "Toda tu clientela, en una lista",
+   "d": "Contacto, sucursal, etiquetas, cuánto ha comprado y cuándo fue la última vez."
+  },
+  {
+   "p": "lista",
+   "r": [
+    96,
+    253,
+    1408,
+    1258
+   ],
+   "t": "Nivel y cashback a la vista",
+   "d": "Puntos, nivel y saldo del monedero de cada clienta, sin abrir su ficha."
+  },
+  {
+   "p": "ficha",
+   "r": [
+    64,
+    0,
+    1440,
+    3219
+   ],
+   "t": "Una ficha por clienta",
+   "d": "Sus datos, su sucursal y sus etiquetas: talla, gustos y si es VIP."
+  },
+  {
+   "p": "ficha",
+   "r": [
+    408,
+    224,
+    1408,
+    317
+   ],
+   "t": "Cuánto vale tu clienta",
+   "d": "Total gastado, número de compras, ticket promedio y saldo del monedero."
+  },
+  {
+   "p": "ficha",
+   "r": [
+    409,
+    967,
+    1407,
+    1059
+   ],
+   "t": "Su membresía, a la vista",
+   "d": "Plan, vigencia y cuántos beneficios ha usado."
+  },
+  {
+   "p": "productos",
+   "r": [
+    408,
+    190,
+    1416,
+    279
+   ],
+   "t": "Lo que más se lleva",
+   "d": "Las prendas que más compra, con foto, SKU y unidades, para recomendarle lo correcto."
+  }
+ ]
+}

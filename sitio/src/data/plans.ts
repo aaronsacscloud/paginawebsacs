@@ -113,7 +113,7 @@ export const plans: Plan[] = [
       { category: 'Puntos y monedero del cliente', items: ['Monedero electrónico y puntos por compra', 'Niveles de cliente y premios por nivel', 'Sus puntos valen en el mostrador y en línea'] },
       { category: 'Portal de tu cliente y tarjetas de regalo', items: ['Portal con tu marca donde tu cliente ve sus compras', 'Portal de autofacturación', 'Tarjetas de regalo físicas y digitales'] },
       { category: 'Correo a tus clientes', items: ['Correos al grupo de clientes que elijas', 'Plantillas que editas a la imagen de tu marca', 'Hasta 1,000 contactos incluidos'] },
-      { category: 'WhatsApp a tus clientes', items: ['Avisos automáticos por WhatsApp a tu cliente', 'Avisa el drop o la rebaja por WhatsApp', 'Hasta 200 contactos activos incluidos'] },
+      { category: 'WhatsApp a tus clientes', items: ['Avisos automáticos por WhatsApp a tu cliente', 'Avisos de pedidos, apartados y lealtad', 'Hasta 200 contactos activos incluidos'] },
       { category: 'Membresías de cliente frecuente', items: ['Membresía mensual para tu cliente frecuente', 'Cobro automático y renovación', 'Beneficios exclusivos por nivel de membresía'] },
     ],
     services: [

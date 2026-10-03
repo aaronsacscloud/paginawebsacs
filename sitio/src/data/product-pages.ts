@@ -6314,59 +6314,187 @@ export const pageContent: Record<string, any> = {
     ]
   },
   "clientes-y-crm": {
+    "enSacs": {
+      "modulo": "Clientes",
+      "nota": "Capturas del módulo de Clientes de Sacs (octubre de 2026) con una boutique de ejemplo y clientes ficticios.",
+      "pantallas": [
+        {
+          "id": "lista",
+          "img": "/images/producto/clientes-y-crm/lista.webp",
+          "h": 1500,
+          "t": "Clientes",
+          "alt": "Lista de clientes en Sacs con contacto, sucursal, etiquetas, ventas, nivel de lealtad y cashback"
+        },
+        {
+          "id": "ficha",
+          "img": "/images/producto/clientes-y-crm/ficha.webp",
+          "h": 1430,
+          "t": "Ficha del cliente",
+          "alt": "Ficha de una clienta en Sacs: total gastado, compras, ticket promedio, monedero, membresía y última actividad"
+        },
+        {
+          "id": "productos",
+          "img": "/images/producto/clientes-y-crm/productos.webp",
+          "h": 1600,
+          "t": "Productos más vendidos",
+          "alt": "Prendas que más compra una clienta en Sacs, con foto, SKU, unidades e ingreso"
+        }
+      ],
+      "pasos": [
+        {
+          "p": "lista",
+          "r": [
+            60,
+            290,
+            1400,
+            1480
+          ],
+          "t": "Toda tu clientela, en una lista",
+          "d": "Contacto, sucursal, etiquetas, cuánto ha comprado y cuándo fue la última vez."
+        },
+        {
+          "p": "lista",
+          "r": [
+            1010,
+            320,
+            1310,
+            1190
+          ],
+          "t": "Nivel y cashback a la vista",
+          "d": "Puntos, nivel y saldo del monedero de cada clienta, sin abrir su ficha."
+        },
+        {
+          "p": "ficha",
+          "r": [
+            64,
+            0,
+            384,
+            1430
+          ],
+          "t": "Una ficha por clienta",
+          "d": "Sus datos, su monedero, su nivel de lealtad y los beneficios de su nivel."
+        },
+        {
+          "p": "ficha",
+          "r": [
+            408,
+            224,
+            1408,
+            317
+          ],
+          "t": "Cuánto vale tu clienta",
+          "d": "Total gastado, número de compras, ticket promedio y saldo del monedero."
+        },
+        {
+          "p": "ficha",
+          "r": [
+            409,
+            967,
+            1407,
+            1059
+          ],
+          "t": "Su membresía, a la vista",
+          "d": "Plan, vigencia y cuántos beneficios ha usado."
+        },
+        {
+          "p": "productos",
+          "r": [
+            408,
+            190,
+            1416,
+            279
+          ],
+          "t": "Lo que más se lleva",
+          "d": "Las prendas que más compra, con foto, SKU y unidades, para recomendarle lo correcto."
+        }
+      ]
+    },
     "hero": {
       "eyebrow": "Sacs Clientes y CRM",
-      "title": "Cada cliente, con nombre. Cada visita, con su historia.",
-      "subtitle": "Un perfil que junta sus compras, apartados, puntos, saldo a favor y crédito de todas tus sucursales. Cuando vuelve a la tienda, tu vendedor ya sabe quién es, cuánto vale y qué le debe la casa.",
+      "title": "Cada clienta, con nombre. Cada compra, con su historia.",
+      "subtitle": "Una ficha por clienta con lo que ha comprado, su ticket promedio, su monedero, su nivel de lealtad y su membresía. En la lista ves a toda tu clientela con ventas, puntos y cashback; en la ficha, las prendas que más se lleva.",
       "image": "/images/clientes-crm-hero.webp",
-      "imageAlt": "Vendedora consultando perfil de cliente en tablet Sacs antes de atender"
+      "imageAlt": "Ficha de una clienta de moda en Sacs",
+      "video": {
+        "mp4": "/videos/clientes-hero.mp4",
+        "webm": "/videos/clientes-hero.webm"
+      },
+      "videoPoster": "/videos/clientes-hero-poster.webp"
     },
     "features": [
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M23 21v-2a4 4 0 00-3-3.87\"/><path d=\"M16 3.13a4 4 0 010 7.75\"/></svg>",
-        "title": "Perfil del cliente en una pantalla",
-        "description": "Datos editables (nombre, teléfono, correo, RFC, cumpleaños, dirección e info de facturación), KPIs de Total gastado y Ticket promedio, y los tabs de Compras, Pedidos y Facturas — sin saltar entre módulos."
+        "title": "Ficha completa",
+        "description": "Compras, ticket promedio, monedero, membresía y actividad."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 4h16v16H4z\"/><path d=\"M4 10h16M10 4v16\"/></svg>",
-        "title": "Filtros avanzados para encontrar a quien quieras",
-        "description": "Filtra tu base por tipo de cliente, sucursal y etiquetas, puntos de lealtad, crédito disponible o utilizado, saldo pendiente y rango de última venta. Y exporta el resultado cuando lo necesites."
+        "title": "Lealtad en la lista",
+        "description": "Puntos, nivel y cashback de cada clienta a la vista."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01\"/></svg>",
-        "title": "Crédito y estado de cuenta por cliente",
-        "description": "Asigna límite y línea de crédito, lleva su CXC con estado de cuenta, registra cargos y recibe abonos con el botón Pagar. El cajero ve al instante cuánto crédito le queda."
+        "title": "Etiquetas de moda",
+        "description": "Talla, VIP, fan del denim o compra cada temporada."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z\"/></svg>",
-        "title": "Lealtad, puntos y saldo a favor",
-        "description": "Tarjeta de lealtad con nivel y multiplicador de puntos, puntos acumulados y el saldo a favor (monedero) de devoluciones o anticipos — listos para usar en la siguiente compra. Más notas del vendedor con autor y fecha."
+        "title": "Lo que más compra",
+        "description": "Sus prendas favoritas, con SKU y unidades."
       }
     ],
     "showcaseTitle": "Tu cliente ya no es un ticket anónimo.",
     "blocks": [
       {
-        "title": "Identifica al cliente al cobrar — sin interrogatorios.",
-        "description": "Teléfono, RFC o correo basta para que el cajero lo reconozca al instante. El sistema muestra su historial, su ticket promedio, su última visita y lo que dejó apartado. El vendedor atiende sabiendo con quién está hablando.",
+        "title": "Identifica a tu clienta al cobrar.",
+        "description": "La encuentras por su nombre, correo o teléfono y la venta queda a su nombre: suma a su historial, a sus puntos y a su monedero.",
         "image": "/images/clientes-crm-identificacion.webp",
         "imageAlt": "Cajero identificando a cliente en POS Sacs al iniciar venta",
         "link": null,
         "featured": true,
-        "variant": "crm-identify"
+        "variant": "crm-identify",
+        "bullets": [
+          {
+            "label": "Búsqueda rápida",
+            "detail": "Por nombre, correo o teléfono."
+          },
+          {
+            "label": "Venta a su nombre",
+            "detail": "Cada compra suma a su historial."
+          },
+          {
+            "label": "Puntos al cobrar",
+            "detail": "Su monedero y su nivel se actualizan solos."
+          }
+        ]
       },
       {
-        "title": "Un perfil que aprende de cada visita.",
-        "description": "Cada compra, cada apartado, cada abono y cada devolución se suman al perfil automáticamente. El vendedor puede anotar preferencias a mano — talla, color, estilo, fecha de cumpleaños — y esos datos quedan disponibles en la siguiente sucursal que el cliente visite.",
+        "title": "Una ficha que se arma sola.",
+        "description": "Total gastado, compras, ticket promedio, saldo del monedero, membresía y última actividad en una sola pantalla, y las prendas que más compra, con su talla.",
         "image": "/images/clientes-crm-perfil.webp",
         "imageAlt": "Pantalla de perfil de cliente con historial de compras y notas en Sacs",
         "link": null,
         "featured": true,
         "variant": "crm-profile-360",
-        "cardSize": "lg"
+        "cardSize": "lg",
+        "bullets": [
+          {
+            "label": "Cuánto vale",
+            "detail": "Total gastado, compras y ticket promedio."
+          },
+          {
+            "label": "Su membresía",
+            "detail": "Plan, vigencia y beneficios usados."
+          },
+          {
+            "label": "Lo que más compra",
+            "detail": "Prendas con foto, SKU y unidades."
+          }
+        ]
       },
       {
-        "title": "Filtra tu base como un CRM — sin salir de Sacs.",
-        "description": "Filtros combinables: ticket promedio mayor a $3,000, última compra hace más de 90 días, compradores de la colección verano, clientes con saldo a favor. Los segmentos quedan guardados y se pueden disparar desde promociones o exportar para contactar.",
+        "title": "Filtra tu clientela por lo que importa.",
+        "description": "Por etiquetas como VIP, talla o fan del denim, por tipo, por nivel de lealtad o por fecha de alta. Y con esos criterios armas los segmentos de tus campañas.",
         "image": "/images/clientes-crm-segmentos.webp",
         "imageAlt": "Pantalla de segmentación de clientes con filtros en Sacs",
         "link": {
@@ -6374,25 +6502,53 @@ export const pageContent: Record<string, any> = {
           "href": "/producto/promociones"
         },
         "featured": true,
-        "variant": "crm-segment-builder"
+        "variant": "crm-segment-builder",
+        "bullets": [
+          {
+            "label": "Etiquetas de moda",
+            "detail": "Talla, gustos, VIP o compra cada temporada."
+          },
+          {
+            "label": "Nivel de lealtad",
+            "detail": "Filtra por el nivel del programa."
+          },
+          {
+            "label": "Listas para campañas",
+            "detail": "Los segmentos se usan en tus correos."
+          }
+        ]
       },
       {
-        "title": "El conocimiento del vendedor, al equipo entero.",
-        "description": "Las notas que un vendedor anota hoy las lee el compañero mañana. Si el cliente se muda de la sucursal Polanco a Santa Fe, la nueva tienda lo recibe con todo su contexto: preferencias, tallas, última conversación, productos que le pediste y nunca reclamó.",
+        "title": "Lo que sabe tu vendedora, lo sabe la tienda.",
+        "description": "Notas, etiquetas y la actividad de cada clienta —compras, cambios de nivel, canjes y membresías— quedan en su ficha para quien la atienda después, en cualquier sucursal.",
         "image": "/images/clientes-crm-notas.webp",
         "imageAlt": "Vendedora escribiendo nota en perfil de cliente en tablet Sacs",
         "link": null,
         "featured": true,
-        "variant": "crm-seller-notes"
+        "variant": "crm-seller-notes",
+        "bullets": [
+          {
+            "label": "Notas y etiquetas",
+            "detail": "Talla, gustos y preferencias en su ficha."
+          },
+          {
+            "label": "Actividad",
+            "detail": "Compras, canjes y cambios de nivel con fecha."
+          },
+          {
+            "label": "En todas tus tiendas",
+            "detail": "La misma ficha en cada sucursal."
+          }
+        ]
       }
     ],
     "testimonial": {
-      "quote": "Antes cada tienda tenía su propia libreta de clientes frecuentes. Si un cliente pasaba de Polanco a Santa Fe, lo atendíamos como si fuera nuevo. Ahora el perfil viaja con él — el vendedor ya sabe quién es antes de saludar. Los clientes notan la diferencia inmediatamente.",
+      "quote": "Antes cada tienda tenía su propia libreta de clientas frecuentes. Si una clienta compraba en otra sucursal, la atendíamos como si fuera nueva. Ahora su ficha es la misma en todas: la vendedora ve lo que ha comprado y su nivel antes de saludarla.",
       "name": "Regina Melgar",
       "role": "Directora de Retail",
-      "company": "Casa Melgar Joyería",
-      "stat": "42%",
-      "statLabel": "más ticket promedio en clientes identificados vs anónimos"
+      "company": "Casa Melgar",
+      "stat": "1 ficha",
+      "statLabel": "por clienta, la misma en todas las sucursales"
     },
     "interrupt": "El cliente ya no es un ticket anónimo,",
     "interruptStrike": "es una relación con historia.",
@@ -6524,9 +6680,9 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/regina-melgar.webp",
         "initials": "RM",
         "color": "#b47a3a",
-        "quote": "Antes cada tienda tenía su propia libreta de clientes frecuentes. Si un cliente pasaba de Polanco a Santa Fe, lo atendíamos como si fuera nuevo. Ahora el perfil viaja con él — el vendedor ya sabe quién es antes de saludar.",
+        "quote": "Antes cada tienda tenía su propia libreta de clientas frecuentes. Si una clienta compraba en otra sucursal, la atendíamos como si fuera nueva. Ahora su ficha es la misma en todas: la vendedora ve lo que ha comprado y su nivel antes de saludarla.",
         "name": "Regina Melgar",
-        "business": "Casa Melgar Joyería",
+        "business": "Casa Melgar · Moda mujer",
         "location": "República Dominicana"
       },
       {
@@ -6534,9 +6690,9 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/javier-otero.webp",
         "initials": "JO",
         "color": "#4a6aa8",
-        "quote": "Lo que más me gusta son las notas del vendedor. Si mi mejor cliente cumple años, lo sé. Si prefiere tequila añejo, lo sé. Ya no dependo de que el mismo sommelier lo atienda cada vez — el conocimiento ya es del equipo.",
+        "quote": "Si mi mejor clienta cumple años, lo sé. Si es talla 28 en jeans de tiro alto, lo sé. Ya no depende de que la misma vendedora la atienda: lo que sabemos es de todo el equipo.",
         "name": "Javier Otero",
-        "business": "Vinoteca del Puerto",
+        "business": "Puerto Lino · Ropa de lino",
         "location": "Argentina"
       },
       {
@@ -6544,86 +6700,167 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/carolina-prieto.webp",
         "initials": "CP",
         "color": "#5a8a5f",
-        "quote": "La segmentación cambió cómo armamos campañas. Exportamos un segmento de clientes dormidos 90+ días, lo mandamos por Mailchimp y notamos regresos concretos — lo que con blast nunca lográbamos.",
+        "quote": "Etiquetamos a nuestras clientas por talla y por lo que les gusta, y filtramos la lista antes de cada lanzamiento. A las fans de los botines les avisamos primero cuando llega la temporada, y regresan.",
         "name": "Carolina Prieto",
-        "business": "Prieto Showroom",
+        "business": "Prieto Showroom · Calzado",
         "location": "Panamá"
       }
     ],
     "faqs": [
       {
-        "question": "¿Qué datos del cliente puedo capturar?",
-        "answer": "Los básicos (nombre, teléfono, correo, RFC) más los que tú configures: cumpleaños, dirección, tallas, colores favoritos, preferencias y notas libres. Puedes agregar campos personalizados según tu giro."
+        "question": "¿Qué veo en la ficha de cada clienta?",
+        "answer": "Total gastado, número de compras, ticket promedio, saldo del monedero, su membresía y su última actividad. También las prendas que más compra, con foto, SKU y unidades, para recomendarle lo correcto."
       },
       {
-        "question": "¿El perfil se sincroniza entre sucursales en tiempo real?",
-        "answer": "Sí. Toda la red opera contra la misma base. Si un cliente compra en Polanco a las 11:00, su perfil ya muestra ese ticket cuando entra a Santa Fe a las 13:00."
+        "question": "¿Puedo etiquetar a mis clientas?",
+        "answer": "Sí: talla, VIP, fan del denim, compra cada temporada… y filtras la lista por esas etiquetas."
       },
       {
-        "question": "¿Puedo importar mi base actual de clientes?",
-        "answer": "Sí. Durante el onboarding subimos tu CSV con los datos que tengas. Si traes historial de ventas, también lo cargamos para que el ticket promedio y el gasto acumulado reflejen la historia real, no solo la de Sacs."
+        "question": "¿Cómo filtro mi lista de clientas?",
+        "answer": "Por etiquetas, por tipo de clienta, por nivel de lealtad o por fecha de alta. En la lista ves de cada una su contacto, su sucursal, cuánto ha comprado, sus puntos, su nivel y su cashback."
       },
       {
-        "question": "¿Cómo funciona la segmentación?",
-        "answer": "Combinas filtros (ticket promedio, categoría comprada, última visita, gasto acumulado, sucursal) y el sistema arma el segmento en vivo. Lo guardas con nombre y lo reutilizas en promociones, reportes o exportación."
+        "question": "¿La ficha es la misma en todas mis sucursales?",
+        "answer": "Sí. Todas tus tiendas trabajan sobre la misma base: lo que tu clienta compra en una sucursal aparece en su ficha cuando llega a otra."
       },
       {
-        "question": "¿Tiene campos personalizados por giro?",
-        "answer": "Sí. Si vendes joyería puedes agregar \"talla de anillo\". Si vendes óptica, \"graduación\". Si vendes vinos, \"maridaje favorito\". Los campos se configuran una vez y aparecen en el perfil de todos los clientes."
+        "question": "¿Dónde anoto lo que sabe la vendedora?",
+        "answer": "En la ficha de la clienta: tiene un espacio de notas para su talla, sus gustos o su cumpleaños, junto a sus etiquetas. Ahí mismo queda su actividad (compras, cambios de nivel, canjes y membresías) para quien la atienda después."
       },
       {
-        "question": "¿Se integra con WhatsApp o Mailchimp?",
-        "answer": "Hoy puedes exportar segmentos a CSV y cargarlos en Mailchimp, Klaviyo o tu plataforma de emailing. La integración nativa con WhatsApp Business está en roadmap — no está disponible aún."
+        "question": "¿Se conecta con mi programa de lealtad?",
+        "answer": "Sí. Sus puntos, su nivel y su cashback aparecen en la lista y en su ficha, y se actualizan solos con cada compra."
       },
       {
-        "question": "¿Qué pasa con los datos del cliente si lo borro por su derecho al olvido?",
-        "answer": "Al solicitar el borrado, Sacs anonimiza el perfil (elimina nombre, teléfono, correo, RFC) pero conserva los tickets para cumplir requisitos fiscales. El cliente deja de ser identificable pero la contabilidad queda íntegra."
-      },
-      {
-        "question": "¿Cómo se cargan las notas del vendedor?",
-        "answer": "Desde el POS o desde el panel admin, abres el perfil del cliente y agregas una nota libre. Queda con timestamp y autor, y la ve cualquier vendedor autorizado de la red al abrir el perfil."
-      },
-      {
-        "question": "¿Puedo ver cuánto vale cada cliente en tiempo real?",
-        "answer": "Sí. El perfil muestra gasto acumulado en 12 meses, ticket promedio, frecuencia de visita y categoría favorita. También puedes generar un reporte de \"top 100 clientes\" por gasto acumulado cuando lo necesites."
+        "question": "¿Puedo importar mi base actual de clientas?",
+        "answer": "Sí. Desde la lista de clientes importas el archivo con los datos que ya tienes, y cuando lo necesites exportas tu lista a Excel o CSV."
       }
     ]
   },
   "programa-de-lealtad": {
+    "enSacs": {
+      "modulo": "Programa de lealtad",
+      "nota": "Capturas del Programa de lealtad de Sacs (octubre de 2026) con una boutique de ejemplo.",
+      "pantallas": [
+        {
+          "id": "programa",
+          "img": "/images/producto/programa-de-lealtad/programa.webp",
+          "h": 1300,
+          "t": "Programa de lealtad",
+          "alt": "Programa de lealtad en Sacs: niveles, puntos y cashback por compra, recompensas y avance de configuración"
+        },
+        {
+          "id": "niveles",
+          "img": "/images/producto/programa-de-lealtad/niveles.webp",
+          "h": 1500,
+          "t": "Niveles",
+          "alt": "Niveles del programa de lealtad en Sacs con rango de puntos, multiplicador y beneficios"
+        },
+        {
+          "id": "recompensas",
+          "img": "/images/producto/programa-de-lealtad/recompensas.webp",
+          "h": 1500,
+          "t": "Recompensas",
+          "alt": "Recompensas de moda del programa de lealtad en Sacs"
+        }
+      ],
+      "pasos": [
+        {
+          "p": "programa",
+          "r": [
+            116,
+            115,
+            1388,
+            181
+          ],
+          "t": "Puntos y cashback en cada compra",
+          "d": "Cuántos niveles, qué porcentaje en puntos y cuánto regresa en cashback."
+        },
+        {
+          "p": "programa",
+          "r": [
+            84,
+            293,
+            819,
+            379
+          ],
+          "t": "Se inscriben solos",
+          "d": "Clientas nuevas y existentes entran al programa sin llenar nada."
+        },
+        {
+          "p": "programa",
+          "r": [
+            851,
+            293,
+            1420,
+            1859
+          ],
+          "t": "Lo que falta configurar",
+          "d": "Niveles, recompensas, expiración: el avance de tu programa."
+        },
+        {
+          "p": "niveles",
+          "r": [
+            85,
+            472,
+            818,
+            675
+          ],
+          "t": "Niveles que se ganan comprando",
+          "d": "Rango de puntos de cada nivel, su multiplicador y sus beneficios."
+        },
+        {
+          "p": "recompensas",
+          "r": [
+            84,
+            623,
+            819,
+            893
+          ],
+          "t": "Recompensas que sí se usan",
+          "d": "$200 en tu próxima prenda, ajuste de bastilla, envío gratis."
+        }
+      ]
+    },
     "hero": {
       "eyebrow": "Sacs Programa de Lealtad",
       "title": "Puntos para subir de nivel. Cashback para volver a comprar.",
-      "subtitle": "Dos sistemas en uno: los puntos definen el nivel del cliente y el cashback es dinero real que gasta en su próxima compra. Lo configuras una vez en un asistente paso a paso y Sacs lo aplica al cobrar —sin apps de terceros ni kioskos aparte.",
+      "subtitle": "Cada compra suma puntos que suben a tu clienta de nivel y cashback que regresa a su monedero para la próxima prenda. Se inscriben solas, cada nivel tiene sus beneficios y las recompensas son de moda: un ajuste de bastilla, $200 en su próxima prenda o envío gratis.",
       "image": "/images/programa-de-lealtad-sistema.webp",
-      "imageAlt": "Módulo de programa de lealtad en Sacs"
+      "imageAlt": "Programa de lealtad de una boutique en Sacs",
+      "video": {
+        "mp4": "/videos/lealtad-hero.mp4",
+        "webm": "/videos/lealtad-hero.webm"
+      },
+      "videoPoster": "/videos/lealtad-hero-poster.webp"
     },
     "features": [
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M8 12l3 3 5-6\"/></svg>",
-        "title": "Puntos y cashback, independientes",
-        "description": "Defines un % de puntos (que determina el nivel del cliente) y un % de cashback (dinero real para su próxima compra). Ves la vista previa en vivo de cuánto gana en $100 y en $1,000 mientras configuras."
+        "title": "Puntos y cashback",
+        "description": "Puntos para subir de nivel; cashback para volver a comprar."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"2\"/><path d=\"M2 10h20M7 15h4\"/></svg>",
-        "title": "Niveles, membresías y recompensas",
-        "description": "Constructores dedicados: arma tus niveles, define membresías (se accede pagando o acumulando puntos) y crea recompensas por nivel. Todo desde el mismo asistente, sin tocar código."
+        "title": "Inscripción automática",
+        "description": "Cada clienta entra al programa con su primera compra."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z\"/></svg>",
-        "title": "Expiración que tú controlas",
-        "description": "Caducidad independiente para puntos y para cashback: después de X días, en fecha fija del año o por inactividad del cliente. Con aviso automático X días antes de que expire."
+        "title": "Niveles con beneficios",
+        "description": "Rangos, multiplicadores y beneficios por nivel."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
-        "title": "Dashboard con números reales",
-        "description": "Clientes activos, puntos activos, cashback pendiente y redimido, tasa de participación y recompensas canjeadas. Más la distribución de clientes por nivel y la actividad reciente."
+        "title": "Recompensas de moda",
+        "description": "Ajustes, styling, envío gratis o dinero para su próxima prenda."
       }
     ],
     "showcaseTitle": "La lealtad, cobrada en el POS. No en una app aparte.",
     "blocks": [
       {
-        "title": "Al cobrar, los puntos se suman. Y se descuentan.",
-        "description": "El cajero identifica al cliente, el POS calcula los puntos de la venta en curso y ofrece aplicar el saldo acumulado al total. Un toque: \"¿Usa tus 450 puntos ($450)?\" y listo. Sin abrir otro sistema, sin llamar al supervisor, sin demorar la fila.",
+        "title": "Al cobrar, los puntos se suman solos.",
+        "description": "Con la inscripción automática, cada clienta entra al programa con su primera compra. Al cobrar, Sacs suma los puntos y el cashback con el porcentaje que tú configuraste.",
         "image": "/images/lealtad-pos.webp",
         "imageAlt": "Cajera aplicando puntos del monedero en POS Sacs al pagar",
         "link": {
@@ -6631,21 +6868,49 @@ export const pageContent: Record<string, any> = {
           "href": "/producto/punto-de-venta"
         },
         "featured": true,
-        "variant": "promo-loyalty"
+        "variant": "loyalty-card-moda",
+        "bullets": [
+          {
+            "label": "Inscripción automática",
+            "detail": "Nuevas y existentes, sin llenar nada."
+          },
+          {
+            "label": "Puntos por compra",
+            "detail": "Un porcentaje de cada compra en puntos."
+          },
+          {
+            "label": "Cashback",
+            "detail": "Dinero que regresa a su monedero."
+          }
+        ]
       },
       {
-        "title": "Niveles que suben — y premian con algo real.",
-        "description": "Configura los umbrales de gasto para cada nivel y lo que gana al entrar: multiplicador doble de puntos, acceso a preventas, atención personalizada, envío gratis online o lo que defina tu programa. El sistema sube a los clientes al nivel que corresponde y aplica los beneficios sin que el cajero tenga que recordarlo.",
+        "title": "Niveles que suben y premian.",
+        "description": "Defines el rango de puntos de cada nivel, su multiplicador y sus beneficios. Tu clienta sube sola y lo ve en su ficha y en su portal.",
         "image": "/images/lealtad-niveles.webp",
         "imageAlt": "Pantalla de niveles de lealtad y umbrales en Sacs",
         "link": null,
         "featured": true,
         "variant": "loyalty-tiers",
-        "cardSize": "lg"
+        "cardSize": "lg",
+        "bullets": [
+          {
+            "label": "Rangos de puntos",
+            "detail": "Cuántos puntos pide cada nivel."
+          },
+          {
+            "label": "Multiplicador",
+            "detail": "Más puntos y cashback en los niveles altos."
+          },
+          {
+            "label": "Beneficios por nivel",
+            "detail": "Styling privado o regalo de cumpleaños."
+          }
+        ]
       },
       {
-        "title": "Monedero en todas tus sucursales.",
-        "description": "El cliente acumuló 800 puntos en Polanco y los quiere usar en Santa Fe — funciona. El saldo vive en el perfil, no en una tarjeta física, y se consolida entre todas las sucursales. Al cobrar, cualquier cajero ve el saldo real del cliente sin importar dónde lo ganó.",
+        "title": "Su monedero, siempre a la mano.",
+        "description": "El cashback se queda en el monedero de tu clienta y lo usa en su próxima compra. En su ficha ves el saldo, su nivel y las recompensas que tiene disponibles.",
         "image": "/images/lealtad-monedero.webp",
         "imageAlt": "Cliente usando monedero de lealtad en otra sucursal Sacs",
         "link": {
@@ -6653,26 +6918,54 @@ export const pageContent: Record<string, any> = {
           "href": "/producto/clientes-y-crm"
         },
         "featured": true,
-        "variant": "loyalty-wallet-omni"
+        "variant": "loyalty-wallet-omni",
+        "bullets": [
+          {
+            "label": "Saldo del monedero",
+            "detail": "Lo que tiene para su próxima prenda."
+          },
+          {
+            "label": "Su nivel",
+            "detail": "Con sus multiplicadores y beneficios."
+          },
+          {
+            "label": "Recompensas disponibles",
+            "detail": "Lo que ya puede canjear."
+          }
+        ]
       },
       {
-        "title": "Reglas de canje que tú controlas.",
-        "description": "Decides qué proporción canjea cada punto ($1 por punto, $0.50 por punto o la regla que prefieras), si el canje cubre impuestos, si aplica en productos rebajados, si hay tope por ticket. La política se configura una vez y Sacs la respeta en cada venta — con bitácora para auditar.",
+        "title": "Recompensas de moda, con tus reglas.",
+        "description": "Creas las recompensas que tu clienta canjea con sus puntos: $200 en su próxima prenda, ajuste de bastilla, sesión de styling o envío gratis. Y decides cuándo vencen los puntos y el cashback.",
         "image": "/images/lealtad-reglas.webp",
         "imageAlt": "Pantalla de configuración de reglas de canje de puntos en Sacs",
         "link": null,
         "featured": true,
         "variant": "loyalty-rules",
-        "cardSize": "sm"
+        "cardSize": "sm",
+        "bullets": [
+          {
+            "label": "Recompensas",
+            "detail": "Canjeables con puntos."
+          },
+          {
+            "label": "Expiración",
+            "detail": "Tú decides cuándo vencen."
+          },
+          {
+            "label": "Beneficios exclusivos",
+            "detail": "Para tus mejores clientas."
+          }
+        ]
       }
     ],
     "testimonial": {
-      "quote": "Teníamos un programa de puntos con una app externa que nunca usaba el cajero. La mitad de las ventas pasaban sin puntos. Ahora con Sacs los puntos se aplican al identificar al cliente — sin un paso extra. Pasamos de 35% de ventas identificadas a 78% en dos meses.",
+      "quote": "Teníamos un programa de puntos en una app aparte que nadie usaba en caja. Ahora los puntos y el cashback se suman al cobrar, en cuanto identificamos a la clienta, sin un paso extra.",
       "name": "Santiago Huerta",
       "role": "Director de Marketing",
-      "company": "Pandita Novedades Huerta",
-      "stat": "78%",
-      "statLabel": "de ventas con cliente identificado vs 35% antes"
+      "company": "Casa Huerta",
+      "stat": "0 pasos",
+      "statLabel": "extra en caja para sumar puntos y cashback"
     },
     "interrupt": "La lealtad no vive en una app aparte,",
     "interruptStrike": "vive en el POS donde se cobra.",
@@ -6806,7 +7099,7 @@ export const pageContent: Record<string, any> = {
         "color": "#b47a3a",
         "quote": "Pasamos de mayoría de tickets anónimos a identificar a la mayoría de clientes frecuentes en pocas semanas. El cajero ya no pregunta — el POS ya sabe quién eres por tu teléfono.",
         "name": "Santiago Huerta",
-        "business": "Pandita Novedades Huerta",
+        "business": "Casa Huerta · Moda juvenil",
         "location": "Costa Rica"
       },
       {
@@ -6814,9 +7107,9 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/melina-zapata.webp",
         "initials": "MZ",
         "color": "#4a6aa8",
-        "quote": "Los niveles nos cambiaron la relación con clientes frecuentes. Antes todos recibían el mismo descuento. Ahora nuestras clientes Platino tienen preventa y multiplicador doble — y se nota, compran más seguido y con más ticket que las demás.",
+        "quote": "Los niveles nos cambiaron la relación con las clientas frecuentes. Antes todas recibían el mismo descuento. Ahora las de nivel Andrómeda ganan más puntos por compra y tienen sesión de styling privado, y se nota: vuelven más seguido.",
         "name": "Melina Zapata",
-        "business": "Bazar Zapata",
+        "business": "Zapata · Calzado",
         "location": "Perú"
       },
       {
@@ -6826,93 +7119,170 @@ export const pageContent: Record<string, any> = {
         "color": "#5a8a5f",
         "quote": "El monedero se puede usar entre sucursales sin tarjeta de membresía ni número largo. El cliente da su teléfono y listo. Esa sola cosa nos quitó horas de soporte — ya nadie nos llama porque \"perdió su tarjeta de puntos\".",
         "name": "Raúl Estrada",
-        "business": "Juguetería El Horno",
+        "business": "Hornos · Bolsas y accesorios",
         "location": "República Dominicana"
       }
     ],
     "faqs": [
       {
-        "question": "¿Cuántos puntos gana el cliente por peso gastado?",
-        "answer": "Lo defines tú. Puedes configurar 1 punto por cada $10, 1 por cada $20, antes o después de impuestos, con multiplicadores por categoría o nivel. La regla se aplica igual en todas las sucursales."
-      },
-      {
-        "question": "¿Se pueden canjear los puntos en cualquier sucursal?",
-        "answer": "Sí. El saldo vive en el perfil del cliente y es consolidado en toda la red. Lo que acumuló en una tienda lo puede usar en cualquier otra — sin tarjeta física ni número de membresía."
-      },
-      {
-        "question": "¿Los puntos expiran?",
-        "answer": "Si tú lo configuras, sí. Puedes definir vigencia de 6, 12 o 24 meses. El sistema expira los puntos vencidos automáticamente y envía email de aviso al cliente antes para que los use."
-      },
-      {
-        "question": "¿Puedo excluir productos en rebaja de la acumulación de puntos?",
-        "answer": "Sí. Configuras exclusiones por categoría, por producto o por estado (rebajado, outlet). El POS aplica la exclusión automáticamente al calcular los puntos de cada venta."
+        "question": "¿Cuántos puntos gana mi clienta por compra?",
+        "answer": "Lo defines tú: un porcentaje de cada compra se convierte en puntos y otro en cashback que regresa a su monedero. El asistente te muestra cuánto ganaría en una compra de ejemplo antes de guardar."
       },
       {
         "question": "¿Cómo funcionan los niveles?",
-        "answer": "Defines nombres (Bronce / Plata / Oro / Platino), umbrales de gasto anual y beneficios por nivel (multiplicador de puntos, descuento base, envío gratis, preventas). El sistema promueve y degrada automáticamente según el gasto rolling de 12 meses."
+        "answer": "Defines cada nivel por rango de puntos (Sol 0–100, Luna 101–499, Andrómeda 500+) con su multiplicador de puntos y de cashback y sus beneficios. Tu clienta sube sola."
       },
       {
-        "question": "¿Los puntos se pueden usar en la tienda en línea?",
-        "answer": "Hoy el canje vive en POS — tienda en línea está en roadmap. Mientras tanto, el cliente acumula online (las ventas online suman al saldo) pero canjea en piso."
+        "question": "¿Qué recompensas puedo dar?",
+        "answer": "Las que tú crees, cada una con los puntos que cuesta: envío gratis, $200 en su próxima prenda, ajuste de bastilla gratis, 15 % en nueva colección, sesión de styling privado o regalo de cumpleaños."
       },
       {
-        "question": "¿Se puede limitar el porcentaje del ticket pagado con puntos?",
-        "answer": "Sí. Configuras un tope — por ejemplo, \"máximo 30% del ticket pagado con puntos\". Protege tu margen y evita canjes que vacíen el ticket por completo."
+        "question": "¿Los puntos y el cashback expiran?",
+        "answer": "Solo si tú quieres. Puedes hacer que los puntos venzan después de cierto tiempo o en una fecha de corte fija, y configuras aparte si el cashback expira."
       },
       {
-        "question": "¿Puedo hacer campañas de puntos triples por tiempo limitado?",
-        "answer": "Sí. Configuras evento con fecha de inicio y fin, multiplicador (2x, 3x, 5x) y categorías aplicables. Sacs aplica y desactiva automáticamente — el cajero no tiene que acordarse."
+        "question": "¿Mi clienta tiene que inscribirse?",
+        "answer": "No. Con la inscripción automática entra al programa con su primera compra, sin llenar nada."
       },
       {
-        "question": "¿Cómo se integra con el CRM?",
-        "answer": "El saldo de puntos, el nivel y el historial de canjes viven en el perfil del cliente. Al abrir la ficha ves todo junto: compras, apartados, puntos, nivel y nota del vendedor."
+        "question": "¿Puede usar su saldo en cualquier sucursal?",
+        "answer": "Sí. Sus puntos y su cashback viven en su ficha, no en una tienda: lo que juntó en Polanco Boutique lo usa en SMA Centro o en Querétaro Antea."
+      },
+      {
+        "question": "¿Dónde ve mi clienta sus puntos?",
+        "answer": "En el portal de clientes con tu marca: sus puntos, su nivel, su cashback y las recompensas que puede canjear. Tu equipo ve lo mismo en su ficha."
       }
     ]
   },
   "portal-de-clientes": {
+    "enSacs": {
+      "modulo": "Portal de clientes",
+      "nota": "Capturas del Portal de clientes de Sacs (octubre de 2026) con una boutique de ejemplo.",
+      "pantallas": [
+        {
+          "id": "portal",
+          "img": "/images/producto/portal-de-clientes/portal.webp",
+          "h": 1000,
+          "t": "Portal de clientes",
+          "alt": "Portal de clientes en Sacs: link y QR del portal, configuración rápida y vista previa en celular"
+        },
+        {
+          "id": "editor",
+          "img": "/images/producto/portal-de-clientes/editor.webp",
+          "h": 800,
+          "t": "Editar portal",
+          "alt": "Editor del portal de clientes en Sacs: nombre, color y mensaje de bienvenida con vista previa"
+        }
+      ],
+      "pasos": [
+        {
+          "p": "portal",
+          "r": [
+            234,
+            124,
+            768,
+            564
+          ],
+          "t": "Un link y un QR para tus clientas",
+          "d": "Lo pegas en el ticket, en tu Instagram o en el mostrador."
+        },
+        {
+          "p": "portal",
+          "r": [
+            234,
+            588,
+            768,
+            821
+          ],
+          "t": "Con tu color y tu logo",
+          "d": "Color, logo, banners y secciones activas de tu portal."
+        },
+        {
+          "p": "portal",
+          "r": [
+            963,
+            124,
+            1171,
+            512
+          ],
+          "t": "Así lo ve tu clienta",
+          "d": "Sus puntos, su nivel, su cashback y sus recompensas en el celular."
+        },
+        {
+          "p": "editor",
+          "r": [
+            112,
+            279,
+            880,
+            777
+          ],
+          "t": "Edítalo tú",
+          "d": "Nombre, color y mensaje de bienvenida, con la vista previa al momento."
+        }
+      ]
+    },
     "hero": {
       "eyebrow": "Sacs Portal de Clientes · En piloto",
-      "title": "Tu portal de clientes, con tu marca. Para que se atiendan solos.",
-      "subtitle": "Dale a cada cliente su propio portal digital: consulta sus puntos, su cashback, su nivel, su historial de compras y sus facturas, bajo tu logo, tu color y hasta tu propio dominio. Lo configuras en minutos con un asistente de 2 pasos, compartes el link (o el QR) y tus clientes resuelven solos lo que hoy te llena el WhatsApp.",
+      "title": "Tu portal de clientes, con tu marca.",
+      "subtitle": "Un portal donde cada clienta ve sus puntos, su nivel, su cashback y sus recompensas desde el celular, con el nombre, el color y los banners de tu boutique. Lo compartes con un link o un QR.",
       "image": "/images/portal-de-clientes-sistema.webp",
-      "imageAlt": "Módulo de portal de clientes en Sacs"
+      "imageAlt": "Portal de clientes de una boutique en Sacs",
+      "video": {
+        "mp4": "/videos/portal-hero.mp4",
+        "webm": "/videos/portal-hero.webm"
+      },
+      "videoPoster": "/videos/portal-hero-poster.webp"
     },
     "features": [
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 20h9\"/><path d=\"M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z\"/></svg>",
-        "title": "Tu marca, no la de Sacs",
-        "description": "Editor visual con tu logo, favicon, color principal y mensaje de bienvenida. Conecta tu propio dominio (recompensas.tumarca.com) con CNAME y SSL automático, o usa tu link sacscloudwallet.com listo para compartir."
+        "title": "Con tu marca",
+        "description": "Nombre, color, logo y banners de tu boutique."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z\"/></svg>",
-        "title": "Puntos, cashback y nivel a la vista",
-        "description": "El cliente ve su saldo de puntos, su cashback acumulado, su progreso de nivel y las recompensas disponibles para canjear. Cada sección se enciende o apaga con un toggle desde el panel: tú decides qué muestra el portal."
+        "title": "Puntos y nivel a la vista",
+        "description": "Tu clienta consulta sola su saldo y sus recompensas."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M16 2v4M8 2v4M3 10h18\"/></svg>",
-        "title": "Historial y facturas a la mano",
-        "description": "Cada transacción queda registrada y el cliente consulta su historial de puntos y de cashback al instante. Sus facturas digitales están disponibles para consultar y descargar, sin escribirle al equipo de tienda."
+        "title": "Link y QR",
+        "description": "Para el ticket, el mostrador o tus redes."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M9 9h6M9 13h6M9 17h3\"/></svg>",
-        "title": "Listo en 2 pasos, comparte con QR",
-        "description": "El asistente te lleva de Personalizar a Publicar. Al terminar tienes tu link y un código QR descargable para imprimir en tienda o pegar en redes. Sin agencia, sin sprint de diseño: lo lanzas el mismo día."
+        "title": "Editor con vista previa",
+        "description": "Cambias el portal y lo ves al momento."
       }
     ],
     "showcaseTitle": "El cliente se atiende solo. Tu equipo se enfoca en vender.",
     "blocks": [
       {
-        "title": "Un portal que parece tuyo — porque lo es.",
-        "description": "Editor visual con tu logo, tus colores, tu tipografía y tu dominio propio. Cuando el cliente entra al portal, lo que lee se siente parte de la experiencia de tu marca — no un panel genérico de un software. La continuidad visual empieza en la tienda y termina en su celular.",
+        "title": "Un portal que se ve como tu boutique.",
+        "description": "Nombre, color principal, logo, mensaje de bienvenida y banners: lo editas paso a paso y ves la vista previa al momento.",
         "image": "/images/portal-marca.webp",
         "imageAlt": "Portal de clientes con marca personalizada en móvil y desktop Sacs",
         "link": null,
         "featured": true,
-        "variant": "online-branding"
+        "variant": "online-branding",
+        "bullets": [
+          {
+            "label": "Tu color y tu logo",
+            "detail": "El portal lleva tu marca, no la de Sacs."
+          },
+          {
+            "label": "Banners de temporada",
+            "detail": "Las fotos de tu nueva colección."
+          },
+          {
+            "label": "Vista previa",
+            "detail": "Ves el cambio antes de publicarlo."
+          }
+        ]
       },
       {
-        "title": "Puntos, nivel y vigencia. Sin escribir a tienda.",
-        "description": "El cliente abre el portal y ve cuántos puntos tiene, en qué nivel está, qué falta para subir al siguiente y cuáles están por expirar. El ingreso es con teléfono o correo — sin contraseña complicada, con código por SMS o email al entrar.",
+        "title": "Puntos, nivel y cashback, sin preguntar en tienda.",
+        "description": "Tu clienta entra con su teléfono y ve cuántos puntos tiene, en qué nivel va, su cashback y las recompensas que puede canjear.",
         "image": "/images/portal-puntos.webp",
         "imageAlt": "Portal de cliente mostrando saldo de puntos y nivel de lealtad en móvil",
         "link": {
@@ -6920,41 +7290,83 @@ export const pageContent: Record<string, any> = {
           "href": "/producto/programa-de-lealtad"
         },
         "featured": true,
-        "variant": "portal-points-view"
+        "variant": "portal-points-view",
+        "bullets": [
+          {
+            "label": "Sus puntos",
+            "detail": "Y el historial de cómo los ganó."
+          },
+          {
+            "label": "Su nivel",
+            "detail": "Con los beneficios que le tocan."
+          },
+          {
+            "label": "Sus recompensas",
+            "detail": "Lo que ya puede canjear."
+          }
+        ]
       },
       {
-        "title": "Autofacturación sin dolor — para el cliente y para ti.",
-        "description": "El cliente ingresa con número de ticket y correo, valida o captura su CFDI y descarga el XML. Ya no te escribe preguntando \"¿me puedes facturar?\" ni manda su constancia fiscal por WhatsApp tres veces al año. La factura se genera sola, con timbre SAT válido.",
+        "title": "Su historial de puntos y cashback.",
+        "description": "Desde el mismo portal ve cómo ganó cada punto y cada peso de cashback, y lo que ya canjeó, sin escribirle a la tienda.",
         "image": "/images/portal-autofactura.webp",
         "imageAlt": "Cliente descargando factura XML y PDF desde portal de autofacturación Sacs",
         "link": {
-          "label": "Ver facturación electrónica",
-          "href": "/producto/facturacion-electronica"
+          "label": "Ver programa de lealtad",
+          "href": "/producto/programa-de-lealtad"
         },
         "featured": true,
-        "variant": "invoice-portal"
+        "variant": "portal-history-points",
+        "bullets": [
+          {
+            "label": "Puntos ganados",
+            "detail": "Compra por compra."
+          },
+          {
+            "label": "Cashback",
+            "detail": "Lo que le regresó cada compra."
+          },
+          {
+            "label": "Canjes",
+            "detail": "Las recompensas que ya usó."
+          }
+        ]
       },
       {
-        "title": "Historial y apartados en una app-sin-app.",
-        "description": "El cliente ve todas sus compras, abre sus apartados pendientes y abona desde el celular con tarjeta. Si el apartado está por vencer, el portal se lo muestra en rojo con cuántos días quedan. El equipo de tienda deja de ser el call center y vuelve a ser vendedor.",
+        "title": "Compártelo con un link o un QR.",
+        "description": "El portal tiene su link y su QR para el ticket, el mostrador o tu Instagram; tu clienta lo abre desde el celular.",
         "image": "/images/portal-historial.webp",
         "imageAlt": "Pantalla de historial de compras y apartados abiertos en portal de cliente Sacs",
         "link": {
-          "label": "Ver apartados y pedidos",
-          "href": "/producto/apartados-y-pedidos"
+          "label": "Ver programa de lealtad",
+          "href": "/producto/programa-de-lealtad"
         },
         "featured": true,
         "variant": "portal-history-mobile",
-        "cardSize": "lg"
+        "cardSize": "lg",
+        "bullets": [
+          {
+            "label": "Link propio",
+            "detail": "Con el nombre de tu boutique."
+          },
+          {
+            "label": "QR descargable",
+            "detail": "Para el ticket o el mostrador."
+          },
+          {
+            "label": "En tus redes",
+            "detail": "Lo pegas en tu Instagram."
+          }
+        ]
       }
     ],
     "testimonial": {
-      "quote": "Antes el 30% de los WhatsApps que llegaban eran \"¿cuántos puntos tengo?\" o \"necesito mi factura\". Lanzamos el portal con nuestra marca y esos mensajes bajaron a cero. El equipo ahora atiende solo lo que sí vende — y los clientes se sienten mejor atendidos, no peor.",
+      "quote": "Nuestras clientas ya no preguntan en caja cuántos puntos tienen: lo ven en el portal con nuestro logo y nuestra colección de temporada.",
       "name": "Elena Reig",
       "role": "Directora de Experiencia",
-      "company": "Perfumerías Reig",
-      "stat": "92%",
-      "statLabel": "de consultas rutinarias resueltas sin intervención humana"
+      "company": "Reig",
+      "stat": "Tu marca",
+      "statLabel": "en el portal: nombre, color, logo y banners"
     },
     "interrupt": "Tu equipo no existe para responder \"¿cuántos puntos tengo?\",",
     "interruptStrike": "existe para vender.",
@@ -7086,9 +7498,9 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/elena-reig.webp",
         "initials": "ER",
         "color": "#b47a3a",
-        "quote": "Arrancamos el piloto del portal con autofacturación. Ya notamos menos mensajes pidiendo facturas — cuando agreguemos puntos y apartados, la bandeja queda todavía más limpia.",
+        "quote": "Nuestras clientas ya no preguntan en caja cuántos puntos tienen: lo ven en el portal con nuestro logo y nuestra colección de temporada.",
         "name": "Elena Reig",
-        "business": "Perfumerías Reig",
+        "business": "Reig · Moda mujer",
         "location": "México"
       },
       {
@@ -7096,9 +7508,9 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/federico-narvaez.webp",
         "initials": "FN",
         "color": "#4a6aa8",
-        "quote": "Subimos el logo, los colores y el dominio para el piloto en una mañana. Los clientes ven \"nuestra marca\" en el portal, no \"Sacs\" — y eso cambia la relación.",
+        "quote": "Subimos el logo, el color y los banners de temporada en una mañana. Nuestros clientes ven nuestra marca en el portal, no la de Sacs, y eso cambia la relación.",
         "name": "Federico Narváez",
-        "business": "Ferretería Narváez",
+        "business": "Narváez · Calzado",
         "location": "Uruguay"
       },
       {
@@ -7106,86 +7518,160 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/paloma-esquivel.webp",
         "initials": "PE",
         "color": "#5a8a5f",
-        "quote": "La autofacturación nos quitó 15 horas semanales. Antes una persona dedicaba la mitad de su tiempo a timbrar facturas manuales. Ahora el cliente la genera solo con el número de ticket — y si algo sale mal, tiene el soporte donde lo necesita.",
+        "quote": "Pusimos el QR del portal en el mostrador y el link en Instagram. Nuestras clientas ven desde el celular cuánto cashback tienen y qué recompensa les toca, y vuelven por ella.",
         "name": "Paloma Esquivel",
-        "business": "Cava Esquivel",
+        "business": "Esquivel · Accesorios",
         "location": "México"
       }
     ],
     "faqs": [
       {
-        "question": "¿El portal lleva el nombre de Sacs o mi marca?",
-        "answer": "Tu marca. Logo, colores, tipografía y dominio propio son tuyos. Sacs no aparece en ninguna parte visible del portal — es tu producto, no el nuestro."
+        "question": "¿El portal lleva mi marca o la de Sacs?",
+        "answer": "Tu marca: nombre del portal, color principal, logo, mensaje de bienvenida y banners. Lo editas paso a paso y ves la vista previa al momento."
       },
       {
-        "question": "¿Cuánto toma configurar el portal?",
-        "answer": "En promedio, una mañana. Subes logo y colores, conectas tu subdominio (puntos.tumarca.com), ajustas los textos principales y está listo. El equipo de onboarding te acompaña el primer día."
+        "question": "¿Qué ve mi clienta en el portal?",
+        "answer": "Sus puntos, su nivel y cuánto le falta para el siguiente, su cashback, las recompensas que puede canjear y el historial de puntos y de cashback. Tú decides qué secciones se muestran."
       },
       {
-        "question": "¿Funciona el portal hoy o está en roadmap?",
-        "answer": "El portal de clientes está en desarrollo activo como parte del roadmap de 2026. Hoy está disponible en versión temprana con autofacturación y consulta de puntos; historial completo, abono online y branding total salen en fases. Onboarding incluye el plan específico."
+        "question": "¿Cómo entra mi clienta?",
+        "answer": "Con su teléfono y su contraseña, desde el navegador. No tiene que descargar ninguna app."
       },
       {
-        "question": "¿Con qué credenciales entra el cliente?",
-        "answer": "Con su correo o teléfono. El sistema le envía un magic link o un código OTP por email al momento. Sin contraseñas que memorizar y sin resets que gestionar."
+        "question": "¿Cómo comparto el portal?",
+        "answer": "Al publicarlo obtienes su link, con botón para copiarlo, y un QR que descargas para el ticket, el mostrador o tu Instagram."
       },
       {
-        "question": "¿Se pueden descargar las facturas desde el portal?",
-        "answer": "Sí. Con el número de ticket y el correo, el cliente valida, captura o actualiza su CFDI y descarga XML y PDF al instante. La factura queda guardada en su portal para futuras consultas."
+        "question": "¿Puedo usar mi propio dominio?",
+        "answer": "Sí. Activas tu dominio y Sacs te muestra el registro DNS que debes agregar con tu proveedor. Mientras tanto, tu portal funciona con su link de sacscloudwallet.com."
       },
       {
-        "question": "¿Los clientes pueden abonar apartados desde el portal?",
-        "answer": "Sí, con Stripe conectado. El cliente ve sus apartados abiertos, el saldo y la fecha de vencimiento, y paga con tarjeta desde el celular. El abono se refleja en el apartado al segundo, sin visitar la tienda."
+        "question": "¿Puedo cambiar los banners cada temporada?",
+        "answer": "Sí. Agregas los banners que quieras, cada uno con imagen, título, descripción, texto del botón y enlace, y los cambias cuando llega la nueva colección."
       },
       {
-        "question": "¿Qué pasa si el cliente pide que borremos sus datos?",
-        "answer": "Desde el portal puede solicitar el borrado. Sacs anonimiza el perfil (elimina nombre, teléfono, correo, CFDI) pero conserva los tickets para cumplir requisitos fiscales. Cumples con LFPDPPP sin pelea legal."
-      },
-      {
-        "question": "¿El portal funciona bien en celular?",
-        "answer": "Es lo primero para lo que se diseñó. 90% de tus clientes entran desde el celular, así que el portal es mobile-first: carga rápido, cabe en una mano, usa bien los dedos."
-      },
-      {
-        "question": "¿Puedo tener varios portales si manejo varias marcas?",
-        "answer": "Sí. Cada marca puede tener su propio portal con su dominio, su logo y su paleta — corriendo sobre la misma base de Sacs. Útil si operas marcas distintas bajo la misma razón social."
+        "question": "¿Funciona en celular?",
+        "answer": "Sí. Se abre en cualquier navegador, en iPhone, Android o computadora."
       }
     ]
   },
   "tarjetas-de-regalo": {
+    "enSacs": {
+      "modulo": "Tarjetas de regalo",
+      "nota": "Capturas del módulo de Tarjetas de regalo de Sacs (octubre de 2026) con una boutique de ejemplo.",
+      "pantallas": [
+        {
+          "id": "lista",
+          "img": "/images/producto/tarjetas-de-regalo/lista.webp",
+          "h": 1500,
+          "t": "Tarjetas de regalo",
+          "alt": "Tarjetas de regalo en Sacs: pasivo vivo, ingreso reconocido, emitido y lista de tarjetas con saldo"
+        },
+        {
+          "id": "tarjeta",
+          "img": "/images/producto/tarjetas-de-regalo/tarjeta.webp",
+          "h": 1500,
+          "t": "Tarjeta",
+          "alt": "Detalle de una tarjeta de regalo en Sacs con saldo, canjes y movimientos"
+        }
+      ],
+      "pasos": [
+        {
+          "p": "lista",
+          "r": [
+            210,
+            99,
+            1294,
+            208
+          ],
+          "t": "Lo que debes, en vivo",
+          "d": "Saldo por redimir, ingreso ya reconocido y todo lo emitido."
+        },
+        {
+          "p": "lista",
+          "r": [
+            210,
+            390,
+            1296,
+            1380
+          ],
+          "t": "Cada tarjeta con su saldo",
+          "d": "Código, tipo, estado, saldo actual contra el inicial y vigencia."
+        },
+        {
+          "p": "lista",
+          "r": [
+            211,
+            231,
+            1293,
+            380
+          ],
+          "t": "Activas, agotadas o expiradas",
+          "d": "Filtra por estado o busca por código."
+        },
+        {
+          "p": "tarjeta",
+          "r": [
+            440,
+            445,
+            1000,
+            720
+          ],
+          "t": "El saldo de una tarjeta",
+          "d": "Cuánto se cargó, cuánto se ha usado y cuánto queda."
+        },
+        {
+          "p": "tarjeta",
+          "r": [
+            440,
+            820,
+            1000,
+            970
+          ],
+          "t": "Cada canje registrado",
+          "d": "Emisión y canjes con fecha y monto."
+        }
+      ]
+    },
     "hero": {
       "eyebrow": "Sacs Tarjetas de Regalo · Piloto",
-      "title": "Tarjetas de regalo que viven dentro de tu sistema, no en un proveedor externo.",
-      "subtitle": "Emite tarjetas físicas y digitales con código y PIN, véndelas en el POS y cóbralas con su saldo en cualquier sucursal. Sacs crea solo el producto y el método de pago; tú solo emites, vendes y redimes. Sin comisiones por transacción.",
+      "title": "Tarjetas de regalo que viven dentro de tu sistema.",
+      "subtitle": "Emite tarjetas físicas y digitales con su código, véndelas y cóbralas con su saldo. Sacs lleva el pasivo por redimir, el ingreso reconocido y cada canje, tarjeta por tarjeta.",
       "image": "/images/tarjetas-de-regalo-sistema.webp",
-      "imageAlt": "Módulo de tarjetas de regalo en Sacs"
+      "imageAlt": "Tarjetas de regalo de una boutique en Sacs",
+      "video": {
+        "mp4": "/videos/regalo-hero.mp4",
+        "webm": "/videos/regalo-hero.webm"
+      },
+      "videoPoster": "/videos/regalo-hero-poster.webp"
     },
     "features": [
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"2\"/><path d=\"M2 10h20M7 15h4\"/></svg>",
-        "title": "Físicas y digitales (eGift)",
-        "description": "Emite tarjetas en lote: impresas con su código y QR, o digitales que llegan por correo al destinatario. El saldo se maneja igual para las dos en un solo lugar."
+        "title": "Físicas y digitales",
+        "description": "Con código, saldo y vigencia."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/></svg>",
-        "title": "Saldo, recarga, PIN y vencimiento",
-        "description": "Define montos predefinidos o libres, exige PIN, configura el vencimiento en meses (o que nunca venza) y permite recargar saldo a una tarjeta ya emitida con un tope máximo."
+        "title": "Canjes parciales",
+        "description": "Lo que no usa se queda en su saldo."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
-        "title": "Vende en POS y cobra con el saldo",
-        "description": "Al habilitar venta en POS, Sacs crea el producto 'Tarjeta de Regalo' (precio abierto, sin descontar inventario) y el método de pago 'Tarjeta de regalo'. El cajero captura el código, valida saldo y redime al cerrar la venta."
+        "title": "Pasivo al día",
+        "description": "Saldo por redimir e ingreso reconocido, en vivo."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7l8-4z\"/><path d=\"M9 12l2 2 4-4\"/></svg>",
-        "title": "Consulta de saldo y control del pasivo",
-        "description": "Tu cliente revisa saldo y movimientos en un enlace público y seguro por QR. Tú ves cada tarjeta por estado (activa, agotada, expirada) y el reporte de pasivo: el ingreso se reconoce al redimir, no al vender."
+        "title": "Por correo o WhatsApp",
+        "description": "La tarjeta llega a quien la va a recibir."
       }
     ],
     "showcaseTitle": "La tarjeta de regalo, resuelta dentro de Sacs.",
     "blocks": [
       {
-        "title": "Vende una tarjeta como si fuera un producto más.",
-        "description": "En el POS, \"Tarjeta de regalo\" aparece como un ítem. Eliges el monto (preset o libre), el cliente paga, y el sistema emite el código — físico si la activas en tarjeta impresa, o digital si se envía por email al destinatario. En 30 segundos, sin salir de la caja.",
+        "title": "Emite tarjetas físicas y digitales.",
+        "description": "Las emites con su código, su monto y su vigencia. Cada tarjeta queda con su estado: activa, agotada, inactiva o expirada.",
         "image": "/images/tarjetas-venta.webp",
         "imageAlt": "Cajero vendiendo tarjeta de regalo en POS Sacs",
         "link": {
@@ -7194,30 +7680,72 @@ export const pageContent: Record<string, any> = {
         },
         "featured": true,
         "variant": "gift-sell",
-        "cardSize": "sm"
+        "cardSize": "sm",
+        "bullets": [
+          {
+            "label": "Físicas y digitales",
+            "detail": "Para el mostrador o para enviar."
+          },
+          {
+            "label": "Código único",
+            "detail": "Cada tarjeta con el suyo."
+          },
+          {
+            "label": "Vigencia",
+            "detail": "Con fecha de vencimiento o sin ella."
+          }
+        ]
       },
       {
-        "title": "Canjear es restar del saldo — nada más.",
-        "description": "Al cobrar, el cajero captura o escanea el código de la tarjeta. El POS muestra el saldo disponible y el cliente aplica lo que quiera al ticket. Si el ticket excede el saldo, paga la diferencia con otro método; si queda saldo, la tarjeta sigue válida para la próxima visita.",
+        "title": "Canjear es restar del saldo.",
+        "description": "Cuando tu clienta paga con su tarjeta, el canje se descuenta del saldo y queda en sus movimientos con fecha y monto.",
         "image": "/images/tarjetas-canje.webp",
         "imageAlt": "Cliente canjeando tarjeta de regalo con saldo parcial en POS Sacs",
         "link": null,
         "featured": true,
-        "variant": "gift-redeem"
+        "variant": "gift-redeem",
+        "bullets": [
+          {
+            "label": "Saldo al momento",
+            "detail": "Lo que queda, siempre al día."
+          },
+          {
+            "label": "Canjes parciales",
+            "detail": "Usa una parte y guarda el resto."
+          },
+          {
+            "label": "Movimientos",
+            "detail": "Emisión y canjes con fecha."
+          }
+        ]
       },
       {
-        "title": "Digitales con envío programado.",
-        "description": "El cliente compra una tarjeta digital para su pareja y programa el envío para el día del cumpleaños. El destinatario recibe un email con tu marca, diseño de temporada y el código canjeable. Útil en épocas altas — el regalo de último minuto deja de existir.",
+        "title": "Digitales, por correo o WhatsApp.",
+        "description": "Desde la tarjeta la imprimes o la mandas por correo o WhatsApp a quien la va a recibir, y puedes recargarla o ajustar su saldo.",
         "image": "/images/tarjetas-digital.webp",
         "imageAlt": "Tarjeta de regalo digital enviada por email con diseño de marca Sacs",
         "link": null,
         "featured": true,
         "variant": "gift-digital-schedule",
-        "cardSize": "lg"
+        "cardSize": "lg",
+        "bullets": [
+          {
+            "label": "Imprimir o enviar",
+            "detail": "Por correo o por WhatsApp."
+          },
+          {
+            "label": "Recargar",
+            "detail": "Suma saldo a la misma tarjeta."
+          },
+          {
+            "label": "Destinataria",
+            "detail": "Cada tarjeta dice para quién es."
+          }
+        ]
       },
       {
-        "title": "Contabilidad limpia — sin sorpresas al cierre.",
-        "description": "La venta de una tarjeta es un pasivo, no un ingreso. Sacs la registra como \"obligación de entregar producto\" hasta que se canjea — ahí se convierte en venta real. Tu contador lo agradece: los números cuadran con el SAT y no hay que inventar ajustes fin de mes.",
+        "title": "El pasivo, claro al cierre.",
+        "description": "Pasivo por redimir, ingreso ya reconocido y todo lo emitido, siempre al día, para que el cierre no tenga sorpresas.",
         "image": "/images/tarjetas-contabilidad.webp",
         "imageAlt": "Reporte de tarjetas emitidas y canjeadas con balance de pasivo en Sacs",
         "link": {
@@ -7225,16 +7753,30 @@ export const pageContent: Record<string, any> = {
           "href": "/producto/control-financiero"
         },
         "featured": true,
-        "variant": "control-central"
+        "variant": "gift-liability",
+        "bullets": [
+          {
+            "label": "Pasivo vivo",
+            "detail": "Lo que tus clientas aún pueden gastar."
+          },
+          {
+            "label": "Ingreso reconocido",
+            "detail": "Lo que ya se canjeó."
+          },
+          {
+            "label": "Emitido total",
+            "detail": "Todo lo que has vendido en tarjetas."
+          }
+        ]
       }
     ],
     "testimonial": {
-      "quote": "Usábamos unas tarjetas prepago externas que cobraban 6% por transacción y no sincronizaban saldos entre sucursales. Vendíamos una y media, después venía el escándalo: \"no tengo saldo\" \"sí tiene\" \"no aparece\". Con Sacs la tarjeta es del sistema, canjea donde sea y no pago comisiones externas.",
+      "quote": "Antes las tarjetas de regalo eran de papel y el saldo se anotaba a mano. Ahora cada tarjeta tiene su código y su saldo en Sacs, se canjea en cualquiera de nuestras boutiques y en caja se ve al momento cuánto le queda.",
       "name": "Andrea Chávez",
       "role": "Fundadora",
       "company": "Atelier Chávez",
-      "stat": "6%",
-      "statLabel": "de comisión externa eliminada por tarjeta vendida"
+      "stat": "1 saldo",
+      "statLabel": "por tarjeta, al día en todas tus sucursales"
     },
     "interrupt": "La tarjeta de regalo no es un producto tercerizado,",
     "interruptStrike": "es un pasivo que Sacs administra por ti.",
@@ -7364,11 +7906,11 @@ export const pageContent: Record<string, any> = {
       {
         "bg": "#0a0a0a",
         "image": "/images/testimonials/andrea-chavez.webp",
-        "initials": "VC",
+        "initials": "AC",
         "color": "#b47a3a",
-        "quote": "En piloto con Sacs arrancamos a vender tarjetas canjeables entre nuestras 7 boutiques. El saldo deja de estar \"atrapado\" en la tienda donde se compró la tarjeta — el cliente canjea donde quiera, y para nosotros eso es oro.",
+        "quote": "Vendemos tarjetas de regalo que se canjean en cualquiera de nuestras boutiques. El saldo ya no se queda atrapado en la tienda donde se compró, y la clienta puede usar una parte hoy y el resto en su siguiente visita.",
         "name": "Andrea Chávez",
-        "business": "Atelier Chávez",
+        "business": "Atelier Chávez · Moda mujer",
         "location": "México"
       },
       {
@@ -7376,9 +7918,9 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/damian-orellana.webp",
         "initials": "DO",
         "color": "#4a6aa8",
-        "quote": "En el piloto de fin de año arrancamos tarjetas digitales con envío programado. La fila de última hora para regalos de cumpleaños se descargó — todo se manda por email.",
+        "quote": "En fin de año vendimos tarjetas digitales con nuestro diseño y las mandamos por correo y WhatsApp el día que eligió cada cliente. Quien regalaba unos botines ya no tenía que venir por la tarjeta.",
         "name": "Damián Orellana",
-        "business": "Papelería Orellana",
+        "business": "Orellana · Calzado",
         "location": "Chile"
       },
       {
@@ -7386,96 +7928,202 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/isabela-marin.webp",
         "initials": "IM",
         "color": "#5a8a5f",
-        "quote": "Las tarjetas emitidas son pasivo. Tenerlas en el mismo reporte contable que el resto de la operación nos evitó la excepción que siempre generaba ruido con el contador.",
+        "quote": "Las tarjetas emitidas son pasivo. Ver al cierre cuánto falta por redimir y cuánto ya es ingreso nos quitó las dudas de cada mes con el contador.",
         "name": "Isabela Marín",
-        "business": "Boutique Marín",
+        "business": "Boutique Marín · Accesorios",
         "location": "Ecuador"
       }
     ],
     "faqs": [
       {
-        "question": "¿Las tarjetas de regalo ya están disponibles o son roadmap?",
-        "answer": "Honesto: la funcionalidad de tarjetas de regalo está en fase piloto dentro de SACS3. El flujo completo (emisión física, digital con envío programado, canje omnicanal y reporte de pasivo) sale en fases durante el año. Pregunta al equipo de onboarding por tu timing concreto."
-      },
-      {
-        "question": "¿Puedo vender tarjeta en una sucursal y canjearla en otra?",
-        "answer": "Sí. El saldo vive en Sacs, no en la tarjeta. Cualquier sucursal de tu red puede canjearla — el POS consulta el saldo vigente al momento, sin importar dónde se vendió."
-      },
-      {
-        "question": "¿Se cobra comisión por transacción?",
-        "answer": "No. A diferencia de prepagos externos que cobran 3-6% por emisión o canje, las tarjetas de Sacs no tienen comisión por transacción. Forman parte de tu plan base."
-      },
-      {
-        "question": "¿Qué pasa si el cliente pierde la tarjeta física?",
-        "answer": "Bloqueas el código en el sistema y emites una tarjeta nueva con el saldo remanente. La tarjeta perdida queda inutilizable — quien la encuentre no puede canjear."
-      },
-      {
-        "question": "¿Las tarjetas digitales tienen plantilla con mi marca?",
-        "answer": "Sí. Configuras logo, colores, fuente y mensaje del email una vez. Hay plantillas pre-armadas por temporada (Navidad, Día de las Madres, San Valentín) que puedes activar en dos clics."
-      },
-      {
-        "question": "¿Se puede programar el envío de una tarjeta digital?",
-        "answer": "Sí. El remitente elige día y hora del envío. La tarjeta llega al destinatario en ese momento exacto — útil para cumpleaños, aniversarios o regalos de último minuto con fecha específica."
-      },
-      {
-        "question": "¿Cómo se contabiliza la venta de tarjetas?",
-        "answer": "Al vender, la tarjeta es un pasivo (obligación de entregar producto). Al canjear, se convierte en venta real con IVA. Sacs lleva el registro y te da reportes claros para cierre de mes y auditoría."
-      },
-      {
-        "question": "¿Tienen vencimiento?",
-        "answer": "Lo configuras tú — 12 meses, 24 meses o sin vencimiento. Al vencer, la tarjeta deja de ser canjeable y el saldo remanente pasa a ingreso contable con registro de la operación."
+        "question": "¿Puedo vender la tarjeta en una sucursal y canjearla en otra?",
+        "answer": "Sí. El saldo vive en Sacs, no en la tarjeta: cualquier sucursal la canjea con el saldo al día, sin importar dónde se vendió."
       },
       {
         "question": "¿Se pueden usar parcialmente?",
-        "answer": "Sí. Si la tarjeta tiene $1,000 y el ticket es $600, el cliente usa $600 y la tarjeta sigue con $400 para la próxima visita. Canje parcial sin restricción."
+        "answer": "Sí. Si la tarjeta tiene $2,000 y la compra es de $890, tu clienta paga $890 y le quedan $1,110 para su siguiente visita."
+      },
+      {
+        "question": "¿Las tarjetas llevan mi diseño?",
+        "answer": "Sí. Con el botón Diseño guardas tus diseños de tarjeta y eliges uno al emitir. Con ese diseño se imprime, se envía por correo y se muestra en la consulta de saldo."
+      },
+      {
+        "question": "¿Se puede programar el envío de una tarjeta digital?",
+        "answer": "Sí. Al emitirla eliges el día del envío y le llega por correo a quien la va a recibir; si capturas su WhatsApp, también por ahí."
+      },
+      {
+        "question": "¿Qué pasa si mi clienta pierde la tarjeta física?",
+        "answer": "La desactivas desde su detalle y ya no se puede canjear."
+      },
+      {
+        "question": "¿Puedo recargar una tarjeta?",
+        "answer": "Sí. Desde su detalle le sumas saldo a la misma tarjeta o ajustas el que tiene."
+      },
+      {
+        "question": "¿Tienen vencimiento?",
+        "answer": "Lo configuras tú: una vigencia en meses o sin expiración. Al vencer, la tarjeta queda como expirada y deja de canjearse."
+      },
+      {
+        "question": "¿Cómo veo el pasivo de las tarjetas?",
+        "answer": "Al venderla, la tarjeta es un pasivo; al canjearla, se vuelve ingreso. Sacs te muestra el pasivo vivo, el ingreso reconocido y el total emitido, siempre al día."
       }
     ]
   },
   "marketing-por-correo": {
+    "enSacs": {
+      "modulo": "Embudos y Campañas",
+      "nota": "Capturas del módulo de Embudos y Campañas de Sacs (octubre de 2026) con una boutique de ejemplo.",
+      "pantallas": [
+        {
+          "id": "campanas",
+          "img": "/images/producto/marketing-por-correo/campanas.webp",
+          "h": 1500,
+          "t": "Campañas",
+          "alt": "Campañas de correo en Sacs con avance de envío y ventas atribuidas"
+        },
+        {
+          "id": "segmentos",
+          "img": "/images/producto/marketing-por-correo/segmentos.webp",
+          "h": 1000,
+          "t": "Segmentos",
+          "alt": "Segmentos de clientes de moda en Sacs armados por comportamiento"
+        },
+        {
+          "id": "plantillas",
+          "img": "/images/producto/marketing-por-correo/plantillas.webp",
+          "h": 1100,
+          "t": "Plantillas",
+          "alt": "Plantillas de correo de moda en Sacs"
+        },
+        {
+          "id": "embudos",
+          "img": "/images/producto/marketing-por-correo/embudos.webp",
+          "h": 1000,
+          "t": "Embudos",
+          "alt": "Embudos automáticos de correo en Sacs con disparador y clientes que compraron"
+        }
+      ],
+      "pasos": [
+        {
+          "p": "campanas",
+          "r": [
+            195,
+            190,
+            1305,
+            915
+          ],
+          "t": "Cada campaña, con lo que vendió",
+          "d": "Avance del envío y ventas atribuidas a cada correo."
+        },
+        {
+          "p": "segmentos",
+          "r": [
+            207,
+            196,
+            1297,
+            491
+          ],
+          "t": "Segmentos por lo que compran",
+          "d": "Compró denim en 90 días, sin compra en 60 días, VIP de una tienda."
+        },
+        {
+          "p": "plantillas",
+          "r": [
+            207,
+            196,
+            1297,
+            747
+          ],
+          "t": "Plantillas con versiones",
+          "d": "Nueva colección, rebajas, llegó tu talla: cada una con su historial."
+        },
+        {
+          "p": "embudos",
+          "r": [
+            207,
+            235,
+            1297,
+            430
+          ],
+          "t": "Embudos que se disparan solos",
+          "d": "Cliente nuevo, vuelta a stock, después de su compra."
+        },
+        {
+          "p": "embudos",
+          "r": [
+            783,
+            235,
+            1148,
+            300
+          ],
+          "t": "Cuántos compraron",
+          "d": "Activos, completados y los que terminaron comprando."
+        }
+      ]
+    },
     "hero": {
       "eyebrow": "Sacs Marketing por Correo",
-      "title": "Marketing por correo, en construcción. Lo automático ya jala.",
-      "subtitle": "Hoy Sacs manda correos automáticos donde más duele: carrito abandonado y avisos de pedido/pago, con tu proveedor de envío conectado. El centro de campañas segmentadas está en piloto con retailers seleccionados — cuéntanos qué quieres mandar y lo activamos contigo.",
+      "title": "Correos que venden, con tus clientas de siempre.",
+      "subtitle": "Segmentos por lo que compran, plantillas de temporada, embudos que se disparan solos y campañas que te dicen cuánto vendieron. Todo con la clientela que ya tienes en Sacs.",
       "image": "/images/marketing-correo-hero.webp",
-      "imageAlt": "Dueña de boutique revisando campaña de email en laptop Sacs"
+      "imageAlt": "Campañas de correo de una boutique en Sacs",
+      "video": {
+        "mp4": "/videos/correo-hero.mp4",
+        "webm": "/videos/correo-hero.webm"
+      },
+      "videoPoster": "/videos/correo-hero-poster.webp"
     },
     "features": [
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 4h16c1 0 2 1 2 2v12c0 1-1 2-2 2H4c-1 0-2-1-2-2V6c0-1 1-2 2-2z\"/><path d=\"M22 6l-10 7L2 6\"/></svg>",
-        "title": "Correos de carrito abandonado",
-        "description": "Recupera ventas de tu tienda en línea: el cliente deja el carrito y Sacs le manda un correo con descuento. Configuras hasta tres correos, cada uno con su % y su asunto."
+        "title": "Segmentos por compra",
+        "description": "Por categoría, tienda, cumpleaños o nivel."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M3 9h18M9 21V9\"/></svg>",
-        "title": "Asuntos con variables",
-        "description": "Personaliza el asunto que ve el cliente en su bandeja con variables que se reemplazan solas (nombre, productos). Con preview del correo antes de que salga."
+        "title": "Plantillas de temporada",
+        "description": "Nueva colección, rebajas y llegó tu talla."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83\"/></svg>",
-        "title": "Avisos por evento del negocio",
-        "description": "Dispara correos automáticos cuando pasa algo: pedido confirmado, pago recibido. Mismas plantillas que tus notificaciones de WhatsApp, gestionadas por evento."
+        "title": "Embudos automáticos",
+        "description": "Bienvenida, vuelta a stock y después de la compra."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l4-4 4 4 5-5\"/></svg>",
-        "title": "Envío con SendGrid integrado",
-        "description": "El motor de correo usa SendGrid: plantillas dinámicas o HTML, adjuntos y seguimiento. Es el mismo enviador que ya mueve carrito abandonado, pedidos e influencers."
+        "title": "Ventas atribuidas",
+        "description": "Cuánto vendió cada campaña."
       }
     ],
-    "showcaseTitle": "El correo que sí se abre. El correo que sí vende.",
+    "showcaseTitle": "El correo que sí vende.",
     "blocks": [
       {
-        "title": "La plantilla lista. Tu marca, puesta.",
-        "description": "Elige un template — bienvenida, nueva temporada, recuperación, cumpleaños — y el sistema ya trae tu logo, tus colores y tu tono. Editas los bloques como si fuera un documento: texto, imagen, botón, producto. Lo que se ve en el preview es lo que llega al inbox.",
+        "title": "Plantillas de temporada, con tu marca.",
+        "description": "Nueva colección, rebajas, llegó tu talla o tu monedero te espera: cada plantilla con sus versiones, lista para una campaña o un embudo.",
         "image": "/images/marketing-correo-plantilla.webp",
         "imageAlt": "Vista previa de plantilla de email con marca aplicada en editor Sacs",
         "link": null,
         "featured": true,
         "variant": "email-template-preview",
-        "cardSize": "lg"
+        "cardSize": "lg",
+        "bullets": [
+          {
+            "label": "Por temporada",
+            "detail": "Otoño-invierno, rebajas, regreso a clases."
+          },
+          {
+            "label": "Versiones",
+            "detail": "Cada cambio queda guardado."
+          },
+          {
+            "label": "Duplicar",
+            "detail": "Partes de una que ya funcionó."
+          }
+        ]
       },
       {
-        "title": "Segmenta por lo que hacen, no por lo que imaginas.",
-        "description": "Filtra tu lista por ticket promedio, categoría comprada, sucursal favorita, días desde la última visita, total gastado en el año. El segmento se arma en segundos porque los datos ya viven en tu POS. No subes CSVs, no pegas listas: exportas directo desde Clientes y disparas.",
+        "title": "Segmenta por lo que compran.",
+        "description": "Armas segmentos con condiciones: compró denim en los últimos 90 días, lleva 60 días sin comprar o es VIP de una tienda. Y si prefieres, una lista fija.",
         "image": "/images/marketing-correo-segmento.webp",
         "imageAlt": "Pantalla de segmentación por comportamiento de cliente en Sacs",
         "link": {
@@ -7483,44 +8131,83 @@ export const pageContent: Record<string, any> = {
           "href": "/producto/clientes-y-crm"
         },
         "featured": true,
-        "variant": "crm-segment-builder"
+        "variant": "crm-segment-builder",
+        "bullets": [
+          {
+            "label": "Por compra",
+            "detail": "Lo que compraron y cuándo."
+          },
+          {
+            "label": "Por tienda y nivel",
+            "detail": "Para hablarle a quien sí le toca."
+          },
+          {
+            "label": "Segmentos o listas",
+            "detail": "Dinámicos o fijos."
+          }
+        ]
       },
       {
-        "title": "Con tu proveedor de correo. Sin atarte a uno.",
-        "description": "Sacs arma el correo y la lista segmentada; el envío lo hace tu proveedor (Mailchimp, Brevo, Resend o el que uses). Nosotros no cobramos por volumen de envío y tú mantienes la reputación del dominio que ya tienes trabajada. En piloto — cuéntanos qué proveedor usas y lo integramos.",
+        "title": "Embudos que trabajan solos.",
+        "description": "Bienvenida a clientas nuevas, aviso cuando vuelve su talla, cuidados después de la compra o reactivación: cada embudo se dispara con un evento y te dice cuántas compraron.",
         "image": "/images/marketing-correo-proveedor.webp",
-        "imageAlt": "Integraciones de proveedores de email conectadas en panel Sacs",
-        "link": {
-          "label": "Ver integraciones",
-          "href": "/producto/integraciones"
-        },
+        "imageAlt": "Embudo automático de correo en Sacs con disparador y clientas que compraron",
+        "link": null,
         "featured": true,
         "variant": "email-provider-connect",
-        "cardSize": "sm"
+        "cardSize": "sm",
+        "bullets": [
+          {
+            "label": "Disparadores",
+            "detail": "Cliente nuevo, vuelta a stock, venta."
+          },
+          {
+            "label": "Activos y completados",
+            "detail": "En qué paso va cada clienta."
+          },
+          {
+            "label": "Cuántas compraron",
+            "detail": "El resultado de cada embudo."
+          }
+        ]
       },
       {
-        "title": "Después del envío, la verdad. ¿Vendió o no?",
-        "description": "Cada campaña muestra aperturas, clics y — lo que de verdad importa — ventas atribuidas en tienda y online durante los 14 días siguientes. Si un correo te generó 48 visitas y $62,300 en caja, lo sabes. Si no vendió nada, también. Dejas de adivinar qué funciona. (en integración con ventas en tienda; hoy disponemos de métricas de aperturas y clics)",
+        "title": "Después del envío, ¿vendió o no?",
+        "description": "Cada campaña muestra su avance de envío y las ventas atribuidas a ese correo. Sabes qué mensaje vendió y cuál no, y las respuestas de tus clientas llegan a Conversaciones.",
         "image": "/images/marketing-correo-atribucion.webp",
         "imageAlt": "Dashboard de atribución de ventas por campaña en Sacs",
         "link": {
-          "label": "Ver analítica",
-          "href": "/producto/analitica"
+          "label": "Ver reportes y analítica",
+          "href": "/producto/reportes-y-analitica"
         },
         "featured": true,
-        "variant": "email-campaign-metrics"
+        "variant": "email-campaign-metrics",
+        "bullets": [
+          {
+            "label": "Avance del envío",
+            "detail": "Cuántos correos salieron."
+          },
+          {
+            "label": "Ventas atribuidas",
+            "detail": "Lo que vendió cada campaña."
+          },
+          {
+            "label": "Conversaciones",
+            "detail": "Las respuestas, en un solo lugar."
+          }
+        ]
       }
     ],
     "testimonial": {
-      "quote": "Mandábamos el mismo correo a toda la lista y cada vez funcionaba peor. Con Sacs armamos tres segmentos — recurrentes, dormidos y VIP — y cada uno recibe algo distinto. El último correo a dormidos recuperó 37 clientes que no pasaban hace 8 meses.",
+      "quote": "Mandábamos el mismo correo a toda la lista. Ahora armamos tres segmentos — recurrentes, dormidas y VIP — y cada uno recibe algo distinto. En cada campaña vemos cuánto vendió.",
       "name": "Regina Meléndez",
       "role": "Directora de Marketing",
       "company": "Casa Ámbar",
-      "stat": "3.4×",
-      "statLabel": "mejor tasa de apertura contra blast genérico"
+      "stat": "3",
+      "statLabel": "segmentos, un correo distinto para cada uno"
     },
-    "interrupt": "El correo genérico muere en promociones,",
-    "interruptStrike": "el correo segmentado llega cuando debe.",
+    "interrupt": "El correo genérico se pierde en promociones,",
+    "interruptStrike": "el segmentado llega cuando debe.",
     "showcaseTabs": [
       {
         "label": "Carrito",
@@ -7558,7 +8245,7 @@ export const pageContent: Record<string, any> = {
           {
             "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 13l4 4L19 7\"/></svg>",
             "title": "Prueba A/B de asunto",
-            "description": "Elige dos asuntos. Sacs manda uno al 10% de la lista, espera 2 horas y envía al resto el que mejor abrió. Tú solo lees el reporte. (depende de las capacidades de tu proveedor email — Mailchimp/Brevo/Resend)"
+            "description": "Escribes dos asuntos y eliges qué porcentaje de la lista recibe la prueba. En el detalle de la campaña ves cuál ganó."
           }
         ]
       },
@@ -7649,9 +8336,9 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/regina-melendez.webp",
         "initials": "RM",
         "color": "#b47a3a",
-        "quote": "Pasamos de un solo blast a tres segmentos: recurrentes, dormidas y VIP. Notamos regresos de clientes dormidos que llevaban meses sin pasar — algo que con el blast único no pasaba.",
+        "quote": "Pasamos de un solo correo para todas a tres segmentos: recurrentes, dormidas y VIP. Las dormidas regresaron a la tienda, y en cada campaña vemos lo que vendió.",
         "name": "Regina Meléndez",
-        "business": "Casa Ámbar",
+        "business": "Casa Ámbar · Moda mujer",
         "location": "México"
       },
       {
@@ -7659,9 +8346,9 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/diego-faundez.webp",
         "initials": "DF",
         "color": "#4a6aa8",
-        "quote": "No quería cambiar de proveedor de correo porque llevaba años construyendo la reputación del dominio. Sacs se integró con el que ya usaba — yo solo armo la campaña y segmento, el envío corre por donde siempre.",
+        "quote": "Armo el segmento de quienes compraron tejido de alpaca y la campaña sale desde Sacs; al día siguiente veo cuánto vendió.",
         "name": "Diego Faúndez",
-        "business": "Tienda Alpaca Andina",
+        "business": "Alpaca Andina · Suéteres y tejidos",
         "location": "Perú"
       },
       {
@@ -7671,135 +8358,280 @@ export const pageContent: Record<string, any> = {
         "color": "#5a8a5f",
         "quote": "Empezamos a separar recurrentes de nuevas. Las campañas para cada grupo suenan distinto — y las dormidas responden mejor cuando reciben algo pensado para ellas.",
         "name": "Cristina Huamán",
-        "business": "Joyería Illari",
+        "business": "Illari · Accesorios",
         "location": "Perú"
       }
     ],
     "faqs": [
       {
         "question": "¿Sacs envía los correos directamente?",
-        "answer": "Hoy no. Sacs arma el correo, segmenta la lista y te conecta con el proveedor de email que ya usas (Mailchimp, Brevo, Resend, entre otros). El envío corre por tu proveedor — así mantienes la reputación del dominio y no pagas dos veces por volumen. Estamos en piloto con retailers seleccionados para validar el flujo antes de abrirlo a todos."
-      },
-      {
-        "question": "¿Qué proveedores de correo están soportados?",
-        "answer": "En el piloto conectamos Mailchimp, Brevo y Resend. Si usas otro, cuéntanos y lo evaluamos — la arquitectura está preparada para integrar SMTP o APIs estándar. No cobramos por volumen de envío."
+        "answer": "Sí. Los correos salen desde el remitente verificado de Sacs con el nombre de tu boutique; el dominio propio llega más adelante."
       },
       {
         "question": "¿Cómo sé si mi campaña sí vendió?",
-        "answer": "Sacs cruza aperturas y clics con las ventas hechas en tienda y en la tienda online durante los 14 días siguientes. Verás ventas atribuidas y revenue por campaña — no solo aperturas."
+        "answer": "Cada campaña muestra las ventas que se le atribuyen, y el tablero suma lo atribuido en los últimos 30 días."
       },
       {
         "question": "¿Puedo usar mi propia plantilla de diseño?",
-        "answer": "Sí. Puedes empezar con una plantilla nuestra y guardarla como tuya, o importar HTML si ya tienes un diseño armado con tu agencia. La plantilla queda disponible para reutilizar en todas las campañas."
+        "answer": "Sí: armas la plantilla por bloques, la duplicas y cada cambio queda como versión."
       },
       {
         "question": "¿Cómo se arman los segmentos?",
-        "answer": "Usas filtros sobre el CRM: ticket promedio, categoría comprada, sucursal, días desde última compra, total gastado, cumpleaños del mes. Combinas filtros con AND/OR. El segmento se guarda y se actualiza automáticamente a medida que los clientes compran."
+        "answer": "Con condiciones: lo que compraron (categoría, marca o producto), cuándo compraron, cuánto gastan, su tienda, su mes de cumpleaños o su nivel de lealtad. El segmento se actualiza solo. Si prefieres, armas una lista fija."
       },
       {
-        "question": "¿Qué pasa con los clientes que se dan de baja?",
-        "answer": "Sacs respeta el opt-out. Cuando un cliente se da de baja, queda marcado en el CRM y no recibe más campañas promocionales — ni aunque califique por filtros. Los correos transaccionales (recibo de compra, notificación de apartado) siguen llegando porque no son marketing."
+        "question": "¿Qué pasa con las clientas que se dan de baja?",
+        "answer": "Cada correo lleva su enlace de baja. Quien se da de baja deja de recibir tus campañas y sale de tus embudos."
       },
       {
         "question": "¿Puedo programar envíos para un día y hora específicos?",
-        "answer": "Sí. Eliges fecha y hora exacta, y Sacs coordina el disparo con tu proveedor para que llegue justo cuando tú quieres. También puedes pausar una campaña antes de que salga si cambias de opinión."
+        "answer": "Sí. La programas con fecha y hora, y mientras está programada la puedes cancelar."
       },
       {
         "question": "¿Funciona la prueba A/B de asunto?",
-        "answer": "Sí. Defines dos asuntos, Sacs envía el primero al 10% de la lista y el segundo a otro 10%. Pasadas 2 horas, envía al 80% restante el que mejor abrió. Solo funciona si el tamaño de la muestra es suficiente."
+        "answer": "Sí: escribes dos asuntos y eliges qué porcentaje de la lista recibe la prueba."
       },
       {
         "question": "¿Las automatizaciones consumen mi cuota de envío?",
-        "answer": "Sí, los correos automáticos (bienvenida, cumpleaños, carrito abandonado) se envían a través de tu proveedor de email y cuentan contra tu cuota ahí. Sacs no te cobra extra por volumen."
+        "answer": "Las automatizaciones no se cobran aparte de tu plan. Si quieres, le pones un tope mensual a los correos de campaña."
       }
     ]
   },
   "marketing-por-whatsapp": {
+    "enSacs": {
+      "modulo": "Notificaciones",
+      "nota": "Capturas de las notificaciones automáticas de Sacs (octubre de 2026) con una boutique de ejemplo.",
+      "pantallas": [
+        {
+          "id": "lealtad",
+          "img": "/images/producto/marketing-por-whatsapp/lealtad.webp",
+          "h": 2100,
+          "t": "Notificaciones · Lealtad",
+          "alt": "Notificaciones automáticas de lealtad en Sacs por WhatsApp y correo"
+        },
+        {
+          "id": "apartados",
+          "img": "/images/producto/marketing-por-whatsapp/apartados.webp",
+          "h": 1500,
+          "t": "Notificaciones · Pedidos",
+          "alt": "Notificaciones automáticas de pedidos en Sacs por WhatsApp y correo"
+        }
+      ],
+      "pasos": [
+        {
+          "p": "lealtad",
+          "r": [
+            330,
+            48,
+            1110,
+            126
+          ],
+          "t": "WhatsApp y correo, por evento",
+          "d": "Cada aviso a tus clientas con su canal: lo activas o lo pruebas."
+        },
+        {
+          "p": "lealtad",
+          "r": [
+            373,
+            458,
+            1067,
+            747
+          ],
+          "t": "Bienvenida al programa",
+          "d": "Al unirse, tu clienta recibe su aviso por WhatsApp y por correo."
+        },
+        {
+          "p": "lealtad",
+          "r": [
+            373,
+            759,
+            1067,
+            1048
+          ],
+          "t": "Cashback abonado",
+          "d": "Se entera en el momento en que le cae saldo en su monedero."
+        },
+        {
+          "p": "lealtad",
+          "r": [
+            373,
+            1361,
+            1067,
+            1650
+          ],
+          "t": "Subiste de nivel",
+          "d": "El aviso sale solo cuando sube de nivel en el programa."
+        },
+        {
+          "p": "apartados",
+          "r": [
+            373,
+            334,
+            1067,
+            623
+          ],
+          "t": "Pedido confirmado",
+          "d": "Plantilla aprobada por Meta: tú solo la activas o mandas una prueba."
+        },
+        {
+          "p": "apartados",
+          "r": [
+            373,
+            936,
+            1067,
+            1225
+          ],
+          "t": "Listo para recoger",
+          "d": "Cuando el pedido está preparado, tu clienta lo sabe sin que nadie le escriba."
+        }
+      ]
+    },
     "hero": {
-      "eyebrow": "Sacs Marketing por WhatsApp · Piloto",
-      "title": "Avísale a tu cliente por WhatsApp, sin escribir nada.",
-      "subtitle": "Notificaciones automáticas a tus clientes por WhatsApp y Correo, disparadas por los eventos reales de tu negocio: ticket de compra, abono a apartado, pedido listo, recordatorio de pago. Plantillas aprobadas por Meta y enviadas vía Kapso. Activas, pruebas y listo.",
+      "eyebrow": "Sacs Marketing por WhatsApp",
+      "title": "Avísale a tu clienta por WhatsApp, sin escribir nada.",
+      "subtitle": "Avisos automáticos por WhatsApp y correo que salen solos con cada evento de tu boutique: bienvenida al programa, cashback abonado, recompensa canjeada, pedido confirmado o listo para recoger. Con plantillas aprobadas por Meta.",
       "image": "/images/marketing-whatsapp-hero.webp",
-      "imageAlt": "Cliente leyendo promoción de boutique en WhatsApp"
+      "imageAlt": "Notificaciones automáticas por WhatsApp de una boutique en Sacs",
+      "video": {
+        "mp4": "/videos/whatsapp-hero.mp4",
+        "webm": "/videos/whatsapp-hero.webm"
+      },
+      "videoPoster": "/videos/whatsapp-hero-poster.webp"
     },
     "features": [
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z\"/></svg>",
-        "title": "WhatsApp con plantilla aprobada por Meta",
-        "description": "Nada de WhatsApp Web personal. Los mensajes salen con plantillas pre-aprobadas por Meta y se envían vía Kapso. Cada evento trae su plantilla base lista; solo la activas con un switch."
+        "title": "Aprobadas por Meta",
+        "description": "Plantillas listas; tú solo las activas."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6L9 17l-5-5\"/></svg>",
-        "title": "Se dispara solo con cada evento",
-        "description": "Vendes y sale el comprobante. Abonan a un apartado y llega el recibo. El pedido queda preparado y el cliente se entera. Cada aviso parte de un evento real del POS, Pedidos, Apartados o la tienda en linea: nadie redacta a mano."
+        "title": "Se dispara solo",
+        "description": "Cada evento de la boutique manda su aviso."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4\"/></svg>",
-        "title": "WhatsApp y Correo, módulo por módulo",
-        "description": "Las notificaciones están agrupadas por módulo (Punto de Venta, Pedidos, Apartados, Cotizaciones, Comercio electrónico, Tarjetas de regalo, Lealtad, Órdenes de servicio, Eventos, Consignación). Por cada evento prendes o apagas WhatsApp y Correo de forma independiente."
+        "title": "WhatsApp y correo",
+        "description": "Por evento, eliges el canal."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l4-4 4 4 5-5\"/></svg>",
         "title": "Prueba antes de prender",
-        "description": "Envía un WhatsApp o correo de prueba a tu propio número o email para ver exactamente cómo le llega al cliente. Y revisa el estado de la plantilla (Aprobada, Pendiente, Rechazada) sin salir del panel."
+        "description": "Un aviso de prueba a tu número."
       }
     ],
-    "showcaseTitle": "La conversación con muy alta apertura. Sin quemar tu número.",
+    "showcaseTitle": "Cada aviso, a tiempo. Sin escribir nada.",
     "blocks": [
       {
-        "title": "Tu número oficial. Tu marca verificada.",
-        "description": "Conectas un número WhatsApp Business propio con marca verificada — checkmark verde oficial cuando Meta lo aprueba. Clientes ven tu logo en el chat, tu catálogo enlazado y la tranquilidad de que están hablando con el retailer real, no con un bot pirata.",
+        "title": "Cada evento, su aviso.",
+        "description": "Bienvenida al programa, cashback abonado, recompensa canjeada, subiste de nivel: cada evento tiene su aviso por WhatsApp y por correo, y tú decides cuáles se prenden.",
         "image": "/images/marketing-whatsapp-verificado.webp",
         "imageAlt": "Número WhatsApp Business verificado con marca de retailer en móvil",
         "link": null,
         "featured": true,
-        "variant": "whatsapp-verified-profile"
+        "variant": "whatsapp-verified-profile",
+        "bullets": [
+          {
+            "label": "Por evento",
+            "detail": "Lealtad, pedidos, apartados y más."
+          },
+          {
+            "label": "WhatsApp y correo",
+            "detail": "Un interruptor por canal."
+          },
+          {
+            "label": "Tú lo prendes",
+            "detail": "Y lo apagas cuando quieras."
+          }
+        ]
       },
       {
-        "title": "Plantillas aprobadas. Envíos a escala.",
-        "description": "Meta exige plantillas pre-aprobadas para mensajes masivos. Sacs trae plantillas base para los casos típicos de retail — recordatorio, promoción, confirmación — y te acompaña a registrar las tuyas propias. Una vez aprobadas, las usas miles de veces sin pedir permiso cada envío.",
+        "title": "Plantillas aprobadas por Meta.",
+        "description": "El texto de WhatsApp viene en plantillas ya aprobadas por Meta y lo administra Sacs, así tus avisos no se bloquean. Tú solo los activas. Las campañas masivas y el número propio son Sacs Inbox, un servicio aparte.",
         "image": "/images/marketing-whatsapp-plantilla.webp",
         "imageAlt": "Editor de plantillas de WhatsApp con estado de aprobación en Sacs",
         "link": null,
         "featured": true,
-        "variant": "whatsapp-template-approval"
+        "variant": "whatsapp-template-approval",
+        "bullets": [
+          {
+            "label": "Aprobadas por Meta",
+            "detail": "Sin trámites de tu lado."
+          },
+          {
+            "label": "Sin redactar",
+            "detail": "El texto ya viene escrito."
+          },
+          {
+            "label": "Prueba antes de prender",
+            "detail": "Mandas un aviso de prueba."
+          }
+        ]
       },
       {
-        "title": "Campañas segmentadas. No blast a todos.",
-        "description": "Elige el segmento (dormidos de 90 días, top 10% de ticket, clientes de una sucursal, compradores de la temporada pasada) y dispara la campaña. WhatsApp es un canal íntimo — mandar lo mismo a todos te hace perder suscriptores rápido. Segmenta, personaliza y envía cuando tenga sentido.",
+        "title": "Pedidos y apartados, avisados.",
+        "description": "Pedido confirmado, abono registrado, pedido preparado: tu clienta recibe cada paso sin que nadie de la tienda tenga que escribirle.",
         "image": "/images/marketing-whatsapp-segmento.webp",
-        "imageAlt": "Pantalla de segmento de clientes para campaña de WhatsApp",
-        "link": {
-          "label": "Ver clientes y CRM",
-          "href": "/producto/clientes-y-crm"
-        },
-        "featured": true,
-        "variant": "crm-segment-builder"
-      },
-      {
-        "title": "Notificaciones que suman, no que molestan.",
-        "description": "Confirmación cuando la compra queda registrada. Aviso cuando el apartado está a 3 días de vencer. Notificación cuando el pedido especial llegó. Recordatorio cuando el producto en carrito online sigue disponible. Cada disparo parte de un evento real — y el cliente las recibe porque realmente las necesita.",
-        "image": "/images/marketing-whatsapp-notificaciones.webp",
-        "imageAlt": "Mensajes automáticos de WhatsApp notificando apartado por vencer y pedido listo",
+        "imageAlt": "Avisos automáticos de pedidos y apartados por WhatsApp en Sacs",
         "link": {
           "label": "Ver apartados y pedidos",
           "href": "/producto/apartados-y-pedidos"
         },
         "featured": true,
         "variant": "whatsapp-notifications",
-        "cardSize": "lg"
+        "bullets": [
+          {
+            "label": "Pedido confirmado",
+            "detail": "En cuanto se registra."
+          },
+          {
+            "label": "Abonos",
+            "detail": "Cada pago a su pedido o apartado."
+          },
+          {
+            "label": "Listo para recoger",
+            "detail": "Cuando el pedido está preparado."
+          }
+        ]
+      },
+      {
+        "title": "Lealtad que se nota.",
+        "description": "Cuando le abonas cashback, canjea una recompensa o sube de nivel, tu clienta se entera por WhatsApp en ese momento.",
+        "image": "/images/marketing-whatsapp-notificaciones.webp",
+        "imageAlt": "Avisos automáticos de WhatsApp de cashback, recompensa y nivel",
+        "link": {
+          "label": "Ver programa de lealtad",
+          "href": "/producto/programa-de-lealtad"
+        },
+        "featured": true,
+        "variant": "wa-lealtad",
+        "cardSize": "lg",
+        "bullets": [
+          {
+            "label": "Cashback abonado",
+            "detail": "Sabe que tiene saldo."
+          },
+          {
+            "label": "Recompensa canjeada",
+            "detail": "Con lo que se llevó."
+          },
+          {
+            "label": "Subiste de nivel",
+            "detail": "Y lo que gana con eso."
+          }
+        ]
       }
     ],
     "testimonial": {
-      "quote": "Usábamos el WhatsApp de una vendedora para mandar promociones — la cuenta terminó baneada dos veces. Migrar a WhatsApp Business oficial con Sacs fue el paso que debíamos haber dado hace dos años. Primera campaña segmentada: 48% de respuestas.",
+      "quote": "Antes una vendedora avisaba a mano que el pedido estaba listo; ahora el aviso sale solo y nadie se olvida.",
       "name": "Mariana Peñaloza",
       "role": "Directora Comercial",
-      "company": "Colmena Accesorios",
-      "stat": "48%",
-      "statLabel": "tasa de respuesta en campañas segmentadas"
+      "company": "Colmena",
+      "stat": "0",
+      "statLabel": "avisos escritos a mano"
     },
-    "interrupt": "El número personal se quema por spamear,",
-    "interruptStrike": "el BSP oficial se gana muy alta apertura.",
+    "interrupt": "El mensaje que se escribe a mano se olvida,",
+    "interruptStrike": "el que sale solo llega a tiempo.",
     "showcaseTabs": [
       {
         "label": "Por evento",
@@ -7928,9 +8760,9 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/mariana-penaloza.webp",
         "initials": "MP",
         "color": "#b47a3a",
-        "quote": "Cerramos el piloto con BSP oficial. Dejamos de depender del WhatsApp personal de una vendedora, que se quemaba cuando mandaba muchos mensajes. Por fin tenemos un canal que no se nos cae.",
+        "quote": "Antes una vendedora avisaba a mano que el pedido estaba listo; ahora el aviso sale solo y nadie se olvida.",
         "name": "Mariana Peñaloza",
-        "business": "Colmena Accesorios",
+        "business": "Colmena · Accesorios",
         "location": "República Dominicana"
       },
       {
@@ -7938,9 +8770,9 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/joaquin-ibarra.webp",
         "initials": "JI",
         "color": "#4a6aa8",
-        "quote": "Los apartados se nos vencían sin pago — nadie los recordaba. Con el piloto de recordatorios automáticos a 3 días del vencimiento, el cliente vuelve antes. Todavía medimos el impacto fino, pero el flujo está activo.",
+        "quote": "Cada abono a un apartado le llega a la clienta por WhatsApp con su saldo; ya no nos llaman a preguntar cuánto deben.",
         "name": "Joaquín Ibarra",
-        "business": "Zapatería Ibarra",
+        "business": "Ibarra · Calzado",
         "location": "Argentina"
       },
       {
@@ -7948,135 +8780,275 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/paola-restrepo.webp",
         "initials": "PR",
         "color": "#5a8a5f",
-        "quote": "Tratamos WhatsApp como lo que es: un canal más que debe tener presupuesto, plantillas aprobadas y métricas. Sacs nos obliga a disciplina que antes no teníamos.",
+        "quote": "Prendimos los avisos de cashback y de nivel; las clientas vuelven a usar su saldo porque saben que lo tienen.",
         "name": "Paola Restrepo",
-        "business": "Moda Paola",
+        "business": "Paola · Moda mujer",
         "location": "Colombia"
       }
     ],
     "faqs": [
       {
-        "question": "¿Sacs envía los WhatsApp directamente?",
-        "answer": "No. Sacs orquesta el flujo (plantillas, segmentos, disparos, métricas) y se conecta con un BSP oficial certificado por Meta (360dialog, Gupshup u otros según tu país). El envío real lo hace el BSP con tu número verificado. La integración está en piloto — lanzamos con retailers seleccionados en las próximas semanas."
+        "question": "¿Necesito mi propio número o cuenta de Meta?",
+        "answer": "No. Los avisos salen con plantillas aprobadas por Meta que administra Sacs; tú solo los activas."
       },
       {
-        "question": "¿Puedo usar mi número personal de WhatsApp?",
-        "answer": "No lo recomendamos y Meta tampoco. Para envíos masivos y automáticos necesitas WhatsApp Business API con un número dedicado. Sacs te guía en el proceso de migración del número actual o alta de uno nuevo con el BSP."
+        "question": "¿Puedo editar el texto?",
+        "answer": "El del correo sí; el de WhatsApp lo administra Sacs para mantener la plantilla aprobada."
       },
       {
-        "question": "¿Qué necesito para empezar?",
-        "answer": "Cuenta Meta Business verificada, un número de teléfono disponible (no puede estar ya activo en WhatsApp personal), y elegir un BSP. Sacs acompaña el proceso de alta — suele tomar entre 3 y 10 días hábiles dependiendo del país."
+        "question": "¿Cómo pruebo un aviso?",
+        "answer": "Con «Enviar prueba» en cada canal, antes de prenderlo."
       },
       {
-        "question": "¿Cuánto cuesta mandar un WhatsApp?",
-        "answer": "Meta cobra por conversación iniciada (categorías: marketing, utility, authentication, service). El precio varía por país — típicamente entre 0.04 y 0.15 USD por conversación de marketing. Sacs muestra el costo en el panel antes de cada envío y en la bitácora después."
+        "question": "¿Qué eventos hay?",
+        "answer": "Lealtad, pedidos, apartados, cotizaciones, tarjetas de regalo, comercio electrónico y más."
       },
       {
-        "question": "¿Tengo que conseguir opt-in explícito?",
-        "answer": "Sí, es requisito de Meta. Sacs solo dispara campañas a clientes que marcaron explícitamente \"acepto recibir comunicaciones por WhatsApp\" en el punto de venta o en el checkout online. Mandar sin opt-in lleva a reportes de spam y baja la calidad de tu número."
-      },
-      {
-        "question": "¿Por qué todo pasa por plantillas pre-aprobadas?",
-        "answer": "Es regla de Meta. Fuera de la ventana de 24 horas desde la última conversación del cliente, solo puedes mandar plantillas aprobadas previamente. Dentro de la ventana puedes escribir libre. Sacs respeta la regla automáticamente — jamás envía algo que te meta en problemas."
-      },
-      {
-        "question": "¿Cuánto tarda Meta en aprobar una plantilla?",
-        "answer": "Normalmente entre minutos y 24 horas. Si la plantilla viola políticas (promesas exageradas, lenguaje agresivo, spam), Meta la rechaza y Sacs te muestra el motivo para que ajustes y vuelvas a enviar."
-      },
-      {
-        "question": "¿Las notificaciones automáticas y las campañas manuales cuentan igual?",
-        "answer": "Cuentan como conversaciones iniciadas, pero Meta las clasifica distinto. Una notificación utility (pedido listo, apartado por vencer) suele costar menos que una de marketing. Sacs usa la categoría correcta automáticamente."
-      },
-      {
-        "question": "¿Qué pasa si el cliente responde al WhatsApp automático?",
-        "answer": "Se abre una ventana de sesión de 24 horas. Durante esa ventana puedes contestar con mensajes libres (sin plantilla). Sacs ruteará la respuesta al equipo que definas — asesor de la sucursal, soporte central o agente IA si lo tienes activado."
+        "question": "¿Puedo mandar campañas o usar mi número?",
+        "answer": "Eso es Sacs Inbox, un servicio aparte."
       }
     ]
   },
   "membresias-y-suscripciones": {
+    "enSacs": {
+      "modulo": "Membresías",
+      "nota": "Capturas del módulo de Membresías de Sacs (octubre de 2026) con una boutique de ejemplo.",
+      "pantallas": [
+        {
+          "id": "planes",
+          "img": "/images/producto/membresias-y-suscripciones/planes.webp",
+          "h": 1000,
+          "t": "Planes",
+          "alt": "Planes de membresía de moda en Sacs con precio mensual y anual y beneficios contados"
+        },
+        {
+          "id": "membresias",
+          "img": "/images/producto/membresias-y-suscripciones/membresias.webp",
+          "h": 1400,
+          "t": "Membresías",
+          "alt": "Membresías vendidas en Sacs con clienta, plan, vigencia y consumo de beneficios"
+        },
+        {
+          "id": "tablero",
+          "img": "/images/producto/membresias-y-suscripciones/tablero.webp",
+          "h": 1700,
+          "t": "Tablero",
+          "alt": "Tablero de membresías en Sacs: ingresos, activas, renovaciones, utilización y rentabilidad"
+        }
+      ],
+      "pasos": [
+        {
+          "p": "planes",
+          "r": [
+            95,
+            369,
+            409,
+            570
+          ],
+          "t": "Planes con beneficios contados",
+          "d": "Ajustes de bastilla, vaporizado o styling: cuántos incluye cada plan."
+        },
+        {
+          "p": "planes",
+          "r": [
+            763,
+            369,
+            1077,
+            610
+          ],
+          "t": "Precio mensual o anual",
+          "d": "Cada plan con su precio por mes y por año, para venderlo en tienda y en línea."
+        },
+        {
+          "p": "membresias",
+          "r": [
+            92,
+            299,
+            1412,
+            969
+          ],
+          "t": "Cada membresía, con su vigencia",
+          "d": "Quién la tiene, qué plan, cuándo vence y cuánto ha usado."
+        },
+        {
+          "p": "tablero",
+          "r": [
+            88,
+            355,
+            1420,
+            592
+          ],
+          "t": "Activas, por vencer y canceladas",
+          "d": "Ingresos del año, membresías vigentes por plan y renovaciones próximas."
+        },
+        {
+          "p": "tablero",
+          "r": [
+            92,
+            604,
+            1412,
+            711
+          ],
+          "t": "Lo vendido contra lo consumido",
+          "d": "Cuánto se ha cobrado, cuánto se ha usado y cuánto falta por consumir."
+        },
+        {
+          "p": "tablero",
+          "r": [
+            92,
+            733,
+            1412,
+            2202
+          ],
+          "t": "Si el programa deja dinero",
+          "d": "Cobrado contra el costo real de los servicios: utilidad y margen."
+        }
+      ]
+    },
     "hero": {
-      "eyebrow": "Sacs Membresías y Suscripciones · Piloto",
-      "title": "Membresías de pago que dan acceso inmediato a tus mejores beneficios",
-      "subtitle": "Dentro del Programa de Lealtad de Sacs creas membresías de pago — únicas, mensuales o anuales — que llevan a tu cliente directo a un nivel con descuentos, puntos multiplicados y beneficios, sin esperar a acumular. Tú defines el nivel, el precio y la duración.",
+      "eyebrow": "Sacs Membresías y Suscripciones",
+      "title": "Membresías de pago con beneficios que se cuentan.",
+      "subtitle": "Planes como un club de ajustes y styling: precio mensual o anual, beneficios contados por plan y la vigencia de cada membresía. Las vendes en tienda o en línea y el tablero te dice si el programa deja dinero.",
       "image": "/images/membresias-y-suscripciones-sistema.webp",
-      "imageAlt": "Programa de membresías y lealtad en Sacs"
+      "imageAlt": "Membresías de una boutique en Sacs",
+      "video": {
+        "mp4": "/videos/membresias-hero.mp4",
+        "webm": "/videos/membresias-hero.webm"
+      },
+      "videoPoster": "/videos/membresias-hero-poster.webp"
     },
     "features": [
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg>",
-        "title": "Tres formas de cobrar la membresía",
-        "description": "Habilitas pago único, mensual o anual (o los tres) para cada membresía, cada uno con su precio en pesos. El cliente elige cómo entrar; tú decides qué opciones ofreces."
+        "title": "Beneficios contados",
+        "description": "Cada plan dice qué incluye y cuántas veces."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2l3 7h7l-5.5 4.5 2 7.5L12 17l-6.5 4 2-7.5L2 9h7z\"/></svg>",
-        "title": "Acceso inmediato a un nivel",
-        "description": "Cada membresía está ligada a un nivel de lealtad (Bronce, Plata, Oro o los que tú nombres). Al contratarla, el cliente obtiene de inmediato los beneficios de ese nivel sin tener que acumular puntos primero."
+        "title": "Mensual o anual",
+        "description": "Precio por mes y por año en cada plan."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 12V8a2 2 0 00-2-2H6a2 2 0 00-2 2v4\"/><path d=\"M2 12h20M12 12v6\"/></svg>",
-        "title": "Niveles con beneficios que tú defines",
-        "description": "En el builder de niveles configuras puntos mínimos, multiplicador de puntos, multiplicador de cashback y una lista libre de beneficios (envío gratis, acceso a eventos, etc.). La membresía desbloquea todo eso de un jalón."
+        "title": "Vigencia y uso",
+        "description": "Cada membresía con su fecha y sus beneficios usados."
       },
       {
         "icon": "<svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"M7 14l4-4 4 4 5-5\"/></svg>",
-        "title": "Duración a tu medida",
-        "description": "Defines la vigencia de la membresía en días (365 por defecto). Tú controlas cuánto dura el acceso al nivel para cada plan que crees."
+        "title": "Rentabilidad real",
+        "description": "Lo cobrado contra lo que cuestan los servicios."
       }
     ],
     "showcaseTitle": "La venta única se acaba. El miembro vuelve todos los meses.",
     "blocks": [
       {
-        "title": "Planes con cobro automático. Sin ir a pedir el pago.",
-        "description": "Configuras los planes (mensual, trimestral, anual) y Sacs orquesta el cobro con tu pasarela — Stripe, MercadoPago u otra. Si la tarjeta falla, reintenta 3 veces con intervalo, avisa al cliente y pausa el plan sin perderlo. Tú cobras sin tener que cobrarle a nadie.",
+        "title": "Planes con beneficios contados.",
+        "description": "Un club con dos ajustes de bastilla al mes, otro con limpieza y lustrado de calzado: cada plan dice qué incluye y cuántas veces. Con Stripe, la membresía se cobra sola cada mes.",
         "image": "/images/membresias-recurrente.webp",
-        "imageAlt": "Panel de suscripciones con cobro automático y reintentos en Sacs",
+        "imageAlt": "Plan de membresía de moda en Sacs con precio mensual y anual y beneficios contados",
         "link": null,
         "featured": true,
-        "variant": "membership-recurring"
+        "variant": "membership-recurring",
+        "bullets": [
+          {
+            "label": "Beneficios por plan",
+            "detail": "Ajustes, vaporizado, styling, calzado."
+          },
+          {
+            "label": "Mensual o anual",
+            "detail": "Cada plan con sus dos precios."
+          },
+          {
+            "label": "En tienda y en línea",
+            "detail": "Lo publicas en tu punto de venta."
+          }
+        ]
       },
       {
-        "title": "Niveles con reglas claras. Beneficios sin ambigüedad.",
-        "description": "Bronze entra con $99 al mes y lleva 10% de descuento. Silver son $249 y suma puntos doble + acceso anticipado. Gold son $599 con envío gratis y regalo de cumpleaños. Tú defines los nombres, los precios y los beneficios. El cajero ve el nivel al escanear y el beneficio se aplica solo.",
+        "title": "Cada membresía con su vigencia.",
+        "description": "Quién la tiene, qué plan, desde cuándo y hasta cuándo, si se vendió en tienda o en línea y cuántos beneficios ha usado. Al vencer, la renuevas o la cambias de plan.",
         "image": "/images/membresias-niveles.webp",
-        "imageAlt": "Tarjetas de niveles de membresía Bronze Silver Gold con beneficios",
+        "imageAlt": "Membresía de una clienta en Sacs con vigencia, origen y beneficios usados",
         "link": {
           "label": "Ver programa de lealtad",
-          "href": "/producto/programa-lealtad"
+          "href": "/producto/programa-de-lealtad"
         },
         "featured": true,
         "variant": "membership-tiers-pricing",
-        "cardSize": "lg"
+        "cardSize": "lg",
+        "bullets": [
+          {
+            "label": "Vigencia",
+            "detail": "Inicio, fin y días restantes."
+          },
+          {
+            "label": "Origen",
+            "detail": "Sucursal o tienda en línea."
+          },
+          {
+            "label": "Uso de beneficios",
+            "detail": "Usados contra disponibles."
+          }
+        ]
       },
       {
-        "title": "La credencial vive en su celular.",
-        "description": "Cada miembro recibe su tarjeta digital con QR en Apple Wallet, Google Wallet o como enlace directo. Al comprar, muestra el código, el cajero lo escanea y Sacs aplica nivel, beneficio y puntos al instante. Sin buscar por teléfono, sin pedir credencial física, sin fricción. (Apple/Google Wallet passes en roadmap)",
+        "title": "En la ficha de tu clienta.",
+        "description": "Su membresía aparece en su ficha con los beneficios usados y disponibles y el ahorro que ya aprovechó; y se la mandas para que la tenga a la mano.",
         "image": "/images/membresias-credencial.webp",
-        "imageAlt": "Credencial digital de membresía en Apple Wallet siendo escaneada en caja",
+        "imageAlt": "Membresía de una clienta con beneficios usados, disponibles y ahorro",
         "link": null,
         "featured": true,
         "variant": "membership-wallet-pass",
-        "cardSize": "lg"
+        "cardSize": "lg",
+        "bullets": [
+          {
+            "label": "Usados y disponibles",
+            "detail": "Beneficio por beneficio."
+          },
+          {
+            "label": "Ahorro aprovechado",
+            "detail": "Lo que se ha ahorrado con su plan."
+          },
+          {
+            "label": "Se la mandas",
+            "detail": "Su membresía, en su celular."
+          }
+        ]
       },
       {
-        "title": "Retención medida. LTV entendido.",
-        "description": "Dashboard con MRR (ingreso recurrente mensual), churn (quién se da de baja y cuándo), LTV por nivel y conversión de free a paid. Ves que los Gold duran 14 meses en promedio y gastan 4× el ticket del cliente regular — y ajustas el beneficio del Silver para empujarlo a subir de nivel. (dashboard con MRR, churn y LTV en desarrollo)",
+        "title": "¿El programa deja dinero?",
+        "description": "Ingresos, membresías activas y por vencer, utilización, lo vendido contra lo consumido y la rentabilidad por plan y por servicio.",
         "image": "/images/membresias-metricas.webp",
-        "imageAlt": "Dashboard de métricas de suscripciones con MRR churn y LTV por nivel",
+        "imageAlt": "Tablero de membresías con cobrado, consumido, pendiente y margen",
         "link": {
-          "label": "Ver analítica",
-          "href": "/producto/analitica"
+          "label": "Ver reportes y analítica",
+          "href": "/producto/reportes-y-analitica"
         },
         "featured": true,
-        "variant": "membership-mrr-dashboard"
+        "variant": "membership-mrr-dashboard",
+        "bullets": [
+          {
+            "label": "Por vencer",
+            "detail": "Las renovaciones que vienen."
+          },
+          {
+            "label": "Vendido contra consumido",
+            "detail": "Lo cobrado y lo ya usado."
+          },
+          {
+            "label": "Rentabilidad",
+            "detail": "Por plan y por servicio."
+          }
+        ]
       }
     ],
     "testimonial": {
-      "quote": "Lanzamos una membresía de $299 al mes con acceso a descuentos y preventas. A los 5 meses tenemos 420 socios activos, eso son $125 mil de ingreso recurrente que antes no existía. La recompra entre socios es 3× comparada con el cliente regular.",
+      "quote": "Lanzamos Club Calzado con limpieza y lustrado incluidos; el tablero nos dice que el plan sí deja margen.",
       "name": "Sofía Arellano",
       "role": "Fundadora",
-      "company": "Club Maderas Vinos Vinos",
-      "stat": "$125k",
-      "statLabel": "MRR recurrente desde cero en 5 meses"
+      "company": "Maderas",
+      "stat": "2",
+      "statLabel": "servicios incluidos, contados en cada membresía"
     },
     "interrupt": "La venta única depende del regreso,",
     "interruptStrike": "la suscripción asegura el ingreso.",
@@ -8208,9 +9180,9 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/sofia-arellano.webp",
         "initials": "SA",
         "color": "#b47a3a",
-        "quote": "Vamos a lanzar piloto de membresía con Sacs — $299 al mes con descuento directo en compras y acceso a preventas. Esperamos construir ingreso recurrente que hoy no existe en nuestra operación.",
+        "quote": "Lanzamos Club Calzado con limpieza y lustrado incluidos; el tablero nos dice que el plan sí deja margen.",
         "name": "Sofía Arellano",
-        "business": "Club Maderas Vinos Vinos",
+        "business": "Maderas · Calzado y moda hombre",
         "location": "Paraguay"
       },
       {
@@ -8218,9 +9190,9 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/rodrigo-valdivia.webp",
         "initials": "RV",
         "color": "#4a6aa8",
-        "quote": "En la Enoteca queremos que el socio se inscriba solo al ver el ahorro en su ticket. El piloto con Sacs nos permite probar ese efecto antes de escalarlo al resto de las sucursales.",
+        "quote": "En la sastrería queremos que el cliente vea cuántos ajustes le quedan en su plan; con Sacs lo medimos.",
         "name": "Rodrigo Valdivia",
-        "business": "Enoteca del Valle",
+        "business": "Del Valle · Sastrería",
         "location": "Uruguay"
       },
       {
@@ -8228,48 +9200,40 @@ export const pageContent: Record<string, any> = {
         "image": "/images/testimonials/vanessa-otero.webp",
         "initials": "VO",
         "color": "#5a8a5f",
-        "quote": "Los cobros recurrentes fallan — es parte del juego. Lo que buscamos en el piloto de Sacs es que los intentos de cobro y los avisos al cliente no nos consuman al equipo. Estamos construyendo ese flujo ahora.",
+        "quote": "Si una tarjeta falla, Stripe reintenta el cobro y la clienta recibe el enlace para actualizarla. Ya nadie del equipo anda persiguiendo pagos.",
         "name": "Vanessa Otero",
-        "business": "Perfumería Atenea",
+        "business": "Atenea · Calzado",
         "location": "Ecuador"
       }
     ],
     "faqs": [
       {
-        "question": "¿Cuándo está disponible Membresías y Suscripciones?",
-        "answer": "Está en roadmap. Lanzamos con retailers piloto seleccionados en las próximas semanas — primero módulo de cobro recurrente y niveles, luego portal de miembro y credencial digital. Si quieres ser de los primeros, escríbenos y coordinamos un piloto adaptado a tu operación."
+        "question": "¿Qué incluye un plan?",
+        "answer": "Los beneficios que tú decidas, contados: dos ajustes de bastilla, cuatro planchados o una sesión de styling. Cada membresía lleva la cuenta de lo usado y lo disponible."
       },
       {
-        "question": "¿Con qué pasarelas de pago se integra?",
-        "answer": "La integración inicial incluye Stripe, MercadoPago, Conekta y PayPal. Tu relación comercial es con la pasarela — Sacs orquesta la lógica de la suscripción (ciclos, reintentos, prorrateo) sobre la pasarela que ya uses."
+        "question": "¿Puedo cobrarlo mensual o anual?",
+        "answer": "Sí. Cada plan tiene su precio por mes y por año."
       },
       {
-        "question": "¿Qué pasa si la tarjeta del miembro falla?",
-        "answer": "Sacs reintenta el cobro en día 1, día 3 y día 7 con notificaciones al cliente. Si al día 10 no hay pago, el plan se pausa automáticamente — el miembro pierde los beneficios pero no se da de baja. Puede reactivar actualizando su método de pago desde el portal."
+        "question": "¿Dónde se venden las membresías?",
+        "answer": "En sucursal, desde tu punto de venta, y en línea: publicas el plan y tu clienta lo compra desde su celular."
       },
       {
-        "question": "¿Puedo ofrecer prueba gratis?",
-        "answer": "Sí. Configuras 7, 14 o 30 días de trial. Sacs guarda la tarjeta al alta, no cobra hasta que termine la prueba y cobra el primer ciclo si el cliente no canceló. El cliente puede cancelar durante el trial sin cargo."
+        "question": "¿El cobro es automático?",
+        "answer": "Sí, con Stripe. La membresía se cobra sola cada mes. Si un pago falla, Stripe lo reintenta y tu clienta recibe un enlace para actualizar su tarjeta; durante los días de gracia sigue usando sus beneficios."
       },
       {
-        "question": "¿Los beneficios se aplican en caja sin que el cajero haga nada?",
-        "answer": "Sí. Al escanear el QR de la credencial o identificar al cliente por teléfono, Sacs reconoce el nivel y aplica el % de descuento, el multiplicador de puntos y cualquier otro beneficio automáticamente. El cajero solo cobra."
+        "question": "¿Puedo renovar o cambiar de plan?",
+        "answer": "Sí. Desde la membresía la renuevas o la cambias a otro plan; queda encadenada a la anterior para que no pierdas el historial."
       },
       {
-        "question": "¿Puedo combinar membresía con programa de puntos?",
-        "answer": "Sí — de hecho funcionan juntos. El miembro acumula puntos del programa general pero con multiplicador (2× o 3× según su nivel). Los puntos se canjean igual, pero rinden mucho más. Los miembros sienten que cada peso gastado trabaja doble."
+        "question": "¿Cómo ve la clienta su membresía?",
+        "answer": "En su portal: su plan, su vigencia, los beneficios que le quedan y su código QR. Se lo mandas desde Sacs."
       },
       {
-        "question": "¿Cómo se calcula el LTV y el churn?",
-        "answer": "LTV = (ticket promedio × ciclos retenidos) − costo de adquisición. Churn = miembros que se dan de baja en el mes / miembros activos al inicio del mes. Sacs muestra ambos desglosados por nivel, para que veas qué nivel retiene mejor y cuál necesita ajuste."
-      },
-      {
-        "question": "¿Cómo se maneja contablemente un cobro anual?",
-        "answer": "Un plan anual de $3,600 cobrado en enero no es ingreso de enero — son $300 al mes de ingreso reconocido durante 12 meses. El resto es pasivo diferido. Sacs entrega el reporte mes a mes listo para tu contador; tú cumples con NIF/IFRS sin pensarlo."
-      },
-      {
-        "question": "¿El miembro puede cancelar en cualquier momento?",
-        "answer": "Sí. Sacs no te permite poner obstáculos legales a la cancelación — cumplir con leyes de consumidor de cada país es obligatorio. El miembro cancela desde el portal con un clic, pierde beneficios al final del ciclo pagado y queda marcado en el CRM como \"ex-miembro\" para posibles campañas de recuperación."
+        "question": "¿Cómo sé si el programa deja dinero?",
+        "answer": "El tablero te muestra ingresos, membresías activas y por vencer, utilización, lo vendido contra lo consumido y lo pendiente, y la rentabilidad por plan y por servicio."
       }
     ]
   },

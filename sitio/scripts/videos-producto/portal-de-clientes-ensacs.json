@@ -1,0 +1,66 @@
+{
+ "modulo": "Portal de clientes",
+ "nota": "Capturas del Portal de clientes de Sacs (octubre de 2026) con una boutique de ejemplo.",
+ "pantallas": [
+  {
+   "id": "portal",
+   "img": "/images/producto/portal-de-clientes/portal.webp",
+   "h": 1000,
+   "t": "Portal de clientes",
+   "alt": "Portal de clientes en Sacs: link y QR del portal, configuración rápida y vista previa en celular"
+  },
+  {
+   "id": "editor",
+   "img": "/images/producto/portal-de-clientes/editor.webp",
+   "h": 800,
+   "t": "Editar portal",
+   "alt": "Editor del portal de clientes en Sacs: nombre, color y mensaje de bienvenida con vista previa"
+  }
+ ],
+ "pasos": [
+  {
+   "p": "portal",
+   "r": [
+    234,
+    124,
+    768,
+    564
+   ],
+   "t": "Un link y un QR para tus clientas",
+   "d": "Lo pegas en el ticket, en tu Instagram o en el mostrador."
+  },
+  {
+   "p": "portal",
+   "r": [
+    234,
+    588,
+    768,
+    821
+   ],
+   "t": "Con tu color y tu logo",
+   "d": "Color, logo, banners y secciones activas de tu portal."
+  },
+  {
+   "p": "portal",
+   "r": [
+    963,
+    124,
+    1171,
+    512
+   ],
+   "t": "Así lo ve tu clienta",
+   "d": "Sus puntos, su nivel, su cashback y sus recompensas en el celular."
+  },
+  {
+   "p": "editor",
+   "r": [
+    112,
+    279,
+    880,
+    777
+   ],
+   "t": "Edítalo tú",
+   "d": "Cambias colores, banners y secciones y ves el resultado al momento."
+  }
+ ]
+}

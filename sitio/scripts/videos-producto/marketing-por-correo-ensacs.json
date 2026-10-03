@@ -1,0 +1,91 @@
+{
+ "modulo": "Embudos y Campañas",
+ "nota": "Capturas del módulo de Embudos y Campañas de Sacs (octubre de 2026) con una boutique de ejemplo.",
+ "pantallas": [
+  {
+   "id": "campanas",
+   "img": "/images/producto/marketing-por-correo/campanas.webp",
+   "h": 1500,
+   "t": "Campañas",
+   "alt": "Campañas de correo en Sacs con avance de envío y ventas atribuidas"
+  },
+  {
+   "id": "segmentos",
+   "img": "/images/producto/marketing-por-correo/segmentos.webp",
+   "h": 1000,
+   "t": "Segmentos",
+   "alt": "Segmentos de clientes de moda en Sacs armados por comportamiento"
+  },
+  {
+   "id": "plantillas",
+   "img": "/images/producto/marketing-por-correo/plantillas.webp",
+   "h": 1100,
+   "t": "Plantillas",
+   "alt": "Plantillas de correo de moda en Sacs"
+  },
+  {
+   "id": "embudos",
+   "img": "/images/producto/marketing-por-correo/embudos.webp",
+   "h": 1000,
+   "t": "Embudos",
+   "alt": "Embudos automáticos de correo en Sacs con disparador y clientes que compraron"
+  }
+ ],
+ "pasos": [
+  {
+   "p": "campanas",
+   "r": [
+    182,
+    0,
+    1322,
+    115
+   ],
+   "t": "Cada campaña, con lo que vendió",
+   "d": "Avance del envío y ventas atribuidas a cada correo."
+  },
+  {
+   "p": "segmentos",
+   "r": [
+    207,
+    196,
+    1297,
+    491
+   ],
+   "t": "Segmentos por lo que compran",
+   "d": "Compró denim en 90 días, talla M sin compra, VIP de una tienda."
+  },
+  {
+   "p": "plantillas",
+   "r": [
+    207,
+    196,
+    1297,
+    747
+   ],
+   "t": "Plantillas con versiones",
+   "d": "Nueva colección, rebajas, llegó tu talla: cada una con su historial."
+  },
+  {
+   "p": "embudos",
+   "r": [
+    207,
+    235,
+    1297,
+    300
+   ],
+   "t": "Embudos que se disparan solos",
+   "d": "Cliente nuevo, vuelta a stock, después de su compra."
+  },
+  {
+   "p": "embudos",
+   "r": [
+    783,
+    235,
+    1148,
+    300
+   ],
+   "t": "Cuántos compraron",
+   "d": "Activos, completados y los que terminaron comprando."
+  }
+ ]
+}

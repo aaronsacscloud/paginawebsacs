@@ -1,0 +1,88 @@
+{
+ "modulo": "Notificaciones",
+ "nota": "Capturas de las notificaciones automáticas de Sacs (octubre de 2026) con una boutique de ejemplo.",
+ "pantallas": [
+  {
+   "id": "lealtad",
+   "img": "/images/producto/marketing-por-whatsapp/lealtad.webp",
+   "h": 2100,
+   "t": "Notificaciones · Lealtad",
+   "alt": "Notificaciones automáticas de lealtad en Sacs por WhatsApp y correo"
+  },
+  {
+   "id": "apartados",
+   "img": "/images/producto/marketing-por-whatsapp/apartados.webp",
+   "h": 1500,
+   "t": "Notificaciones · Pedidos",
+   "alt": "Notificaciones automáticas de pedidos en Sacs por WhatsApp y correo"
+  }
+ ],
+ "pasos": [
+  {
+   "p": "lealtad",
+   "r": [
+    330,
+    48,
+    1110,
+    126
+   ],
+   "t": "WhatsApp y correo, por evento",
+   "d": "Cada aviso a tus clientas con su canal: lo activas o lo pruebas."
+  },
+  {
+   "p": "lealtad",
+   "r": [
+    373,
+    458,
+    1067,
+    747
+   ],
+   "t": "Bienvenida al programa",
+   "d": "Al unirse, tu clienta recibe su aviso por WhatsApp y por correo."
+  },
+  {
+   "p": "lealtad",
+   "r": [
+    373,
+    759,
+    1067,
+    1048
+   ],
+   "t": "Cashback abonado",
+   "d": "Se entera en el momento en que le cae saldo en su monedero."
+  },
+  {
+   "p": "lealtad",
+   "r": [
+    373,
+    1361,
+    1067,
+    1650
+   ],
+   "t": "Subiste de nivel",
+   "d": "El aviso sale solo cuando sube de nivel en el programa."
+  },
+  {
+   "p": "apartados",
+   "r": [
+    373,
+    334,
+    1067,
+    623
+   ],
+   "t": "Pedido confirmado",
+   "d": "Plantilla aprobada por Meta: tú solo la activas o mandas una prueba."
+  },
+  {
+   "p": "apartados",
+   "r": [
+    373,
+    936,
+    1067,
+    1225
+   ],
+   "t": "Listo para recoger",
+   "d": "Cuando el pedido está preparado, tu clienta lo sabe sin que nadie le escriba."
+  }
+ ]
+}

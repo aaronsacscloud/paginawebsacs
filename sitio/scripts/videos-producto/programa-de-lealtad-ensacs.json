@@ -1,0 +1,84 @@
+{
+ "modulo": "Programa de lealtad",
+ "nota": "Capturas del Programa de lealtad de Sacs (octubre de 2026) con una boutique de ejemplo.",
+ "pantallas": [
+  {
+   "id": "programa",
+   "img": "/images/producto/programa-de-lealtad/programa.webp",
+   "h": 1300,
+   "t": "Programa de lealtad",
+   "alt": "Programa de lealtad en Sacs: niveles, puntos y cashback por compra, recompensas y avance de configuración"
+  },
+  {
+   "id": "niveles",
+   "img": "/images/producto/programa-de-lealtad/niveles.webp",
+   "h": 1500,
+   "t": "Niveles",
+   "alt": "Niveles del programa de lealtad en Sacs con rango de puntos, multiplicador y beneficios"
+  },
+  {
+   "id": "recompensas",
+   "img": "/images/producto/programa-de-lealtad/recompensas.webp",
+   "h": 1500,
+   "t": "Recompensas",
+   "alt": "Recompensas de moda del programa de lealtad en Sacs"
+  }
+ ],
+ "pasos": [
+  {
+   "p": "programa",
+   "r": [
+    116,
+    115,
+    1388,
+    181
+   ],
+   "t": "Puntos y cashback en cada compra",
+   "d": "Cuántos niveles, qué porcentaje en puntos y cuánto regresa en cashback."
+  },
+  {
+   "p": "programa",
+   "r": [
+    84,
+    293,
+    819,
+    379
+   ],
+   "t": "Se inscriben solos",
+   "d": "Clientas nuevas y existentes entran al programa sin llenar nada."
+  },
+  {
+   "p": "programa",
+   "r": [
+    851,
+    293,
+    1420,
+    1859
+   ],
+   "t": "Lo que falta configurar",
+   "d": "Niveles, recompensas, expiración: el avance de tu programa."
+  },
+  {
+   "p": "niveles",
+   "r": [
+    85,
+    472,
+    818,
+    536
+   ],
+   "t": "Niveles que se ganan comprando",
+   "d": "Rango de puntos de cada nivel, su multiplicador y sus beneficios."
+  },
+  {
+   "p": "recompensas",
+   "r": [
+    116,
+    115,
+    1388,
+    181
+   ],
+   "t": "Recompensas que sí se usan",
+   "d": "$200 en tu próxima prenda, ajuste de bastilla, envío gratis."
+  }
+ ]
+}

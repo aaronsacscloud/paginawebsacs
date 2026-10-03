@@ -1,0 +1,95 @@
+{
+ "modulo": "Membresías",
+ "nota": "Capturas del módulo de Membresías de Sacs (octubre de 2026) con una boutique de ejemplo.",
+ "pantallas": [
+  {
+   "id": "planes",
+   "img": "/images/producto/membresias-y-suscripciones/planes.webp",
+   "h": 1000,
+   "t": "Planes",
+   "alt": "Planes de membresía de moda en Sacs con precio mensual y anual y beneficios contados"
+  },
+  {
+   "id": "membresias",
+   "img": "/images/producto/membresias-y-suscripciones/membresias.webp",
+   "h": 1400,
+   "t": "Membresías",
+   "alt": "Membresías vendidas en Sacs con clienta, plan, vigencia y consumo de beneficios"
+  },
+  {
+   "id": "tablero",
+   "img": "/images/producto/membresias-y-suscripciones/tablero.webp",
+   "h": 1700,
+   "t": "Tablero",
+   "alt": "Tablero de membresías en Sacs: ingresos, activas, renovaciones, utilización y rentabilidad"
+  }
+ ],
+ "pasos": [
+  {
+   "p": "planes",
+   "r": [
+    95,
+    369,
+    409,
+    570
+   ],
+   "t": "Planes con beneficios contados",
+   "d": "Ajustes de bastilla, vaporizado o styling: cuántos incluye cada plan."
+  },
+  {
+   "p": "planes",
+   "r": [
+    763,
+    369,
+    1077,
+    610
+   ],
+   "t": "Precio mensual o anual",
+   "d": "Cada plan con su precio por mes y por año, para venderlo en tienda y en línea."
+  },
+  {
+   "p": "membresias",
+   "r": [
+    92,
+    299,
+    1412,
+    969
+   ],
+   "t": "Cada membresía, con su vigencia",
+   "d": "Quién la tiene, qué plan, cuándo vence y cuánto ha usado."
+  },
+  {
+   "p": "tablero",
+   "r": [
+    64,
+    163,
+    1440,
+    3482
+   ],
+   "t": "Activas, por vencer y canceladas",
+   "d": "Ingresos del año, membresías vigentes por plan y renovaciones próximas."
+  },
+  {
+   "p": "tablero",
+   "r": [
+    92,
+    604,
+    1412,
+    711
+   ],
+   "t": "Lo vendido contra lo consumido",
+   "d": "Cuánto se ha cobrado, cuánto se ha usado y cuánto falta por consumir."
+  },
+  {
+   "p": "tablero",
+   "r": [
+    92,
+    733,
+    1412,
+    2202
+   ],
+   "t": "Si el programa deja dinero",
+   "d": "Cobrado contra el costo real de los servicios: utilidad y margen."
+  }
+ ]
+}

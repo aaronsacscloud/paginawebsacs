@@ -320,6 +320,51 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                       </div>
                     )}
 
+                    {block.variant === 'gift-liability' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge">
+                            <span class="sq-fc-dot"></span>
+                            Tarjetas de regalo
+                          </span>
+                          <span class="sq-fc-time">8 activas</span>
+                        </div>
+                        <div class="sq-fc-metric">
+                          <span class="sq-fc-metric-label">Pasivo vivo</span>
+                          <div class="sq-fc-metric-row">
+                            <span class="sq-fc-metric-val">$7,770</span>
+                            <span class="sq-fc-metric-delta">por redimir</span>
+                          </div>
+                          <svg class="sq-fc-metric-spark" viewBox="0 0 120 28" preserveAspectRatio="none" aria-hidden="true">
+                            <path d="M0 22 L12 18 L24 20 L36 14 L48 16 L60 10 L72 12 L84 6 L96 8 L108 4 L120 2" fill="none" stroke="#2AB5A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          </svg>
+                        </div>
+                        <div class="sq-fc-ranking">
+                          <span class="sq-fc-ranking-title">Al cierre</span>
+                          <div class="sq-fc-rank-row">
+                            <span class="sq-fc-rank-pos">1</span>
+                            <span class="sq-fc-rank-name">Ingreso reconocido</span>
+                            <span class="sq-fc-rank-val">$13,230</span>
+                          </div>
+                          <div class="sq-fc-rank-row">
+                            <span class="sq-fc-rank-pos">2</span>
+                            <span class="sq-fc-rank-name">Emitido total</span>
+                            <span class="sq-fc-rank-val">$21,500</span>
+                          </div>
+                          <div class="sq-fc-rank-row">
+                            <span class="sq-fc-rank-pos">3</span>
+                            <span class="sq-fc-rank-name">Tarjetas activas</span>
+                            <span class="sq-fc-rank-val">8</span>
+                          </div>
+                        </div>
+                        <button class="sq-fc-cobrar sq-fc-cobrar--dash" tabindex="-1">
+                          VER TARJETAS
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </button>
+                      </div>
+                    )}
+
+
                     {block.variant === 'promo-auto' && (
                       <div class="sq-featured-card" aria-hidden="true">
                         <div class="sq-fc-header">
@@ -465,6 +510,44 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                           <div class="sq-goldcard-foot-tier">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(60,40,5,0.85)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                             <span>Gold</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {block.variant === 'loyalty-card-moda' && (
+                      <div class="sq-goldcard" aria-hidden="true">
+                        <div class="sq-goldcard-shine"></div>
+                        <div class="sq-goldcard-grid"></div>
+                        <div class="sq-goldcard-top">
+                          <span class="sq-goldcard-brand">Polanco Boutique</span>
+                          <svg class="sq-goldcard-chip" width="34" height="26" viewBox="0 0 34 26" fill="none" aria-hidden="true">
+                            <rect x="0.5" y="0.5" width="33" height="25" rx="4" fill="url(#chipGradModa)" stroke="rgba(60,40,5,0.4)"/>
+                            <path d="M11 0v6M17 0v6M23 0v6M11 20v6M17 20v6M23 20v6M0 13h7M27 13h7M11 7h12v12h-12z" stroke="rgba(60,40,5,0.55)" stroke-width="1"/>
+                            <defs>
+                              <linearGradient id="chipGradModa" x1="0" y1="0" x2="34" y2="26" gradientUnits="userSpaceOnUse">
+                                <stop offset="0" stop-color="#F2D589"/>
+                                <stop offset="0.5" stop-color="#E0B85F"/>
+                                <stop offset="1" stop-color="#A37728"/>
+                              </linearGradient>
+                            </defs>
+                          </svg>
+                        </div>
+                        <div class="sq-goldcard-mid">
+                          <span class="sq-goldcard-pts-label">PUNTOS DISPONIBLES</span>
+                          <div class="sq-goldcard-pts-row">
+                            <span class="sq-goldcard-pts-num">2,450</span>
+                            <span class="sq-goldcard-pts-delta">+120</span>
+                          </div>
+                        </div>
+                        <div class="sq-goldcard-foot">
+                          <div class="sq-goldcard-foot-name">
+                            <span class="sq-goldcard-name-label">CLIENTA</span>
+                            <span class="sq-goldcard-name">Lucía Herrera</span>
+                          </div>
+                          <div class="sq-goldcard-foot-tier">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(60,40,5,0.85)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                            <span>Andrómeda</span>
                           </div>
                         </div>
                       </div>
@@ -1086,13 +1169,13 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         <div class="sq-fc-header">
                           <span class="sq-fc-badge sq-fc-badge--brand">
                             <span class="sq-fc-dot"></span>
-                            Editor en vivo
+                            Editar portal
                           </span>
-                          <span class="sq-fc-time">Tempo.com</span>
+                          <span class="sq-fc-time">Color #2B2118</span>
                         </div>
                         <div class="sq-fc-brand-preview">
                           <div class="sq-fc-brand-header">
-                            <span class="sq-fc-brand-logo">TEMPO</span>
+                            <span class="sq-fc-brand-logo">Polanco Boutique · Mi club</span>
                             <div class="sq-fc-brand-nav">
                               <span></span>
                               <span></span>
@@ -1100,9 +1183,9 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                             </div>
                           </div>
                           <div class="sq-fc-brand-hero">
-                            Carteras hechas a mano en Buenos Aires
+                            Banner: “Nueva colección Otoño-Invierno”
                           </div>
-                          <div class="sq-fc-brand-cta">Ver colección</div>
+                          <div class="sq-fc-brand-cta" style="background:#2B2118;color:#fff">Logo ✓ · Ver colección</div>
                           <div class="sq-fc-brand-tiles">
                             <div class="sq-fc-brand-tile"></div>
                             <div class="sq-fc-brand-tile"></div>
@@ -1111,7 +1194,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         </div>
                         <div class="sq-fc-brand-meta">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                          Paleta, tipografías y bloques editables
+                          Nombre, color, logo, banners y secciones
                         </div>
                       </div>
                     )}
@@ -1881,13 +1964,13 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                           <span class="sq-fc-time">Guardado</span>
                         </div>
                         <div class="sq-fc-chip-stack">
-                          <div class="sq-fc-chip-row"><span class="sq-fc-chip-op">AND</span><span class="sq-fc-chip">ticket promedio &gt; $3,000</span></div>
-                          <div class="sq-fc-chip-row"><span class="sq-fc-chip-op">AND</span><span class="sq-fc-chip">sin compra 90d</span></div>
-                          <div class="sq-fc-chip-row"><span class="sq-fc-chip-op">AND</span><span class="sq-fc-chip">sucursal: Polanco</span></div>
+                          <div class="sq-fc-chip-row"><span class="sq-fc-chip-op">AND</span><span class="sq-fc-chip">categoría: denim</span></div>
+                          <div class="sq-fc-chip-row"><span class="sq-fc-chip-op">AND</span><span class="sq-fc-chip">últimos 90 días</span></div>
+                          <div class="sq-fc-chip-row"><span class="sq-fc-chip-op">AND</span><span class="sq-fc-chip">sin compra 60 días</span></div>
                         </div>
                         <div class="sq-fc-segment-count">
-                          <span class="sq-fc-segment-num">842</span>
-                          <span class="sq-fc-segment-desc">clientes · 18% de tu base</span>
+                          <span class="sq-fc-segment-num">214</span>
+                          <span class="sq-fc-segment-desc">clientas cumplen hoy</span>
                         </div>
                         <button class="sq-fc-cobrar sq-fc-cobrar--segment" tabindex="-1">
                           ACTIVAR SEGMENTO
@@ -1903,22 +1986,20 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                             <span class="sq-fc-dot"></span>
                             Niveles
                           </span>
-                          <span class="sq-fc-time">4 tiers activos</span>
+                          <span class="sq-fc-time">3 niveles</span>
                         </div>
-                        <div class="sq-fc-tier-grid">
-                          <div class="sq-fc-tier"><span class="sq-fc-tier-dot" style="background:#b89063"></span><span class="sq-fc-tier-name">Bronce</span><span class="sq-fc-tier-meta">0–5k</span></div>
-                          <div class="sq-fc-tier"><span class="sq-fc-tier-dot" style="background:#b8b8c0"></span><span class="sq-fc-tier-name">Plata</span><span class="sq-fc-tier-meta">5–15k</span></div>
-                          <div class="sq-fc-tier sq-fc-tier--active"><span class="sq-fc-tier-dot" style="background:#c89b3f"></span><span class="sq-fc-tier-name">Oro</span><span class="sq-fc-tier-meta">15–40k</span></div>
-                          <div class="sq-fc-tier"><span class="sq-fc-tier-dot" style="background:#6e7684"></span><span class="sq-fc-tier-name">Platino</span><span class="sq-fc-tier-meta">40k+</span></div>
+                        <div class="sq-fc-tier-grid" style="grid-template-columns:repeat(3,1fr)">
+                          <div class="sq-fc-tier"><span class="sq-fc-tier-dot" style="background:#d9a441"></span><span class="sq-fc-tier-name">Sol</span><span class="sq-fc-tier-meta">0–100 pts · ×1</span></div>
+                          <div class="sq-fc-tier sq-fc-tier--active"><span class="sq-fc-tier-dot" style="background:#9aa3b5"></span><span class="sq-fc-tier-name">Luna</span><span class="sq-fc-tier-meta">101–499 · ×1.25</span></div>
+                          <div class="sq-fc-tier"><span class="sq-fc-tier-dot" style="background:#4b3f72"></span><span class="sq-fc-tier-name">Andrómeda</span><span class="sq-fc-tier-meta">500+ · ×1.75</span></div>
                         </div>
                         <div class="sq-fc-tier-progress">
-                          <div class="sq-fc-tier-bar"><div class="sq-fc-tier-bar-fill" style="width:62%"></div></div>
-                          <span class="sq-fc-tier-progress-label">$24,800 / $40,000 para Platino</span>
+                          <div class="sq-fc-tier-bar"><div class="sq-fc-tier-bar-fill" style="width:76%"></div></div>
+                          <span class="sq-fc-tier-progress-label">Te faltan 120 pts para Andrómeda</span>
                         </div>
                         <div class="sq-fc-tier-benefits">
-                          <span class="sq-fc-tier-ben">2× puntos</span>
-                          <span class="sq-fc-tier-ben">Envío gratis</span>
-                          <span class="sq-fc-tier-ben">Preventas</span>
+                          <span class="sq-fc-tier-ben">Styling privado</span>
+                          <span class="sq-fc-tier-ben">Regalo de cumpleaños</span>
                         </div>
                       </div>
                     )}
@@ -1928,30 +2009,30 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         <div class="sq-fc-header">
                           <span class="sq-fc-badge sq-fc-badge--amber">
                             <span class="sq-fc-dot"></span>
-                            Perfil 360°
+                            Ficha de la clienta
                           </span>
-                          <span class="sq-fc-time">VIP</span>
+                          <span class="sq-fc-time">Club Atelier</span>
                         </div>
                         <div class="sq-fc-profile-head">
-                          <div class="sq-fc-avatar">AM</div>
+                          <div class="sq-fc-avatar">XO</div>
                           <div class="sq-fc-profile-meta">
-                            <span class="sq-fc-profile-name">Ana Morales</span>
-                            <span class="sq-fc-profile-sub">LTV <strong>$47,820</strong> · 34 tickets</span>
+                            <span class="sq-fc-profile-name">Ximena Ochoa</span>
+                            <span class="sq-fc-profile-sub">Total <strong>$24,703</strong> · 7 compras</span>
                           </div>
                         </div>
                         <div class="sq-fc-tag-row">
-                          <span class="sq-fc-tag">ticket $1,405</span>
-                          <span class="sq-fc-tag">talla 27</span>
-                          <span class="sq-fc-tag">negro · camel</span>
+                          <span class="sq-fc-tag">ticket $3,529</span>
+                          <span class="sq-fc-tag">monedero $706.19</span>
+                          <span class="sq-fc-tag">VIP</span>
                         </div>
                         <div class="sq-fc-tx-list">
-                          <div class="sq-fc-tx-row"><span class="sq-fc-tx-item">Bolso Tote Camel</span><span class="sq-fc-tx-amt">$2,890</span></div>
-                          <div class="sq-fc-tx-row"><span class="sq-fc-tx-item">Cartera Mini Negro</span><span class="sq-fc-tx-amt">$1,240</span></div>
-                          <div class="sq-fc-tx-row"><span class="sq-fc-tx-item">Cinturón Brown 90</span><span class="sq-fc-tx-amt">$680</span></div>
+                          <div class="sq-fc-tx-row"><span class="sq-fc-tx-item">Jeans tiro alto · 28</span><span class="sq-fc-tx-amt">3 pzas</span></div>
+                          <div class="sq-fc-tx-row"><span class="sq-fc-tx-item">Blusa de seda · M</span><span class="sq-fc-tx-amt">2 pzas</span></div>
+                          <div class="sq-fc-tx-row"><span class="sq-fc-tx-item">Botín de piel · 24</span><span class="sq-fc-tx-amt">1 par</span></div>
                         </div>
                         <div class="sq-fc-seller-note">
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                          <span>Marcela · 12 mar — pidió reserva talla 27</span>
+                          <span>Membresía Club Atelier · vigente</span>
                         </div>
                       </div>
                     )}
@@ -1994,17 +2075,16 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                             <span class="sq-fc-dot"></span>
                             Plantilla aprobada
                           </span>
-                          <span class="sq-fc-time">Meta · Marketing</span>
+                          <span class="sq-fc-time">Meta · Utility</span>
                         </div>
                         <div class="sq-fc-wa-bubble sq-fc-wa-bubble--template">
-                          <div class="sq-fc-wa-line">Hola <span class="sq-fc-wa-var">{'{{1}}'}</span>, tu apartado</div>
-                          <div class="sq-fc-wa-line"><span class="sq-fc-wa-var">{'{{2}}'}</span> vence el <span class="sq-fc-wa-var">{'{{3}}'}</span>.</div>
-                          <div class="sq-fc-wa-line sq-fc-wa-line--cta">Paga desde aquí ↗</div>
+                          <div class="sq-fc-wa-line">Hola <span class="sq-fc-wa-var">{'{{1}}'}</span>, registramos tu abono;</div>
+                          <div class="sq-fc-wa-line">tu saldo es <span class="sq-fc-wa-var">{'{{2}}'}</span>.</div>
                           <span class="sq-fc-wa-time">✓✓ 9:32</span>
                         </div>
                         <div class="sq-fc-wa-tags">
                           <span class="sq-fc-wa-tag sq-fc-wa-tag--ok">✓ Aprobada</span>
-                          <span class="sq-fc-wa-tag">Marketing</span>
+                          <span class="sq-fc-wa-tag">Utility</span>
                           <span class="sq-fc-wa-tag">ES-MX</span>
                         </div>
                       </div>
@@ -2021,15 +2101,41 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         </div>
                         <div class="sq-fc-wa-stack">
                           <div class="sq-fc-wa-bubble sq-fc-wa-bubble--stack">
-                            <span class="sq-fc-wa-txt">Tu apartado vence en 3 días · saldo $615</span>
+                            <span class="sq-fc-wa-txt">Tu pedido #PB-1042 está confirmado</span>
                             <span class="sq-fc-wa-time">✓✓ 8:14</span>
                           </div>
                           <div class="sq-fc-wa-bubble sq-fc-wa-bubble--stack">
-                            <span class="sq-fc-wa-txt">Tu pedido llegó a Polanco — recógelo hasta el vie</span>
+                            <span class="sq-fc-wa-txt">Registramos tu abono · saldo $615</span>
                             <span class="sq-fc-wa-time">✓✓ 11:02</span>
                           </div>
                           <div class="sq-fc-wa-bubble sq-fc-wa-bubble--stack">
-                            <span class="sq-fc-wa-txt">Compra registrada · ticket #7812 · 320 pts</span>
+                            <span class="sq-fc-wa-txt">Tu pedido está listo para recoger en Polanco</span>
+                            <span class="sq-fc-wa-time">✓✓ 19:45</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {block.variant === 'wa-lealtad' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--wa">
+                            <span class="sq-fc-dot"></span>
+                            Notificaciones
+                          </span>
+                          <span class="sq-fc-time">Automáticas</span>
+                        </div>
+                        <div class="sq-fc-wa-stack">
+                          <div class="sq-fc-wa-bubble sq-fc-wa-bubble--stack">
+                            <span class="sq-fc-wa-txt">¡Bienvenida a Polanco Club! Ya sumas 120 pts</span>
+                            <span class="sq-fc-wa-time">✓✓ 8:14</span>
+                          </div>
+                          <div class="sq-fc-wa-bubble sq-fc-wa-bubble--stack">
+                            <span class="sq-fc-wa-txt">Te abonamos $171.57 de cashback</span>
+                            <span class="sq-fc-wa-time">✓✓ 11:02</span>
+                          </div>
+                          <div class="sq-fc-wa-bubble sq-fc-wa-bubble--stack">
+                            <span class="sq-fc-wa-txt">Subiste a nivel Luna: puntos ×1.5</span>
                             <span class="sq-fc-wa-time">✓✓ 19:45</span>
                           </div>
                         </div>
@@ -2037,6 +2143,32 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                     )}
 
                     {block.variant === 'portal-history-mobile' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--portal">
+                            <span class="sq-fc-dot"></span>
+                            Link de tu portal
+                          </span>
+                          <span class="sq-fc-time">Publicado</span>
+                        </div>
+                        <div class="sq-fc-portal">
+                          <div class="sq-fc-portal-qr" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M3 3h7v7H3V3zm2 2v3h3V5H5zm9-2h7v7h-7V3zm2 2v3h3V5h-3zM3 14h7v7H3v-7zm2 2v3h3v-3H5zm11-2h2v2h-2v-2zm2 2h2v2h-2v-2zm-4 0h2v2h-2v-2zm4 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm-2-2h2v2h-2v-2zm4-6h2v2h-2v-2z"/></svg>
+                          </div>
+                          <div class="sq-fc-portal-text">
+                            <span class="sq-fc-portal-title">sacscloudwallet.com/polancoboutique</span>
+                            <span class="sq-fc-portal-meta">Polanco Boutique · Mi club</span>
+                          </div>
+                        </div>
+                        <div class="sq-fc-portal-steps">
+                          <div class="sq-fc-portal-step">Copiar</div>
+                          <div class="sq-fc-portal-step">QR</div>
+                          <div class="sq-fc-portal-step sq-fc-portal-step--done">Descargar QR</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {block.variant === 'portal-history-points' && (
                       <div class="sq-featured-card" aria-hidden="true">
                         <div class="sq-fc-header">
                           <span class="sq-fc-badge sq-fc-badge--coral">
@@ -2047,22 +2179,21 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         </div>
                         <div class="sq-fc-mobile-frame">
                           <div class="sq-fc-mobile-tabs">
-                            <span class="sq-fc-mobile-tab">Compras</span>
-                            <span class="sq-fc-mobile-tab sq-fc-mobile-tab--active">Apartados</span>
+                            <span class="sq-fc-mobile-tab sq-fc-mobile-tab--active">Puntos</span>
+                            <span class="sq-fc-mobile-tab">Cashback</span>
                           </div>
                           <div class="sq-fc-mobile-list">
                             <div class="sq-fc-mobile-row">
-                              <span class="sq-fc-mobile-row-main">Ticket #7812</span>
-                              <span class="sq-fc-mobile-row-sub">Polanco · 4 mar · $2,890</span>
+                              <span class="sq-fc-mobile-row-main">+120 pts · compra PBF-7107</span>
+                              <span class="sq-fc-mobile-row-sub">Polanco Boutique · 28 sep</span>
                             </div>
                             <div class="sq-fc-mobile-row">
-                              <span class="sq-fc-mobile-row-main">Ticket #7690</span>
-                              <span class="sq-fc-mobile-row-sub">Santa Fe · 18 feb · $1,240</span>
+                              <span class="sq-fc-mobile-row-main">+$41.76 cashback</span>
+                              <span class="sq-fc-mobile-row-sub">Compra PBF-7107 · 28 sep</span>
                             </div>
-                            <div class="sq-fc-mobile-row sq-fc-mobile-row--warn">
-                              <span class="sq-fc-mobile-row-main">Apartado #A-204 · vence en 3 días</span>
-                              <span class="sq-fc-mobile-row-sub">Saldo $615 pendiente</span>
-                              <span class="sq-fc-mobile-pay">Abonar</span>
+                            <div class="sq-fc-mobile-row">
+                              <span class="sq-fc-mobile-row-main">−150 pts · canje</span>
+                              <span class="sq-fc-mobile-row-sub">$200 en tu próxima prenda · 2 oct</span>
                             </div>
                           </div>
                         </div>
@@ -2076,29 +2207,29 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                             <span class="sq-fc-dot"></span>
                             Monedero
                           </span>
-                          <span class="sq-fc-time">Red omnicanal</span>
+                          <span class="sq-fc-time">Nivel Luna</span>
                         </div>
                         <div class="sq-fc-wallet-head">
                           <span class="sq-fc-wallet-label">Saldo</span>
-                          <span class="sq-fc-wallet-amount">$820 <span class="sq-fc-wallet-unit">MXN · 820 pts</span></span>
+                          <span class="sq-fc-wallet-amount">$820 <span class="sq-fc-wallet-unit">de cashback</span></span>
                         </div>
                         <div class="sq-fc-wallet-moves">
                           <div class="sq-fc-wallet-row">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21V10l9-7 9 7v11"/></svg>
-                            <span class="sq-fc-wallet-branch">Polanco</span>
-                            <span class="sq-fc-wallet-delta sq-fc-wallet-delta--pos">+300</span>
+                            <span class="sq-fc-wallet-branch">Polanco Boutique</span>
+                            <span class="sq-fc-wallet-delta sq-fc-wallet-delta--pos">+$300</span>
                             <span class="sq-fc-wallet-when">18 mar</span>
                           </div>
                           <div class="sq-fc-wallet-row">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21V10l9-7 9 7v11"/></svg>
-                            <span class="sq-fc-wallet-branch">Santa Fe</span>
-                            <span class="sq-fc-wallet-delta sq-fc-wallet-delta--neg">−200</span>
+                            <span class="sq-fc-wallet-branch">SMA Centro</span>
+                            <span class="sq-fc-wallet-delta sq-fc-wallet-delta--neg">−$200</span>
                             <span class="sq-fc-wallet-when">5 abr</span>
                           </div>
                           <div class="sq-fc-wallet-row">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21V10l9-7 9 7v11"/></svg>
-                            <span class="sq-fc-wallet-branch">Chapalita</span>
-                            <span class="sq-fc-wallet-delta sq-fc-wallet-delta--pos">+720</span>
+                            <span class="sq-fc-wallet-branch">Querétaro Antea</span>
+                            <span class="sq-fc-wallet-delta sq-fc-wallet-delta--pos">+$720</span>
                             <span class="sq-fc-wallet-when">hoy</span>
                           </div>
                         </div>
@@ -2110,19 +2241,19 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         <div class="sq-fc-header">
                           <span class="sq-fc-badge sq-fc-badge--sea">
                             <span class="sq-fc-dot"></span>
-                            Canje · GC-84A2
+                            Redención
                           </span>
-                          <span class="sq-fc-time">Polanco</span>
+                          <span class="sq-fc-time">Polanco Boutique</span>
                         </div>
                         <div class="sq-fc-gift-ticket">
                           <div class="sq-fc-gift-main">
-                            <div class="sq-fc-gift-row"><span>Saldo original</span><span class="sq-fc-gift-val">$2,000</span></div>
-                            <div class="sq-fc-gift-row sq-fc-gift-row--out"><span>Canje aplicado</span><span class="sq-fc-gift-val">−$1,340</span></div>
-                            <div class="sq-fc-gift-row sq-fc-gift-row--rem"><span>Saldo restante</span><span class="sq-fc-gift-val">$660</span></div>
+                            <div class="sq-fc-gift-row"><span>Emisión</span><span class="sq-fc-gift-val">+$2,000</span></div>
+                            <div class="sq-fc-gift-row sq-fc-gift-row--out"><span>Redención</span><span class="sq-fc-gift-val">−$890</span></div>
+                            <div class="sq-fc-gift-row sq-fc-gift-row--rem"><span>Saldo</span><span class="sq-fc-gift-val">$1,110</span></div>
                           </div>
                           <div class="sq-fc-gift-card">
                             <span class="sq-fc-gift-card-logo">GIFT</span>
-                            <span class="sq-fc-gift-card-code">•• 84A2</span>
+                            <span class="sq-fc-gift-card-code">•• H35K</span>
                           </div>
                         </div>
                       </div>
@@ -2133,25 +2264,25 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         <div class="sq-fc-header">
                           <span class="sq-fc-badge sq-fc-badge--rose">
                             <span class="sq-fc-dot"></span>
-                            Digital · Programada
+                            Digital · Envío programado
                           </span>
-                          <span class="sq-fc-time">18 may · 9:00</span>
+                          <span class="sq-fc-time">18 may</span>
                         </div>
                         <div class="sq-fc-giftdigital">
                           <div class="sq-fc-giftdigital-card">
-                            <span class="sq-fc-giftdigital-brand">TEMPO</span>
+                            <span class="sq-fc-giftdigital-brand">Polanco Boutique</span>
                             <span class="sq-fc-giftdigital-amount">$2,000</span>
                             <span class="sq-fc-giftdigital-note">Tarjeta de regalo</span>
                           </div>
                           <div class="sq-fc-giftdigital-meta">
                             <div class="sq-fc-giftdigital-row"><span class="sq-fc-giftdigital-k">Para</span><span class="sq-fc-giftdigital-v">Lucía Ramírez</span></div>
                             <div class="sq-fc-giftdigital-row"><span class="sq-fc-giftdigital-k">De</span><span class="sq-fc-giftdigital-v">Marco</span></div>
-                            <div class="sq-fc-giftdigital-row"><span class="sq-fc-giftdigital-k">Email</span><span class="sq-fc-giftdigital-v">lucia@…</span></div>
+                            <div class="sq-fc-giftdigital-row"><span class="sq-fc-giftdigital-k">Correo</span><span class="sq-fc-giftdigital-v">lucia@…</span></div>
                           </div>
                         </div>
                         <div class="sq-fc-giftdigital-preview">
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 7l10 7 10-7"/></svg>
-                          Email programado · "Feliz cumpleaños Lucía"
+                          Enviar correo · Enviar WhatsApp · Imprimir
                         </div>
                       </div>
                     )}
@@ -2161,22 +2292,23 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         <div class="sq-fc-header">
                           <span class="sq-fc-badge sq-fc-badge--deep">
                             <span class="sq-fc-dot"></span>
-                            Wallet pass
+                            Membresía
                           </span>
-                          <span class="sq-fc-time">Socio · Gold</span>
+                          <span class="sq-fc-time">Club Atelier</span>
                         </div>
                         <div class="sq-fc-pass">
                           <div class="sq-fc-pass-top">
-                            <span class="sq-fc-pass-brand">CLUB MADERAS</span>
-                            <span class="sq-fc-pass-level">GOLD</span>
+                            <span class="sq-fc-pass-brand">POLANCO BOUTIQUE</span>
+                            <span class="sq-fc-pass-level">CLUB ATELIER</span>
                           </div>
                           <div class="sq-fc-pass-mid">
-                            <span class="sq-fc-pass-label">Socio</span>
+                            <span class="sq-fc-pass-label">Clienta</span>
                             <span class="sq-fc-pass-name">Ana Morales</span>
                           </div>
                           <div class="sq-fc-pass-meta">
-                            <div class="sq-fc-pass-col"><span class="sq-fc-pass-k">Miembro</span><span class="sq-fc-pass-v">MB-2341</span></div>
-                            <div class="sq-fc-pass-col"><span class="sq-fc-pass-k">Renueva</span><span class="sq-fc-pass-v">05 jul</span></div>
+                            <div class="sq-fc-pass-col"><span class="sq-fc-pass-k">Usados</span><span class="sq-fc-pass-v">2</span></div>
+                            <div class="sq-fc-pass-col"><span class="sq-fc-pass-k">Disponibles</span><span class="sq-fc-pass-v">5</span></div>
+                            <div class="sq-fc-pass-col"><span class="sq-fc-pass-k">Ahorro</span><span class="sq-fc-pass-v">$780</span></div>
                           </div>
                           <div class="sq-fc-pass-qr" aria-hidden="true"></div>
                         </div>
@@ -2188,24 +2320,24 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         <div class="sq-fc-header">
                           <span class="sq-fc-badge sq-fc-badge--silver">
                             <span class="sq-fc-dot"></span>
-                            Plan Silver
+                            Club Atelier
                           </span>
-                          <span class="sq-fc-time">$249 / mes</span>
+                          <span class="sq-fc-time">$390 / mes</span>
                         </div>
                         <div class="sq-fc-sub-head">
-                          <span class="sq-fc-sub-k">Próximo cobro</span>
-                          <span class="sq-fc-sub-v">5 may · $249</span>
+                          <span class="sq-fc-sub-k">Plan anual</span>
+                          <span class="sq-fc-sub-v">$3,900 / año</span>
                         </div>
                         <div class="sq-fc-sub-history">
-                          <span class="sq-fc-sub-hlabel">Historial</span>
-                          <span class="sq-fc-sub-pill sq-fc-sub-pill--ok">Feb ✓</span>
-                          <span class="sq-fc-sub-pill sq-fc-sub-pill--ok">Mar ✓</span>
-                          <span class="sq-fc-sub-pill sq-fc-sub-pill--ok">Abr ✓</span>
+                          <span class="sq-fc-sub-hlabel">Incluye</span>
+                          <span class="sq-fc-sub-pill sq-fc-sub-pill--ok">Ajuste de bastilla ×2</span>
+                          <span class="sq-fc-sub-pill sq-fc-sub-pill--ok">Planchado ×4</span>
+                          <span class="sq-fc-sub-pill sq-fc-sub-pill--ok">Styling ×1</span>
                         </div>
                         <div class="sq-fc-sub-method">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-                          Visa •• 4242
-                          <span class="sq-fc-sub-badge">Reintentos auto</span>
+                          Cobro automático · Stripe
+                          <span class="sq-fc-sub-badge">POS y en línea</span>
                         </div>
                       </div>
                     )}
@@ -2215,26 +2347,23 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         <div class="sq-fc-header">
                           <span class="sq-fc-badge sq-fc-badge--violet">
                             <span class="sq-fc-dot"></span>
-                            MRR · abril
+                            Tablero
                           </span>
-                          <span class="sq-fc-time">Suscripciones</span>
+                          <span class="sq-fc-time">Membresías</span>
                         </div>
                         <div class="sq-fc-kpi-row">
                           <div class="sq-fc-kpi">
-                            <span class="sq-fc-kpi-k">MRR</span>
-                            <span class="sq-fc-kpi-v">$125,400</span>
-                            <span class="sq-fc-kpi-d sq-fc-kpi-d--up">+8.4%</span>
+                            <span class="sq-fc-kpi-k">Cobrado</span>
+                            <span class="sq-fc-kpi-v">$17,270</span>
                           </div>
                           <div class="sq-fc-kpi">
-                            <span class="sq-fc-kpi-k">Churn</span>
-                            <span class="sq-fc-kpi-v">3.2%</span>
-                            <span class="sq-fc-kpi-d sq-fc-kpi-d--down">−0.6pp</span>
+                            <span class="sq-fc-kpi-k">Consumido</span>
+                            <span class="sq-fc-kpi-v">$35,450</span>
                           </div>
                         </div>
                         <div class="sq-fc-ltv-tbl">
-                          <div class="sq-fc-ltv-row"><span class="sq-fc-ltv-tier">Bronze</span><span class="sq-fc-ltv-life">6 m</span><span class="sq-fc-ltv-val">$594</span></div>
-                          <div class="sq-fc-ltv-row"><span class="sq-fc-ltv-tier">Silver</span><span class="sq-fc-ltv-life">11 m</span><span class="sq-fc-ltv-val">$2,739</span></div>
-                          <div class="sq-fc-ltv-row sq-fc-ltv-row--top"><span class="sq-fc-ltv-tier">Gold</span><span class="sq-fc-ltv-life">14 m</span><span class="sq-fc-ltv-val">$8,386</span></div>
+                          <div class="sq-fc-ltv-row"><span class="sq-fc-ltv-tier">Pendiente</span><span class="sq-fc-ltv-life">por consumir</span><span class="sq-fc-ltv-val">$12,870</span></div>
+                          <div class="sq-fc-ltv-row sq-fc-ltv-row--top"><span class="sq-fc-ltv-tier">Margen</span><span class="sq-fc-ltv-life">del programa</span><span class="sq-fc-ltv-val">48%</span></div>
                         </div>
                       </div>
                     )}
@@ -2246,13 +2375,13 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                             <span class="sq-fc-dot"></span>
                             Campaña · Dormidas 90d
                           </span>
-                          <span class="sq-fc-time">14 días</span>
+                          <span class="sq-fc-time">Enviada</span>
                         </div>
                         <div class="sq-fc-kpi-grid">
                           <div class="sq-fc-kpi"><span class="sq-fc-kpi-k">Aperturas</span><span class="sq-fc-kpi-v">42%</span></div>
                           <div class="sq-fc-kpi"><span class="sq-fc-kpi-k">Clics</span><span class="sq-fc-kpi-v">8%</span></div>
-                          <div class="sq-fc-kpi"><span class="sq-fc-kpi-k">Ventas</span><span class="sq-fc-kpi-v">48</span></div>
-                          <div class="sq-fc-kpi"><span class="sq-fc-kpi-k">Revenue</span><span class="sq-fc-kpi-v">$62,300</span></div>
+                          <div class="sq-fc-kpi"><span class="sq-fc-kpi-k">Enviados</span><span class="sq-fc-kpi-v">2,140/2,402</span></div>
+                          <div class="sq-fc-kpi"><span class="sq-fc-kpi-k">Atribuido</span><span class="sq-fc-kpi-v">$68,450</span></div>
                         </div>
                         <div class="sq-fc-spark-wrap">
                           <span class="sq-fc-spark-label">Ventas atribuidas</span>
@@ -2271,20 +2400,20 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                           <span class="sq-fc-time">Portal móvil</span>
                         </div>
                         <div class="sq-fc-mobile-frame">
-                          <div class="sq-fc-portal-greet">Hola, <strong>Ana</strong></div>
+                          <div class="sq-fc-portal-greet">Hola, <strong>Ximena</strong></div>
                           <div class="sq-fc-portal-points">
-                            <span class="sq-fc-portal-points-num">4,820</span>
-                            <span class="sq-fc-portal-points-unit">puntos · <span class="sq-fc-portal-points-tier">Oro</span></span>
+                            <span class="sq-fc-portal-points-num">2,450</span>
+                            <span class="sq-fc-portal-points-unit">puntos · <span class="sq-fc-portal-points-tier">Andrómeda</span></span>
                           </div>
                           <div class="sq-fc-portal-bar-wrap">
-                            <div class="sq-fc-portal-bar"><div class="sq-fc-portal-bar-fill" style="width:68%"></div></div>
-                            <span class="sq-fc-portal-bar-label">Te faltan 1,180 pts para Platino</span>
+                            <div class="sq-fc-portal-bar"><div class="sq-fc-portal-bar-fill" style="width:100%"></div></div>
+                            <span class="sq-fc-portal-bar-label">Nivel más alto · ×1.75 en puntos</span>
                           </div>
                           <div class="sq-fc-portal-expiry">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                            380 pts expiran en 14 días
+                            $706.19 de cashback en tu monedero
                           </div>
-                          <div class="sq-fc-portal-cta">CANJEAR</div>
+                          <div class="sq-fc-portal-cta">VER RECOMPENSAS</div>
                         </div>
                       </div>
                     )}
@@ -2300,12 +2429,12 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         </div>
                         <div class="sq-fc-pos-line">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.37 1.9.72 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0122 16.92z"/></svg>
-                          55 2814 7720
+                          55 •••• 7720
                         </div>
                         <div class="sq-fc-pos-profile">
-                          <span class="sq-fc-pos-name">Ana Morales</span>
-                          <span class="sq-fc-pos-sub">Ticket prom. <strong>$1,405</strong> · última 14 mar</span>
-                          <span class="sq-fc-pos-sub">Saldo a favor <strong>$215</strong></span>
+                          <span class="sq-fc-pos-name">Ximena Ochoa</span>
+                          <span class="sq-fc-pos-sub">Ticket prom. <strong>$3,529</strong> · 7 compras</span>
+                          <span class="sq-fc-pos-sub">Monedero <strong>$706.19</strong> · Luna</span>
                         </div>
                         <button class="sq-fc-cobrar sq-fc-cobrar--amber" tabindex="-1">
                           INICIAR VENTA
@@ -2319,22 +2448,22 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         <div class="sq-fc-header">
                           <span class="sq-fc-badge sq-fc-badge--amber">
                             <span class="sq-fc-dot"></span>
-                            Notas del equipo
+                            Notas y actividad
                           </span>
-                          <span class="sq-fc-time">3 notas</span>
+                          <span class="sq-fc-time">Ximena Ochoa</span>
                         </div>
                         <div class="sq-fc-notes">
                           <div class="sq-fc-note">
-                            <span class="sq-fc-note-head"><span class="sq-fc-note-author">Marcela</span><span class="sq-fc-note-time">12 mar</span></span>
-                            <span class="sq-fc-note-body">Prefiere talla 27 en jeans high rise. Marca Tempo.</span>
+                            <span class="sq-fc-note-head"><span class="sq-fc-note-author">Nota</span><span class="sq-fc-note-time">Etiquetas: VIP · Denim</span></span>
+                            <span class="sq-fc-note-body">Talla 28 en jeans de tiro alto. Le gustan los tonos camel.</span>
                           </div>
                           <div class="sq-fc-note">
-                            <span class="sq-fc-note-head"><span class="sq-fc-note-author">Diego</span><span class="sq-fc-note-time">3 mar</span></span>
-                            <span class="sq-fc-note-body">Cumpleaños 14 abril. Regalo: perfume floral.</span>
+                            <span class="sq-fc-note-head"><span class="sq-fc-note-author">Nota</span><span class="sq-fc-note-time">Cumpleaños</span></span>
+                            <span class="sq-fc-note-body">Cumpleaños 14 abril. Regalo: mascada de seda.</span>
                           </div>
                           <div class="sq-fc-note">
-                            <span class="sq-fc-note-head"><span class="sq-fc-note-author">Paulina</span><span class="sq-fc-note-time">22 feb</span></span>
-                            <span class="sq-fc-note-body">Pidió reservar bolso camel — avisar cuando llegue.</span>
+                            <span class="sq-fc-note-head"><span class="sq-fc-note-author">Actividad</span><span class="sq-fc-note-time">22 feb</span></span>
+                            <span class="sq-fc-note-body">Subió a nivel Luna · compra en Polanco Boutique.</span>
                           </div>
                         </div>
                       </div>
@@ -2345,16 +2474,16 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         <div class="sq-fc-header">
                           <span class="sq-fc-badge sq-fc-badge--gold">
                             <span class="sq-fc-dot"></span>
-                            Reglas · Puntos
+                            Recompensas
                           </span>
-                          <span class="sq-fc-time">Config</span>
+                          <span class="sq-fc-time">Activas</span>
                         </div>
                         <div class="sq-fc-toggle-list">
-                          <div class="sq-fc-toggle-row"><span class="sq-fc-toggle-k">1 pt = $1</span><span class="sq-fc-toggle sq-fc-toggle--on"><span class="sq-fc-toggle-dot"></span></span></div>
-                          <div class="sq-fc-toggle-row"><span class="sq-fc-toggle-k">Aplica en rebajas</span><span class="sq-fc-toggle"><span class="sq-fc-toggle-dot"></span></span></div>
-                          <div class="sq-fc-toggle-row"><span class="sq-fc-toggle-k">Tope 30% del ticket</span><span class="sq-fc-toggle sq-fc-toggle--on"><span class="sq-fc-toggle-dot"></span></span></div>
+                          <div class="sq-fc-toggle-row"><span class="sq-fc-toggle-k">Envío gratis · 80 pts</span><span class="sq-fc-toggle sq-fc-toggle--on"><span class="sq-fc-toggle-dot"></span></span></div>
+                          <div class="sq-fc-toggle-row"><span class="sq-fc-toggle-k">$200 en tu prenda · 150 pts</span><span class="sq-fc-toggle sq-fc-toggle--on"><span class="sq-fc-toggle-dot"></span></span></div>
+                          <div class="sq-fc-toggle-row"><span class="sq-fc-toggle-k">Ajuste de bastilla · 120 pts</span><span class="sq-fc-toggle sq-fc-toggle--on"><span class="sq-fc-toggle-dot"></span></span></div>
                         </div>
-                        <div class="sq-fc-rule-foot">Vigencia <strong>12 meses</strong> · aviso 30 días antes</div>
+                        <div class="sq-fc-rule-foot">Vigencia: <strong>configurable</strong></div>
                       </div>
                     )}
 
@@ -2363,20 +2492,21 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         <div class="sq-fc-header">
                           <span class="sq-fc-badge sq-fc-badge--email">
                             <span class="sq-fc-dot"></span>
-                            Proveedor conectado
+                            Embudo
                           </span>
-                          <span class="sq-fc-time">Mailchimp</span>
+                          <span class="sq-fc-time">Activo</span>
                         </div>
                         <div class="sq-fc-prov">
-                          <div class="sq-fc-prov-logo">M</div>
+                          <div class="sq-fc-prov-logo" style="background:#e8ecfa;color:#4a5ab8"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8z"/></svg></div>
                           <div class="sq-fc-prov-meta">
-                            <span class="sq-fc-prov-name">Mailchimp · casa-ambar.com</span>
-                            <span class="sq-fc-prov-ok">✓ Envío delegado · sin comisión por volumen</span>
+                            <span class="sq-fc-prov-name">Llegó tu talla</span>
+                            <span class="sq-fc-prov-ok">Disparador: vuelta a stock</span>
                           </div>
                         </div>
-                        <div class="sq-fc-prov-stats">
-                          <div class="sq-fc-prov-stat"><span class="sq-fc-prov-stat-k">Reputación</span><span class="sq-fc-prov-stat-v">98</span></div>
-                          <div class="sq-fc-prov-stat"><span class="sq-fc-prov-stat-k">Bounces</span><span class="sq-fc-prov-stat-v">0.3%</span></div>
+                        <div class="sq-fc-prov-stats" style="grid-template-columns:repeat(3,1fr)">
+                          <div class="sq-fc-prov-stat" style="flex-direction:column;align-items:flex-start;gap:2px"><span class="sq-fc-prov-stat-k">Activos</span><span class="sq-fc-prov-stat-v">4</span></div>
+                          <div class="sq-fc-prov-stat" style="flex-direction:column;align-items:flex-start;gap:2px"><span class="sq-fc-prov-stat-k">Completados</span><span class="sq-fc-prov-stat-v">5</span></div>
+                          <div class="sq-fc-prov-stat" style="flex-direction:column;align-items:flex-start;gap:2px"><span class="sq-fc-prov-stat-k">Compraron</span><span class="sq-fc-prov-stat-v">3</span></div>
                         </div>
                       </div>
                     )}
@@ -2386,21 +2516,23 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         <div class="sq-fc-header">
                           <span class="sq-fc-badge sq-fc-badge--wa">
                             <span class="sq-fc-dot"></span>
-                            Perfil Business
+                            Avisos por evento
                           </span>
-                          <span class="sq-fc-time">Verificado</span>
+                          <span class="sq-fc-time">Lealtad</span>
                         </div>
-                        <div class="sq-fc-wa-profile">
-                          <div class="sq-fc-wa-avatar">CM</div>
-                          <div class="sq-fc-wa-profile-meta">
-                            <span class="sq-fc-wa-profile-name">Casa Melgar <span class="sq-fc-wa-check">✓</span></span>
-                            <span class="sq-fc-wa-profile-sub">Joyería · 11 sucursales</span>
+                        <div class="sq-fc-wa-stack">
+                          <div class="sq-fc-wa-bubble sq-fc-wa-bubble--stack">
+                            <span class="sq-fc-wa-txt">Bienvenida al programa</span>
+                            <span class="sq-fc-wa-time">WhatsApp · Correo</span>
                           </div>
-                        </div>
-                        <div class="sq-fc-wa-desc">Hecho a mano en México desde 1984. Anillos, aretes y cadenas en plata y oro.</div>
-                        <div class="sq-fc-wa-catalog">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-                          Ver catálogo · 84 items
+                          <div class="sq-fc-wa-bubble sq-fc-wa-bubble--stack">
+                            <span class="sq-fc-wa-txt">Cashback / monedero abonado</span>
+                            <span class="sq-fc-wa-time">WhatsApp · Correo</span>
+                          </div>
+                          <div class="sq-fc-wa-bubble sq-fc-wa-bubble--stack">
+                            <span class="sq-fc-wa-txt">Subiste de nivel</span>
+                            <span class="sq-fc-wa-time">WhatsApp · Correo</span>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -2416,7 +2548,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         </div>
                         <div class="sq-fc-pos-ticket">
                           <div class="sq-fc-pos-row"><span>Tarjeta de regalo</span><span class="sq-fc-pos-amt">$1,500</span></div>
-                          <div class="sq-fc-pos-sub">Código: GC-84A2 · Activación al cobrar</div>
+                          <div class="sq-fc-pos-sub">SACS-TJX6-W4P2-H35K · se activa al cobrar</div>
                         </div>
                         <button class="sq-fc-cobrar sq-fc-cobrar--sea" tabindex="-1">
                           COBRAR
@@ -2430,32 +2562,26 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         <div class="sq-fc-header">
                           <span class="sq-fc-badge sq-fc-badge--violet">
                             <span class="sq-fc-dot"></span>
-                            Planes
+                            Membresía
                           </span>
-                          <span class="sq-fc-time">3 niveles</span>
+                          <span class="sq-fc-time">Vendida en sucursal</span>
                         </div>
                         <div class="sq-fc-plans-row">
                           <div class="sq-fc-plan">
-                            <span class="sq-fc-plan-name">Bronze</span>
-                            <span class="sq-fc-plan-price">$99<span class="sq-fc-plan-per">/mes</span></span>
-                            <span class="sq-fc-plan-ben">5% dto</span>
-                            <span class="sq-fc-plan-ben">1× pts</span>
-                            <span class="sq-fc-plan-ben">Portal</span>
+                            <span class="sq-fc-plan-name">Clienta</span>
+                            <span class="sq-fc-plan-price">Club Gala</span>
+                            <span class="sq-fc-plan-ben">Paulina A.</span>
                           </div>
                           <div class="sq-fc-plan sq-fc-plan--highlight">
-                            <span class="sq-fc-plan-tag">Popular</span>
-                            <span class="sq-fc-plan-name">Silver</span>
-                            <span class="sq-fc-plan-price">$249<span class="sq-fc-plan-per">/mes</span></span>
-                            <span class="sq-fc-plan-ben">10% dto</span>
-                            <span class="sq-fc-plan-ben">2× pts</span>
-                            <span class="sq-fc-plan-ben">Preventas</span>
+                            <span class="sq-fc-plan-tag">Vigente</span>
+                            <span class="sq-fc-plan-name">Vigencia</span>
+                            <span class="sq-fc-plan-price">12 sep</span>
+                            <span class="sq-fc-plan-ben">Desde 12 ago</span>
                           </div>
                           <div class="sq-fc-plan">
-                            <span class="sq-fc-plan-name">Gold</span>
-                            <span class="sq-fc-plan-price">$599<span class="sq-fc-plan-per">/mes</span></span>
-                            <span class="sq-fc-plan-ben">15% dto</span>
-                            <span class="sq-fc-plan-ben">Envío gratis</span>
-                            <span class="sq-fc-plan-ben">Regalo BD</span>
+                            <span class="sq-fc-plan-name">Beneficios</span>
+                            <span class="sq-fc-plan-price">3/7</span>
+                            <span class="sq-fc-plan-ben">Usados</span>
                           </div>
                         </div>
                       </div>
@@ -3349,15 +3475,15 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                       <Fragment>
                         <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                          Editor visual
+                          Color
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-5.52-4.48-10-10-10z"/></svg>
-                          Paleta
+                          Logo
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6M12 4v16"/></svg>
-                          Tipografía
+                          Banners
                         </div>
                       </Fragment>
                     )}
@@ -3791,11 +3917,11 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                       <Fragment>
                         <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>
-                          4 niveles
+                          3 niveles
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
-                          Progreso
+                          Multiplicador
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
@@ -3808,15 +3934,15 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                       <Fragment>
                         <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                          VIP
+                          Total gastado
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg>
-                          Historial
+                          Monedero
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                          Notas
+                          Membresía
                         </div>
                       </Fragment>
                     )}
@@ -3849,8 +3975,8 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                           Variables
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-                          Opt-in
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                          Enviar prueba
                         </div>
                       </Fragment>
                     )}
@@ -3859,15 +3985,32 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                       <Fragment>
                         <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                          Apartado
+                          Confirmado
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V10l9-7 9 7v11"/></svg>
-                          Pedido listo
+                          Abono
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-                          Compra
+                          Listo
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'wa-lealtad' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                          Cashback
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V10l9-7 9 7v11"/></svg>
+                          Recompensa
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                          Nivel
                         </div>
                       </Fragment>
                     )}
@@ -3875,16 +4018,33 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                     {block.variant === 'portal-history-mobile' && (
                       <Fragment>
                         <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/></svg>
-                          Móvil
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+                          Link
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                          QR
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/></svg>
+                          Instagram
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'portal-history-points' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg>
                           Historial
                         </div>
-                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-                          Abonar
+                          Cashback
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/></svg>
+                          Celular
                         </div>
                       </Fragment>
                     )}
@@ -3893,15 +4053,15 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                       <Fragment>
                         <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V10l9-7 9 7v11"/></svg>
-                          Toda la red
+                          3 sucursales
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-                          Saldo vivo
+                          Cashback
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                          En vivo
+                          Saldo al día
                         </div>
                       </Fragment>
                     )}
@@ -3910,7 +4070,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                       <Fragment>
                         <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-                          GC-84A2
+                          SACS-TJX6-W4P2-H35K
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -3918,7 +4078,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/></svg>
-                          Omnicanal
+                          Movimientos
                         </div>
                       </Fragment>
                     )}
@@ -3927,15 +4087,32 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                       <Fragment>
                         <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 7l10 7 10-7"/></svg>
-                          Email
+                          Correo
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                          Programado
+                          WhatsApp
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-                          QR
+                          Imprimir
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'gift-liability' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                          Pasivo vivo
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                          Ingreso reconocido
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                          Emitido total
                         </div>
                       </Fragment>
                     )}
@@ -3944,7 +4121,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                       <Fragment>
                         <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/></svg>
-                          Wallet
+                          Enviar
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
@@ -3952,7 +4129,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>
-                          Gold
+                          Ahorro
                         </div>
                       </Fragment>
                     )}
@@ -3961,15 +4138,15 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                       <Fragment>
                         <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                          Recurrente
+                          Mensual o anual
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-                          Visa
+                          Stripe
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
-                          Reintentos
+                          Beneficios
                         </div>
                       </Fragment>
                     )}
@@ -3978,15 +4155,15 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                       <Fragment>
                         <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
-                          MRR
+                          Ingresos
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
-                          Churn
+                          Utilización
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/></svg>
-                          LTV
+                          Rentabilidad
                         </div>
                       </Fragment>
                     )}
@@ -4003,7 +4180,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-                          Revenue
+                          Atribuido
                         </div>
                       </Fragment>
                     )}
@@ -4020,7 +4197,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                          Vencimiento
+                          Cashback
                         </div>
                       </Fragment>
                     )}
@@ -4033,11 +4210,11 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                          Reconocido
+                          A su nombre
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
-                          Contexto
+                          Puntos
                         </div>
                       </Fragment>
                     )}
@@ -4050,11 +4227,11 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                          Timeline
+                          Actividad
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                          Equipo
+                          Sucursales
                         </div>
                       </Fragment>
                     )}
@@ -4063,7 +4240,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                       <Fragment>
                         <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/></svg>
-                          Reglas
+                          Recompensas
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -4071,7 +4248,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-                          Tope
+                          Canje con puntos
                         </div>
                       </Fragment>
                     )}
@@ -4079,16 +4256,16 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                     {block.variant === 'email-provider-connect' && (
                       <Fragment>
                         <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-                          Conectado
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                          Disparador
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
-                          Reputación
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                          Activos
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 7l10 7 10-7"/></svg>
-                          Tu dominio
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                          Compraron
                         </div>
                       </Fragment>
                     )}
@@ -4097,15 +4274,15 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                       <Fragment>
                         <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-                          Verificado
+                          Por evento
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7l8-4z"/></svg>
-                          Oficial
+                          WhatsApp
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                          Catálogo
+                          Correo
                         </div>
                       </Fragment>
                     )}
@@ -4118,7 +4295,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                          Monto libre
+                          Monto
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
@@ -4131,15 +4308,15 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                       <Fragment>
                         <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-                          3 planes
+                          Vigencia
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>
-                          Popular
+                          Origen
                         </div>
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-                          Beneficios
+                          Uso de beneficios
                         </div>
                       </Fragment>
                     )}

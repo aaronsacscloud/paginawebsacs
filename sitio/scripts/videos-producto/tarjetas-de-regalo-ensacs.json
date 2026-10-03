@@ -1,0 +1,77 @@
+{
+ "modulo": "Tarjetas de regalo",
+ "nota": "Capturas del módulo de Tarjetas de regalo de Sacs (octubre de 2026) con una boutique de ejemplo.",
+ "pantallas": [
+  {
+   "id": "lista",
+   "img": "/images/producto/tarjetas-de-regalo/lista.webp",
+   "h": 1500,
+   "t": "Tarjetas de regalo",
+   "alt": "Tarjetas de regalo en Sacs: pasivo vivo, ingreso reconocido, emitido y lista de tarjetas con saldo"
+  },
+  {
+   "id": "tarjeta",
+   "img": "/images/producto/tarjetas-de-regalo/tarjeta.webp",
+   "h": 1500,
+   "t": "Tarjeta",
+   "alt": "Detalle de una tarjeta de regalo en Sacs con saldo, canjes y movimientos"
+  }
+ ],
+ "pasos": [
+  {
+   "p": "lista",
+   "r": [
+    210,
+    99,
+    1294,
+    208
+   ],
+   "t": "Lo que debes, en vivo",
+   "d": "Saldo por redimir, ingreso ya reconocido y todo lo emitido."
+  },
+  {
+   "p": "lista",
+   "r": [
+    211,
+    294,
+    1293,
+    389
+   ],
+   "t": "Cada tarjeta con su saldo",
+   "d": "Código, tipo, estado, saldo actual contra el inicial y vigencia."
+  },
+  {
+   "p": "lista",
+   "r": [
+    211,
+    231,
+    1293,
+    294
+   ],
+   "t": "Activas, agotadas o expiradas",
+   "d": "Filtra por estado o busca por código."
+  },
+  {
+   "p": "tarjeta",
+   "r": [
+    210,
+    99,
+    1294,
+    208
+   ],
+   "t": "El saldo de una tarjeta",
+   "d": "Cuánto se cargó, cuánto se ha usado y cuánto queda."
+  },
+  {
+   "p": "tarjeta",
+   "r": [
+    440,
+    519,
+    1000,
+    983
+   ],
+   "t": "Cada canje registrado",
+   "d": "Emisión y canjes con fecha y monto."
+  }
+ ]
+}
