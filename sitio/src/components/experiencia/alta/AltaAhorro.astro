@@ -1,0 +1,43 @@
+---
+/**
+ * «Lo que te ahorras.» (/experiencia/alta-de-productos): el cierre en números, marino con líneas como «Lo prendes tú»
+ * del probador. Los números son los de la página: 4–5 días → unos 30 minutos (lote de 10, referencia), los 19 de 21
+ * campos de la ficha del ejemplo sin teclear y una sola foto por prenda. Cada columna entra al verse (.rv → .is-on, script de la página).
+ */
+import { AHORRO } from '../../../data/experiencia-alta';
+---
+<section class="pda aho pd-marino" aria-labelledby="aho-h">
+  <div class="pda-fondo" aria-hidden="true"><span>30 MINUTOS · 30 MINUTOS · 30 MINUTOS</span><span>30 MINUTOS · 30 MINUTOS · 30 MINUTOS</span></div>
+  <p class="pd-folio"><span>El ahorro</span><span>De la caja a la venta</span></p>
+  <h2 class="pda-h" id="aho-h">{AHORRO.h}</h2>
+  <div class="aho-cols">
+    {AHORRO.cols.map((c, i) => (
+      <div class="aho-col rv" style={`--i:${i}`}>
+        <p class="aho-big">{c.big}</p>
+        <p class="aho-t">{c.t}</p>
+        <p class="aho-d">{c.d}</p>
+      </div>
+    ))}
+  </div>
+  <a class="pda-sigue" href="/contacto" data-evento="experiencia_cta_ahorro">Agenda una demo
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+  </a>
+</section>
+
+<style>
+  .aho-cols { display: grid; margin-top: 48px; border-top: 2px solid #fff; }
+  .aho-col { padding: 24px 0; border-bottom: 1px solid var(--pd-filete); }
+  .aho-big { margin: 0; font: 700 clamp(52px, 5.6vw, 92px)/0.9 var(--pd-clash); white-space: nowrap; letter-spacing: -0.03em; color: #fff; }
+  .aho-t { margin: 12px 0 0; font: 700 clamp(20px, 2vw, 26px)/1.2 var(--pd-clash); color: #fff; }
+  .aho-d { margin: 10px 0 0; max-width: 34ch; font: 500 16px/1.55 var(--font-body); color: var(--pd-tenue); }
+  :global(.js-rv) .aho-cols .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.1s); }
+  :global(.js-rv) .aho-cols .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 768px) {
+    .aho-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .aho-col { padding: 30px 32px 34px 0; border-bottom: 0; }
+    .aho-col + .aho-col { padding-left: 32px; border-left: 1px solid var(--pd-filete); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .aho-cols .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>

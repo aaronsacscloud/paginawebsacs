@@ -1,0 +1,272 @@
+---
+/**
+ * «La captura, en vivo» (/experiencia/alta-de-productos): el tripié, la prenda y la voz con AXO. Es «En vivo» del
+ * Estudio tal cual (sacs3 estudio-vivo.html · sacs_api lib/estudio/vivo.lib.js): el celular en un tripié con la pantalla
+ * hacia la persona; cuando la prenda se queda quieta cuenta 3·2·1 y toma la foto solo; AXO dice qué es y, si duda del
+ * color, pregunta con opciones numeradas que se contestan hablando («Di el número o el nombre»); luego «¿En qué colores
+ * y cuántas de cada talla?» y la tabla colores × tallas se arma con lo dictado; y mientras capturas, el Estudio ya hace
+ * la ficha y las fotos de las que pasaste. Los textos de la pantalla son los de En vivo.
+ *
+ * Con el scroll (data-tramos="5"): el paso 1 es la bodega a pantalla completa con sus señas (el tripié, la prenda,
+ * tú a un lado); del 2 al 5 la foto se oscurece y aparece el celular con la pantalla de En vivo. Las señas van sobre la
+ * foto con un «cover» propio (el lienzo conserva la proporción), así no se mueven de su sitio. En el teléfono la foto
+ * vertical entra completa arriba y el paso va abajo.
+ * Sin JS o con «reducir movimiento»: la foto con sus señas, el celular en el último paso y los cinco pasos en lista.
+ */
+import { CAPTURA, PIEZAS } from '../../../data/experiencia-alta';
+const I = '/images/experiencia/';
+// dónde va cada seña: [x, y] en % de la foto ancha (1536×1024) y de la vertical (1024×1536)
+const SENAS = [
+  { t: 'El tripié, a 1–1.5 m', ancha: [47.6, 60], vertical: [31, 75] },
+  { t: 'La prenda, en el recuadro', ancha: [58.8, 76], vertical: [47, 64] },
+  { t: 'Tú, a un lado', ancha: [77.5, 15], vertical: [79, 18.5] },
+];
+const COLORES = [
+  { n: 1, t: 'Mandarina', hex: '#D44E16' },
+  { n: 2, t: 'Naranja', hex: '#F07A1A' },
+  { n: 3, t: 'Terracota', hex: '#B5532F' },
+];
+const piezas = PIEZAS.filas.reduce((s, f) => s + f.n.reduce((a, b) => a + b, 0), 0);
+---
+<section class="ac" data-escena data-tramos="5" data-tramo="4" aria-labelledby="ac-h">
+  <div class="ac-riel" data-riel>
+    <div class="ac-escena">
+      <div class="ac-lienzo ac-lienzo--ancho" aria-hidden="true">
+        <img class="ac-foto" src={`${I}alta-escena-1536.webp`} srcset={`${I}alta-escena-1280.webp 1280w, ${I}alta-escena-1536.webp 1536w`} sizes="100vw" width="1536" height="1024" alt="" loading="lazy" decoding="async" />
+        <span class="ac-recuadro"></span>
+        {SENAS.map((s, i) => <span class="ac-sena" style={`left:${s.ancha[0]}%;top:${s.ancha[1]}%;--i:${i}`}><i></i>{s.t}</span>)}
+      </div>
+      <div class="ac-lienzo ac-lienzo--vertical" aria-hidden="true">
+        <img class="ac-foto" src={`${I}alta-vertical-1024.webp`} srcset={`${I}alta-vertical-800.webp 800w, ${I}alta-vertical-1024.webp 1024w`} sizes="100vw" width="1024" height="1536" alt="" loading="lazy" decoding="async" />
+        <span class="ac-recuadro"></span>
+        {SENAS.map((s, i) => <span class="ac-sena" style={`left:${s.vertical[0]}%;top:${s.vertical[1]}%;--i:${i}`}><i></i>{s.t}</span>)}
+      </div>
+      <p class="sr-only">En la bodega de una boutique, un celular en un tripié frente a un vestido de lino mandarina colgado en la pared; la dueña, a un lado, saca la siguiente prenda de las cajas.</p>
+
+      <!-- lo que se ve en el celular del tripié: En vivo -->
+      <div class="ac-tel" role="img" aria-label={`La pantalla de En vivo: la foto se toma sola; AXO reconoce un vestido midi de lino y pregunta de qué color es, con tres opciones; ella contesta «la uno»; dicta una chica, tres medianas y dos grandes de cada color, en mandarina y negro: ${piezas} piezas; y pasa a la siguiente prenda mientras el Estudio hace la ficha y las fotos`}>
+        <div class="ac-pant">
+          <div class="ac-top"><span class="ac-vivo"><i></i>En vivo</span><b>AXO</b><span class="ac-n"><em data-v="1">Prenda 1 de 10</em><em data-v="2">Prenda 2 de 10</em></span></div>
+          <div class="ac-cam">
+            <img src={`${I}alta-cruda.webp`} alt="" width="720" height="1080" loading="lazy" decoding="async" />
+            <span class="ac-marco"></span>
+            <span class="ac-cuenta"><b>3</b><b>2</b><b>1</b></span>
+            <span class="ac-flash"></span>
+            <span class="ac-auto">✓ Foto automática</span>
+            <span class="ac-espera">Pon la siguiente prenda</span>
+          </div>
+
+          <!-- 2 · la foto se toma sola -->
+          <div class="ac-v ac-v1">
+            <p class="ac-guia">Pon la pantalla hacia ti y la prenda en el recuadro</p>
+            <p class="ac-axo"><b>AXO</b>Di «AXO…» para hablarme.</p>
+          </div>
+
+          <!-- 3 · AXO la reconoce y pregunta el color -->
+          <div class="ac-v ac-v2">
+            <p class="ac-tarjeta"><img src={`${I}alta-cruda.webp`} alt="" width="720" height="1080" loading="lazy" decoding="async" /><span><small>Nueva</small><b>Vestido midi con cinto</b><em>lino</em></span></p>
+            <p class="ac-q">¿De qué color es?</p>
+            <div class="ac-ops">{COLORES.map((c) => <span class={c.n === 1 ? 'is-on' : undefined}><b>{c.n}</b><i style={`--c:${c.hex}`}></i><em>{c.t}</em></span>)}</div>
+            <p class="ac-yo">«La uno»</p>
+          </div>
+
+          <!-- 4 · le dices cuántas -->
+          <div class="ac-v ac-v3">
+            <p class="ac-q">¿En qué colores y cuántas de cada talla?</p>
+            <p class="ac-yo">«Una chica, tres medianas y dos grandes, de cada color: mandarina y negro»</p>
+            <div class="ac-tabla">
+              <div class="ac-fila ac-fila--h"><span></span>{PIEZAS.tallas.map((t) => <b>{t}</b>)}<b>Total</b></div>
+              {PIEZAS.filas.map((f) => (
+                <div class="ac-fila"><span><i style={`--c:${f.hex}`}></i>{f.color}</span>{f.n.map((n) => <b>{n}</b>)}<b>{f.n.reduce((a, b) => a + b, 0)}</b></div>
+              ))}
+              <p class="ac-suma">{piezas} piezas · {PIEZAS.tallas.length} tallas · {PIEZAS.filas.length} colores</p>
+            </div>
+          </div>
+
+          <!-- 5 · y la siguiente -->
+          <div class="ac-v ac-v4">
+            <p class="ac-axo"><b>AXO</b>Listo: va al Estudio. Pon la siguiente.</p>
+            <div class="ac-estudio"><span>En el Estudio</span><div><img src={`${I}alta-producto.webp`} alt="" width="720" height="1080" loading="lazy" decoding="async" /><img src={`${I}alta-modelo.webp`} alt="" width="720" height="1080" loading="lazy" decoding="async" /><em>La ficha y las fotos, en camino…</em></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ac-txt">
+        <p class="ac-k">En vivo, hablando con AXO</p>
+        <h2 class="ac-h" id="ac-h">La captura.</h2>
+        <ol class="ac-pasos">
+          {CAPTURA.map((p, k) => (
+            <li class="ac-paso" data-k={k}>
+              <span class="ac-paso-n">{p.n}</span>
+              <span class="ac-paso-t"><b>{p.t}</b><span>{p.d}</span></span>
+              <i class="ac-barra" aria-hidden="true"><b></b></i>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .ac { position: relative; background: #0B0B0C; color: #fff; }
+  .ac-escena { position: relative; overflow: hidden; }
+  /* sin escena: la foto, el celular y los pasos, uno debajo del otro */
+  .ac-lienzo { position: relative; width: 100%; }
+  .ac-lienzo--ancho { aspect-ratio: 1536 / 1024; }
+  .ac-lienzo--vertical { display: none; aspect-ratio: 1024 / 1536; }
+  .ac-foto { position: absolute; inset: 0; width: 100%; height: 100%; transition: opacity 0.7s ease, transform 1s cubic-bezier(0.22, 1, 0.36, 1); }
+  /* el recuadro punteado sobre la prenda, como el de la pantalla */
+  .ac-recuadro { position: absolute; border: 2px dashed rgba(255, 255, 255, 0.92); border-radius: 14px; transition: opacity 0.5s ease; }
+  .ac-lienzo--ancho .ac-recuadro { left: 50.6%; top: 7.5%; width: 16.6%; height: 65%; }
+  .ac-lienzo--vertical .ac-recuadro { left: 31%; top: 8.5%; width: 32%; height: 54%; }
+  .ac-sena { position: absolute; z-index: 2; display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px 9px 11px; border-radius: 99px; background: #fff; color: #141414; font: 700 14px/1 var(--font-display); white-space: nowrap; transform: translate(-50%, -50%); box-shadow: 0 12px 26px -12px rgba(0, 0, 0, 0.55); transition: opacity 0.5s ease, transform 0.5s ease; }
+  .ac-sena i { width: 10px; height: 10px; border-radius: 50%; background: #E0457B; box-shadow: 0 0 0 4px rgba(224, 69, 123, 0.25); }
+
+  /* ── el celular de En vivo ── */
+  .ac-tel { position: relative; width: min(78vw, 300px); aspect-ratio: 9 / 19; margin: 28px auto 0; padding: 2.4%; border-radius: 13% / 6.2%; background: #121216; box-shadow: 0 40px 70px -30px rgba(0, 0, 0, 0.8), inset 0 0 0 1.5px rgba(255, 255, 255, 0.14); transition: opacity 0.6s ease, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
+  .ac-pant { position: relative; height: 100%; overflow: hidden; border-radius: 11% / 5.2%; background: #0E0E11; color: #fff; container-type: size; }
+  .ac-top { position: absolute; left: 0; right: 0; top: 0; z-index: 4; display: grid; grid-template-columns: 1fr auto 1fr; gap: 2cqw; align-items: center; padding: 4.6cqh 5cqw 2.4cqh; background: linear-gradient(180deg, rgba(14, 14, 17, 0.92), rgba(14, 14, 17, 0)); font: 600 3.8cqw/1 var(--font-display); }
+  .ac-top b { font-weight: 700; letter-spacing: 0.12em; }
+  .ac-vivo { justify-self: start; display: inline-flex; align-items: center; gap: 1.6cqw; padding: 1.4cqw 2.6cqw; border-radius: 99px; background: rgba(224, 69, 123, 0.24); color: #FF9CBD; }
+  .ac-vivo i { width: 2cqw; height: 2cqw; border-radius: 50%; background: #FF4D7E; animation: acLate 1.2s ease-in-out infinite; }
+  .ac-n { position: relative; justify-self: stretch; height: 3.8cqw; }
+  .ac-n em { position: absolute; right: 0; top: 0; font-style: normal; white-space: nowrap; opacity: 0; transition: opacity 0.4s; }
+  .ac-cam { position: absolute; left: 0; right: 0; top: 0; height: 57%; overflow: hidden; transition: height 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+  .ac-cam img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 32%; transition: filter 0.5s ease; }
+  .ac-marco { position: absolute; left: 17%; right: 17%; top: 15%; bottom: 5%; border: 0.7cqw dashed rgba(255, 255, 255, 0.8); border-radius: 3cqw; }
+  .ac-cuenta { position: absolute; left: 50%; top: 50%; width: 22cqw; height: 22cqw; transform: translate(-50%, -50%); }
+  .ac-cuenta b { position: absolute; inset: 0; display: grid; place-items: center; border-radius: 50%; background: rgba(14, 14, 17, 0.62); font: 700 13cqw/1 var(--pd-clash, var(--font-display)); opacity: 0; }
+  .ac-flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+  .ac-auto { position: absolute; left: 50%; bottom: 2.6cqh; transform: translateX(-50%); padding: 2cqw 4cqw; border-radius: 99px; background: rgba(31, 157, 99, 0.95); font: 700 3.9cqw/1 var(--font-display); white-space: nowrap; opacity: 0; }
+  .ac-espera { position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%); padding: 2.4cqw 4.4cqw; border-radius: 99px; background: rgba(14, 14, 17, 0.72); font: 700 4.2cqw/1 var(--font-display); white-space: nowrap; opacity: 0; transition: opacity 0.4s ease; }
+  .ac-v { position: absolute; left: 0; right: 0; bottom: 0; top: 57%; padding: 2.6cqh 5cqw 3.4cqh; display: flex; flex-direction: column; justify-content: flex-start; gap: 1.8cqh; opacity: 0; visibility: hidden; transition: opacity 0.45s ease, visibility 0s linear 0.45s; }
+  .ac-guia { margin: 0; font: 600 5cqw/1.3 var(--font-display); color: rgba(255, 255, 255, 0.9); }
+  .ac-axo { margin: 0; padding: 2.6cqw 3.6cqw; border-radius: 4cqw 4cqw 4cqw 1cqw; background: #1D1D23; font: 500 4.6cqw/1.35 var(--font-body); }
+  .ac-axo b { display: block; margin-bottom: 0.8cqh; font: 700 3.4cqw/1 var(--font-display); color: #FF9CBD; letter-spacing: 0.12em; }
+  .ac-yo { align-self: flex-end; margin: 0; max-width: 90%; padding: 2.2cqw 3.4cqw; border-radius: 4cqw 4cqw 1cqw 4cqw; background: #E0457B; font: 600 4.4cqw/1.3 var(--font-body); }
+  .ac-tarjeta { display: flex; align-items: center; gap: 3cqw; margin: 0; }
+  .ac-tarjeta img { width: 12cqw; height: 16cqw; object-fit: cover; border-radius: 1.6cqw; }
+  .ac-tarjeta span { display: grid; gap: 0.6cqh; }
+  .ac-tarjeta small { justify-self: start; padding: 0.8cqw 1.8cqw; border-radius: 99px; background: rgba(111, 211, 163, 0.18); color: #6FD3A3; font: 700 3cqw/1 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; }
+  .ac-tarjeta b { font: 700 4.8cqw/1.15 var(--font-display); }
+  .ac-tarjeta em { font: 500 3.8cqw/1 var(--font-body); font-style: normal; color: rgba(255, 255, 255, 0.62); }
+  .ac-q { margin: 0; font: 700 5.2cqw/1.2 var(--font-display); }
+  .ac-ops { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.8cqw; }
+  .ac-ops span { display: grid; grid-template-columns: auto auto; grid-template-areas: 'n c' 't t'; justify-content: start; align-items: center; gap: 1cqh 1.6cqw; padding: 2cqw 2.2cqw; border-radius: 3cqw; border: 1px solid rgba(255, 255, 255, 0.2); }
+  .ac-ops span > b { grid-area: n; display: grid; place-items: center; width: 6.4cqw; height: 6.4cqw; border-radius: 50%; background: rgba(255, 255, 255, 0.14); font: 700 3.5cqw/1 var(--font-display); }
+  .ac-ops span > i { grid-area: c; width: 6.4cqw; height: 6.4cqw; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 0.5cqw rgba(255, 255, 255, 0.18); }
+  .ac-ops span > em { grid-area: t; font: 600 3.6cqw/1 var(--font-display); font-style: normal; }
+  .ac-ops .is-on { border-color: #fff; background: rgba(255, 255, 255, 0.1); }
+  .ac-tabla { padding: 1.6cqw 3cqw 2.4cqw; border-radius: 3.4cqw; background: #1D1D23; }
+  .ac-fila { display: grid; grid-template-columns: 1fr repeat(4, 9.6cqw); align-items: center; gap: 1cqw; padding: 1.3cqh 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); font: 600 4.1cqw/1 var(--font-display); }
+  .ac-fila > b { text-align: center; }
+  .ac-fila > b:last-child { color: #6FD3A3; }
+  .ac-fila--h { font: 600 3.3cqw/1 var(--font-display); color: rgba(255, 255, 255, 0.55); }
+  .ac-fila--h > b:last-child { color: rgba(255, 255, 255, 0.55); }
+  .ac-fila span { display: flex; align-items: center; gap: 2cqw; }
+  .ac-fila span i { width: 4cqw; height: 4cqw; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 0.5cqw rgba(255, 255, 255, 0.22); }
+  .ac-suma { margin: 1.4cqh 0 0; font: 700 4.1cqw/1 var(--font-display); color: #6FD3A3; }
+  .ac-estudio { padding: 2.6cqw 3.4cqw; border-radius: 3.4cqw; background: #1D1D23; }
+  .ac-estudio > span { font: 700 3.4cqw/1 var(--font-display); color: rgba(255, 255, 255, 0.6); letter-spacing: 0.1em; text-transform: uppercase; }
+  .ac-estudio div { display: flex; align-items: center; gap: 2.4cqw; margin-top: 1.6cqh; }
+  .ac-estudio img { width: 16cqw; height: 24cqw; object-fit: cover; border-radius: 2cqw; background: #2A2A31; }
+  .ac-estudio em { font: 600 4.2cqw/1.3 var(--font-display); font-style: normal; color: #FF9CBD; }
+
+  /* del paso 3 en adelante la cámara se encoge y deja lugar a la plática */
+  .ac:is([data-tramo="2"], [data-tramo="3"], [data-tramo="4"]) .ac-cam { height: 44%; }
+  .ac-v2, .ac-v3, .ac-v4 { top: 44%; }
+  /* 5: espera la siguiente prenda */
+  .ac[data-tramo="4"] .ac-cam img { filter: blur(5px) brightness(0.55); }
+  .ac[data-tramo="4"] .ac-espera { opacity: 1; }
+  /* el paso que se ve (sin JS: el último) */
+  .ac[data-tramo="0"] .ac-v1, .ac[data-tramo="1"] .ac-v1, .ac[data-tramo="2"] .ac-v2, .ac[data-tramo="3"] .ac-v3, .ac[data-tramo="4"] .ac-v4 { opacity: 1; visibility: visible; transition: opacity 0.45s ease, visibility 0s; }
+  .ac:not([data-tramo="4"]) .ac-n em[data-v="1"], .ac[data-tramo="4"] .ac-n em[data-v="2"] { opacity: 1; }
+  .ac:is([data-tramo="2"], [data-tramo="3"]) .ac-auto { opacity: 1; }
+
+  /* ── los pasos ── */
+  .ac-txt { padding: 36px 20px 56px; }
+  .ac-k { margin: 0 0 14px; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: #F07FA6; }
+  .ac-h { margin: 0; color: #fff; font: 700 clamp(40px, 5.6vw, 84px)/0.94 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; }
+  .ac-pasos { margin: 22px 0 0; padding: 0; list-style: none; border-top: 1px solid rgba(255, 255, 255, 0.3); }
+  .ac-paso { position: relative; display: grid; grid-template-columns: 40px 1fr; gap: 4px; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.18); }
+  .ac-paso-n { font: 700 19px/1.2 var(--pd-clash, var(--font-display)); color: #F07FA6; transition: color 0.3s; }
+  .ac-paso-t { display: grid; gap: 3px; }
+  .ac-paso-t b { font: 700 16px/1.3 var(--font-display); color: #fff; }
+  .ac-paso-t > span { font: 500 14.5px/1.45 var(--font-body); color: rgba(255, 255, 255, 0.8); }
+  .ac-barra { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; overflow: hidden; }
+  .ac-barra b { display: block; height: 100%; background: #E0457B; transform: scaleX(0); transform-origin: 0 50%; }
+
+  /* ── con el scroll ── */
+  .ac.is-escena .ac-riel { height: 560vh; }
+  .ac.is-escena .ac-escena { position: sticky; top: 0; height: 100vh; height: 100svh; }
+  .ac.is-escena .ac-lienzo { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+  .ac.is-escena .ac-lienzo--ancho { width: max(100vw, calc(100svh * 1.5)); }
+  .ac.is-escena .ac-tel { position: absolute; z-index: 3; margin: 0; }
+  .ac.is-escena .ac-paso-n { color: rgba(255, 255, 255, 0.45); }
+  .ac.is-escena[data-tramo="0"] .ac-paso[data-k="0"] .ac-paso-n, .ac.is-escena[data-tramo="1"] .ac-paso[data-k="1"] .ac-paso-n, .ac.is-escena[data-tramo="2"] .ac-paso[data-k="2"] .ac-paso-n, .ac.is-escena[data-tramo="3"] .ac-paso[data-k="3"] .ac-paso-n, .ac.is-escena[data-tramo="4"] .ac-paso[data-k="4"] .ac-paso-n { color: #F07FA6; }
+  .ac.is-escena[data-tramo="0"] .ac-paso[data-k="0"] .ac-barra b, .ac.is-escena[data-tramo="1"] .ac-paso[data-k="1"] .ac-barra b, .ac.is-escena[data-tramo="2"] .ac-paso[data-k="2"] .ac-barra b, .ac.is-escena[data-tramo="3"] .ac-paso[data-k="3"] .ac-barra b, .ac.is-escena[data-tramo="4"] .ac-paso[data-k="4"] .ac-barra b { animation: acBarra 4.5s linear both; }
+  /* paso 1: la bodega con sus señas; del 2 en adelante la foto se oscurece y entra el celular */
+  .ac.is-escena .ac-sena { opacity: 0; transform: translate(-50%, -20%); }
+  .ac.is-escena[data-tramo="0"] .ac-sena { opacity: 1; transform: translate(-50%, -50%); transition-delay: calc(0.25s + var(--i) * 0.3s); }
+  .ac.is-escena:not([data-tramo="0"]) .ac-recuadro { opacity: 0; }
+  .ac.is-escena:not([data-tramo="0"]) .ac-foto { opacity: 0.26; transform: scale(1.05); }
+  .ac.is-escena[data-tramo="0"] .ac-tel { opacity: 0; pointer-events: none; }
+  /* 2 · la cuenta, el flash y «Foto automática» */
+  .ac.is-escena[data-tramo="1"] .ac-cuenta b:nth-child(1) { animation: acCuenta 0.7s ease 0.5s both; }
+  .ac.is-escena[data-tramo="1"] .ac-cuenta b:nth-child(2) { animation: acCuenta 0.7s ease 1.2s both; }
+  .ac.is-escena[data-tramo="1"] .ac-cuenta b:nth-child(3) { animation: acCuenta 0.7s ease 1.9s both; }
+  .ac.is-escena[data-tramo="1"] .ac-flash { animation: acFlash 0.55s ease 2.6s both; }
+  .ac.is-escena[data-tramo="1"] .ac-auto { animation: acAparece 0.4s ease 2.8s both; }
+  /* 3 · AXO pregunta el color y ella contesta */
+  .ac.is-escena[data-tramo="2"] .ac-v2 > * { animation: acAparece 0.5s ease both; }
+  .ac.is-escena[data-tramo="2"] .ac-v2 .ac-q { animation-delay: 0.5s; }
+  .ac.is-escena[data-tramo="2"] .ac-v2 .ac-ops { animation-delay: 0.9s; }
+  .ac.is-escena[data-tramo="2"] .ac-v2 .ac-yo { animation-delay: 1.8s; }
+  .ac.is-escena[data-tramo="2"] .ac-ops .is-on { animation: acElige 0.4s ease 2.2s both; }
+  /* 4 · lo dictado se vuelve la tabla */
+  .ac.is-escena[data-tramo="3"] .ac-v3 .ac-yo { animation: acAparece 0.5s ease 0.4s both; }
+  .ac.is-escena[data-tramo="3"] .ac-fila, .ac.is-escena[data-tramo="3"] .ac-suma { animation: acAparece 0.45s ease both; }
+  .ac.is-escena[data-tramo="3"] .ac-fila:nth-child(2) { animation-delay: 1.4s; }
+  .ac.is-escena[data-tramo="3"] .ac-fila:nth-child(3) { animation-delay: 1.8s; }
+  .ac.is-escena[data-tramo="3"] .ac-suma { animation-delay: 2.3s; }
+  /* 5 · la siguiente */
+  .ac.is-escena[data-tramo="4"] .ac-v4 > * { animation: acAparece 0.5s ease both; }
+  .ac.is-escena[data-tramo="4"] .ac-estudio { animation-delay: 0.5s; }
+  @keyframes acCuenta { 0% { opacity: 0; transform: scale(1.3); } 30% { opacity: 1; transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes acFlash { 0% { opacity: 0; } 30% { opacity: 0.85; } 100% { opacity: 0; } }
+  @keyframes acAparece { from { opacity: 0; transform: translateY(1.6cqh); } to { opacity: 1; transform: none; } }
+  @keyframes acElige { 50% { transform: scale(0.95); } 100% { background: #fff; color: #141414; } }
+  @keyframes acBarra { from { transform: scaleX(0); } to { transform: none; } }
+  @keyframes acLate { 50% { opacity: 0.35; } }
+
+  @media (min-width: 900px) {
+    .ac.is-escena .ac-escena::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(90deg, rgba(8, 8, 10, 0.86) 0%, rgba(8, 8, 10, 0.6) 26%, rgba(8, 8, 10, 0) 44%); }
+    .ac.is-escena .ac-txt { position: absolute; left: 0; top: 50%; z-index: 2; width: min(34vw, 460px); padding: 0 0 0 4.4vw; transform: translateY(-50%); text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45); }
+    .ac.is-escena .ac-tel { right: 10vw; top: 50%; width: auto; height: min(80vh, 660px); transform: translateY(-50%); }
+    .ac.is-escena[data-tramo="0"] .ac-tel { transform: translateY(calc(-50% + 60px)) scale(0.92); }
+  }
+  /* en escritorio, solo el texto del paso en que va */
+  @media (min-width: 900px) {
+    .ac.is-escena .ac-paso-t > span { display: none; }
+    .ac.is-escena[data-tramo="0"] .ac-paso[data-k="0"] .ac-paso-t > span, .ac.is-escena[data-tramo="1"] .ac-paso[data-k="1"] .ac-paso-t > span, .ac.is-escena[data-tramo="2"] .ac-paso[data-k="2"] .ac-paso-t > span, .ac.is-escena[data-tramo="3"] .ac-paso[data-k="3"] .ac-paso-t > span, .ac.is-escena[data-tramo="4"] .ac-paso[data-k="4"] .ac-paso-t > span { display: block; }
+  }
+  @media (max-width: 899px) {
+    .ac-lienzo--ancho { display: none; }
+    .ac-lienzo--vertical { display: block; }
+    .ac-sena { font-size: 12px; padding: 7px 12px 7px 9px; }
+    /* la foto vertical entra completa arriba; el paso va abajo */
+    .ac.is-escena .ac-lienzo--vertical { left: 0; top: 0; width: 100%; transform: none; }
+    .ac.is-escena .ac-txt { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 56px 20px 18px; background: linear-gradient(180deg, rgba(11, 11, 12, 0) 0, #0B0B0C 52px); }
+    .ac.is-escena .ac-k { margin-bottom: 8px; }
+    .ac.is-escena .ac-h { font-size: clamp(30px, 8.6vw, 40px); }
+    .ac.is-escena .ac-pasos { margin-top: 10px; }
+    .ac.is-escena .ac-paso { display: none; padding: 10px 0 8px; }
+    .ac.is-escena[data-tramo="0"] .ac-paso[data-k="0"], .ac.is-escena[data-tramo="1"] .ac-paso[data-k="1"], .ac.is-escena[data-tramo="2"] .ac-paso[data-k="2"], .ac.is-escena[data-tramo="3"] .ac-paso[data-k="3"], .ac.is-escena[data-tramo="4"] .ac-paso[data-k="4"] { display: grid; }
+    .ac.is-escena .ac-tel { left: 50%; top: 2svh; width: auto; height: min(60svh, 520px); transform: translateX(-50%); }
+    .ac.is-escena[data-tramo="0"] .ac-tel { transform: translate(-50%, 60px) scale(0.92); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ac * { animation: none !important; transition: none !important; }
+  }
+</style>

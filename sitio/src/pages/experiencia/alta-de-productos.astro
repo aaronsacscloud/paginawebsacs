@@ -1,0 +1,98 @@
+---
+/**
+ * /experiencia/alta-de-productos — «De la caja a la venta en 30 minutos», la Experiencia 02 (3-oct-2026).
+ *
+ * Pedido del dueño: subir productos en tiempo real con AXO (En vivo del Estudio de moda), con el mismo diseño que el
+ * probador: imagen a pantalla completa y la historia con el scroll. Recorrido: portada (la bodega con el tripié) →
+ * antes y después (4–5 días contra unos 30 minutos) → la captura en vivo (el celular, la foto sola, AXO, las tallas y
+ * los colores dictados) → la ficha que se llena sola (el ADN de la prenda) → el Estudio solo (producto, colores,
+ * modelo, escenario, publicada en la caja y la tienda en línea) → lo que te ahorras → preguntas → cierre.
+ * Todo lo que dice sale del producto (ver src/data/experiencia-alta.ts). El menú principal solo se ve hasta arriba
+ * (navSoloArriba): las escenas ocupan la pantalla entera.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ExpHero from '../../components/experiencia/ExpHero.astro';
+import AltaAntes from '../../components/experiencia/alta/AltaAntes.astro';
+import AltaCaptura from '../../components/experiencia/alta/AltaCaptura.astro';
+import AltaFicha from '../../components/experiencia/alta/AltaFicha.astro';
+import AltaEstudio from '../../components/experiencia/alta/AltaEstudio.astro';
+import AltaAhorro from '../../components/experiencia/alta/AltaAhorro.astro';
+import GiroFAQ from '../../components/giros/GiroFAQ.astro';
+import FinalCTA from '../../components/FinalCTA.astro';
+import StructuredData from '../../components/StructuredData.astro';
+import { ALTA, PREGUNTAS_ALTA } from '../../data/experiencia-alta';
+import { experiencias } from '../../data/experiencias';
+import { SITIO } from '../../data/entidad';
+import { breadcrumbList } from '../../lib/breadcrumb';
+import '../../styles/planeacion.css';
+
+const exp = experiencias.find((e) => e.slug === 'alta-de-productos')!;
+const title = 'Alta de productos de moda con IA, en vivo con AXO | Sacs';
+const description = 'Pones la prenda frente al celular, le hablas a AXO y Sacs llena la ficha, hace las fotos, la modelo y el escenario, y la publica en tu caja y tu tienda en línea. De 4–5 días a unos 30 minutos.';
+
+const pagina = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  '@id': `${SITIO}${exp.href}#pagina`,
+  name: exp.titulo,
+  description,
+  url: `${SITIO}${exp.href}`,
+  inLanguage: 'es-MX',
+};
+const migas = breadcrumbList([{ name: 'Inicio', url: `${SITIO}/` }, { name: 'Experiencia', url: `${SITIO}/experiencia` }, { name: exp.titulo }]);
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: PREGUNTAS_ALTA.map((p) => ({ '@type': 'Question', name: p.question, acceptedAnswer: { '@type': 'Answer', text: p.answer } })),
+};
+---
+<BaseLayout
+  title={title}
+  description={description}
+  image="/images/experiencia/alta-og.jpg"
+  preloadImage="/images/experiencia/alta-vertical-1024.webp"
+  preloadMedia="(max-width: 767px)"
+  structuredData={[pagina, migas]}
+  navSoloArriba
+>
+  <StructuredData data={faqSchema} />
+
+  <div class="pd exp">
+    <ExpHero
+      folio={ALTA.folio}
+      etiqueta="Estudio AXO · En vivo"
+      titulo={ALTA.titulo}
+      bajada={ALTA.bajada}
+      ancha={{ s1280: '/images/experiencia/alta-escena-1280.webp', s1920: '/images/experiencia/alta-escena-1536.webp', alto1920: 1280 }}
+      vertical={{ src: '/images/experiencia/alta-vertical-1024.webp', ancho: 1024, alto: 1536 }}
+      alt="En la bodega de una boutique, la dueña saca la mercancía nueva de las cajas mientras un celular en un tripié fotografía un vestido mandarina colgado en la pared"
+      ancla="alta-antes"
+    />
+    <div id="alta-antes"><AltaAntes /></div>
+    <AltaCaptura />
+    <AltaFicha />
+    <AltaEstudio />
+    <AltaAhorro />
+  </div>
+
+  <GiroFAQ title="Preguntas frecuentes sobre el alta de productos con AXO" faqs={PREGUNTAS_ALTA} />
+  <FinalCTA />
+</BaseLayout>
+
+<script>
+  import { iniciaEscenas } from '../../scripts/experiencia/escenas';
+  iniciaEscenas();
+
+  // Las columnas de «Lo que te ahorras» entran al verse (sin JS se ven completas).
+  (() => {
+    const rv = Array.from(document.querySelectorAll<HTMLElement>('.exp .rv'));
+    if (!rv.length || !('IntersectionObserver' in window)) return;
+    document.documentElement.classList.add('js-rv');
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-on'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -12% 0px' });
+    rv.forEach((el) => io.observe(el));
+  })();
+
+  const ph = (evento: string, props?: Record<string, unknown>) => { try { (window as any).sacsPH?.(evento, props); } catch { /* sin medición */ } };
+  document.querySelectorAll<HTMLElement>('.exp [data-evento]').forEach((a) => a.addEventListener('click', () => ph(a.dataset.evento!, { experiencia: 'alta-de-productos' })));
+  document.querySelector('.final-cta-btn')?.addEventListener('click', () => ph('experiencia_cta_prueba', { experiencia: 'alta-de-productos' }));
+</script>

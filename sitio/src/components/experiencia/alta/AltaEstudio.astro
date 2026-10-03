@@ -1,0 +1,248 @@
+---
+/**
+ * «Lo demás lo hace Sacs» (/experiencia/alta-de-productos): el Estudio de moda trabajando solo con la foto del celular
+ * (sacs_api lib/estudio/orquestador.lib.js): foto de producto → colores (el negro sale de la misma foto, marcado «Color
+ * ilustrativo») → en modelo → en escenario (el Contenido del Estudio) → publicada en la caja y la tienda en línea con
+ * el precio por la regla de la marca (precio.lib.js: costo $480 al 55 % → $1,290), sus tallas y sus colores.
+ *
+ * Con el scroll (data-tramos="5"): un paso por tramo; cambia la foto grande y el color de la página. A un lado, «la foto
+ * del celular» (la de antes). En el último, la caja y la tienda en línea. Sin JS o con «reducir movimiento»: las cuatro
+ * fotos en fila y lo publicado debajo.
+ */
+import { ESTUDIO, PIEZAS } from '../../../data/experiencia-alta';
+const I = '/images/experiencia/';
+const fotos = ESTUDIO.filter((e) => e.img !== 'publicada');
+const piezas = PIEZAS.filas.reduce((s, f) => s + f.n.reduce((a, b) => a + b, 0), 0);
+---
+<section class="ae" data-escena data-tramos="5" data-tramo="4" aria-labelledby="ae-h">
+  <div class="ae-riel" data-riel>
+    <div class="ae-escena">
+      <div class="ae-txt">
+        <p class="ae-k">El Estudio de moda, solo</p>
+        <h2 class="ae-h" id="ae-h">Lo demás lo hace Sacs.</h2>
+        <ol class="ae-pasos">
+          {ESTUDIO.map((p, k) => (
+            <li class="ae-paso" data-k={k}>
+              <span class="ae-paso-n">{p.n}</span>
+              <span class="ae-paso-t"><b>{p.t}</b><span>{p.d}</span></span>
+              <i class="ae-barra" aria-hidden="true"><b></b></i>
+            </li>
+          ))}
+        </ol>
+        <p class="ae-reloj"><b>7.7 min</b><span>para las fotos de 10 prendas, en paralelo, en nuestras pruebas de septiembre de 2026.</span></p>
+      </div>
+
+      <div class="ae-escenario">
+        <figure class="ae-antes">
+          <img src={`${I}alta-cruda.webp`} width="720" height="1080" alt="" loading="lazy" decoding="async" />
+          <figcaption>La foto del celular</figcaption>
+        </figure>
+        <div class="ae-fotos">
+          {fotos.map((f, k) => (
+            <figure class="ae-foto" data-k={k}>
+              <img src={`${I}alta-${f.img}.webp`} width="720" height="1080" alt={
+                f.img === 'producto' ? 'El vestido mandarina en foto de producto, sin gancho y sobre fondo claro'
+                : f.img === 'negro' ? 'El mismo vestido en negro, hecho con la misma foto'
+                : f.img === 'modelo' ? 'El vestido mandarina puesto en una modelo, de frente'
+                : 'La modelo con el vestido en una terraza con buganvilias al atardecer'} loading="lazy" decoding="async" />
+              {f.img === 'negro' && <span class="ae-ilustrativo">Color ilustrativo</span>}
+              <figcaption>{f.t}</figcaption>
+            </figure>
+          ))}
+        </div>
+
+        <!-- 5 · publicada: la tienda en línea y la caja -->
+        <div class="ae-pub">
+          <div class="ae-pub-web">
+            <p class="ae-donde">En tu tienda en línea</p>
+            <div class="ae-web" role="img" aria-label="En la tienda en línea: el vestido midi de lino con cinto, a $1,290, en mandarina y negro, tallas CH, M y G">
+              <div class="ae-web-bar"><i></i><i></i><i></i><span>Tu tienda en línea · Vestidos</span></div>
+              <div class="ae-web-in">
+                <img src={`${I}alta-modelo.webp`} width="720" height="1080" alt="" loading="lazy" decoding="async" />
+                <div class="ae-web-info">
+                  <small>Vestidos · Nuevo</small>
+                  <b class="ae-web-n">Vestido midi de lino con cinto</b>
+                  <p class="ae-web-p">$1,290</p>
+                  <p class="ae-web-l">Color: Mandarina</p>
+                  <p class="ae-web-c">{PIEZAS.filas.map((f, i) => <i class={i === 0 ? 'is-on' : undefined} style={`--c:${f.hex}`}></i>)}</p>
+                  <p class="ae-web-l">Talla</p>
+                  <p class="ae-web-t">{PIEZAS.tallas.map((t, i) => <span class={i === 1 ? 'is-on' : undefined}>{t}</span>)}</p>
+                  <span class="ae-web-btn">Agregar a la bolsa</span>
+                </div>
+              </div>
+            </div>
+            <p class="ae-regla">Precio por tu regla: costo $480, margen 55 %</p>
+            <p class="ae-canales">Y listas para marketplaces e historias: fondo blanco 1:1 · 9:16</p>
+          </div>
+          <div class="ae-pub-caja">
+            <p class="ae-donde">En tu caja</p>
+            <div class="ae-caja" role="img" aria-label={`En la caja: el vestido nuevo ya aparece en el catálogo, a $1,290, con ${piezas} piezas`}>
+              <div class="ae-caja-bar"><b>Caja</b><span>Buscar producto…</span></div>
+              <div class="ae-caja-grid">
+                <div class="ae-tile is-nuevo"><img src={`${I}alta-producto.webp`} width="720" height="1080" alt="" loading="lazy" decoding="async" /><em>Nuevo</em><b>Vestido midi de lino con cinto</b><span>$1,290 · {piezas} pzs</span></div>
+                <div class="ae-tile is-vacio"><i></i><b></b><span></span></div>
+                <div class="ae-tile is-vacio"><i></i><b></b><span></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* los colores de cada paso: producto (estudio claro) · negro · modelo (arena) · escenario (terracota) · publicada (azul) */
+  .ae { --bg: #4470D8; --t: #fff; --t2: rgba(255, 255, 255, 0.82); --acc: #fff; --fil: rgba(255, 255, 255, 0.3); position: relative; background: var(--bg); color: var(--t); transition: background-color 0.7s ease, color 0.5s ease; }
+  .ae.is-escena[data-tramo="0"] { --bg: #ECEAE5; --t: #141414; --t2: #4A4741; --acc: #D03A70; --fil: rgba(20, 20, 20, 0.16); }
+  .ae.is-escena[data-tramo="1"] { --bg: #18181B; --t: #fff; --t2: rgba(255, 255, 255, 0.76); --acc: #F07FA6; --fil: rgba(255, 255, 255, 0.2); }
+  .ae.is-escena[data-tramo="2"] { --bg: #E9DCC9; --t: #141414; --t2: #4F463A; --acc: #B4502E; --fil: rgba(20, 20, 20, 0.16); }
+  .ae.is-escena[data-tramo="3"] { --bg: #B24E2C; --t: #fff; --t2: rgba(255, 255, 255, 0.86); --acc: #FFD9A8; --fil: rgba(255, 255, 255, 0.3); }
+  .ae-escena { position: relative; display: grid; gap: 36px; padding: 72px 20px 80px; }
+
+  .ae-k { margin: 0 0 14px; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--t); }
+  .ae-h { margin: 0; max-width: 13ch; color: var(--t); font: 700 clamp(38px, 4.6vw, 68px)/0.94 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; text-wrap: balance; transition: color 0.5s ease; }
+  .ae-pasos { margin: 22px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--fil); }
+  .ae-paso { position: relative; display: grid; grid-template-columns: 40px 1fr; gap: 4px; padding: 12px 0; border-bottom: 1px solid var(--fil); }
+  .ae-paso-n { font: 700 19px/1.2 var(--pd-clash, var(--font-display)); color: var(--acc); transition: color 0.3s; }
+  .ae-paso-t { display: grid; gap: 3px; }
+  .ae-paso-t b { font: 700 16px/1.3 var(--font-display); color: var(--t); }
+  .ae-paso-t > span { font: 500 14.5px/1.45 var(--font-body); color: var(--t2); }
+  .ae-barra { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; overflow: hidden; }
+  .ae-barra b { display: block; height: 100%; background: var(--acc); transform: scaleX(0); transform-origin: 0 50%; }
+  .ae-reloj { display: flex; align-items: baseline; gap: 12px; margin: 22px 0 0; color: var(--t); }
+  .ae-reloj b { flex: none; font: 700 clamp(30px, 3vw, 42px)/1 var(--pd-clash, var(--font-display)); }
+  .ae-reloj span { max-width: 34ch; font: 500 13.5px/1.45 var(--font-body); color: var(--t2); }
+
+  /* ── sin escena: las cuatro fotos en fila y lo publicado debajo ── */
+  .ae-escenario { position: relative; }
+  .ae-antes { display: none; }
+  .ae-fotos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .ae-foto { position: relative; margin: 0; }
+  .ae-foto img { display: block; width: 100%; height: auto; border-radius: 16px; }
+  .ae-foto figcaption { margin-top: 8px; font: 600 13px/1.3 var(--font-display); color: var(--t); }
+  .ae-ilustrativo { position: absolute; left: 10px; top: 10px; padding: 6px 10px; border-radius: 99px; background: rgba(255, 255, 255, 0.94); color: #141414; font: 700 11px/1 var(--font-display); letter-spacing: 0.04em; }
+  .ae-pub { position: relative; display: grid; gap: 22px; margin-top: 28px; }
+  .ae-pub-web { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+  .ae-pub-web .ae-web { align-self: stretch; }
+  .ae-donde { margin: 0 0 2px; font: 700 12px/1.2 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--t); }
+  /* la etiqueta de la caja va a la derecha: a la izquierda la tapa la tienda en línea */
+  .ae-pub-caja .ae-donde { margin-bottom: 10px; text-align: right; }
+
+  /* la tienda en línea */
+  .ae-web { overflow: hidden; border-radius: 16px; background: #fff; color: #141414; box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.45); }
+  .ae-web-bar { display: flex; align-items: center; gap: 6px; padding: 9px 12px; background: #F1F0EE; }
+  .ae-web-bar i { width: 9px; height: 9px; border-radius: 50%; background: #D9D6D1; }
+  .ae-web-bar span { flex: 1; margin-left: 8px; padding: 4px 10px; border-radius: 99px; background: #fff; font: 500 11.5px/1 var(--font-body); color: #77706F; }
+  .ae-web-in { display: grid; grid-template-columns: 0.9fr 1fr; }
+  .ae-web-in > img { width: 100%; height: 100%; aspect-ratio: 2 / 3; object-fit: cover; }
+  .ae-web-info { display: flex; flex-direction: column; gap: 7px; padding: 16px 16px 18px; }
+  .ae-web-info small { font: 600 10.5px/1 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: #77706F; }
+  .ae-web-n { font: 700 17px/1.2 var(--font-display); }
+  .ae-web-p { margin: 0; font: 700 18px/1 var(--font-display); }
+  .ae-web-l { margin: 4px 0 0; font: 600 11.5px/1 var(--font-display); color: #4A4741; }
+  .ae-web-c { display: flex; gap: 8px; margin: 0; }
+  .ae-web-c i { width: 22px; height: 22px; border-radius: 50%; background: var(--c); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12); }
+  .ae-web-c i.is-on { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px #141414; }
+  .ae-web-t { display: flex; gap: 6px; margin: 0; }
+  .ae-web-t span { display: grid; place-items: center; min-width: 34px; height: 30px; padding: 0 6px; border: 1px solid #D9D6D1; border-radius: 8px; font: 600 12px/1 var(--font-display); }
+  .ae-web-t span.is-on { border-color: #141414; background: #141414; color: #fff; }
+  .ae-web-btn { margin-top: auto; display: grid; place-items: center; height: 38px; border-radius: 99px; background: #141414; color: #fff; font: 700 12.5px/1 var(--font-display); }
+
+  /* la caja */
+  .ae-caja { overflow: hidden; border-radius: 16px; background: #1B1B1F; color: #fff; box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.55); }
+  .ae-caja-bar { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+  .ae-caja-bar b { font: 700 13px/1 var(--font-display); }
+  .ae-caja-bar span { flex: 1; padding: 6px 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.08); font: 500 11.5px/1 var(--font-body); color: rgba(255, 255, 255, 0.55); }
+  .ae-caja-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 10px; }
+  .ae-tile { position: relative; display: grid; gap: 5px; align-content: start; padding: 6px 6px 8px; border-radius: 10px; background: rgba(255, 255, 255, 0.06); }
+  .ae-tile img { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; object-position: 50% 20%; border-radius: 6px; background: #ECEAE5; }
+  .ae-tile b { font: 700 10.5px/1.2 var(--font-display); }
+  .ae-tile span { font: 600 10px/1 var(--font-display); color: #6FD3A3; }
+  .ae-tile em { position: absolute; left: 10px; top: 10px; padding: 3px 6px; border-radius: 99px; background: #E0457B; font: 700 9px/1 var(--font-display); font-style: normal; text-transform: uppercase; letter-spacing: 0.06em; }
+  .ae-tile.is-nuevo { box-shadow: inset 0 0 0 1.5px #E0457B; }
+  .ae-tile.is-vacio i { display: block; aspect-ratio: 1; border-radius: 6px; background: rgba(255, 255, 255, 0.08); }
+  .ae-tile.is-vacio b { height: 8px; width: 80%; border-radius: 4px; background: rgba(255, 255, 255, 0.1); }
+  .ae-tile.is-vacio span { height: 7px; width: 45%; border-radius: 4px; background: rgba(255, 255, 255, 0.08); }
+  .ae-regla, .ae-canales { margin: 0; padding: 8px 14px; border-radius: 99px; background: rgba(255, 255, 255, 0.96); color: #141414; font: 700 12.5px/1.2 var(--font-display); }
+  .ae-canales { background: rgba(255, 255, 255, 0.18); color: #fff; font-weight: 600; }
+
+  @media (min-width: 640px) {
+    .ae-fotos { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .ae-pub { grid-template-columns: 1.25fr 1fr; align-items: start; }
+  }
+
+  /* ══ con el scroll ══ */
+  .ae.is-escena .ae-riel { height: 560vh; }
+  .ae.is-escena .ae-escena { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; padding: 0; display: block; }
+  .ae.is-escena .ae-paso-n { color: var(--t2); opacity: 0.6; }
+  .ae.is-escena[data-tramo="0"] .ae-paso[data-k="0"] .ae-paso-n, .ae.is-escena[data-tramo="1"] .ae-paso[data-k="1"] .ae-paso-n, .ae.is-escena[data-tramo="2"] .ae-paso[data-k="2"] .ae-paso-n, .ae.is-escena[data-tramo="3"] .ae-paso[data-k="3"] .ae-paso-n, .ae.is-escena[data-tramo="4"] .ae-paso[data-k="4"] .ae-paso-n { color: var(--acc); opacity: 1; }
+  .ae.is-escena[data-tramo="0"] .ae-paso[data-k="0"] .ae-barra b, .ae.is-escena[data-tramo="1"] .ae-paso[data-k="1"] .ae-barra b, .ae.is-escena[data-tramo="2"] .ae-paso[data-k="2"] .ae-barra b, .ae.is-escena[data-tramo="3"] .ae-paso[data-k="3"] .ae-barra b, .ae.is-escena[data-tramo="4"] .ae-paso[data-k="4"] .ae-barra b { animation: aeBarra 4.5s linear both; }
+  .ae.is-escena .ae-escenario { position: absolute; }
+  .ae.is-escena .ae-antes { display: block; position: absolute; z-index: 2; margin: 0; transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+  .ae.is-escena .ae-antes img { display: block; width: 100%; height: auto; border-radius: 12px; border: 5px solid #fff; box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.5); }
+  .ae.is-escena .ae-antes figcaption { margin-top: 8px; font: 700 12px/1.2 var(--font-display); color: var(--t); text-align: center; transition: color 0.5s ease; }
+  .ae.is-escena .ae-fotos { display: block; position: absolute; }
+  .ae.is-escena .ae-foto { position: absolute; inset: 0; opacity: 0; transform: scale(0.97); transition: opacity 0.6s ease, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
+  .ae.is-escena .ae-foto img { width: 100%; height: 100%; object-fit: cover; border-radius: 22px; box-shadow: 0 40px 80px -40px rgba(0, 0, 0, 0.55); }
+  .ae.is-escena .ae-foto figcaption { display: none; }
+  .ae.is-escena[data-tramo="0"] .ae-foto[data-k="0"], .ae.is-escena[data-tramo="1"] .ae-foto[data-k="1"], .ae.is-escena[data-tramo="2"] .ae-foto[data-k="2"], .ae.is-escena[data-tramo="3"] .ae-foto[data-k="3"] { opacity: 1; transform: none; }
+  .ae.is-escena .ae-ilustrativo { left: 16px; top: 16px; padding: 8px 12px; font-size: 12px; }
+  /* 5 · publicada: se van las fotos y entran la tienda en línea y la caja */
+  .ae.is-escena .ae-pub { position: absolute; inset: 0; display: block; margin: 0; opacity: 0; pointer-events: none; transform: translateY(40px); transition: opacity 0.6s ease, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
+  .ae.is-escena[data-tramo="4"] .ae-pub { opacity: 1; pointer-events: auto; transform: none; }
+  .ae.is-escena[data-tramo="4"] .ae-antes, .ae.is-escena[data-tramo="4"] .ae-fotos { opacity: 0; transform: scale(0.94); }
+  .ae.is-escena .ae-fotos { transition: opacity 0.5s ease, transform 0.6s ease; }
+  .ae.is-escena[data-tramo="4"] .ae-pub-caja { animation: aeEntra 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both; }
+  .ae.is-escena[data-tramo="4"] .ae-regla { animation: aeEntra 0.6s ease 0.6s both; }
+  .ae.is-escena[data-tramo="4"] .ae-canales { animation: aeEntra 0.6s ease 0.8s both; }
+  @keyframes aeBarra { from { transform: scaleX(0); } to { transform: none; } }
+  @keyframes aeEntra { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+
+  @media (min-width: 900px) {
+    .ae.is-escena .ae-txt { position: absolute; left: 0; top: 50%; z-index: 2; width: min(34vw, 460px); padding: 0 0 0 4.4vw; transform: translateY(-50%); }
+    /* el escenario: la foto grande a la derecha y «la foto del celular» a su lado */
+    .ae.is-escena .ae-escenario { right: 5vw; top: 50%; width: 52vw; height: min(80svh, 720px); transform: translateY(-50%); }
+    .ae.is-escena .ae-fotos { right: 4vw; top: 0; height: 100%; aspect-ratio: 2 / 3; }
+    .ae.is-escena .ae-antes { left: 2vw; bottom: 4%; width: min(11vw, 150px); transform: rotate(-4deg); }
+    .ae.is-escena .ae-antes::after { content: '→'; position: absolute; right: -44px; top: 38%; font: 700 30px/1 var(--font-display); color: var(--t); transition: color 0.5s ease; }
+    /* 5: la tienda en línea a la izquierda y la caja encimada a su derecha, un poco más abajo */
+    .ae.is-escena .ae-pub-web { position: absolute; left: 0; top: 50%; width: 64%; transform: translateY(-50%); }
+    .ae.is-escena .ae-pub-caja { position: absolute; right: 0; top: 50%; z-index: 2; width: 40%; transform: translateY(-6%); }
+  }
+  /* en escritorio, solo el texto del paso en que va */
+  @media (min-width: 900px) {
+    .ae.is-escena .ae-paso-t > span { display: none; }
+    .ae.is-escena[data-tramo="0"] .ae-paso[data-k="0"] .ae-paso-t > span, .ae.is-escena[data-tramo="1"] .ae-paso[data-k="1"] .ae-paso-t > span, .ae.is-escena[data-tramo="2"] .ae-paso[data-k="2"] .ae-paso-t > span, .ae.is-escena[data-tramo="3"] .ae-paso[data-k="3"] .ae-paso-t > span, .ae.is-escena[data-tramo="4"] .ae-paso[data-k="4"] .ae-paso-t > span { display: block; }
+  }
+  @media (max-width: 899px) {
+    /* el escenario arriba, el paso abajo */
+    .ae.is-escena .ae-escenario { left: 20px; right: 20px; top: 3svh; height: 56svh; }
+    .ae.is-escena .ae-fotos { left: 50%; top: 0; height: 100%; aspect-ratio: 2 / 3; transform: translateX(-50%); }
+    .ae.is-escena[data-tramo="4"] .ae-fotos { transform: translateX(-50%) scale(0.94); }
+    .ae.is-escena .ae-antes { left: 0; bottom: 0; width: min(24vw, 110px); transform: rotate(-4deg); }
+    .ae.is-escena .ae-antes img { border-width: 3px; }
+    .ae.is-escena .ae-antes figcaption { font-size: 10.5px; }
+    .ae.is-escena .ae-pub-web { position: absolute; left: 0; top: 0; width: 100%; gap: 6px; }
+    .ae.is-escena .ae-donde { font-size: 10.5px; }
+    .ae.is-escena .ae-web-in { grid-template-columns: 0.8fr 1fr; }
+    .ae.is-escena .ae-web-info { gap: 5px; padding: 12px; }
+    .ae.is-escena .ae-web-n { font-size: 14.5px; }
+    /* la caja abajo a la derecha, sin tapar la tienda; su barra ya dice «Caja» */
+    .ae.is-escena .ae-pub-caja { position: absolute; right: -6px; bottom: -64px; z-index: 2; width: 58%; }
+    .ae.is-escena .ae-pub-caja .ae-donde { display: none; }
+    .ae.is-escena .ae-caja-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ae.is-escena .ae-tile.is-vacio:last-child { display: none; }
+    .ae.is-escena .ae-regla, .ae.is-escena .ae-canales { display: none; }
+    .ae.is-escena .ae-txt { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 40px 20px 18px; background: linear-gradient(180deg, transparent 0, var(--bg) 36px); transition: background 0.7s ease; }
+    .ae.is-escena .ae-k { margin-bottom: 8px; }
+    .ae.is-escena .ae-h { font-size: clamp(30px, 8.6vw, 40px); }
+    .ae.is-escena .ae-pasos { margin-top: 10px; }
+    .ae.is-escena .ae-paso { display: none; padding: 10px 0 8px; }
+    .ae.is-escena[data-tramo="0"] .ae-paso[data-k="0"], .ae.is-escena[data-tramo="1"] .ae-paso[data-k="1"], .ae.is-escena[data-tramo="2"] .ae-paso[data-k="2"], .ae.is-escena[data-tramo="3"] .ae-paso[data-k="3"], .ae.is-escena[data-tramo="4"] .ae-paso[data-k="4"] { display: grid; }
+    .ae.is-escena .ae-reloj { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ae, .ae * { animation: none !important; transition: none !important; }
+  }
+</style>

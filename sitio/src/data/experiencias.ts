@@ -1,5 +1,6 @@
 /**
- * EXPERIENCIA — lo que la clienta de una marca de moda vive con Sacs, en la tienda física y en línea (2-oct-2026).
+ * EXPERIENCIA — lo que se vive con Sacs en una marca de moda: la clienta en la tienda física y en línea, y la marca en
+ * su bodega (2-oct-2026; la 02, el alta de productos con AXO, el 3-oct-2026).
  *
  * Pedido del dueño: «crea una sección que se llame "Experiencia" en el menú principal; al darle clic aparece la
  * primera experiencia en grande, en formato vertical de imagen, porque vamos a poner varias». Cada experiencia es una
@@ -37,5 +38,17 @@ export const experiencias: Experiencia[] = [
     imagenAlto: 1200,
     alt: 'Clienta en una boutique mirando su celular, donde se ve con un vestido verde que no se ha probado',
     acento: '#E0457B',
+  },
+  {
+    slug: 'alta-de-productos',
+    num: '02',
+    titulo: 'De la caja a la venta con AXO',
+    bajada: 'Pones la prenda frente al celular, le hablas a AXO y en unos 30 minutos ya se vende en tu caja y tu tienda en línea.',
+    href: '/experiencia/alta-de-productos',
+    imagen: '/images/experiencia/alta-vertical-800.webp',
+    imagenAncho: 800,
+    imagenAlto: 1200,
+    alt: 'Dueña de una boutique junto a las cajas de mercancía nueva; un celular en un tripié fotografía un vestido mandarina colgado en la pared',
+    acento: '#F08A4B',
   },
 ];

@@ -12,8 +12,8 @@ import { SITIO } from '../../data/entidad';
 import { breadcrumbList } from '../../lib/breadcrumb';
 import '../../styles/planeacion.css';
 
-const title = 'Experiencia: lo que tu clienta vive con Sacs | Sacs';
-const description = 'Experiencias de compra para tiendas de moda con Sacs, en el piso y en línea: empieza por el probador virtual en tienda.';
+const title = 'Experiencia: lo que se vive con Sacs | Sacs';
+const description = 'Experiencias de Sacs para tiendas de moda, en el piso, en la bodega y en línea: el probador virtual en tienda y el alta de productos en vivo con AXO, de la caja a la venta en 30 minutos.';
 const lista = {
   '@context': 'https://schema.org',
   '@type': 'ItemList',
@@ -27,11 +27,11 @@ const [primera, ...resto] = experiencias;
   <div class="pd">
     <section class="pda exi pd-negro" aria-labelledby="exi-h">
       <div class="pda-fondo" aria-hidden="true"><span>EXPERIENCIA · EXPERIENCIA · EXPERIENCIA</span><span>EXPERIENCIA · EXPERIENCIA · EXPERIENCIA</span></div>
-      <p class="pd-folio"><span>Experiencia</span><span>En el piso y en línea</span></p>
+      <p class="pd-folio"><span>Experiencia</span><span>En la tienda, la bodega y en línea</span></p>
       <div class="exi-grid">
         <div class="exi-txt">
-          <h1 class="pda-h" id="exi-h">Lo que tu clienta vive con Sacs.</h1>
-          <p class="exi-p">Cada experiencia, con su página: cómo se vive en tu tienda física y en tu tienda en línea, con tu inventario.</p>
+          <h1 class="pda-h" id="exi-h">Lo que se vive con Sacs.</h1>
+          <p class="exi-p">Cada experiencia, con su página: cómo se vive en tu tienda física, en tu bodega y en tu tienda en línea, con tu inventario.</p>
         </div>
         <div class="exi-cards">
           <a class="exi-card is-grande" href={primera.href} style={`--ac:${primera.acento};`}>
@@ -77,6 +77,12 @@ const [primera, ...resto] = experiencias;
   .exi-ir { margin-top: 4px; font: 700 15px/1 var(--font-display); color: var(--ac, #E0457B); }
   .exi-card:hover { color: #fff; text-decoration: none; }
   .exi-card:focus-visible { outline: 3px solid var(--ac, #E0457B); outline-offset: 4px; }
+  /* teléfono: una debajo de la otra (de lado, la segunda quedaba fuera de la pantalla) */
+  @media (max-width: 899px) {
+    .exi-cards { flex-direction: column; align-items: stretch; overflow: visible; }
+    .exi-card, .exi-card.is-grande { width: 100%; }
+    .exi-card:not(.is-grande) { aspect-ratio: 4 / 5; }
+  }
   @media (min-width: 900px) {
     .exi-grid { grid-template-columns: 1fr auto; gap: 64px; align-items: center; }
     .exi-p { font-size: 19px; }
