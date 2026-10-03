@@ -5219,6 +5219,11 @@ for (let i = 0; i <= currentPlanIdx; i++) {
   // Hero video play/pause on click + mouse-parallax + scroll reveal
   (() => {
     const video = document.getElementById('pf-hero-video') as HTMLVideoElement | null;
+    // la pantalla del iPad toma la proporción real del video (en el teléfono no se recorta nada)
+    if (video) {
+      const ajusta = () => { if (video.videoWidth && video.videoHeight) (video.closest('.pf-ipad-screen') as HTMLElement | null)?.style.setProperty('--ar', `${video.videoWidth} / ${video.videoHeight}`); };
+      if (video.readyState >= 1) ajusta(); else video.addEventListener('loadedmetadata', ajusta, { once: true });
+    }
     const perspective = document.getElementById('pf-ipad-perspective') as HTMLElement | null;
     if (!video) return;
     const screen = video.parentElement;
@@ -5629,18 +5634,24 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     .pf-hero-media-wrap--mock {
       padding: clamp(6px, 1.6vw, 12px);
     }
+    /* teléfono: el marco crece con la pantalla 16:9 del video para que nada se corte */
+    .pf-hero-media-wrap--mock { aspect-ratio: auto; padding: 14px 0; overflow: visible; background: none; }
+    .pf-hero-media-wrap--mock::before, .pf-hero-media-wrap--mock::after { display: none; }
     .pf-ipad-perspective {
       width: 100%;
-      aspect-ratio: 4 / 3;
+      aspect-ratio: auto;
       transform: scale(var(--reveal-scale, 1));
     }
+    .pf-ipad-idle, .pf-hero-video-frame--ipad { height: auto; }
+    .pf-hero-video-frame--ipad .pf-ipad-screen { height: auto; aspect-ratio: var(--ar, 16 / 9); }
     /* No mouse parallax on mobile */
     .pf-ipad-perspective.is-visible {
       --reveal-scale: 1.01;
     }
     .pf-ipad-idle { animation: none; }
     .pf-hero-video-frame--ipad {
-      padding: 10px 12px;
+      padding: 9px 9px;
+      border-radius: 20px;
     }
     /* Mobile perf: drop the heavy blur */
     .pf-hero-media-wrap--mock::before {
