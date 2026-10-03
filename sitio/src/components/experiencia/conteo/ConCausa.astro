@@ -1,0 +1,73 @@
+---
+/**
+ * «Bajó la venta. ¿Por qué?» (/experiencia/conteo-de-personas): la misma caída de 20 % en la caja, dos causas que solo
+ * se separan contando a quien entra. Doble página en marfil: cada caso con sus barras (visitas y tickets, semana 1
+ * contra semana 2), su conversión y qué revisar. Ejemplo; cada caso entra al verse (.rv → .is-on, script de la página).
+ */
+import { CON_CAUSA } from '../../../data/experiencia-conteo';
+---
+<section class="cca pd-marfil" id="con-causa" aria-labelledby="cca-h">
+  <div class="cca-in">
+    <p class="pd-folio"><span>{CON_CAUSA.folio[0]}</span><span>{CON_CAUSA.folio[1]}</span></p>
+    <h2 class="cca-h" id="cca-h">{CON_CAUSA.h}</h2>
+    <p class="cca-p">{CON_CAUSA.p}</p>
+    <div class="cca-casos">
+      {CON_CAUSA.casos.map((c, i) => (
+        <article class="cca-caso rv" style={`--i:${i}`} aria-label={`${c.k}: ${c.t}. Conversión de ${c.conv[0]} a ${c.conv[1]}. ${c.que} ${c.haz}`}>
+          <p class="cca-k">{c.k}</p>
+          <h3 class="cca-t">{c.t}</h3>
+          <div class="cca-graf" aria-hidden="true">
+            {[['Visitas', c.visitas], ['Tickets', c.tickets]].map(([n, v]) => (
+              <div class="cca-par">
+                <span class="cca-b"><i style={`--h:${(v as number[])[0]}`}></i><small>Sem. 1</small></span>
+                <span class="cca-b cca-b--2"><i style={`--h:${(v as number[])[1]}`}></i><small>Sem. 2</small></span>
+                <b>{n as string}</b>
+              </div>
+            ))}
+          </div>
+          <p class="cca-conv">Conversión <b>{c.conv[0]}</b> → <b class:list={[{ 'is-baja': c.conv[0] !== c.conv[1] }]}>{c.conv[1]}</b></p>
+          <p class="cca-que"><b>{c.que}</b> {c.haz}</p>
+        </article>
+      ))}
+    </div>
+    <p class="cca-nota">Ejemplo. En construcción: el conteo de personas todavía no está disponible en Sacs.</p>
+  </div>
+</section>
+
+<style>
+  .cca { padding: 72px 0 80px; }
+  .cca-in { max-width: 1160px; margin: 0 auto; padding: 0 20px; }
+  .cca-h { margin: 0; max-width: 13ch; color: var(--pd-texto); font: 700 clamp(40px, 6.2vw, 90px)/0.94 var(--pd-clash); letter-spacing: -0.02em; }
+  .cca-p { margin: 18px 0 0; max-width: 52ch; font: 500 18px/1.5 var(--font-body); color: var(--pd-tenue); }
+  .cca-casos { display: grid; gap: 18px; margin-top: 40px; }
+  .cca-caso { padding: 24px 22px 22px; border-radius: 20px; background: #fff; box-shadow: 0 30px 60px -44px rgba(20, 20, 20, 0.5); }
+  .cca-caso + .cca-caso { background: #141414; color: #fff; }
+  .cca-k { margin: 0; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; opacity: 0.7; }
+  .cca-t { margin: 8px 0 0; font: 700 clamp(24px, 2.6vw, 34px)/1.1 var(--pd-clash); color: inherit; }
+  .cca-graf { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 22px; }
+  .cca-par { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: end; }
+  .cca-par > b { grid-column: 1 / -1; font: 700 13px/1.2 var(--font-display); }
+  .cca-b { display: grid; gap: 6px; justify-items: center; }
+  .cca-b i { display: block; width: 100%; height: calc(var(--h) * 1.1px); border-radius: 8px 8px 3px 3px; background: #9DB8F5; }
+  .cca-b--2 i { background: #2F55C4; }
+  .cca-caso + .cca-caso .cca-b i { background: rgba(255, 255, 255, 0.35); }
+  .cca-caso + .cca-caso .cca-b--2 i { background: #F07FA6; }
+  .cca-b small { font: 600 11px/1 var(--font-display); opacity: 0.7; }
+  .cca-conv { margin: 22px 0 0; padding-top: 14px; border-top: 1px solid currentColor; font: 600 15px/1.2 var(--font-display); }
+  .cca-conv b { font: 700 22px/1 var(--pd-clash); }
+  .cca-conv b.is-baja { color: #E0457B; }
+  .cca-que { margin: 12px 0 0; font: 500 16px/1.5 var(--font-body); }
+  .cca-que b { font-family: var(--font-display); }
+  .cca-nota { margin: 22px 0 0; font: 600 13.5px/1.5 var(--font-display); color: var(--pd-obra); }
+  :global(.js-rv) .cca .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.12s); }
+  :global(.js-rv) .cca .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .cca { padding: 112px 0 120px; }
+    .cca-in { padding: 0 5vw; }
+    .cca-casos { grid-template-columns: 1fr 1fr; gap: 24px; }
+    .cca-caso { padding: 32px 32px 30px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .cca .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>

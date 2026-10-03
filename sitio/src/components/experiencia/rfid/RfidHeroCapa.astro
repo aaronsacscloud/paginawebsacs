@@ -1,0 +1,52 @@
+---
+/**
+ * La capa de la portada de /experiencia/rfid (va en el slot de ExpHero): las etiquetas del rack que «responden» al
+ * lector (ondas que salen de cada etiqueta, sobre su sitio en la foto: el lienzo conserva la proporción y se acomoda
+ * como la foto) y la tarjeta del conteo, como la pantalla que va a tener la experiencia. Ejemplo (en construcción).
+ */
+import { RFID_PASADA } from '../../../data/experiencia-rfid';
+// etiquetas en % de cada foto
+const ANCHA = [[81, 30], [85.5, 32], [91, 34], [96, 30], [76.5, 26.5]];
+const VERTICAL = [[52, 19], [58, 20], [64, 21], [70, 19]];
+---
+<div class="rhc" aria-hidden="true">
+  <div class="rhc-lienzo rhc-lienzo--ancho">{ANCHA.map(([x, y], i) => <span class="rhc-onda" style={`left:${x}%;top:${y}%;--i:${i}`}></span>)}</div>
+  <div class="rhc-lienzo rhc-lienzo--vertical">{VERTICAL.map(([x, y], i) => <span class="rhc-onda" style={`left:${x}%;top:${y}%;--i:${i}`}></span>)}</div>
+</div>
+<div class="rhc-tarjeta" aria-hidden="true">
+  <span class="rhc-ej">Ejemplo</span>
+  <p class="rhc-k"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="2"/><path d="M8 8a5.6 5.6 0 0 0 0 8M16 8a5.6 5.6 0 0 1 0 8M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/></svg>Conteo RFID</p>
+  <p class="rhc-n">{RFID_PASADA.total.toLocaleString('es-MX')}<small>piezas</small></p>
+  <p class="rhc-s">leídas en <b>{RFID_PASADA.segundos} s</b></p>
+  <span class="rhc-ok">✓</span>
+</div>
+
+<style>
+  .rhc { position: absolute; inset: 0; z-index: -1; overflow: hidden; container-type: size; pointer-events: none; }
+  .rhc-lienzo { position: absolute; }
+  .rhc-lienzo--ancho { display: none; }
+  .rhc-lienzo--vertical { left: 50%; top: 30%; width: max(100cqw, calc(100cqh * 1024 / 1536)); aspect-ratio: 1024 / 1536; transform: translate(-50%, -30%); }
+  .rhc-onda { position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: rgba(255, 255, 255, 0.9); box-shadow: 0 0 12px rgba(91, 134, 234, 0.9); }
+  .rhc-onda::before, .rhc-onda::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.9); animation: rhcOnda 2.4s ease-out infinite; animation-delay: calc(var(--i) * 0.35s); }
+  .rhc-onda::after { animation-delay: calc(var(--i) * 0.35s + 1.2s); }
+  @keyframes rhcOnda { 0% { transform: scale(0.6); opacity: 0.95; } 100% { transform: scale(3.2); opacity: 0; } }
+  .rhc-tarjeta { position: absolute; z-index: 1; right: 16px; top: 88px; display: grid; gap: 6px; width: 190px; padding: 14px 16px; border-radius: 18px; background: rgba(255, 255, 255, 0.95); color: #141414; box-shadow: 0 24px 50px -24px rgba(0, 0, 0, 0.55); }
+  .rhc-ej { position: absolute; right: 44px; top: 12px; padding: 3px 7px; border-radius: 99px; background: #F2C46B; font: 700 9.5px/1 var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; }
+  .rhc-k { display: flex; align-items: center; gap: 7px; margin: 0; font: 600 12px/1.2 var(--font-display); color: #4A4741; }
+  .rhc-k svg { color: #2F55C4; }
+  .rhc-n { display: flex; align-items: baseline; gap: 6px; margin: 4px 0 0; font: 700 40px/1 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; }
+  .rhc-n small { font: 600 13px/1 var(--font-display); color: #2F55C4; letter-spacing: 0; }
+  .rhc-s { margin: 0; font: 500 13px/1.2 var(--font-body); color: #4A4741; }
+  .rhc-s b { color: #2F55C4; }
+  .rhc-ok { position: absolute; right: 12px; top: 10px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #1F9D63; color: #fff; font: 700 13px/1 var(--font-display); }
+  @media (min-width: 768px) {
+    .rhc-lienzo--vertical { display: none; }
+    .rhc-lienzo--ancho { display: block; left: 70%; top: 50%; width: max(100cqw, calc(100cqh * 1536 / 1024)); aspect-ratio: 1536 / 1024; transform: translate(-70%, -50%); }
+    .rhc-tarjeta { right: 4vw; top: auto; bottom: 10vh; width: 270px; padding: 20px 22px; gap: 8px; }
+    .rhc-n { font-size: 60px; }
+    .rhc-s { font-size: 15px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rhc-onda::before, .rhc-onda::after { animation: none; opacity: 0; }
+  }
+</style>

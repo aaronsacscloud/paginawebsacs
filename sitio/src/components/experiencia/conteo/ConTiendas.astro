@@ -1,0 +1,60 @@
+---
+/**
+ * «La que más vende no es la que mejor vende» (/experiencia/conteo-de-personas): tres tiendas con sus visitas, sus
+ * tickets y su conversión en una barra; la Norte, que recibe más gente y convierte la mitad que la Centro, va marcada.
+ * Marino con líneas. Ejemplo y en construcción; cada fila entra al verse (.rv → .is-on, script de la página).
+ */
+import { CON_TIENDAS } from '../../../data/experiencia-conteo';
+const PALABRA = Array.from({ length: 3 }, () => 'CONVERSIÓN').join(' · ');
+const filas = CON_TIENDAS.tiendas.map((t) => ({ ...t, conv: Math.round((t.tickets / t.visitas) * 100) }));
+const peor = Math.min(...filas.map((f) => f.conv));
+---
+<section class="pda cti pd-marino" aria-labelledby="cti-h">
+  <div class="pda-fondo" aria-hidden="true"><span>{PALABRA}</span><span>{PALABRA}</span></div>
+  <p class="pd-folio"><span>{CON_TIENDAS.folio[0]}</span><span>{CON_TIENDAS.folio[1]}</span></p>
+  <h2 class="pda-h" id="cti-h">{CON_TIENDAS.h}</h2>
+  <div class="cti-tabla">
+    <p class="cti-cab" aria-hidden="true"><span>Tienda</span><span>Visitas</span><span>Tickets</span><span>Conversión</span></p>
+    {filas.map((f, i) => (
+      <div class:list={['cti-fila rv', { 'is-peor': f.conv === peor }]} style={`--i:${i};--c:${f.conv}`}>
+        <b class="cti-n">{f.n}</b>
+        <span class="cti-num"><small>Visitas</small>{f.visitas.toLocaleString('es-MX')}</span>
+        <span class="cti-num"><small>Tickets</small>{f.tickets.toLocaleString('es-MX')}</span>
+        <span class="cti-conv"><i aria-hidden="true"><em></em></i><b>{f.conv} %</b></span>
+      </div>
+    ))}
+  </div>
+  <p class="cti-nota">{CON_TIENDAS.nota}</p>
+  <p class="pda-nota">Ejemplo. En construcción: todavía no está disponible en Sacs.</p>
+</section>
+
+<style>
+  .cti-tabla { margin-top: 40px; border-top: 2px solid #fff; }
+  .cti-cab { display: none; }
+  .cti-fila { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; padding: 18px 0; border-bottom: 1px solid var(--pd-filete); }
+  .cti-n { grid-column: 1 / -1; font: 700 clamp(22px, 2.4vw, 30px)/1.1 var(--pd-clash); color: #fff; }
+  .cti-num { display: grid; gap: 3px; font: 700 22px/1 var(--pd-clash); color: #fff; }
+  .cti-num small { font: 600 11px/1.2 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--pd-tenue); }
+  .cti-conv { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; }
+  .cti-conv i { position: relative; flex: 1; height: 12px; border-radius: 99px; background: rgba(157, 184, 245, 0.2); overflow: hidden; }
+  .cti-conv em { position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--c) * 3%); border-radius: 99px; background: #9DB8F5; }
+  .cti-conv b { min-width: 64px; font: 700 28px/1 var(--pd-clash); color: #9DB8F5; text-align: right; }
+  .cti-fila.is-peor .cti-conv em { background: #F07FA6; }
+  .cti-fila.is-peor .cti-conv b { color: #F07FA6; }
+  .cti-nota { margin: 26px 0 0; max-width: 56ch; font: 600 clamp(18px, 1.8vw, 22px)/1.45 var(--font-display); color: #fff; }
+  :global(.js-rv) .cti .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.12s); }
+  :global(.js-rv) .cti .rv.is-on { opacity: 1; transform: none; }
+  :global(.js-rv) .cti .rv .cti-conv em { width: 0; transition: width 1s cubic-bezier(0.22, 1, 0.36, 1) 0.3s; }
+  :global(.js-rv) .cti .rv.is-on .cti-conv em { width: calc(var(--c) * 3%); }
+  @media (min-width: 900px) {
+    .cti-cab { display: grid; grid-template-columns: 1.2fr 0.6fr 0.6fr 1.6fr; gap: 24px; margin: 0; padding: 14px 0; border-bottom: 1px solid var(--pd-filete); font: 600 11px/1.2 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--pd-tenue); }
+    .cti-fila { grid-template-columns: 1.2fr 0.6fr 0.6fr 1.6fr; gap: 24px; align-items: center; padding: 22px 0; }
+    .cti-n, .cti-conv { grid-column: auto; }
+    .cti-num small { display: none; }
+    .cti-num { font-size: 28px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .cti .rv { opacity: 1; transform: none; transition: none; }
+    :global(.js-rv) .cti .rv .cti-conv em { width: calc(var(--c) * 3%); transition: none; }
+  }
+</style>

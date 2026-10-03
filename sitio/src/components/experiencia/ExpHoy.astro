@@ -1,0 +1,50 @@
+---
+/**
+ * «Lo que ya hay y lo que falta» de una experiencia en construcción (/experiencia/*, 3-oct-2026): dos columnas entre
+ * filetes. A la izquierda, lo que YA está en Sacs y sirve hoy para lo mismo (con su palomita); a la derecha, lo que la
+ * experiencia agrega y todavía está en construcción (con su asterisco). Abajo, la nota de siempre: sin fecha ni promesa.
+ * Regla del sitio: nada inventado; lo que no existe va marcado «en construcción».
+ */
+interface Props { id?: string; folio: [string, string]; titulo: string; hoy: { t: string; d: string }[]; obra: { t: string; d: string }[]; nota: string }
+const { id, folio, titulo, hoy, obra, nota } = Astro.props;
+const hid = `${id || 'exy'}-h`;
+---
+<section class="exy pd-marfil" id={id} aria-labelledby={hid}>
+  <div class="exy-in">
+    <p class="pd-folio"><span>{folio[0]}</span><span>{folio[1]}</span></p>
+    <h2 class="exy-h" id={hid}>{titulo}</h2>
+    <div class="exy-cols">
+      <div class="exy-col">
+        <p class="exy-k"><b class="exy-ok" aria-hidden="true">✓</b>Ya en Sacs</p>
+        <ul>{hoy.map((x) => <li><b>{x.t}</b><span>{x.d}</span></li>)}</ul>
+      </div>
+      <div class="exy-col exy-col--obra">
+        <p class="exy-k"><b class="exy-ast" aria-hidden="true">*</b>En construcción</p>
+        <ul>{obra.map((x) => <li><b>{x.t}</b><span>{x.d}</span></li>)}</ul>
+      </div>
+    </div>
+    <p class="exy-nota"><span aria-hidden="true">*</span> {nota}</p>
+  </div>
+</section>
+
+<style>
+  .exy { padding: 72px 0 80px; }
+  .exy-in { max-width: 1160px; margin: 0 auto; padding: 0 20px; }
+  .exy-h { margin: 0; max-width: 16ch; color: var(--pd-texto); font: 700 clamp(36px, 5.2vw, 76px)/0.96 var(--pd-clash); letter-spacing: -0.02em; text-wrap: balance; }
+  .exy-cols { display: grid; gap: 8px; margin-top: 40px; border-top: 2px solid var(--pd-texto); }
+  .exy-col { padding: 22px 0 6px; }
+  .exy-k { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; font: 700 13px/1.3 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--pd-texto); }
+  .exy-ok, .exy-ast { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font: 700 14px/1 var(--font-display); }
+  .exy-ok { background: #17804F; color: #fff; }
+  .exy-ast { background: #F2C46B; color: #141414; font-size: 18px; padding-top: 4px; }
+  .exy-col ul { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--pd-filete); }
+  .exy-col li { display: grid; gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--pd-filete); }
+  .exy-col li b { font: 700 17px/1.3 var(--font-display); color: var(--pd-texto); }
+  .exy-col li span { font: 500 15px/1.5 var(--font-body); color: var(--pd-tenue); }
+  .exy-nota { margin: 24px 0 0; max-width: 70ch; font: 600 14px/1.5 var(--font-display); color: var(--pd-obra); }
+  @media (min-width: 900px) {
+    .exy { padding: 112px 0 120px; }
+    .exy-in { padding: 0 5vw; }
+    .exy-cols { grid-template-columns: 1fr 1fr; gap: 56px; }
+  }
+</style>

@@ -1,0 +1,134 @@
+---
+/**
+ * «Hora por hora» (/experiencia/conteo-de-personas): un sábado de la tienda, de 10 a 21, con el scroll
+ * (data-tramos="4": 12:00 · 15:00 · 19:00 · 21:00). Al fondo, la tienda llena (oscurecida); a la izquierda, el paso;
+ * a la derecha, el tablero: visitas y tickets acumulados, la conversión y las barras por hora, que van apareciendo; en
+ * la hora pico (6 a 7 de la tarde) la barra se marca y la conversión cae a 15 %. Ejemplo y en construcción; los
+ * números cuadran (VISITAS y TICKETS de experiencia-conteo.ts). Sin JS o con «reducir movimiento»: el día completo.
+ */
+import { CON_DIA, HORAS, VISITAS, TICKETS } from '../../../data/experiencia-conteo';
+const I = '/images/experiencia/';
+const max = Math.max(...VISITAS);
+const suma = (xs: number[], n: number) => xs.slice(0, n).reduce((a, b) => a + b, 0);
+const cortes = CON_DIA.tramos.map((t) => ({ v: suma(VISITAS, t.hasta), k: suma(TICKETS, t.hasta) }));
+// en qué tramo aparece cada barra
+const desde = HORAS.map((_, i) => CON_DIA.tramos.findIndex((t) => i < t.hasta));
+const PICO = 8; // 18 a 19
+---
+<section class="cdi" data-escena data-tramos="4" data-tramo="3" aria-labelledby="cdi-h">
+  <div class="cdi-riel" data-riel>
+    <div class="cdi-escena">
+      <img class="cdi-fondo" src={`${I}conteo-pico-1536.webp`} srcset={`${I}conteo-pico-1280.webp 1280w, ${I}conteo-pico-1536.webp 1536w`} sizes="100vw" width="1536" height="1024" alt="" loading="lazy" decoding="async" />
+
+      <div class="cdi-txt">
+        <p class="cdi-k">{CON_DIA.k}</p>
+        <h2 class="cdi-h" id="cdi-h">{CON_DIA.h}</h2>
+        <ol class="cdi-pasos">
+          {CON_DIA.tramos.map((p, k) => (
+            <li class="cdi-paso" data-k={k}>
+              <span class="cdi-paso-n">{p.hora}</span>
+              <span class="cdi-paso-t"><b>{p.t}</b><span>{p.d}</span></span>
+              <i class="cdi-barra" aria-hidden="true"><b></b></i>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div class="cdi-tablero" role="img" aria-label="El tablero del sábado: 1,284 visitas y 295 tickets, 23 % de conversión; la hora pico de 6 a 7 de la tarde convirtió 15 %">
+        <div class="cdi-nums">
+          <p><small>Visitas</small><b>{cortes.map((c, k) => <span data-k={k}>{c.v.toLocaleString('es-MX')}</span>)}</b></p>
+          <p><small>Tickets</small><b>{cortes.map((c, k) => <span data-k={k}>{c.k.toLocaleString('es-MX')}</span>)}</b></p>
+          <p class="cdi-conv"><small>Conversión</small><b>{cortes.map((c, k) => <span data-k={k}>{Math.round((c.k / c.v) * 100)} %</span>)}</b></p>
+        </div>
+        <div class="cdi-graf">
+          {HORAS.map((h, i) => (
+            <div class:list={['cdi-col', { 'is-pico': i === PICO }]} data-d={desde[i]}>
+              <span class="cdi-v" style={`--h:${((VISITAS[i] / max) * 100).toFixed(1)}%`}><i style={`--t:${((TICKETS[i] / VISITAS[i]) * 100).toFixed(1)}%`}></i></span>
+              <small>{h}</small>
+            </div>
+          ))}
+          <span class="cdi-pico-et">Hora pico · 15 %</span>
+        </div>
+        <p class="cdi-ley"><span><i class="is-v"></i>Visitas</span><span><i class="is-t"></i>Compraron</span><em>Ejemplo</em></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cdi { position: relative; background: #0B0B0C; color: #fff; }
+  .cdi-escena { position: relative; overflow: hidden; display: grid; gap: 28px; padding: 64px 20px 72px; }
+  .cdi-fondo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.22; }
+  .cdi-txt, .cdi-tablero { position: relative; z-index: 1; }
+  .cdi-k { margin: 0 0 14px; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: #9DB8F5; }
+  .cdi-h { margin: 0; color: #fff; font: 700 clamp(40px, 5.2vw, 78px)/0.94 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; }
+  .cdi-pasos { margin: 22px 0 0; padding: 0; list-style: none; border-top: 1px solid rgba(255, 255, 255, 0.3); }
+  .cdi-paso { position: relative; display: grid; grid-template-columns: 62px 1fr; gap: 4px; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.18); }
+  .cdi-paso-n { font: 700 17px/1.3 var(--pd-clash, var(--font-display)); color: #9DB8F5; }
+  .cdi-paso-t { display: grid; gap: 3px; }
+  .cdi-paso-t b { font: 700 16px/1.3 var(--font-display); color: #fff; }
+  .cdi-paso-t > span { font: 500 14.5px/1.45 var(--font-body); color: rgba(255, 255, 255, 0.82); }
+  .cdi-barra { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; overflow: hidden; }
+  .cdi-barra b { display: block; height: 100%; background: #5B86EA; transform: scaleX(0); transform-origin: 0 50%; }
+
+  /* el tablero */
+  .cdi-tablero { padding: 20px 20px 16px; border-radius: 22px; background: #fff; color: #141414; box-shadow: 0 40px 80px -40px rgba(0, 0, 0, 0.8); }
+  .cdi-nums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding-bottom: 14px; border-bottom: 1px solid #ECE9E3; }
+  .cdi-nums p { display: grid; gap: 4px; margin: 0; }
+  .cdi-nums small { font: 600 10.5px/1.2 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: #6B6862; }
+  .cdi-nums b { font: 700 clamp(24px, 3vw, 40px)/1 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; color: #2F55C4; }
+  .cdi-conv b { color: #17804F; }
+  .cdi-nums [data-k] { display: none; }
+  .cdi[data-tramo="0"] .cdi-nums [data-k="0"], .cdi[data-tramo="1"] .cdi-nums [data-k="1"], .cdi[data-tramo="2"] .cdi-nums [data-k="2"], .cdi[data-tramo="3"] .cdi-nums [data-k="3"] { display: inline; animation: cdiAparece 0.45s ease both; }
+  .cdi-graf { position: relative; display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 6px; align-items: end; height: 200px; padding-top: 30px; }
+  .cdi-col { display: grid; grid-template-rows: 1fr auto; gap: 6px; height: 100%; }
+  .cdi-col small { font: 600 10.5px/1 var(--font-display); color: #6B6862; text-align: center; }
+  .cdi-v { position: relative; align-self: end; display: block; height: var(--h); border-radius: 6px 6px 2px 2px; background: #C9D7F7; transform-origin: 50% 100%; transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), background 0.4s; }
+  .cdi-v i { position: absolute; left: 0; right: 0; bottom: 0; height: var(--t); border-radius: 0 0 2px 2px; background: #2F55C4; }
+  .cdi-col.is-pico .cdi-v { background: #F6C2C2; }
+  .cdi-col.is-pico .cdi-v i { background: #D64545; }
+  .cdi-pico-et { position: absolute; left: calc(100% * 8 / 11); top: 0; padding: 4px 8px; border-radius: 99px; background: #D64545; color: #fff; font: 700 11px/1 var(--font-display); white-space: nowrap; transform: translateX(-30%); opacity: 0; transition: opacity 0.4s ease; }
+  .cdi[data-tramo="2"] .cdi-pico-et, .cdi[data-tramo="3"] .cdi-pico-et { opacity: 1; }
+  /* las barras que todavía no llegan */
+  .cdi[data-tramo="0"] .cdi-col:is([data-d="1"], [data-d="2"], [data-d="3"]) .cdi-v,
+  .cdi[data-tramo="1"] .cdi-col:is([data-d="2"], [data-d="3"]) .cdi-v,
+  .cdi[data-tramo="2"] .cdi-col[data-d="3"] .cdi-v { transform: scaleY(0); }
+  .cdi-ley { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin: 12px 0 0; font: 600 12px/1 var(--font-display); color: #4A4741; }
+  .cdi-ley span { display: inline-flex; align-items: center; gap: 6px; }
+  .cdi-ley i { width: 10px; height: 10px; border-radius: 3px; }
+  .cdi-ley .is-v { background: #C9D7F7; }
+  .cdi-ley .is-t { background: #2F55C4; }
+  .cdi-ley em { margin-left: auto; padding: 3px 7px; border-radius: 99px; background: #F2C46B; font-style: normal; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: #141414; }
+  @keyframes cdiAparece { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @keyframes cdiBarra { from { transform: scaleX(0); } to { transform: none; } }
+
+  /* ── con el scroll ── */
+  .cdi.is-escena .cdi-riel { height: 440vh; }
+  .cdi.is-escena .cdi-escena { position: sticky; top: 0; height: 100vh; height: 100svh; align-content: center; }
+  .cdi.is-escena .cdi-paso-n { color: rgba(255, 255, 255, 0.45); }
+  .cdi.is-escena[data-tramo="0"] .cdi-paso[data-k="0"] .cdi-paso-n, .cdi.is-escena[data-tramo="1"] .cdi-paso[data-k="1"] .cdi-paso-n, .cdi.is-escena[data-tramo="2"] .cdi-paso[data-k="2"] .cdi-paso-n, .cdi.is-escena[data-tramo="3"] .cdi-paso[data-k="3"] .cdi-paso-n { color: #9DB8F5; }
+  .cdi.is-escena[data-tramo="0"] .cdi-paso[data-k="0"] .cdi-barra b, .cdi.is-escena[data-tramo="1"] .cdi-paso[data-k="1"] .cdi-barra b, .cdi.is-escena[data-tramo="2"] .cdi-paso[data-k="2"] .cdi-barra b, .cdi.is-escena[data-tramo="3"] .cdi-paso[data-k="3"] .cdi-barra b { animation: cdiBarra 4.5s linear both; }
+
+  @media (min-width: 900px) {
+    .cdi-escena { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); align-items: center; gap: 5vw; padding: 110px 5vw 120px; }
+    .cdi.is-escena .cdi-escena { padding: 0 5vw; }
+    .cdi.is-escena .cdi-paso-t > span { display: none; }
+    .cdi.is-escena[data-tramo="0"] .cdi-paso[data-k="0"] .cdi-paso-t > span, .cdi.is-escena[data-tramo="1"] .cdi-paso[data-k="1"] .cdi-paso-t > span, .cdi.is-escena[data-tramo="2"] .cdi-paso[data-k="2"] .cdi-paso-t > span, .cdi.is-escena[data-tramo="3"] .cdi-paso[data-k="3"] .cdi-paso-t > span { display: block; }
+    .cdi-tablero { padding: 28px 30px 22px; }
+    .cdi-graf { height: min(42vh, 340px); gap: 10px; }
+  }
+  @media (max-width: 899px) {
+    .cdi.is-escena .cdi-escena { display: block; padding: 0; }
+    .cdi.is-escena .cdi-tablero { position: absolute; left: 16px; right: 16px; top: 3svh; padding: 16px 16px 12px; }
+    .cdi.is-escena .cdi-graf { height: 34svh; }
+    .cdi.is-escena .cdi-txt { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 20px 18px; background: linear-gradient(180deg, rgba(11, 11, 12, 0) 0, #0B0B0C 24px); }
+    .cdi.is-escena .cdi-k { margin-bottom: 8px; }
+    .cdi.is-escena .cdi-h { font-size: clamp(30px, 8.6vw, 40px); }
+    .cdi.is-escena .cdi-pasos { margin-top: 10px; }
+    .cdi.is-escena .cdi-paso { display: none; padding: 10px 0 8px; }
+    .cdi.is-escena[data-tramo="0"] .cdi-paso[data-k="0"], .cdi.is-escena[data-tramo="1"] .cdi-paso[data-k="1"], .cdi.is-escena[data-tramo="2"] .cdi-paso[data-k="2"], .cdi.is-escena[data-tramo="3"] .cdi-paso[data-k="3"] { display: grid; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cdi * { animation: none !important; transition: none !important; }
+  }
+</style>

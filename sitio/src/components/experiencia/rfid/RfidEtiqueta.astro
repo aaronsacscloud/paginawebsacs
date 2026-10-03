@@ -1,0 +1,47 @@
+---
+/**
+ * «La etiqueta» (/experiencia/rfid): qué es una etiqueta RFID, en la foto macro de una etiqueta en una camisa de lino
+ * con la seña del chip, y tres cosas que la hacen distinta del código de barras. Fucsia con su palabra gigante; cada
+ * renglón entra al verse (.rv → .is-on, script de la página).
+ */
+import { RFID_ETIQUETA } from '../../../data/experiencia-rfid';
+const I = '/images/experiencia/';
+const PALABRA = Array.from({ length: 3 }, () => 'LA ETIQUETA').join(' · ');
+---
+<section class="pda re pd-fucsia" aria-labelledby="re-h">
+  <div class="pda-fondo" aria-hidden="true"><span>{PALABRA}</span><span>{PALABRA}</span></div>
+  <p class="pd-folio"><span>{RFID_ETIQUETA.k}</span><span>Cómo funciona</span></p>
+  <div class="re-grid">
+    <figure class="re-foto rv" style="--i:0">
+      <img src={`${I}rfid-etiqueta-1280.webp`} srcset={`${I}rfid-etiqueta-1280.webp 1280w, ${I}rfid-etiqueta-1536.webp 1536w`} sizes="(min-width: 900px) 50vw, 100vw" width="1536" height="1024" alt="Una etiqueta blanca colgada de una camisa de lino; adentro se ve el chip de RFID" loading="lazy" decoding="async" />
+      <span class="re-sena" aria-hidden="true"><i></i>Chip y antena</span>
+    </figure>
+    <div>
+      <h2 class="pda-h re-h" id="re-h">{RFID_ETIQUETA.h}</h2>
+      <ul class="re-puntos">
+        {RFID_ETIQUETA.puntos.map((p, i) => <li class="rv" style={`--i:${i + 1}`}><b>{p.t}</b><span>{p.d}</span></li>)}
+      </ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .re-grid { display: grid; gap: 32px; margin-top: 8px; }
+  .re-foto { position: relative; margin: 0; overflow: hidden; border-radius: 22px; box-shadow: 0 40px 80px -40px rgba(60, 0, 20, 0.6); }
+  .re-foto img { display: block; width: 100%; height: auto; }
+  .re-sena { position: absolute; left: 50%; top: 62%; display: inline-flex; align-items: center; gap: 8px; padding: 8px 13px 8px 10px; border-radius: 99px; background: #141414; color: #fff; font: 700 13px/1 var(--font-display); white-space: nowrap; }
+  .re-sena i { width: 10px; height: 10px; border-radius: 50%; background: #F07FA6; box-shadow: 0 0 0 4px rgba(240, 127, 166, 0.3); }
+  .re-h { max-width: 18ch; font-size: clamp(32px, 3.4vw, 52px); }
+  .re-puntos { margin: 28px 0 0; padding: 0; list-style: none; border-top: 2px solid #fff; }
+  .re-puntos li { display: grid; gap: 6px; padding: 18px 0; border-bottom: 1px solid var(--pd-filete); }
+  .re-puntos b { font: 700 clamp(22px, 2.4vw, 30px)/1.15 var(--pd-clash); color: #fff; }
+  .re-puntos span { font: 500 16px/1.5 var(--font-body); color: #fff; }
+  :global(.js-rv) .re .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.1s); }
+  :global(.js-rv) .re .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .re-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 5vw; align-items: center; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .re .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>

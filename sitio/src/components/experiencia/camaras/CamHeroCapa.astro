@@ -1,0 +1,77 @@
+---
+/**
+ * La capa del mapa de calor sobre la portada de /experiencia/camaras-con-ia (va en el slot de ExpHero). Cada foto
+ * tiene su lienzo con su proporción, acomodado igual que la foto (escritorio: 70 % / 50 %; teléfono: 50 % / 30 %), así
+ * las manchas caen sobre la mesa de novedades y los racks en cualquier pantalla. Las manchas laten despacio; la
+ * tarjeta de la zona más vista flota encima del velo. Todo es de ejemplo (la experiencia está en construcción).
+ */
+// [x, y, radio] en % del ancho de cada foto · tipo de calor
+const ANCHA = [
+  { x: 64, y: 52, r: 19, t: 'caliente' },
+  { x: 63, y: 17, r: 10, t: 'tibio' },
+  { x: 88, y: 24, r: 9, t: 'tibio' },
+  { x: 76, y: 88, r: 9, t: 'tibio' },
+  { x: 27, y: 18, r: 7, t: 'tibio' },
+];
+const VERTICAL = [
+  { x: 48, y: 37, r: 34, t: 'caliente' },
+  { x: 85, y: 20, r: 16, t: 'tibio' },
+  { x: 72, y: 84, r: 15, t: 'tibio' },
+  { x: 16, y: 12, r: 14, t: 'tibio' },
+];
+---
+<div class="chc" aria-hidden="true">
+  <div class="chc-lienzo chc-lienzo--ancho">
+    <svg viewBox="0 0 1536 1024" preserveAspectRatio="none">
+      <defs>
+        <radialGradient id="chc-caliente"><stop offset="0" stop-color="#FF1F3D" stop-opacity=".9" /><stop offset=".32" stop-color="#FF6A1A" stop-opacity=".78" /><stop offset=".62" stop-color="#FFD23F" stop-opacity=".5" /><stop offset="1" stop-color="#FFE47A" stop-opacity="0" /></radialGradient>
+        <radialGradient id="chc-tibio"><stop offset="0" stop-color="#FF9F1C" stop-opacity=".72" /><stop offset=".55" stop-color="#FFE15A" stop-opacity=".42" /><stop offset="1" stop-color="#FFE15A" stop-opacity="0" /></radialGradient>
+      </defs>
+      {ANCHA.map((m, i) => <circle class="chc-m" cx={(m.x * 1536) / 100} cy={(m.y * 1024) / 100} r={(m.r * 1536) / 100} fill={`url(#chc-${m.t})`} style={`--i:${i}`} />)}
+    </svg>
+  </div>
+  <div class="chc-lienzo chc-lienzo--vertical">
+    <svg viewBox="0 0 1024 1536" preserveAspectRatio="none">
+      <defs>
+        <radialGradient id="chc-caliente-v"><stop offset="0" stop-color="#FF1F3D" stop-opacity=".9" /><stop offset=".32" stop-color="#FF6A1A" stop-opacity=".78" /><stop offset=".62" stop-color="#FFD23F" stop-opacity=".5" /><stop offset="1" stop-color="#FFE47A" stop-opacity="0" /></radialGradient>
+        <radialGradient id="chc-tibio-v"><stop offset="0" stop-color="#FF9F1C" stop-opacity=".72" /><stop offset=".55" stop-color="#FFE15A" stop-opacity=".42" /><stop offset="1" stop-color="#FFE15A" stop-opacity="0" /></radialGradient>
+      </defs>
+      {VERTICAL.map((m, i) => <circle class="chc-m" cx={(m.x * 1024) / 100} cy={(m.y * 1536) / 100} r={(m.r * 1024) / 100} fill={`url(#chc-${m.t}-v)`} style={`--i:${i}`} />)}
+    </svg>
+  </div>
+</div>
+<div class="chc-tarjeta" aria-hidden="true">
+  <p class="chc-fila"><small>Zona más vista</small><b>Mesa de novedades</b></p>
+  <p class="chc-fila"><small>Permanencia promedio</small><b>2:40 <em>min</em></b></p>
+  <span class="chc-ej">Ejemplo</span>
+</div>
+
+<style>
+  .chc { position: absolute; inset: 0; z-index: -1; overflow: hidden; container-type: size; pointer-events: none; }
+  .chc-lienzo { position: absolute; }
+  .chc-lienzo svg { display: block; width: 100%; height: 100%; mix-blend-mode: multiply; }
+  /* teléfono: la foto vertical (object-position 50 % 30 %) */
+  .chc-lienzo--ancho { display: none; }
+  .chc-lienzo--vertical { left: 50%; top: 30%; width: max(100cqw, calc(100cqh * 1024 / 1536)); aspect-ratio: 1024 / 1536; transform: translate(-50%, -30%); }
+  .chc-m { transform-box: fill-box; transform-origin: center; animation: chcLate 5s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -1.3s); }
+  @keyframes chcLate { from { transform: scale(0.9); opacity: 0.85; } to { transform: scale(1.06); opacity: 1; } }
+
+  .chc-tarjeta { position: absolute; z-index: 1; right: 16px; top: 88px; display: grid; gap: 10px; width: 190px; padding: 14px 16px; border-radius: 16px; background: rgba(255, 255, 255, 0.94); color: #141414; box-shadow: 0 24px 50px -24px rgba(0, 0, 0, 0.55); }
+  .chc-fila { display: grid; gap: 3px; margin: 0; }
+  .chc-fila small { font: 600 10.5px/1.2 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: #6B6862; }
+  .chc-fila b { font: 700 16px/1.15 var(--font-display); }
+  .chc-fila em { font-style: normal; font-size: 12px; color: #6B6862; }
+  .chc-fila + .chc-fila b { font: 700 30px/1 var(--pd-clash, var(--font-display)); color: #2F55C4; }
+  .chc-ej { position: absolute; right: 10px; top: 10px; padding: 3px 7px; border-radius: 99px; background: #F2C46B; font: 700 9.5px/1 var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; }
+
+  @media (min-width: 768px) {
+    .chc-lienzo--vertical { display: none; }
+    .chc-lienzo--ancho { display: block; left: 70%; top: 50%; width: max(100cqw, calc(100cqh * 1536 / 1024)); aspect-ratio: 1536 / 1024; transform: translate(-70%, -50%); }
+    .chc-tarjeta { right: 4vw; top: auto; bottom: 12vh; width: 250px; padding: 18px 20px; gap: 14px; }
+    .chc-fila b { font-size: 19px; }
+    .chc-fila + .chc-fila b { font-size: 44px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .chc-m { animation: none; }
+  }
+</style>

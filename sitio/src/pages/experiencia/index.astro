@@ -13,7 +13,7 @@ import { breadcrumbList } from '../../lib/breadcrumb';
 import '../../styles/planeacion.css';
 
 const title = 'Experiencia: lo que se vive con Sacs | Sacs';
-const description = 'Experiencias de Sacs para tiendas de moda, en el piso, en la bodega y en línea: el probador virtual en tienda y el alta de productos en vivo con AXO, de la caja a la venta en 30 minutos.';
+const description = 'Experiencias de Sacs para tiendas de moda, en el piso, en la bodega y en línea: el probador virtual en tienda, el alta de productos en vivo con AXO y, en construcción, cámaras con IA, conteo de personas y RFID.';
 const lista = {
   '@context': 'https://schema.org',
   '@type': 'ItemList',
@@ -38,6 +38,7 @@ const [primera, ...resto] = experiencias;
             <img src={primera.imagen} width={primera.imagenAncho} height={primera.imagenAlto} alt={primera.alt} loading="eager" fetchpriority="high" decoding="async" />
             <span class="exi-velo" aria-hidden="true"></span>
             <span class="exi-num">{primera.num}</span>
+            {primera.obra && <span class="exi-obra">En construcción</span>}
             <span class="exi-card-txt">
               <span class="exi-t">{primera.titulo}</span>
               <span class="exi-d">{primera.bajada}</span>
@@ -49,6 +50,7 @@ const [primera, ...resto] = experiencias;
               <img src={e.imagen} width={e.imagenAncho} height={e.imagenAlto} alt={e.alt} loading="lazy" decoding="async" />
               <span class="exi-velo" aria-hidden="true"></span>
               <span class="exi-num">{e.num}</span>
+              {e.obra && <span class="exi-obra">En construcción</span>}
               <span class="exi-card-txt"><span class="exi-t">{e.titulo}</span><span class="exi-ir">Ver →</span></span>
             </a>
           ))}
@@ -63,10 +65,9 @@ const [primera, ...resto] = experiencias;
   .exi { min-height: calc(100svh - 101px); }
   .exi-grid { display: grid; gap: 36px; margin-top: 8px; align-items: end; }
   .exi-p { margin: 18px 0 0; max-width: 36ch; font: 500 17px/1.5 var(--font-body); color: var(--pd-tenue); }
-  .exi-cards { display: flex; gap: 16px; align-items: flex-end; overflow-x: auto; padding-bottom: 4px; }
-  .exi-card { position: relative; flex: 0 0 auto; display: block; width: 220px; aspect-ratio: 2 / 3; overflow: hidden; border-radius: 18px; background: #1C1C1F; color: #fff; text-decoration: none; isolation: isolate; }
-  /* en vw, no en %: la columna es «auto» y un % del contenedor daría 0 */
-  .exi-card.is-grande { width: min(420px, calc(100vw - 40px)); }
+  /* la primera en grande y las demás en una rejilla de 2 × 2 a su lado (3-oct-2026: ya son cinco) */
+  .exi-cards { display: grid; gap: 14px; }
+  .exi-card { position: relative; display: block; min-width: 0; aspect-ratio: 2 / 3; overflow: hidden; border-radius: 18px; background: #1C1C1F; color: #fff; text-decoration: none; isolation: isolate; }
   .exi-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1); }
   .exi-card:hover img { transform: scale(1.04); }
   .exi-velo { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11, 11, 12, 0) 40%, rgba(11, 11, 12, 0.86) 100%); }
@@ -75,16 +76,24 @@ const [primera, ...resto] = experiencias;
   .exi-t { font: 700 clamp(28px, 3vw, 38px)/1.02 var(--pd-clash); letter-spacing: -0.015em; }
   .exi-d { font: 500 15px/1.45 var(--font-body); color: rgba(255, 255, 255, 0.86); }
   .exi-ir { margin-top: 4px; font: 700 15px/1 var(--font-display); color: var(--ac, #E0457B); }
+  .exi-obra { position: absolute; top: 16px; right: 16px; padding: 5px 9px; border-radius: 99px; background: #F2C46B; color: #141414; font: 700 10.5px/1 var(--font-display); letter-spacing: 0.05em; text-transform: uppercase; }
   .exi-card:hover { color: #fff; text-decoration: none; }
   .exi-card:focus-visible { outline: 3px solid var(--ac, #E0457B); outline-offset: 4px; }
-  /* teléfono: una debajo de la otra (de lado, la segunda quedaba fuera de la pantalla) */
+  /* teléfono: la primera a lo ancho y las demás de dos en dos */
   @media (max-width: 899px) {
-    .exi-cards { flex-direction: column; align-items: stretch; overflow: visible; }
-    .exi-card, .exi-card.is-grande { width: 100%; }
-    .exi-card:not(.is-grande) { aspect-ratio: 4 / 5; }
+    .exi-cards { grid-template-columns: 1fr 1fr; }
+    .exi-card.is-grande { grid-column: 1 / -1; }
+    .exi-card:not(.is-grande) .exi-card-txt { left: 14px; right: 14px; bottom: 14px; }
+    .exi-card:not(.is-grande) .exi-t { font-size: 19px; }
+    .exi-card:not(.is-grande) .exi-num { top: 14px; left: 14px; font-size: 16px; }
+    .exi-card:not(.is-grande) .exi-obra { top: 40px; left: 14px; right: auto; font-size: 9px; }
   }
   @media (min-width: 900px) {
-    .exi-grid { grid-template-columns: 1fr auto; gap: 64px; align-items: center; }
+    .exi-grid { grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.6fr); gap: 56px; align-items: center; }
+    .exi-cards { grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)); }
+    .exi-card.is-grande { grid-row: span 2; aspect-ratio: auto; }
+    .exi-card:not(.is-grande) { aspect-ratio: 4 / 5; }
+    .exi-card:not(.is-grande) .exi-t { font-size: clamp(20px, 1.7vw, 26px); }
     .exi-p { font-size: 19px; }
   }
 </style>

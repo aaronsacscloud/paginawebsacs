@@ -1,0 +1,36 @@
+---
+/**
+ * Una lista grande numerada sobre color (/experiencia/*), como «Su foto, cuidada» del probador (ProbCuidado), con sus
+ * datos por props: la palabra gigante detrás del título y cada renglón entra al verse (.rv → .is-on, script de la
+ * página). Para privacidad, instalación o reglas de una experiencia.
+ */
+interface Props { id?: string; tema?: string; palabra: string; folio: [string, string]; titulo: string; puntos: string[]; nota?: string }
+const { id, tema = 'pd-azul', palabra, folio, titulo, puntos, nota } = Astro.props;
+const hid = `${id || 'exl'}-h`;
+const fondo = Array.from({ length: 4 }, () => palabra).join(' · ');
+---
+<section class={`pda exl ${tema}`} id={id} aria-labelledby={hid}>
+  <div class="pda-fondo" aria-hidden="true"><span>{fondo}</span><span>{fondo}</span></div>
+  <p class="pd-folio"><span>{folio[0]}</span><span>{folio[1]}</span></p>
+  <h2 class="pda-h" id={hid}>{titulo}</h2>
+  <ol class="exl-lista">
+    {puntos.map((t, i) => <li class="rv" style={`--i:${i}`}><span class="exl-n">{String(i + 1).padStart(2, '0')}</span><span class="exl-t">{t}</span></li>)}
+  </ol>
+  {nota && <p class="exl-nota">{nota}</p>}
+</section>
+
+<style>
+  .exl-lista { margin: 48px 0 0; padding: 0; list-style: none; border-top: 2px solid var(--pd-texto); }
+  .exl-lista li { display: grid; grid-template-columns: 48px 1fr; gap: 8px; padding: 22px 0; border-bottom: 1px solid var(--pd-filete); }
+  .exl-n { font: 700 22px/1.2 var(--pd-clash); color: var(--pd-texto); }
+  .exl-t { font: 700 clamp(22px, 2.6vw, 34px)/1.2 var(--pd-clash); letter-spacing: -0.01em; color: var(--pd-texto); text-wrap: balance; }
+  .exl-nota { margin: 28px 0 0; max-width: 70ch; font: 600 16px/1.5 var(--font-display); color: var(--pd-texto); }
+  :global(.js-rv) .exl-lista .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.08s); }
+  :global(.js-rv) .exl-lista .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 768px) {
+    .exl-lista li { grid-template-columns: 80px 1fr; padding: 26px 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .exl-lista .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>

@@ -1,0 +1,84 @@
+---
+/**
+ * «La misma etiqueta, todo el día» (/experiencia/rfid): tres usos más allá del conteo — encontrar una prenda, recibir
+ * la caja del proveedor sin abrirla y controlar las salidas —, cada uno con su foto, su color y su pantalla.
+ * Escritorio con movimiento: una galería que corre de lado con el scroll (la escena se pega y la pista se recorre con
+ * --p). Teléfono, sin JS o con «reducir movimiento»: una tarjeta debajo de otra. Ejemplo y en construcción.
+ */
+import { RFID_USOS } from '../../../data/experiencia-rfid';
+const I = '/images/experiencia/';
+const COLOR = ['#4470D8', '#D03A70', '#0A1648'];
+const ALT: Record<string, string> = {
+  'rfid-vertical': 'Una vendedora con un lector RFID de mano frente a un rack de prendas de lino',
+  'rfid-bodega': 'En la bodega, una vendedora lee con el lector una caja cerrada del proveedor',
+  'rfid-puerta': 'La entrada de la boutique con las antenas de seguridad a los lados de la puerta; una clienta sale con su bolsa',
+};
+---
+<section class="ru" data-escena aria-labelledby="ru-h">
+  <div class="ru-cab">
+    <p class="pd-folio"><span>{RFID_USOS.folio[0]}</span><span>{RFID_USOS.folio[1]}</span></p>
+    <h2 class="ru-h" id="ru-h">{RFID_USOS.h}</h2>
+  </div>
+  <div class="ru-riel" data-riel>
+    <div class="ru-escena">
+      <div class="ru-pista">
+        {RFID_USOS.usos.map((u, i) => {
+          const vertical = u.img === 'rfid-vertical';
+          const src = vertical ? `${I}${u.img}-800.webp` : `${I}${u.img}-1280.webp`;
+          return (
+            <article class="ru-panel" style={`--c:${COLOR[i]}`} aria-labelledby={`ru-t${i}`}>
+              <figure class="ru-foto">
+                <img src={src} width={vertical ? 800 : 1280} height={vertical ? 1200 : 853} alt={ALT[u.img]} loading="lazy" decoding="async" />
+                <p class="ru-ui" aria-hidden="true"><small>{u.ui.a}</small><b>{u.ui.b}</b><em>{u.ui.c}</em></p>
+              </figure>
+              <div class="ru-txt">
+                <p class="ru-k">{String(i + 1).padStart(2, '0')} · {u.k}</p>
+                <h3 class="ru-t" id={`ru-t${i}`}>{u.t}</h3>
+                <p class="ru-d">{u.d}</p>
+                <p class="ru-obra">Ejemplo · en construcción</p>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .ru { position: relative; background: #0B0B0C; color: #fff; padding-top: 72px; }
+  .ru-cab { max-width: 1160px; margin: 0 auto; padding: 0 20px 32px; }
+  .ru-cab .pd-folio { color: #fff; border-color: rgba(255, 255, 255, 0.3); }
+  .ru-h { margin: 0; max-width: 14ch; color: #fff; font: 700 clamp(40px, 6vw, 88px)/0.94 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; text-wrap: balance; }
+  .ru-pista { display: grid; gap: 18px; padding: 0 20px 72px; }
+  .ru-panel { display: grid; overflow: hidden; border-radius: 24px; background: var(--c); }
+  .ru-foto { position: relative; margin: 0; aspect-ratio: 4 / 3; }
+  .ru-foto img { width: 100%; height: 100%; object-fit: cover; }
+  .ru-ui { position: absolute; left: 14px; bottom: 14px; display: grid; gap: 3px; margin: 0; padding: 12px 14px; border-radius: 14px; background: rgba(255, 255, 255, 0.95); color: #141414; box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.6); }
+  .ru-ui small { font: 600 10.5px/1.2 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: #6B6862; }
+  .ru-ui b { font: 700 16px/1.2 var(--font-display); }
+  .ru-ui em { justify-self: start; margin-top: 4px; padding: 4px 9px; border-radius: 99px; background: var(--c); color: #fff; font: 700 12px/1 var(--font-display); font-style: normal; }
+  .ru-txt { padding: 22px 22px 26px; }
+  .ru-k { margin: 0; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.85); }
+  .ru-t { margin: 10px 0 0; color: #fff; font: 700 clamp(28px, 3.2vw, 46px)/1 var(--pd-clash, var(--font-display)); letter-spacing: -0.015em; }
+  .ru-d { margin: 12px 0 0; max-width: 40ch; font: 500 16px/1.55 var(--font-body); color: #fff; }
+  .ru-obra { display: inline-block; margin: 16px 0 0; padding: 4px 9px; border-radius: 99px; background: #F2C46B; color: #141414; font: 700 11px/1.2 var(--font-display); letter-spacing: 0.04em; }
+
+  @media (min-width: 900px) {
+    .ru { padding-top: 112px; }
+    .ru-cab { padding: 0 5vw 40px; max-width: none; }
+    .ru-pista { grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 0 5vw 120px; gap: 20px; }
+    .ru-foto { aspect-ratio: 4 / 5; }
+  }
+  /* ══ escritorio con movimiento: la galería corre de lado ══ */
+  @media (min-width: 900px) and (min-height: 640px) {
+    .ru.is-escena .ru-riel { height: 320vh; }
+    .ru.is-escena .ru-escena { position: sticky; top: 0; height: 100vh; height: 100svh; display: flex; align-items: center; overflow: hidden; }
+    .ru.is-escena .ru-pista { display: flex; gap: 3vw; width: max-content; padding: 0 5vw; transform: translateX(calc(var(--p, 0) * (-1 * (3 * 74vw + 2 * 3vw + 10vw - 100vw)))); }
+    .ru.is-escena .ru-panel { flex: none; width: 74vw; height: min(78svh, 680px); grid-template-columns: 1.25fr 1fr; }
+    .ru.is-escena .ru-foto { aspect-ratio: auto; height: 100%; }
+    .ru.is-escena .ru-txt { align-self: center; padding: 4vw 3.4vw; }
+    .ru.is-escena .ru-ui { left: 24px; bottom: 24px; padding: 16px 18px; }
+    .ru.is-escena .ru-ui b { font-size: 19px; }
+  }
+</style>

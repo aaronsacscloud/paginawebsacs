@@ -1,0 +1,41 @@
+---
+/**
+ * La tarjeta de «Visitantes hoy» sobre la portada de /experiencia/conteo-de-personas (va en el slot de ExpHero): el
+ * conteo del día, las barras por hora y la conversión, como la pantalla que va a tener la experiencia. Ejemplo (en
+ * construcción); los números cuadran con el sábado de CON_DIA (1,284 visitas, 295 tickets).
+ */
+import { VISITAS, TICKETS } from '../../../data/experiencia-conteo';
+const total = VISITAS.reduce((a, b) => a + b, 0);
+const tickets = TICKETS.reduce((a, b) => a + b, 0);
+const max = Math.max(...VISITAS);
+const conv = Math.round((tickets / total) * 100);
+---
+<div class="cnh" aria-hidden="true">
+  <span class="cnh-ej">Ejemplo</span>
+  <p class="cnh-k"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="8" r="2.4"/><path d="M15.5 14.2A5 5 0 0 1 21 19"/></svg>Visitantes hoy</p>
+  <p class="cnh-n">{total.toLocaleString('es-MX')}</p>
+  <div class="cnh-barras">{VISITAS.map((v, i) => <i style={`--h:${((v / max) * 100).toFixed(1)}%;--d:${(0.4 + i * 0.06).toFixed(2)}s`}></i>)}</div>
+  <p class="cnh-conv"><span>Conversión</span><b>{conv} %</b></p>
+</div>
+
+<style>
+  .cnh { position: absolute; z-index: 1; left: 16px; top: 86px; display: grid; gap: 8px; width: 200px; padding: 14px 16px 16px; border-radius: 18px; background: rgba(255, 255, 255, 0.95); color: #141414; box-shadow: 0 24px 50px -24px rgba(0, 0, 0, 0.55); pointer-events: none; }
+  .cnh-ej { position: absolute; right: 10px; top: 10px; padding: 3px 7px; border-radius: 99px; background: #F2C46B; font: 700 9.5px/1 var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; }
+  .cnh-k { display: flex; align-items: center; gap: 7px; margin: 0; font: 600 12px/1.2 var(--font-display); color: #4A4741; }
+  .cnh-k svg { color: #2F55C4; }
+  .cnh-n { margin: 0; font: 700 40px/1 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; color: #2F55C4; }
+  .cnh-barras { display: flex; align-items: flex-end; gap: 3px; height: 44px; }
+  .cnh-barras i { flex: 1; height: var(--h); border-radius: 3px 3px 1px 1px; background: linear-gradient(180deg, #5B86EA, #2F55C4); animation: cnhSube 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .cnh-barras i { animation-delay: var(--d, 0s); }
+  .cnh-conv { display: flex; align-items: center; justify-content: space-between; margin: 2px 0 0; padding: 8px 10px; border-radius: 10px; background: #EAF7EF; font: 600 12.5px/1 var(--font-display); color: #17804F; }
+  .cnh-conv b { font: 700 20px/1 var(--pd-clash, var(--font-display)); }
+  @keyframes cnhSube { from { transform: scaleY(0); transform-origin: 50% 100%; } to { transform: none; transform-origin: 50% 100%; } }
+  @media (min-width: 768px) {
+    .cnh { left: auto; top: auto; right: 4vw; bottom: 9vh; width: 270px; padding: 20px 22px 22px; gap: 12px; }
+    .cnh-n { font-size: 60px; }
+    .cnh-barras { height: 64px; gap: 4px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cnh-barras i { animation: none; }
+  }
+</style>

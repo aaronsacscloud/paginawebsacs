@@ -1,0 +1,71 @@
+---
+/**
+ * «Tu gente, en las horas que llegan» (/experiencia/conteo-de-personas): la semana de visitas por hora (lunes a
+ * domingo × 10 a 21) en una rejilla de calor y las tres lecturas que salen de ella (cuándo reforzar el piso). Fucsia,
+ * con su palabra gigante. El Cuadrante de horarios sí existe en Sacs (los turnos); las visitas, en construcción.
+ */
+import { CON_SEMANA, DIAS, HORAS, SEMANA } from '../../../data/experiencia-conteo';
+const PALABRA = Array.from({ length: 3 }, () => 'HORAS PICO').join(' · ');
+---
+<section class="pda csm pd-fucsia" aria-labelledby="csm-h">
+  <div class="pda-fondo" aria-hidden="true"><span>{PALABRA}</span><span>{PALABRA}</span></div>
+  <p class="pd-folio"><span>{CON_SEMANA.folio[0]}</span><span>{CON_SEMANA.folio[1]}</span></p>
+  <h2 class="pda-h" id="csm-h">{CON_SEMANA.h}</h2>
+  <p class="csm-p">{CON_SEMANA.p}</p>
+  <div class="csm-grid">
+    <figure class="csm-rej rv" style="--i:0" role="img" aria-label="Visitas por hora de lunes a domingo: lo más lleno es el sábado de 5 a 8 de la tarde y el domingo de 1 a 4">
+      <div class="csm-tabla" aria-hidden="true">
+        <span class="csm-esq"></span>
+        {HORAS.map((h) => <span class="csm-hora">{h}</span>)}
+        {DIAS.map((d, i) => (
+          <>
+            <span class="csm-dia">{d}</span>
+            {SEMANA[i].map((v) => <span class="csm-c" data-v={v}></span>)}
+          </>
+        ))}
+      </div>
+      <figcaption><span><i data-v="0"></i>Tranquilo</span><span><i data-v="4"></i>Lleno</span><em>Ejemplo · en construcción</em></figcaption>
+    </figure>
+    <div class="csm-picos">
+      {CON_SEMANA.picos.map((p, i) => <div class="csm-pico rv" style={`--i:${i + 1}`}><b>{p.t}</b><span>{p.d}</span></div>)}
+      <p class="csm-hoy rv" style="--i:4"><b>✓</b>{CON_SEMANA.hoy}</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .csm-p { margin: 18px 0 0; max-width: 52ch; font: 500 17px/1.55 var(--font-body); color: #fff; }
+  .csm-grid { display: grid; gap: 28px; margin-top: 36px; }
+  .csm-rej { margin: 0; padding: 18px 16px 14px; border-radius: 20px; background: rgba(255, 255, 255, 0.12); }
+  .csm-tabla { display: grid; grid-template-columns: 34px repeat(11, minmax(0, 1fr)); gap: 4px; }
+  .csm-hora { font: 600 10px/1 var(--font-display); text-align: center; color: rgba(255, 255, 255, 0.85); padding-bottom: 4px; }
+  .csm-dia { font: 700 11px/1 var(--font-display); color: #fff; align-self: center; }
+  .csm-c { aspect-ratio: 1; border-radius: 5px; background: rgba(255, 255, 255, 0.12); }
+  .csm-c[data-v="1"], .csm-rej i[data-v="1"] { background: rgba(255, 255, 255, 0.3); }
+  .csm-c[data-v="2"], .csm-rej i[data-v="2"] { background: #FFC9DA; }
+  .csm-c[data-v="3"], .csm-rej i[data-v="3"] { background: #FFE15A; }
+  .csm-c[data-v="4"], .csm-rej i[data-v="4"] { background: #FFF6C2; box-shadow: 0 0 0 2px #fff; }
+  .csm-rej i[data-v="0"] { background: rgba(255, 255, 255, 0.12); }
+  .csm-rej figcaption { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin-top: 14px; font: 600 12px/1 var(--font-display); color: #fff; }
+  .csm-rej figcaption span { display: inline-flex; align-items: center; gap: 6px; }
+  .csm-rej figcaption i { width: 12px; height: 12px; border-radius: 3px; }
+  .csm-rej figcaption em { margin-left: auto; padding: 3px 7px; border-radius: 99px; background: #F2C46B; color: #141414; font-style: normal; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .csm-picos { display: grid; border-top: 2px solid #fff; }
+  .csm-pico { display: grid; gap: 6px; padding: 18px 0; border-bottom: 1px solid var(--pd-filete); }
+  .csm-pico b { font: 700 clamp(22px, 2.4vw, 30px)/1.15 var(--pd-clash); color: #fff; }
+  .csm-pico span { font: 500 16px/1.5 var(--font-body); color: #fff; }
+  .csm-hoy { display: flex; align-items: center; gap: 10px; margin: 18px 0 0; padding: 12px 16px; border-radius: 14px; background: #fff; color: #141414; font: 600 15px/1.4 var(--font-display); }
+  .csm-hoy b { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; background: #17804F; color: #fff; font-size: 13px; }
+  :global(.js-rv) .csm .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.1s); }
+  :global(.js-rv) .csm .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .csm-grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 5vw; align-items: start; }
+    .csm-rej { padding: 26px 24px 18px; }
+    .csm-tabla { grid-template-columns: 44px repeat(11, minmax(0, 1fr)); gap: 6px; }
+    .csm-hora { font-size: 12px; }
+    .csm-dia { font-size: 13px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .csm .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>

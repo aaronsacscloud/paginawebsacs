@@ -1,0 +1,92 @@
+---
+/**
+ * /experiencia/camaras-con-ia — «Lo que tu clienta mira, en un mapa», la Experiencia 03 (3-oct-2026). EN CONSTRUCCIÓN.
+ *
+ * Pedido del dueño: tres experiencias nuevas para moda (cámaras con IA, conteo de personas, RFID) con el mismo diseño
+ * que el probador y el alta de productos: imagen a pantalla completa, el paso a paso con el scroll, los beneficios y
+ * los problemas que resuelve. Recorrido: portada (la planta con su mapa de calor) → a ojo contra con datos → un día en
+ * tu tienda (el mapa se arma con el scroll) → lo miran pero no lo compran → mueve y mide → lo que resuelve → lo que ya
+ * hay y lo que falta → preguntas → cierre.
+ * NADA de esto existe hoy como software (ver src/data/experiencia-camaras.ts): la página entera va marcada «en
+ * construcción», sin fecha, y los números son de ejemplo. El menú principal solo se ve hasta arriba (navSoloArriba).
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ExpHero from '../../components/experiencia/ExpHero.astro';
+import ExpAntesDespues from '../../components/experiencia/ExpAntesDespues.astro';
+import ExpLista from '../../components/experiencia/ExpLista.astro';
+import ExpHoy from '../../components/experiencia/ExpHoy.astro';
+import CamHeroCapa from '../../components/experiencia/camaras/CamHeroCapa.astro';
+import CamDia from '../../components/experiencia/camaras/CamDia.astro';
+import CamMiran from '../../components/experiencia/camaras/CamMiran.astro';
+import CamMueve from '../../components/experiencia/camaras/CamMueve.astro';
+import GiroFAQ from '../../components/giros/GiroFAQ.astro';
+import FinalCTA from '../../components/FinalCTA.astro';
+import StructuredData from '../../components/StructuredData.astro';
+import { CAMARAS, CAM_ANTES, CAM_RESUELVE, CAM_HOY, PREGUNTAS_CAMARAS, OBRA_AVISO } from '../../data/experiencia-camaras';
+import { experiencias } from '../../data/experiencias';
+import { SITIO } from '../../data/entidad';
+import { breadcrumbList } from '../../lib/breadcrumb';
+import '../../styles/planeacion.css';
+
+const exp = experiencias.find((e) => e.slug === 'camaras-con-ia')!;
+const title = 'Cámaras con IA y mapas de calor para tiendas de moda | Sacs';
+const description = 'Así va a funcionar: el mapa de calor de tu piso, cuánto se queda tu clienta en cada mesa y lo que mira sin comprar, junto a tu venta y tu inventario de Sacs. En construcción.';
+
+const pagina = { '@context': 'https://schema.org', '@type': 'WebPage', '@id': `${SITIO}${exp.href}#pagina`, name: exp.titulo, description, url: `${SITIO}${exp.href}`, inLanguage: 'es-MX' };
+const migas = breadcrumbList([{ name: 'Inicio', url: `${SITIO}/` }, { name: 'Experiencia', url: `${SITIO}/experiencia` }, { name: exp.titulo }]);
+const faqSchema = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: PREGUNTAS_CAMARAS.map((p) => ({ '@type': 'Question', name: p.question, acceptedAnswer: { '@type': 'Answer', text: p.answer } })) };
+---
+<BaseLayout
+  title={title}
+  description={description}
+  image="/images/experiencia/camaras-og.jpg"
+  preloadImage="/images/experiencia/camaras-vertical-1024.webp"
+  preloadMedia="(max-width: 767px)"
+  structuredData={[pagina, migas]}
+  navSoloArriba
+>
+  <StructuredData data={faqSchema} />
+
+  <div class="pd exp">
+    <ExpHero
+      folio={CAMARAS.folio}
+      etiqueta={CAMARAS.etiqueta}
+      titulo={CAMARAS.titulo}
+      bajada={CAMARAS.bajada}
+      aviso={OBRA_AVISO}
+      ancha={{ s1280: '/images/experiencia/camaras-portada-1280.webp', s1920: '/images/experiencia/camaras-portada-1536.webp', alto1920: 1280 }}
+      vertical={{ src: '/images/experiencia/camaras-vertical-1024.webp', ancho: 1024, alto: 1536 }}
+      alt="Una boutique de moda vista desde el techo, con clientas alrededor de la mesa redonda de novedades y el mapa de calor encima"
+      ancla="cam-antes"
+    >
+      <CamHeroCapa />
+    </ExpHero>
+    <ExpAntesDespues id="cam-antes" folio={CAM_ANTES.folio} titulo={CAM_ANTES.titulo} antes={CAM_ANTES.antes} despues={CAM_ANTES.despues} nota={CAM_ANTES.nota} />
+    <CamDia />
+    <CamMiran />
+    <CamMueve />
+    <ExpLista id="cam-resuelve" tema="pd-azul" palabra="LO QUE RESUELVE" folio={CAM_RESUELVE.folio} titulo={CAM_RESUELVE.titulo} puntos={CAM_RESUELVE.puntos} />
+    <ExpHoy id="cam-hoy" folio={CAM_HOY.folio} titulo={CAM_HOY.titulo} hoy={CAM_HOY.hoy} obra={CAM_HOY.obra} nota={CAM_HOY.nota} />
+  </div>
+
+  <GiroFAQ title="Preguntas frecuentes sobre las cámaras con IA" faqs={PREGUNTAS_CAMARAS} />
+  <FinalCTA />
+</BaseLayout>
+
+<script>
+  import { iniciaEscenas } from '../../scripts/experiencia/escenas';
+  iniciaEscenas();
+
+  // Los renglones de las listas entran al verse (sin JS se ven completos).
+  (() => {
+    const rv = Array.from(document.querySelectorAll<HTMLElement>('.exp .rv'));
+    if (!rv.length || !('IntersectionObserver' in window)) return;
+    document.documentElement.classList.add('js-rv');
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-on'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -12% 0px' });
+    rv.forEach((el) => io.observe(el));
+  })();
+
+  const ph = (evento: string, props?: Record<string, unknown>) => { try { (window as any).sacsPH?.(evento, props); } catch { /* sin medición */ } };
+  document.querySelectorAll<HTMLElement>('.exp [data-evento]').forEach((a) => a.addEventListener('click', () => ph(a.dataset.evento!, { experiencia: 'camaras-con-ia' })));
+  document.querySelector('.final-cta-btn')?.addEventListener('click', () => ph('experiencia_cta_prueba', { experiencia: 'camaras-con-ia' }));
+</script>
