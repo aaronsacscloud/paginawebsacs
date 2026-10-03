@@ -68,6 +68,29 @@ const cases = [
     sucursalesUrl: 'https://sthela.com/pages/ubicacion-y-horarios-de-las-sucursales',
     stats: [], quote: '', author: '', highlights: [], image: '',
   },
+  {
+    slug: 'vende-tu-closet',
+    estilo: 'lujo',
+    brand: 'Vende Tu Clóset',
+    tag: 'Lujo pre-loved · Consignación',
+    lead: 'Vende Tu Clóset es una startup mexicana de consignación y venta de artículos de lujo pre-loved. Bolsas, ropa y accesorios de las grandes casas de moda, cada pieza revisada y autenticada antes de llegar a su nueva dueña.',
+    historia: [
+      { lugar: 'Coatepec, Veracruz', t: 'Nace en línea.', d: 'Instagram y TikTok hacen el resto: la confianza de sus clientes la lleva a crecer de forma exponencial.' },
+      { lugar: 'Xalapa · febrero 2022', t: 'Corporativo y showroom.', d: 'En Torre JV, en la ciudad que la vio nacer.' },
+      { lugar: 'Ciudad de México', t: 'A unos pasos de Masaryk.', d: 'Alejandro Dumas 135, Polanco: la avenida del lujo en México.' },
+      { lugar: 'Guadalajara', t: 'Su tienda más grande.', d: 'A pocos minutos de Andares.' },
+      { lugar: 'Monterrey', t: 'También en Nuevo León.', d: 'La expansión sigue.' },
+    ],
+    confianza: [
+      { k: 'Certificación', d: 'Cada pieza se analiza y su autenticidad se verifica con la tecnología Entrupy.' },
+      { k: 'Seguridad', d: 'Las compras están protegidas a través de su pasarela de pagos.' },
+      { k: 'Atención', d: 'Todo su equipo está atento a cada solicitud, con una atención de calidad en todo momento.' },
+    ],
+    marcas: ['Chanel', 'Dior', 'Louis Vuitton', 'Hermès', 'Fendi', 'Prada', 'Saint Laurent', 'Bottega Veneta', 'Gucci', 'Balenciaga', 'Celine', 'Goyard', 'Cartier', 'Valentino'],
+    ciudades: ['Ciudad de México', 'Xalapa', 'Guadalajara', 'Monterrey'],
+    web: 'https://www.vtc.mx/',
+    stats: [], quote: '', author: '', highlights: [], image: '',
+  },
 ];
 ---
 
@@ -83,12 +106,67 @@ const cases = [
     <span class="ce-eyebrow">Casos de éxito</span>
     <h1 class="ce-hero-title">No venden una prenda. Venden <span class="ce-rot"><span>una forma de vestir.</span><span aria-hidden="true">una temporada.</span><span aria-hidden="true">un recuerdo.</span><span aria-hidden="true">una comunidad.</span></span></h1>
     <p class="ce-hero-subtitle">Trabajamos con empresarios que saben lo que hacen: líderes apasionados por su marca que construyen un ecosistema completo alrededor de ella. Por cómo hacen las cosas, sus marcas siguen creciendo.</p>
-    <p class="ce-hero-proof"><span>Con ellos trabajamos:</span> <a href="#liveshow">Live Shows Merchandising</a> <a href="#sthela">Sthela &amp; Co.</a></p>
+    <p class="ce-hero-proof"><span>Con ellos trabajamos:</span> <a href="#liveshow">Live Shows Merchandising</a> <a href="#sthela">Sthela &amp; Co.</a> <a href="#vende-tu-closet">Vende Tu Clóset</a></p>
   </div>
 </section>
 
 <!-- Cases -->
-{cases.map((c, idx) => c.estilo === 'moda-claro' ? (
+{cases.map((c, idx) => c.estilo === 'lujo' ? (
+  <section class="ce-lujo" id={c.slug}>
+    <div class="ce-lujo-inner">
+      <div class="ce-lujo-top">
+        <div class="ce-lujo-head">
+          <img src="/images/vtc-logo-blanco.webp" alt="" width="287" height="220" loading="lazy" class="ce-lujo-mono" />
+          <span class="ce-lujo-name">Vende Tu Clóset</span>
+          <div class="ce-lujo-chips"><span class="ce-lujo-n1">Nº 1 en México</span><span class="ce-lujo-tag">{c.tag}</span></div>
+          <h2 class="ce-lujo-title">La número 1 en lujo <em>pre&#8209;loved</em> de México.</h2>
+          <p class="ce-lujo-lead">{c.lead}</p>
+        </div>
+        <div class="ce-lujo-fotos">
+          <img src="/images/vtc-equipo.webp" alt="El equipo de Vende Tu Clóset en su stand, con bolsas de lujo en exhibición" width="1000" height="1248" loading="lazy" class="ce-lujo-foto-a" />
+          <img src="/images/vtc-espejo.webp" alt="Clienta con vestido rojo frente al espejo «Good taste looks good on you» de Vende Tu Clóset" width="1000" height="1248" loading="lazy" class="ce-lujo-foto-b" />
+        </div>
+      </div>
+    </div>
+    <div class="ce-lujo-marcas" aria-label="Algunas de las casas que vende">
+      <div class="ce-lujo-cinta">
+        {[0, 1].map((n) => (
+          <span class="ce-lujo-cinta-set" aria-hidden={n === 1 ? 'true' : undefined}>
+            {c.marcas?.map((m) => <span>{m}</span>)}
+          </span>
+        ))}
+      </div>
+    </div>
+    <div class="ce-lujo-inner">
+      <h3 class="ce-lujo-sub">De una cuenta de Instagram a la avenida del lujo</h3>
+      <ol class="ce-lujo-historia">
+        {c.historia?.map((h) => (
+          <li><span class="ce-lujo-lugar">{h.lugar}</span><strong>{h.t}</strong><span>{h.d}</span></li>
+        ))}
+      </ol>
+      <div class="ce-lujo-confianza">
+        <img src="/images/vtc-bolsas.webp" alt="Bolsas Dior y Fendi en exhibición" width="1000" height="1248" loading="lazy" class="ce-lujo-foto-c" />
+        <div class="ce-lujo-pilares">
+          <p class="ce-lujo-pilares-intro">Comprar lujo a través de un intermediario puede causar dudas. Por eso Vende Tu Clóset le da a cada cliente las herramientas para comprar tranquilo.</p>
+          {c.confianza?.map((cf) => (
+            <div class="ce-lujo-pilar"><h4>{cf.k}</h4><p>{cf.d}</p></div>
+          ))}
+        </div>
+        <img src="/images/vtc-vogue.webp" alt="Micrófono de Vende Tu Clóset sobre un ejemplar de Vogue México" width="1000" height="1248" loading="lazy" class="ce-lujo-foto-d" />
+      </div>
+      <div class="ce-lujo-foot">
+        <div class="ce-lujo-ciudades">
+          <span class="ce-lujo-lugar">4 sucursales</span>
+          <p>{c.ciudades?.join('\u00a0· ')}</p>
+        </div>
+        <a href={c.web} target="_blank" rel="noopener" class="ce-lujo-link">
+          Conoce vtc.mx
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+) : c.estilo === 'moda-claro' ? (
   <section class="ce-claro" id={c.slug}>
     <div class="ce-claro-inner">
       <div class="ce-claro-head">
@@ -587,6 +665,78 @@ const cases = [
     .ce-reel video, .ce-reel--main video { box-shadow: 0 4px 12px rgba(147, 51, 234, 0.12); }
     .ce-claro-points { grid-template-columns: 1fr; }
     .ce-claro-link { width: 100%; justify-content: center; }
+  }
+
+
+  /* ── Vende Tu Clóset: negro de la sección (como Live Shows) con el degradado rosa · morado · un toque naranja ── */
+  .ce-lujo { --lujo-tinta: #0b0a10; --lujo-panel: #15121c; --lujo-blanco: #fff; --lujo-gris: rgba(255, 255, 255, 0.68); --lujo-linea: rgba(255, 255, 255, 0.12); --lujo-rosa: #FF7AB6;
+    --lujo-grad: linear-gradient(90deg, #EC4899, #A855F7 72%, #FB923C);
+    position: relative; overflow: hidden; color: var(--lujo-blanco); padding: clamp(72px, 9vw, 120px) 0;
+    background:
+      radial-gradient(ellipse 50% 40% at 0% 8%, rgba(236, 72, 153, 0.20), transparent 70%),
+      radial-gradient(ellipse 45% 40% at 100% 38%, rgba(168, 85, 247, 0.18), transparent 70%),
+      radial-gradient(ellipse 40% 30% at 30% 100%, rgba(251, 146, 60, 0.10), transparent 70%),
+      var(--lujo-tinta); }
+  .ce-lujo-inner { position: relative; max-width: 1200px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px); }
+  .ce-lujo-top { display: grid; grid-template-columns: 1fr 1.05fr; gap: clamp(36px, 6vw, 88px); align-items: center; }
+  .ce-lujo-mono { display: block; width: 92px; height: auto; }
+  .ce-lujo-name { display: block; margin-top: 14px; font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 0.5em; text-transform: uppercase; color: var(--lujo-blanco); }
+  .ce-lujo-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 30px; }
+  .ce-lujo-n1 { display: inline-block; font-family: var(--font-display); font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #fff; background: var(--lujo-grad); padding: 6px 12px; border-radius: 100px; }
+  .ce-lujo-tag { font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--lujo-rosa); }
+  .ce-lujo-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(2.4rem, 5vw, 4.2rem); line-height: 1.02; letter-spacing: -0.045em; color: var(--lujo-blanco); margin: 18px 0 22px; text-wrap: balance; }
+  .ce-lujo-title em { font-style: normal; white-space: nowrap; background: var(--lujo-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .ce-lujo-lead { font-family: var(--font-body); font-size: 17px; line-height: 1.75; color: var(--lujo-gris); margin: 0; max-width: 520px; }
+  .ce-lujo-fotos { position: relative; padding: 0 0 14% 18%; }
+  .ce-lujo-fotos::before { content: ''; position: absolute; top: -14px; right: -14px; width: 46%; height: 52%; border-radius: 18px; background: var(--lujo-grad); opacity: 0.9; }
+  .ce-lujo-fotos img { position: relative; display: block; width: 100%; height: auto; object-fit: cover; border-radius: 14px; }
+  .ce-lujo-foto-a { aspect-ratio: 4 / 5; }
+  .ce-lujo-foto-b { position: absolute !important; left: 0; bottom: 0; width: 42% !important; aspect-ratio: 4 / 5; border: 6px solid var(--lujo-tinta); }
+
+  .ce-lujo-marcas { position: relative; margin: clamp(56px, 7vw, 88px) 0; padding: 20px 0; overflow: hidden; background: rgba(255, 255, 255, 0.03); border-top: 1px solid var(--lujo-linea); border-bottom: 1px solid var(--lujo-linea); }
+  .ce-lujo-cinta { display: flex; width: max-content; animation: ce-lujo-cinta 60s linear infinite; }
+  .ce-lujo-cinta-set { display: flex; flex-shrink: 0; }
+  .ce-lujo-cinta-set span { display: inline-flex; align-items: center; font-family: var(--font-display); font-weight: 700; letter-spacing: -0.02em; font-size: clamp(1.25rem, 2.4vw, 1.8rem); color: var(--lujo-blanco); padding: 0 clamp(16px, 2.2vw, 28px); white-space: nowrap; }
+  .ce-lujo-cinta-set span::after { content: ''; width: 7px; height: 7px; border-radius: 50%; margin-left: clamp(16px, 2.2vw, 28px); background: var(--lujo-grad); }
+  @keyframes ce-lujo-cinta { to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) { .ce-lujo-cinta { animation: none; } }
+
+  .ce-lujo-sub { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.035em; font-size: clamp(1.7rem, 3.2vw, 2.5rem); line-height: 1.1; color: var(--lujo-blanco); margin: 0 0 36px; text-wrap: balance; }
+  .ce-lujo-historia { position: relative; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; }
+  .ce-lujo-historia::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; border-radius: 2px; background: var(--lujo-grad); }
+  .ce-lujo-historia li { position: relative; display: flex; flex-direction: column; gap: 6px; padding-top: 26px; font-family: var(--font-body); font-size: 14px; line-height: 1.55; color: var(--lujo-gris); }
+  .ce-lujo-historia li::before { content: ''; position: absolute; top: -5px; left: 0; width: 12px; height: 12px; border-radius: 50%; background: var(--lujo-tinta); border: 2px solid var(--lujo-rosa); }
+  .ce-lujo-historia li:last-child::before { background: var(--lujo-rosa); box-shadow: 0 0 0 5px rgba(255, 122, 182, 0.22); }
+  .ce-lujo-historia strong { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.02em; font-size: 1.12rem; line-height: 1.25; color: var(--lujo-blanco); }
+  .ce-lujo-lugar { font-family: var(--font-body); font-size: 11px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: var(--lujo-rosa); }
+
+  .ce-lujo-confianza { display: grid; grid-template-columns: 0.8fr 1.2fr 0.8fr; gap: clamp(20px, 3vw, 40px); align-items: center; margin-top: clamp(56px, 7vw, 88px); }
+  .ce-lujo-confianza > img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 14px; }
+  .ce-lujo-pilares { display: flex; flex-direction: column; gap: 12px; }
+  .ce-lujo-pilares-intro { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.02em; font-size: clamp(1.15rem, 1.8vw, 1.4rem); line-height: 1.35; color: var(--lujo-blanco); margin: 0 0 8px; }
+  .ce-lujo-pilar { padding: 16px 18px; border-radius: 14px; border: 1px solid transparent; background: linear-gradient(var(--lujo-panel), var(--lujo-panel)) padding-box, var(--lujo-grad) border-box; }
+  .ce-lujo-pilar h4 { margin: 0 0 4px; font-family: var(--font-body); font-size: 12px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: var(--lujo-rosa); }
+  .ce-lujo-pilar p { margin: 0; font-family: var(--font-body); font-size: 15px; line-height: 1.6; color: var(--lujo-gris); }
+
+  .ce-lujo-foot { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: clamp(48px, 6vw, 72px); padding-top: 28px; border-top: 1px solid var(--lujo-linea); }
+  .ce-lujo-ciudades p { margin: 6px 0 0; font-family: var(--font-display); font-weight: 700; letter-spacing: -0.02em; font-size: clamp(1.1rem, 1.8vw, 1.35rem); color: var(--lujo-blanco); }
+  .ce-lujo-link { flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; background: #fff; color: #0b0a10; font-family: var(--font-body); font-size: 15px; font-weight: 700; padding: 14px 28px; border-radius: 100px; text-decoration: none; transition: gap 0.2s ease; }
+  .ce-lujo-link:hover { gap: 12px; text-decoration: none; }
+
+  @media (max-width: 900px) {
+    .ce-lujo-top { grid-template-columns: 1fr; }
+    .ce-lujo-historia { grid-template-columns: 1fr; gap: 26px; padding-left: 22px; }
+    .ce-lujo-historia::before { top: 0; bottom: 0; left: 0; right: auto; width: 2px; height: auto; background: linear-gradient(180deg, #EC4899, #A855F7 72%, #FB923C); }
+    .ce-lujo-historia li { padding-top: 0; }
+    .ce-lujo-historia li::before { top: 3px; left: -27px; }
+    .ce-lujo-confianza { grid-template-columns: 1fr 1fr; }
+    .ce-lujo-pilares { grid-column: 1 / -1; order: -1; }
+    .ce-lujo-foot { flex-direction: column; align-items: flex-start; }
+  }
+  @media (max-width: 560px) {
+    .ce-lujo-fotos::before { top: -8px; right: -8px; }
+    .ce-lujo-foto-b { border-width: 4px; }
+    .ce-lujo-link { width: 100%; justify-content: center; }
   }
 
   /* CTA */
