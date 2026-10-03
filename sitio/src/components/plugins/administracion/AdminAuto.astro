@@ -1,0 +1,61 @@
+---
+/**
+ * «Lo que antes hacías a mano, ya no» (/plugins/administracion): lo que Administración hace solo (reglas reales:
+ * recurrentes, vencimientos por días de crédito, saldos por cada pago, el reparto de cada corte, aprobaciones desde un
+ * monto, facturas duplicadas por UUID) y AXO respondiendo sobre el dinero con los números de las pantallas de la
+ * cuenta demo (ejemplo de conversación, como en Staff). Marino.
+ */
+import { AUTO } from '../../../data/plugin-administracion';
+const PALABRA = Array.from({ length: 3 }, () => 'EN AUTOMÁTICO').join(' · ');
+---
+<section class="pda aau pd-marino" id="admin-auto" aria-labelledby="aau-h">
+  <div class="pda-fondo" aria-hidden="true"><span>{PALABRA}</span><span>{PALABRA}</span></div>
+  <p class="pd-folio"><span>{AUTO.k}</span><span>Administración trabaja sola</span></p>
+  <h2 class="pda-h" id="aau-h">{AUTO.h}</h2>
+  <div class="aau-grid">
+    <ul class="aau-items">
+      {AUTO.items.map((x, i) => <li class="rv" style={`--i:${i}`}><span class="aau-ok" aria-hidden="true">✓</span><b>{x.t}</b><span>{x.d}</span></li>)}
+    </ul>
+    <div class="aau-axo rv" style="--i:3">
+      <p class="aau-axo-k"><span class="aau-axo-av" aria-hidden="true">✦</span>{AUTO.axo.k}</p>
+      <h3 class="aau-axo-h">{AUTO.axo.h}</h3>
+      <div class="aau-chat">
+        {AUTO.axo.chat.map((c) => (
+          <>
+            <p class="aau-q">{c.q}</p>
+            <p class="aau-a"><b>AXO</b>{c.a}</p>
+          </>
+        ))}
+      </div>
+      <p class="aau-ej">Ejemplo de conversación</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .aau-grid { display: grid; gap: 28px; margin-top: 40px; }
+  .aau-items { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; border-top: 2px solid #fff; }
+  .aau-items li { display: grid; grid-template-columns: 30px 1fr; align-content: start; gap: 2px 10px; padding: 14px 0; border-bottom: 1px solid var(--pd-filete); }
+  .aau-ok { grid-row: span 2; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: rgba(111, 211, 163, 0.18); color: #6FD3A3; font: 800 12px/1 var(--font-display); }
+  .aau-items b { font: 700 17px/1.25 var(--font-display); color: #fff; }
+  .aau-items span:not(.aau-ok) { font: 500 14.5px/1.5 var(--font-body); color: var(--pd-tenue); }
+  .aau-axo { align-self: start; padding: 24px 22px 20px; border-radius: 22px; background: #13215C; box-shadow: inset 0 0 0 1px rgba(157, 184, 245, 0.25); }
+  .aau-axo-k { display: flex; align-items: center; gap: 10px; margin: 0; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: #9DB8F5; }
+  .aau-axo-av { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #F07FA6, #5B86EA); color: #fff; font-size: 14px; letter-spacing: 0; }
+  .aau-axo-h { margin: 12px 0 0; color: #fff; font: 700 clamp(24px, 2.4vw, 34px)/1.08 var(--pd-clash); letter-spacing: -0.01em; }
+  .aau-chat { display: grid; gap: 10px; margin-top: 18px; }
+  .aau-q { justify-self: end; max-width: 86%; margin: 0; padding: 11px 14px; border-radius: 16px 16px 4px 16px; background: #5B86EA; color: #fff; font: 600 14.5px/1.4 var(--font-display); }
+  .aau-a { justify-self: start; max-width: 92%; margin: 0; padding: 11px 14px; border-radius: 16px 16px 16px 4px; background: #fff; color: #141414; font: 500 14.5px/1.45 var(--font-body); }
+  .aau-a b { display: block; margin-bottom: 3px; font: 700 11px/1 var(--font-display); letter-spacing: 0.12em; color: #D03A70; }
+  .aau-ej { margin: 12px 0 0; font: 600 11px/1 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5); }
+  :global(.js-rv) .aau .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i, 0) * 0.07s); }
+  :global(.js-rv) .aau .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .aau-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 5vw; margin-top: 52px; }
+    .aau-items { grid-template-columns: 1fr 1fr; column-gap: 32px; }
+    .aau-axo { padding: 30px 28px 24px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .aau .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>

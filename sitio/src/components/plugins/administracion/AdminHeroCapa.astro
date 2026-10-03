@@ -1,0 +1,35 @@
+---
+/**
+ * La capa de la portada de /plugins/administracion (va en el slot de ExpHero): la tarjeta REAL de una cuenta de banco
+ * (Cuentas de Efectivo y Bancos, cuenta demo) flotando sobre la foto y el aviso real de la proyección a 30 días.
+ * En el teléfono, solo una notificación chica arriba a la derecha (la tarjeta taparía a la dueña de la foto).
+ */
+const I = '/images/plugins/administracion/';
+---
+<div class="ahc" aria-hidden="true">
+  <div class="ahc-tarjeta"><img src={`${I}tarjeta-bbva.webp`} width="706" height="344" alt="" decoding="async" /></div>
+  <p class="ahc-aviso"><b>✓</b><span><small>Proyección a 30 días</small><strong>Tu tesorería se mantiene sana.</strong></span></p>
+</div>
+<p class="ahc-tel" aria-hidden="true"><b>✓</b><span><strong>Recibo leído con IA</strong><small>Total $2,784.00 · Insumos</small></span></p>
+
+<style>
+  .ahc { display: none; }
+  .ahc-tel { position: absolute; z-index: 1; right: 16px; top: 84px; display: flex; align-items: center; gap: 10px; margin: 0; padding: 9px 14px 9px 9px; border-radius: 16px; background: rgba(255, 255, 255, 0.95); color: #141414; box-shadow: 0 14px 28px -16px rgba(0, 0, 0, 0.6); animation: ahcEntra 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.6s both; }
+  .ahc-tel b, .ahc-aviso b { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 50%; background: #E3F4EA; color: #17804F; font: 800 15px/1 var(--font-display); }
+  .ahc-tel span, .ahc-aviso span { display: grid; gap: 3px; }
+  .ahc-tel strong { font: 700 14px/1.1 var(--font-display); }
+  .ahc-tel small { font: 600 11.5px/1.1 var(--font-display); color: #45433E; }
+  @keyframes ahcEntra { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+  @media (min-width: 768px) {
+    .ahc-tel { display: none; }
+    .ahc { display: grid; gap: 12px; justify-items: end; position: absolute; z-index: 1; right: 4vw; bottom: 9vh; width: min(340px, 27vw); }
+    .ahc-tarjeta { width: 100%; animation: ahcEntra 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both; }
+    .ahc-tarjeta img { display: block; width: 100%; height: auto; border-radius: 18px; box-shadow: 0 30px 60px -26px rgba(4, 18, 60, 0.85); }
+    .ahc-aviso { display: flex; align-items: center; gap: 10px; margin: 0; padding: 10px 16px 10px 10px; border-radius: 16px; background: rgba(255, 255, 255, 0.96); color: #141414; box-shadow: 0 14px 28px -16px rgba(0, 0, 0, 0.6); animation: ahcEntra 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.9s both; }
+    .ahc-aviso small { font: 700 10.5px/1 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: #17804F; }
+    .ahc-aviso strong { font: 700 14px/1.15 var(--font-display); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ahc-tel, .ahc-tarjeta, .ahc-aviso { animation: none; }
+  }
+</style>

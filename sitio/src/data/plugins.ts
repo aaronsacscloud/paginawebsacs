@@ -2,9 +2,10 @@
  * PLUGINS — lo que se le agrega a Sacs desde «Extiende tu Sacs» (3-oct-2026).
  *
  * Pedido del dueño: en el menú «Plataforma», en lugar de los dos rectángulos de abajo («Agenda una demo» y «Empieza
- * gratis», que ya están en la barra), una fila visual de plugins empezando por Staff; «máximo serán 4 o 5». Staff tiene
- * su página (/plugins/staff); los demás llevan a la página que ya tenían en el sitio. Las descripciones salen de las
- * tarjetas del catálogo de la app (sacs3 src/views/sacs-plugins/sacs-plugins.html).
+ * gratis», que ya están en la barra), una fila visual de plugins empezando por Staff; «máximo serán 4 o 5». Staff y
+ * Administración tienen su página (/plugins/staff, /plugins/administracion); los demás llevan a la página que ya
+ * tenían en el sitio. Las descripciones salen de las tarjetas del catálogo de la app (sacs3
+ * src/views/sacs-plugins/sacs-plugins.html).
  *
  * Un plugin nuevo = una entrada aquí (miniatura 360×440 en /images/plugins/menu-<slug>.webp) y, si tiene, su página
  * en src/pages/plugins/.
@@ -51,8 +52,8 @@ export const plugins: Plugin[] = [
     slug: 'administracion',
     nombre: 'Administración',
     bajada: 'Gastos, bancos, pagos a proveedores y flujo de efectivo al día.',
-    href: '/producto/gastos',
+    href: '/plugins/administracion',
     imagen: '/images/plugins/menu-administracion.webp',
-    alt: 'Un escritorio con la tablet de Sacs, recibos y una calculadora',
+    alt: 'La dueña de una boutique revisa un recibo junto a su laptop',
   },
 ];

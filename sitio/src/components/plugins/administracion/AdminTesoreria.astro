@@ -1,0 +1,72 @@
+---
+/**
+ * «Cuánto tienes, y dónde» (/plugins/administracion): Cuentas de Efectivo y Bancos REAL de la cuenta demo, en tres
+ * recortes con su número: el encabezado con «Total en tesorería» y «Requiere atención» (solo el aviso del pago sin
+ * cuenta; el otro es un aviso técnico de cortes viejos), la proyección a 30 días (sin «Próximos pagos grandes», que
+ * lista registros de prueba) y «Mis cuentas» (bancos, bóveda y caja chica). Azul.
+ * En el teléfono: sin el encabezado (no se lee a lo ancho), la proyección para deslizar y las dos tarjetas de banco.
+ */
+import { TESORERIA } from '../../../data/plugin-administracion';
+import StaffVentana from '../staff/StaffVentana.astro';
+const I = '/images/plugins/administracion/';
+---
+<section class="pda ate pd-azul" id="admin-tesoreria" aria-labelledby="ate-h">
+  <p class="pd-folio"><span>{TESORERIA.k}</span><span>Tesorería</span></p>
+  <div class="ate-cab">
+    <h2 class="pda-h" id="ate-h">{TESORERIA.h}</h2>
+    <p class="ate-p">{TESORERIA.p}</p>
+  </div>
+  <div class="ate-collage">
+    <div class="ate-a rv" style="--i:0">
+      <span class="ate-n" aria-hidden="true">01</span>
+      <StaffVentana src={`${I}bancos-arriba.webp`} w={2200} h={474} alt="Cuentas de Efectivo y Bancos: el total en tesorería arriba y «Requiere atención», con un pago de gastos que no está ligado a ninguna cuenta" barra="Cuentas de Efectivo y Bancos" />
+    </div>
+    <div class="ate-b rv" style="--i:1">
+      <span class="ate-n" aria-hidden="true">02</span>
+      <p class="ate-desliza" aria-hidden="true">Desliza →</p>
+      <div class="ate-proy"><StaffVentana src={`${I}bancos-proyeccion.webp`} w={1196} h={384} alt="Proyección a 30 días: lo que hay hoy, las entradas estimadas y los pagos programados, con el aviso «Con lo programado, tu tesorería se mantiene sana los próximos 30 días»" /></div>
+    </div>
+    <div class="ate-c rv" style="--i:2">
+      <span class="ate-n" aria-hidden="true">03</span>
+      <StaffVentana src={`${I}bancos-cuentas.webp`} w={2200} h={808} movil={{ src: `${I}bancos-tarjetas.webp`, w: 724, h: 748 }} alt="Mis cuentas: dos bancos, la bóveda general y la caja chica de la oficina, cada una con su saldo" />
+    </div>
+  </div>
+  <ol class="ate-notas">
+    {TESORERIA.notas.map((n, i) => <li class="rv" style={`--i:${i + 2}`}><b>{n.n}</b><span><strong>{n.t}</strong>{n.d}</span></li>)}
+  </ol>
+</section>
+
+<style>
+  .ate-cab { display: grid; gap: 14px; }
+  .ate-p { margin: 0; max-width: 48ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .ate-collage { display: grid; gap: 14px; margin-top: 36px; }
+  .ate-a, .ate-b, .ate-c { position: relative; }
+  .ate-n { position: absolute; z-index: 2; left: -10px; top: -12px; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #fff; color: #141414; font: 700 13px/1 var(--pd-clash); box-shadow: 0 0 0 4px var(--pd-fondo); }
+  .ate-desliza { display: none; }
+  .ate-notas { display: grid; gap: 0; margin: 32px 0 0; padding: 0; list-style: none; border-top: 2px solid var(--pd-texto); }
+  .ate-notas li { display: grid; grid-template-columns: 44px 1fr; gap: 8px; padding: 16px 0; border-bottom: 1px solid var(--pd-linea); }
+  .ate-notas b { font: 700 18px/1.3 var(--pd-clash); color: var(--pd-texto); }
+  .ate-notas span { display: grid; gap: 4px; font: 500 15px/1.5 var(--font-body); color: var(--pd-tenue); }
+  .ate-notas strong { font: 700 17px/1.25 var(--font-display); color: var(--pd-texto); }
+  :global(.js-rv) .ate .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.1s); }
+  :global(.js-rv) .ate .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .ate-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .ate-collage { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.3fr); gap: 22px; margin-top: 52px; align-items: start; }
+    .ate-a { grid-column: 1 / -1; }
+    .ate-notas { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; border-top: 0; margin-top: 40px; }
+    .ate-notas li { grid-template-columns: 40px 1fr; border-top: 2px solid var(--pd-texto); border-bottom: 0; padding-top: 18px; }
+  }
+  @media (max-width: 767px) {
+    .ate-a { display: none; }
+    /* sin el 01 (el encabezado no va en el teléfono), los números sobran */
+    .ate-n { display: none; }
+    .ate-desliza { display: block; margin: 0 0 8px; font: 700 12.5px/1 var(--font-display); color: #fff; }
+    .ate-proy { overflow-x: auto; overscroll-behavior-x: contain; border-radius: 10px; }
+    .ate-proy > :global(.sv) { width: 560px; }
+    .ate-c { max-width: 380px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .ate .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>

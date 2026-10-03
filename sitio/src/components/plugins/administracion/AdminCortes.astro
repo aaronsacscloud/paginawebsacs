@@ -1,0 +1,67 @@
+---
+/**
+ * «Cierras caja y el dinero llega solo a su cuenta» (/plugins/administracion): la foto del cierre en la boutique
+ * (gpt-image-2.5) a todo lo ancho con el título encima, y debajo «Entradas por corte» REAL de la cuenta demo (cada
+ * corte con su sucursal, su caja, quién lo cerró y a qué cuenta llegó cada forma de pago) con los tres pasos. Negro.
+ */
+import { CORTES } from '../../../data/plugin-administracion';
+import StaffVentana from '../staff/StaffVentana.astro';
+const I = '/images/plugins/administracion/';
+---
+<section class="acr" id="admin-cortes" aria-labelledby="acr-h">
+  <div class="acr-hero">
+    <img class="acr-foto" src={`${I}corte-1536.webp`} srcset={`${I}corte-1280.webp 1280w, ${I}corte-1536.webp 1536w`} sizes="100vw" width="1536" height="1024" alt="Al cerrar la boutique, una vendedora cuenta el efectivo del día en la caja, junto a la terminal de tarjetas" loading="lazy" decoding="async" />
+    <div class="acr-tit">
+      <p class="acr-k">{CORTES.k}</p>
+      <h2 class="acr-h" id="acr-h">{CORTES.h}</h2>
+      <p class="acr-p">{CORTES.p}</p>
+    </div>
+  </div>
+  <div class="acr-cuerpo">
+    <div class="acr-pantalla rv">
+      <StaffVentana src={`${I}cortes.webp`} w={2200} h={1012} movil={{ src: `${I}cortes-movil.webp`, w: 1132, h: 1012 }} alt="Entradas por corte: cada cierre de caja con su sucursal, su caja, quién lo cerró y su hora; lo de tarjeta llegó al banco y el efectivo a la bóveda general" barra="Entradas por corte" />
+    </div>
+    <div class="acr-lado">
+      <ol class="acr-pasos">{CORTES.pasos.map((p, i) => <li class="rv" style={`--i:${i}`}><b>{p.n}</b><span><strong>{p.t}</strong>{p.d}</span></li>)}</ol>
+      <ul class="acr-extra" aria-label="Y en tu tesorería">{CORTES.extra.map((x) => <li>{x}</li>)}</ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .acr { position: relative; background: #0B0B0C; color: #fff; scroll-margin-top: 56px; }
+  .acr-hero { position: relative; overflow: hidden; }
+  .acr-foto { display: block; width: 100%; height: auto; }
+  .acr-tit { padding: 28px 20px 0; }
+  .acr-k { margin: 0 0 12px; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: #F07FA6; }
+  .acr-h { margin: 0; max-width: 14ch; color: #fff; font: 700 clamp(34px, 4.6vw, 68px)/0.96 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; text-wrap: balance; }
+  .acr-p { margin: 16px 0 0; max-width: 46ch; font: 500 17px/1.55 var(--font-body); color: rgba(255, 255, 255, 0.85); }
+  .acr-cuerpo { display: grid; gap: 24px; max-width: 1160px; margin: 0 auto; padding: 32px 20px 80px; }
+  .acr-lado { display: grid; gap: 18px; align-content: start; }
+  .acr-pasos { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; border-top: 2px solid #fff; }
+  .acr-pasos li { display: grid; grid-template-columns: 44px 1fr; gap: 8px; padding: 14px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.18); }
+  .acr-pasos b { font: 700 18px/1.3 var(--pd-clash, var(--font-display)); color: #F07FA6; }
+  .acr-pasos span { display: grid; gap: 4px; font: 500 14.5px/1.5 var(--font-body); color: rgba(255, 255, 255, 0.78); }
+  .acr-pasos strong { font: 700 17px/1.25 var(--font-display); color: #fff; }
+  .acr-extra { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .acr-extra li { padding: 8px 13px; border-radius: 99px; background: rgba(255, 255, 255, 0.1); font: 600 13px/1 var(--font-display); color: #fff; }
+  :global(.js-rv) .acr .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i, 0) * 0.08s); }
+  :global(.js-rv) .acr .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .acr-hero { height: min(88vh, 860px); min-height: 560px; }
+    .acr-foto { position: absolute; inset: 0; height: 100%; object-fit: cover; object-position: 60% 45%; }
+    .acr-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(8, 8, 10, 0.88) 0%, rgba(8, 8, 10, 0.55) 30%, rgba(8, 8, 10, 0) 52%), linear-gradient(180deg, rgba(11, 11, 12, 0) 70%, #0B0B0C 100%); }
+    .acr-tit { position: absolute; z-index: 1; left: 5vw; top: 50%; width: min(40vw, 560px); padding: 0; transform: translateY(-58%); text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45); }
+    .acr-cuerpo { gap: 40px; margin-top: -170px; padding: 0 5vw 120px; position: relative; z-index: 1; box-sizing: content-box; }
+    .acr-lado { grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr); gap: 4vw; align-items: start; }
+    .acr-pasos { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; border-top: 0; }
+    .acr-pasos li { grid-template-columns: 40px 1fr; border-top: 2px solid #fff; border-bottom: 0; padding-top: 16px; }
+    .acr-extra { padding-top: 18px; }
+  }
+  @media (max-width: 899px) {
+    .acr-foto { aspect-ratio: 4 / 3; object-fit: cover; object-position: 62% 50%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .acr .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>

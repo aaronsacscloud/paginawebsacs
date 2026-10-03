@@ -1,0 +1,52 @@
+---
+/**
+ * «Lo que viene, semana por semana» (/plugins/administracion): el Flujo proyectado REAL de Gastos en la cuenta demo
+ * (vencido sin pagar, por pagar a 30 días, compromiso total con los recurrentes y la semana más pesada; la carga por
+ * semana y el detalle de compromisos) y el menú real de «Más acciones». Blanco.
+ */
+import { FLUJO } from '../../../data/plugin-administracion';
+import StaffVentana from '../staff/StaffVentana.astro';
+const I = '/images/plugins/administracion/';
+---
+<section class="pda afl" id="admin-flujo" aria-labelledby="afl-h">
+  <p class="pd-folio"><span>{FLUJO.k}</span><span>Gastos · Más acciones</span></p>
+  <div class="afl-cab">
+    <h2 class="pda-h" id="afl-h">{FLUJO.h}</h2>
+    <p class="afl-p">{FLUJO.p}</p>
+  </div>
+  <p class="afl-desliza" aria-hidden="true">Desliza para verlo completo →</p>
+  <div class="afl-flujo rv">
+    <StaffVentana src={`${I}flujo.webp`} w={2540} h={1336} alt="El flujo proyectado de gastos: lo vencido sin pagar, lo que hay por pagar en 30 días, el compromiso total con los recurrentes, la semana más pesada, la carga de cada semana y el detalle de cada compromiso con su vencimiento" barra="Gastos · Flujo proyectado" />
+  </div>
+  <div class="afl-mas">
+    <p class="afl-mas-k">En «Más acciones» de Gastos</p>
+    <ul class="afl-acciones">{FLUJO.acciones.map((a) => <li>{a}</li>)}</ul>
+  </div>
+</section>
+
+<style>
+  .afl { background: #fff; color: #141414; --pd-texto: #141414; --pd-tenue: #45433E; --pd-filete: rgba(20, 20, 20, 0.16); }
+  .afl-cab { display: grid; gap: 14px; }
+  .afl-p { margin: 0; max-width: 48ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .afl-desliza { display: none; }
+  .afl-flujo { margin-top: 36px; }
+  .afl-mas { display: grid; gap: 12px; margin-top: 28px; }
+  .afl-mas-k { margin: 0; font: 700 13px/1.3 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: #45433E; }
+  .afl-acciones { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .afl-acciones li { padding: 8px 14px; border-radius: 99px; background: #F2F2EF; font: 600 13px/1 var(--font-display); color: #141414; }
+  :global(.js-rv) .afl .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
+  :global(.js-rv) .afl .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .afl-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .afl-flujo { margin-top: 52px; }
+    .afl-mas { grid-template-columns: auto 1fr; align-items: center; gap: 20px; margin-top: 32px; }
+  }
+  @media (max-width: 767px) {
+    .afl-desliza { display: block; margin: 28px 0 8px; font: 700 12.5px/1 var(--font-display); color: #2F55C4; }
+    .afl-flujo { margin-top: 0; max-height: 560px; overflow-x: auto; overscroll-behavior-x: contain; border-radius: 10px; -webkit-mask-image: linear-gradient(#000 84%, transparent); mask-image: linear-gradient(#000 84%, transparent); }
+    .afl-flujo > :global(.sv) { width: 820px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .afl .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>

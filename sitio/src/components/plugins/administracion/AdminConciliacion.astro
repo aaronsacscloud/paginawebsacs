@@ -1,0 +1,102 @@
+---
+/**
+ * «Tu estado de cuenta, conciliado en minutos» (/plugins/administracion): la pestaña REAL «Conciliación 🤖» de la cuenta
+ * demo (elige la cuenta, pega el estado de cuenta, «Analizar con IA») y debajo el resultado dibujado con el diseño y
+ * los textos reales de sacs3 (cuentas-efectivo: el resumen «N exactos · N comisiones · N no registrados · N
+ * pendientes», la tabla Tipo · Línea del banco · Nuestro movimiento · Comisión · Conf. y «Aplicar seleccionadas») con
+ * datos de ejemplo: la demo no tiene un estado de cuenta que conciliar. A la derecha, qué significa cada tipo. Marfil.
+ * En el teléfono, solo el resultado (la tabla se desliza).
+ */
+import { CONCILIACION } from '../../../data/plugin-administracion';
+import StaffVentana from '../staff/StaffVentana.astro';
+const I = '/images/plugins/administracion/';
+const { ejemplo } = CONCILIACION;
+const LBL: Record<string, string> = { match: 'Empata', comision: 'Comisión', no_registrado: 'No registrado', pendiente: 'Pendiente' };
+---
+<section class="pda acn pd-marfil" id="admin-conciliacion" aria-labelledby="acn-h">
+  <p class="pd-folio"><span>{CONCILIACION.k}</span><span>Bancos</span></p>
+  <div class="acn-cab">
+    <h2 class="pda-h" id="acn-h">{CONCILIACION.h}</h2>
+    <p class="acn-p">{CONCILIACION.p}</p>
+  </div>
+  <div class="acn-grid">
+    <div class="acn-izq">
+      <div class="acn-real rv"><StaffVentana src={`${I}conciliacion.webp`} w={2200} h={596} alt="La pestaña Conciliación de Cuentas de Efectivo y Bancos: eliges la cuenta de banco, pegas el estado de cuenta y le das Analizar con IA" barra="Conciliación bancaria 🤖" /></div>
+      <figure class="acn-res rv" style="--i:1" aria-label={`Ejemplo del resultado de la conciliación de ${ejemplo.cuenta}`}>
+        <p class="acn-res-cab"><b>Resultado · {ejemplo.cuenta}</b><i class="acn-ej">Ejemplo</i></p>
+        <p class="acn-resumen">{ejemplo.resumen}</p>
+        <p class="acn-desliza" aria-hidden="true">Desliza la tabla →</p>
+        <div class="acn-tabla-caja">
+          <div class="acn-tabla" role="table">
+            <div class="acn-fila acn-fila--h" role="row"><span role="columnheader"></span><span role="columnheader">Tipo</span><span role="columnheader">Línea del banco</span><span role="columnheader">Nuestro movimiento</span><span role="columnheader" class="num">Comisión</span><span role="columnheader" class="num">Conf.</span></div>
+            {ejemplo.filas.map((f) => (
+              <div class="acn-fila" role="row">
+                <span role="cell"><i class:list={['acn-check', { 'is-off': f.tipo === 'pendiente' }]} aria-hidden="true">{f.tipo === 'pendiente' ? '' : '✓'}</i></span>
+                <span role="cell"><i class={`acn-pill acn-pill--${f.tipo}`}>{LBL[f.tipo]}</i></span>
+                <span role="cell" class="acn-banco">{f.banco}</span>
+                <span role="cell">{f.mov}{f.movM && <small>{f.movM}</small>}</span>
+                <span role="cell" class="num acn-neg">{f.com}</span>
+                <span role="cell" class="num">{f.conf}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <p class="acn-aplicar"><span>Aplicar seleccionadas</span></p>
+      </figure>
+    </div>
+    <ul class="acn-tipos">
+      {CONCILIACION.tipos.map((t, i) => <li class="rv" style={`--i:${i}`}><i class={`acn-pill acn-pill--${t.c}`}>{t.t}</i><span>{t.d}</span></li>)}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .acn-cab { display: grid; gap: 14px; }
+  .acn-p { margin: 0; max-width: 48ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .acn-grid { display: grid; gap: 28px; margin-top: 36px; }
+  .acn-izq { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
+  /* el resultado (diseño de cuentas-efectivo/index.html: .conc-res, la tabla y .conc-pill) */
+  .acn-res { min-width: 0; margin: 0; padding: 18px; border-radius: 14px; background: #fff; color: #0F172A; box-shadow: 0 30px 60px -34px rgba(16, 24, 40, 0.45), 0 0 0 1px rgba(16, 24, 40, 0.06); }
+  .acn-res-cab { display: flex; align-items: center; gap: 10px; margin: 0; font: 700 14.5px/1.2 var(--font-display); }
+  .acn-ej { margin-left: auto; padding: 4px 9px; border-radius: 99px; background: #F2C46B; color: #141414; font: 700 10px/1 var(--font-display); font-style: normal; letter-spacing: 0.06em; text-transform: uppercase; }
+  .acn-resumen { margin: 10px 0 12px; padding: 9px 12px; border-radius: 10px; background: #EFF6FF; color: #1E40AF; font: 600 13px/1.4 var(--font-display); }
+  .acn-desliza { display: none; }
+  .acn-tabla-caja { overflow-x: auto; overscroll-behavior-x: contain; }
+  .acn-tabla { display: grid; min-width: 620px; }
+  .acn-fila { display: grid; grid-template-columns: 26px 112px minmax(0, 1.25fr) minmax(0, 1fr) 82px 52px; gap: 10px; align-items: center; padding: 9px 4px; border-bottom: 1px solid #F1F5F9; font: 500 12.5px/1.35 var(--font-body); color: #334155; }
+  .acn-fila--h { padding-top: 0; font: 700 10.5px/1.2 var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; color: #94A3B8; }
+  .acn-fila small { display: block; margin-top: 1px; font-size: 11.5px; color: #64748B; }
+  .acn-fila .num { text-align: right; }
+  .acn-banco { font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 11.5px; color: #0F172A; }
+  .acn-neg { color: #DC2626; font-weight: 700; }
+  .acn-check { display: grid; place-items: center; width: 17px; height: 17px; border-radius: 4px; background: #2563EB; color: #fff; font: 800 10px/1 var(--font-display); font-style: normal; }
+  .acn-check.is-off { background: #fff; box-shadow: inset 0 0 0 1.5px #CBD5E1; }
+  .acn-pill { display: inline-block; padding: 4px 9px; border-radius: 99px; font: 700 11px/1 var(--font-display); font-style: normal; white-space: nowrap; }
+  .acn-pill--match { background: #DCFCE7; color: #166534; }
+  .acn-pill--comision { background: #FEF3C7; color: #92400E; }
+  .acn-pill--no_registrado { background: #FEE2E2; color: #991B1B; }
+  .acn-pill--pendiente { background: #E2E8F0; color: #334155; }
+  .acn-aplicar { display: flex; justify-content: flex-end; margin: 12px 0 0; }
+  .acn-aplicar span { padding: 9px 14px; border-radius: 10px; background: #2563EB; color: #fff; font: 700 13px/1 var(--font-display); }
+  .acn-tipos { display: grid; gap: 0; align-content: start; margin: 0; padding: 0; list-style: none; border-top: 2px solid var(--pd-texto); }
+  .acn-tipos li { display: grid; gap: 8px; justify-items: start; padding: 16px 0; border-bottom: 1px solid var(--pd-filete); }
+  .acn-tipos .acn-pill { padding: 6px 12px; font-size: 13px; }
+  .acn-tipos span { font: 500 15px/1.5 var(--font-body); color: var(--pd-tenue); }
+  :global(.js-rv) .acn .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i, 0) * 0.08s); }
+  :global(.js-rv) .acn .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .acn-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .acn-grid { grid-template-columns: minmax(0, 1.7fr) minmax(0, 0.8fr); gap: 4vw; margin-top: 52px; align-items: start; }
+    .acn-res { padding: 22px 24px; }
+  }
+  @media (max-width: 767px) {
+    /* la pantalla real (un cuadro para pegar) no se lee a lo ancho del teléfono: queda el resultado */
+    .acn-real { display: none; }
+    .acn-grid { grid-template-columns: minmax(0, 1fr); }
+    .acn-res { padding: 14px; }
+    .acn-desliza { display: block; margin: -4px 0 6px; font: 700 12px/1 var(--font-display); color: #2F55C4; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .acn .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>

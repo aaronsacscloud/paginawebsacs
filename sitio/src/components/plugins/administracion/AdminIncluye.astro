@@ -1,0 +1,100 @@
+---
+/**
+ * «Todo lo que incluye» (/plugins/administracion): el mapa del plugin en una rejilla de tarjetas de color, cada una con
+ * su pantalla real (recortes de la cuenta demo) y un enlace a su sección; la conciliación, dibujada con los tipos
+ * reales del resultado. Bancos y cajas va alta; la captura, la conciliación y el flujo, anchas (4 + 4 + 4 en
+ * escritorio, como en Staff). Cada tarjeta entra al verse (.rv → .is-on, script de la página).
+ */
+import { INCLUYE } from '../../../data/plugin-administracion';
+const PALABRA = Array.from({ length: 3 }, () => 'TODO INCLUIDO').join(' · ');
+const CONC = [
+  { c: 'match', t: 'Empata', m: '$18,000.00' },
+  { c: 'comision', t: 'Comisión', m: '-$228.75' },
+  { c: 'no_registrado', t: 'No registrado', m: '$3,100.00' },
+];
+---
+<section class="pda ain pd-negro" aria-labelledby="ain-h">
+  <div class="pda-fondo" aria-hidden="true"><span>{PALABRA}</span><span>{PALABRA}</span></div>
+  <p class="pd-folio"><span>Todo lo que incluye</span><span>8 piezas, un solo plugin</span></p>
+  <h2 class="pda-h" id="ain-h">Del recibo al banco.</h2>
+  <p class="ain-p">Esto es Administración completo. Toca cualquier pieza para verla por dentro, con pantallas reales de Sacs.</p>
+  <ul class="ain-rejilla">
+    {INCLUYE.map((x, i) => (
+      <li class:list={['ain-t', `ain-t--${x.tono}`, `ain-t--${x.id.replace('admin-', '')}`, { 'ain-t--ancha': x.ancha, 'ain-t--alta': x.alto }, 'rv']} style={`--i:${i}`}>
+        <a href={`#${x.id}`}>
+          <span class="ain-txt"><b>{x.t}</b><span>{x.d}</span><em aria-hidden="true">Ver →</em></span>
+          {x.img ? (
+            <span class="ain-img"><img src={x.img} width={x.w} height={x.h} alt="" loading="lazy" decoding="async" /></span>
+          ) : (
+            <span class="ain-conc" aria-hidden="true">
+              <span class="ain-conc-hoja">
+                <small>Conciliación bancaria 🤖</small>
+                {CONC.map((r) => <span class="ain-conc-fila"><i class={`ain-pill ain-pill--${r.c}`}>{r.t}</i><u></u><b>{r.m}</b></span>)}
+              </span>
+            </span>
+          )}
+        </a>
+      </li>
+    ))}
+  </ul>
+</section>
+
+<style>
+  .ain-p { margin: 18px 0 0; max-width: 52ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .ain-rejilla { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 36px auto 0; padding: 0; list-style: none; }
+  .ain-t a { position: relative; display: flex; flex-direction: column; height: 100%; overflow: hidden; border-radius: 20px; background: var(--fondo); color: var(--tinta); text-decoration: none; transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
+  .ain-t a:hover { transform: translateY(-4px); color: var(--tinta); text-decoration: none; }
+  .ain-t a:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  .ain-t--negro { --fondo: #1C1C1F; --tinta: #fff; --tenue: rgba(255, 255, 255, 0.72); --acento: #9DB8F5; }
+  .ain-t--fucsia { --fondo: #D03A70; --tinta: #fff; --tenue: rgba(255, 255, 255, 0.9); --acento: #fff; }
+  .ain-t--marfil { --fondo: #F5F3EE; --tinta: #141414; --tenue: #45433E; --acento: #2F55C4; }
+  .ain-t--marino { --fondo: #0A1648; --tinta: #fff; --tenue: rgba(255, 255, 255, 0.78); --acento: #9DB8F5; }
+  .ain-t--azul { --fondo: #4470D8; --tinta: #fff; --tenue: rgba(255, 255, 255, 0.92); --acento: #fff; }
+  .ain-txt { display: grid; gap: 5px; padding: 16px 16px 12px; }
+  .ain-txt b { font: 700 clamp(17px, 1.5vw, 22px)/1.12 var(--pd-clash); letter-spacing: -0.01em; }
+  .ain-txt > span { font: 500 13.5px/1.45 var(--font-body); color: var(--tenue); }
+  .ain-txt em { margin-top: 4px; font: 700 12.5px/1 var(--font-display); font-style: normal; color: var(--acento); }
+  .ain-img { position: relative; flex: 1; min-height: 110px; margin: 0 12px; overflow: hidden; border-radius: 12px 12px 0 0; background: #fff; box-shadow: 0 -10px 30px -18px rgba(0, 0, 0, 0.5); }
+  .ain-img img { position: absolute; left: 0; top: 0; width: 100%; height: auto; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+  .ain-t a:hover .ain-img img { transform: translateY(-3%); }
+  /* bancos y cajas: las tarjetas reales, altas, sobre el azul */
+  .ain-t--alta { grid-row: span 2; }
+  .ain-t--alta .ain-img { margin: 4px 14px 0; background: #F5F7FB; border-radius: 16px 16px 0 0; }
+  .ain-t--alta .ain-img img { top: 10px; left: 50%; width: 92%; transform: translateX(-50%); }
+  .ain-t--alta a:hover .ain-img img { transform: translate(-50%, -2%); }
+  .ain-t--ancha { grid-column: span 2; }
+  .ain-t--ancha a { flex-direction: row; align-items: stretch; }
+  .ain-t--ancha .ain-txt { flex: 1; align-content: center; }
+  .ain-t--ancha .ain-img, .ain-t--ancha .ain-conc { flex: 0 0 52%; margin: 14px 14px 0 0; border-radius: 14px 14px 0 0; }
+  /* la conciliación (sin pantalla de resultado en la demo): la hoja dibujada con los tipos reales */
+  .ain-conc { display: grid; place-items: end stretch; flex: 1; min-height: 110px; padding: 0; overflow: hidden; }
+  .ain-conc-hoja { display: grid; gap: 7px; padding: 12px 12px 14px; border-radius: 12px 12px 0 0; background: #fff; color: #141414; }
+  .ain-conc-hoja small { font: 700 11px/1.2 var(--font-display); color: #141414; }
+  .ain-conc-fila { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; padding-top: 7px; border-top: 1px solid #EEF0F4; }
+  .ain-conc-fila u { height: 5px; border-radius: 3px; background: #E7E8EC; }
+  .ain-conc-fila b { font: 700 11.5px/1 var(--font-display); }
+  .ain-pill { padding: 4px 8px; border-radius: 99px; font: 700 10.5px/1 var(--font-display); font-style: normal; }
+  .ain-pill--match { background: #DCFCE7; color: #166534; }
+  .ain-pill--comision { background: #FEF3C7; color: #92400E; }
+  .ain-pill--no_registrado { background: #FEE2E2; color: #991B1B; }
+  :global(.js-rv) .ain-rejilla .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.06s); }
+  :global(.js-rv) .ain-rejilla .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .ain-rejilla { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: minmax(230px, auto); gap: 16px; margin-top: 48px; }
+    .ain-txt { padding: 20px 20px 14px; }
+    .ain-img { margin: 0 16px; min-height: 120px; }
+    .ain-t--ancha .ain-txt { padding: 24px; }
+    .ain-t--ancha .ain-txt b { font-size: clamp(22px, 2.2vw, 32px); }
+  }
+  @media (max-width: 899px) {
+    .ain-t--ancha a { flex-direction: column; }
+    .ain-t--ancha .ain-img { flex: none; height: 150px; margin: 0 12px; border-radius: 12px 12px 0 0; }
+    .ain-t--ancha .ain-conc { flex: none; margin: 0 12px; }
+    .ain-t--alta .ain-img { margin: 4px 12px 0; }
+    .ain-img { min-height: 104px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .ain-rejilla .rv { opacity: 1; transform: none; transition: none; }
+    .ain-t a, .ain-img img { transition: none; }
+  }
+</style>

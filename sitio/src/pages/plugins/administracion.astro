@@ -1,0 +1,102 @@
+---
+/**
+ * /plugins/administracion — «Administración», el plugin de Sacs para el dinero de la tienda (3-oct-2026). Con su
+ * propia página en «Plugins» del menú de Plataforma (src/data/plugins.ts), separada del pilar «Controla».
+ *
+ * Pedido del dueño: «ese mismo formato [el de /plugins/staff] aplícalo para el de gastos… que tenga su propia landing
+ * con la misma lógica de diseño». Recorrido: portada → todo lo que incluye (el mapa) → la lista de gastos y sus
+ * alertas → la captura con IA (con el scroll) → cuentas por pagar → corrida de pagos y antigüedad de saldos → bancos y
+ * cajas → entradas por corte → conciliación con IA → flujo proyectado → en automático (y AXO) → lo que deja de pasar →
+ * preguntas → cierre.
+ * Qué existe y qué no, y de dónde salen las pantallas: src/data/plugin-administracion.ts.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ExpHero from '../../components/experiencia/ExpHero.astro';
+import ExpLista from '../../components/experiencia/ExpLista.astro';
+import AdminHeroCapa from '../../components/plugins/administracion/AdminHeroCapa.astro';
+import AdminIncluye from '../../components/plugins/administracion/AdminIncluye.astro';
+import AdminGastos from '../../components/plugins/administracion/AdminGastos.astro';
+import AdminCaptura from '../../components/plugins/administracion/AdminCaptura.astro';
+import AdminPagar from '../../components/plugins/administracion/AdminPagar.astro';
+import AdminCorrida from '../../components/plugins/administracion/AdminCorrida.astro';
+import AdminTesoreria from '../../components/plugins/administracion/AdminTesoreria.astro';
+import AdminCortes from '../../components/plugins/administracion/AdminCortes.astro';
+import AdminConciliacion from '../../components/plugins/administracion/AdminConciliacion.astro';
+import AdminFlujo from '../../components/plugins/administracion/AdminFlujo.astro';
+import AdminAuto from '../../components/plugins/administracion/AdminAuto.astro';
+import GiroFAQ from '../../components/giros/GiroFAQ.astro';
+import FinalCTA from '../../components/FinalCTA.astro';
+import StructuredData from '../../components/StructuredData.astro';
+import { ADMIN, RESUELVE, PREGUNTAS_ADMIN } from '../../data/plugin-administracion';
+import { SITIO } from '../../data/entidad';
+import { breadcrumbList } from '../../lib/breadcrumb';
+import '../../styles/planeacion.css';
+
+const href = '/plugins/administracion';
+const title = 'Administración: gastos con IA, pagos a proveedores y bancos | Sacs';
+const description = 'El plugin de Sacs para el dinero de tu tienda: le tomas foto al recibo y la IA captura el gasto. Cuentas por pagar con su vencimiento, corrida de pagos, bancos y cajas con su proyección a 30 días, cortes de caja y conciliación con IA.';
+const I = '/images/plugins/administracion/';
+
+const pagina = { '@context': 'https://schema.org', '@type': 'WebPage', '@id': `${SITIO}${href}#pagina`, name: 'Administración · Plugin de Sacs', description, url: `${SITIO}${href}`, inLanguage: 'es-MX' };
+const migas = breadcrumbList([{ name: 'Inicio', url: `${SITIO}/` }, { name: 'Administración' }]);
+const faqSchema = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: PREGUNTAS_ADMIN.map((p) => ({ '@type': 'Question', name: p.question, acceptedAnswer: { '@type': 'Answer', text: p.answer } })) };
+---
+<BaseLayout
+  title={title}
+  description={description}
+  image={`${I}og.jpg`}
+  preloadImage={`${I}vertical-1024.webp`}
+  preloadMedia="(max-width: 767px)"
+  structuredData={[pagina, migas]}
+  navSoloArriba
+>
+  <StructuredData data={faqSchema} />
+
+  <div class="pd exp">
+    <ExpHero
+      folio={ADMIN.folio}
+      etiqueta={ADMIN.etiqueta}
+      titulo={ADMIN.titulo}
+      bajada={ADMIN.bajada}
+      ancha={{ s1280: `${I}portada-1280.webp`, s1920: `${I}portada-1536.webp`, alto1920: 1280 }}
+      vertical={{ src: `${I}vertical-1024.webp`, ancho: 1024, alto: 1536 }}
+      alt="La dueña de una boutique revisa el mes en su laptop, con los recibos en el escritorio"
+      ancla="admin-incluye"
+      sigue="Mira todo lo que incluye"
+    >
+      <AdminHeroCapa />
+    </ExpHero>
+    <div id="admin-incluye"><AdminIncluye /></div>
+    <AdminGastos />
+    <AdminCaptura />
+    <AdminPagar />
+    <AdminCorrida />
+    <AdminTesoreria />
+    <AdminCortes />
+    <AdminConciliacion />
+    <AdminFlujo />
+    <AdminAuto />
+    <ExpLista id="admin-resuelve" tema="pd-fucsia" palabra="LO QUE RESUELVE" folio={RESUELVE.folio} titulo={RESUELVE.titulo} puntos={RESUELVE.puntos} />
+  </div>
+
+  <GiroFAQ title="Preguntas frecuentes sobre Administración" faqs={PREGUNTAS_ADMIN} />
+  <FinalCTA />
+</BaseLayout>
+
+<script>
+  import { iniciaEscenas } from '../../scripts/experiencia/escenas';
+  iniciaEscenas();
+
+  // Lo que entra al verse (sin JS se ve completo).
+  (() => {
+    const rv = Array.from(document.querySelectorAll<HTMLElement>('.exp .rv'));
+    if (!rv.length || !('IntersectionObserver' in window)) return;
+    document.documentElement.classList.add('js-rv');
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-on'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -10% 0px' });
+    rv.forEach((el) => io.observe(el));
+  })();
+
+  const ph = (evento: string, props?: Record<string, unknown>) => { try { (window as any).sacsPH?.(evento, props); } catch { /* sin medición */ } };
+  document.querySelectorAll<HTMLElement>('.exp [data-evento]').forEach((a) => a.addEventListener('click', () => ph(a.dataset.evento!, { plugin: 'administracion' })));
+  document.querySelector('.final-cta-btn')?.addEventListener('click', () => ph('plugin_cta_prueba', { plugin: 'administracion' }));
+</script>

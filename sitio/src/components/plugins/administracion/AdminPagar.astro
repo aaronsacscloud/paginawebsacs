@@ -1,0 +1,73 @@
+---
+/**
+ * «Sabes qué debes, a quién y cuándo» (/plugins/administracion): Cuentas por pagar con la lista REAL de la cuenta demo
+ * (encabezado con «Vencido» y «0-7 días», pestañas y siete cuentas, sin las de prueba), la foto del proveedor que
+ * entrega con su factura (gpt-image-2.5) con el aviso real de la cuenta vencida, y el detalle real de esa cuenta
+ * (saldo pendiente, «Registrar Pago» y sus datos). Blanco.
+ */
+import { PAGAR } from '../../../data/plugin-administracion';
+import StaffVentana from '../staff/StaffVentana.astro';
+const I = '/images/plugins/administracion/';
+---
+<section class="pda apa" id="admin-pagar" aria-labelledby="apa-h">
+  <p class="pd-folio"><span>{PAGAR.k}</span><span>Lo que debes</span></p>
+  <div class="apa-cab">
+    <h2 class="pda-h" id="apa-h">{PAGAR.h}</h2>
+    <p class="apa-p">{PAGAR.p}</p>
+  </div>
+  <p class="apa-desliza" aria-hidden="true">Desliza para ver todas las columnas →</p>
+  <div class="apa-lista rv">
+    <StaffVentana src={`${I}cxp-lista.webp`} w={2676} h={1290} alt="Cuentas por pagar: arriba lo vencido y lo que vence en 7 días; cada cuenta con su folio, su beneficiario, su vencimiento, su saldo pendiente y su estado (pagado o vencido)" barra="Cuentas por Pagar" />
+  </div>
+  <div class="apa-grid">
+    <figure class="apa-foto rv">
+      <img src={`${I}proveedor-1280.webp`} srcset={`${I}proveedor-900.webp 900w, ${I}proveedor-1280.webp 1280w`} sizes="(min-width: 900px) 56vw, 100vw" width="1280" height="853" alt="Un repartidor le entrega cajas de mercancía y la factura a la gerente de la boutique" loading="lazy" decoding="async" />
+      <figcaption class="apa-aviso"><b aria-hidden="true">!</b><span><strong>{PAGAR.vencida}</strong><small>Contacta al proveedor para evitar cargos adicionales.</small></span></figcaption>
+    </figure>
+    <div class="apa-lado">
+      <div class="apa-detalle rv"><StaffVentana src={`${I}cxp-vencida-movil.webp`} w={744} h={784} alt="El detalle de una cuenta vencida: su saldo pendiente en rojo, el botón Registrar Pago y sus datos (proveedor, concepto y vencimiento)" barra="Cuenta GAS-1" /></div>
+      <ul class="apa-puntos">{PAGAR.puntos.map((x, i) => <li class="rv" style={`--i:${i}`}><b>{x.t}</b><span>{x.d}</span></li>)}</ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .apa { background: #fff; color: #141414; --pd-texto: #141414; --pd-tenue: #45433E; --pd-filete: rgba(20, 20, 20, 0.16); }
+  .apa-cab { display: grid; gap: 14px; }
+  .apa-p { margin: 0; max-width: 48ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .apa-desliza { display: none; }
+  .apa-lista { margin-top: 36px; }
+  .apa-grid { display: grid; gap: 24px; margin-top: 28px; }
+  .apa-foto { position: relative; margin: 0; overflow: hidden; border-radius: 20px; }
+  .apa-foto img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .apa-aviso { position: absolute; left: 14px; bottom: 14px; display: flex; align-items: center; gap: 10px; max-width: calc(100% - 28px); margin: 0; padding: 10px 14px 10px 10px; border: 1px solid #FCA5A5; border-radius: 14px; background: #FEF2F2; color: #991B1B; box-shadow: 0 14px 28px -16px rgba(0, 0, 0, 0.6); }
+  .apa-aviso b { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%; background: #DC2626; color: #fff; font: 800 15px/1 var(--font-display); }
+  .apa-aviso span { display: grid; gap: 2px; }
+  .apa-aviso strong { font: 700 14.5px/1.2 var(--font-display); }
+  .apa-aviso small { font: 500 12px/1.3 var(--font-body); color: #B91C1C; }
+  .apa-lado { display: grid; gap: 20px; align-content: start; }
+  .apa-detalle { max-width: 380px; }
+  .apa-puntos { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; border-top: 2px solid #141414; }
+  .apa-puntos li { display: grid; gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--pd-filete); }
+  .apa-puntos b { font: 700 17px/1.25 var(--font-display); }
+  .apa-puntos span { font: 500 14.5px/1.5 var(--font-body); color: var(--pd-tenue); }
+  :global(.js-rv) .apa .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i, 0) * 0.08s); }
+  :global(.js-rv) .apa .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .apa-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .apa-lista { margin-top: 52px; }
+    .apa-grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 4vw; margin-top: 56px; align-items: stretch; }
+    .apa-foto { min-height: 520px; }
+    .apa-aviso { left: 22px; bottom: 22px; }
+    .apa-lado { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 767px) {
+    .apa-desliza { display: block; margin: 28px 0 8px; font: 700 12.5px/1 var(--font-display); color: #2F55C4; }
+    .apa-lista { margin-top: 0; overflow-x: auto; overscroll-behavior-x: contain; border-radius: 10px; }
+    .apa-lista > :global(.sv) { width: 860px; }
+    .apa-foto { aspect-ratio: 4 / 3; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .apa .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>
