@@ -1,0 +1,72 @@
+---
+/**
+ * El mapa de integraciones (/producto/api-e-integraciones): Sacs al centro y alrededor cada conexión real, con pulsos
+ * que viajan de ida y vuelta por las líneas (CSS; se detienen en reducir movimiento). En el teléfono, la lista por
+ * grupos debajo del centro. Solo lo que tiene backend real (config-integraciones + rutas de sacs_api).
+ */
+import type { Hub } from '../../data/automatiza';
+interface Props { hub: Hub }
+const { hub } = Astro.props;
+const nodos = hub.grupos.flatMap((g) => g.items.map((it) => ({ ...it, g: g.t })));
+---
+<section class="auhub" id={hub.id} aria-labelledby={`${hub.id}-h`}>
+  <div class="auhub-in">
+    <p class="auhub-folio"><span>{hub.folio[0]}</span><span>{hub.folio[1]}</span></p>
+    <h2 class="auhub-h" id={`${hub.id}-h`}>{hub.titulo}</h2>
+    <p class="auhub-bajada">{hub.bajada}</p>
+
+    <div class="auhub-mapa" aria-hidden="true">
+      <svg class="auhub-lineas" viewBox="0 0 1000 560" preserveAspectRatio="none">
+        {nodos.map((_, i) => {
+          const a = (i / nodos.length) * Math.PI * 2 - Math.PI / 2;
+          const x = 500 + Math.cos(a) * 400, y = 280 + Math.sin(a) * 220;
+          return <g><path d={`M500 280 L${x.toFixed(0)} ${y.toFixed(0)}`} /><circle r="4" style={`--i:${i}`}><animateMotion dur={`${2.4 + (i % 4) * 0.5}s`} repeatCount="indefinite" path={`M500 280 L${x.toFixed(0)} ${y.toFixed(0)}`} keyPoints={i % 2 ? '0;1' : '1;0'} keyTimes="0;1" /></circle></g>;
+        })}
+      </svg>
+      <div class="auhub-centro"><b>Sacs</b><span>Un catálogo · un inventario</span></div>
+      {nodos.map((nd, i) => {
+        const a = (i / nodos.length) * Math.PI * 2 - Math.PI / 2;
+        return <span class="auhub-nodo" style={`left:${(50 + Math.cos(a) * 40).toFixed(2)}%;top:${(50 + Math.sin(a) * 39.3).toFixed(2)}%`}><b>{nd.n}</b><small>{nd.g}</small></span>;
+      })}
+    </div>
+
+    <div class="auhub-grupos">
+      {hub.grupos.map((g) => (
+        <div class="auhub-g">
+          <p>{g.t}</p>
+          <ul>{g.items.map((it) => <li><b>{it.n}</b><span>{it.d}</span></li>)}</ul>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .auhub { background: #0B0B0C; color: #fff; }
+  .auhub-in { max-width: 1160px; margin: 0 auto; padding: 88px 20px; }
+  .auhub-folio { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin: 0 0 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.18); font: 600 11px/1.35 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; }
+  .auhub-h { margin: 0; color: #fff; font: 700 clamp(36px, 5.6vw, 76px)/0.96 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; }
+  .auhub-bajada { margin: 18px 0 0; max-width: 56ch; font: 400 17px/1.55 var(--font-body); color: rgba(255, 255, 255, 0.72); }
+  .auhub-mapa { position: relative; display: none; margin-top: 48px; aspect-ratio: 1000 / 560; }
+  .auhub-lineas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .auhub-lineas path { stroke: rgba(255, 255, 255, 0.16); stroke-width: 1.2; fill: none; vector-effect: non-scaling-stroke; }
+  .auhub-lineas circle { fill: #8C6BF0; }
+  .auhub-centro { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 26px 34px; border-radius: 28px; background: #fff; color: #141414; box-shadow: 0 0 0 10px rgba(140, 107, 240, 0.18), 0 30px 80px rgba(0, 0, 0, 0.5); }
+  .auhub-centro b { font: 700 34px/1 var(--pd-clash, var(--font-display)); }
+  .auhub-centro span { font: 600 12px/1.2 var(--font-display); color: #6B7080; }
+  .auhub-nodo { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 14px; border-radius: 14px; background: #17181B; border: 1px solid rgba(255, 255, 255, 0.14); white-space: nowrap; }
+  .auhub-nodo b { font: 700 14px/1.1 var(--font-display); }
+  .auhub-nodo small { font: 500 10.5px/1.1 var(--font-body); color: rgba(255, 255, 255, 0.55); }
+  .auhub-grupos { display: grid; gap: 22px; margin-top: 44px; }
+  .auhub-g p { margin: 0 0 8px; font: 700 11px/1.2 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.6); }
+  .auhub-g ul { list-style: none; margin: 0; padding: 0; }
+  .auhub-g li { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; border-top: 1px solid rgba(255, 255, 255, 0.14); }
+  .auhub-g b { font: 700 16px/1.2 var(--font-display); }
+  .auhub-g span { font: 400 14px/1.45 var(--font-body); color: rgba(255, 255, 255, 0.7); }
+  @media (min-width: 900px) {
+    .auhub-in { padding: 120px 5vw; }
+    .auhub-mapa { display: block; }
+    .auhub-grupos { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .auhub-lineas circle { display: none; } }
+</style>

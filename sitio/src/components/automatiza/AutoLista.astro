@@ -1,0 +1,127 @@
+---
+/**
+ * Lista de una página de Automatiza en tres formas: tarjetas (capacidades con su estado), numerada (cómo se calcula,
+ * cómo trabajamos) y tablero (las tarjetas del Tablero de moda, como se ven en la app). Los renglones entran al verse
+ * (.rv, ver AutoPagina); sin JS se ven completos.
+ */
+import type { Lista } from '../../data/automatiza';
+interface Props { lista: Lista }
+const { lista } = Astro.props;
+const ESTADO = { hoy: 'Ya en Sacs', tu: 'Lo activas tú', servicio: 'Con tu especialista' } as const;
+const estilo = lista.estilo || 'tarjetas';
+---
+<section class={`aul aul--${lista.tema} aul--${estilo}${lista.items.length % 3 === 0 && lista.items.length % 4 !== 0 ? ' aul--tres' : ''}`} id={lista.id} aria-labelledby={`${lista.id}-h`}>
+  <div class="aul-in">
+    <p class="aul-folio"><span>{lista.folio[0]}</span><span>{lista.folio[1]}</span></p>
+    <h2 class="aul-h" id={`${lista.id}-h`}>{lista.titulo}</h2>
+    {lista.bajada && <p class="aul-bajada">{lista.bajada}</p>}
+
+    {estilo === 'tarjetas' && (
+      <ul class="aul-grid">
+        {lista.items.map((it, i) => (
+          <li class="aul-card rv" style={`--i:${i % 4}`}>
+            {it.tag && <span class="aul-tag">{it.tag}</span>}
+            <b>{it.t}</b>
+            <span>{it.d}</span>
+            {it.estado && <em class={`aul-estado aul-estado--${it.estado}`}>{ESTADO[it.estado]}</em>}
+          </li>
+        ))}
+      </ul>
+    )}
+
+    {estilo === 'numerada' && (
+      <ol class="aul-num">
+        {lista.items.map((it, i) => (
+          <li class="rv" style={`--i:${i}`}>
+            <span class="aul-n">{String(i + 1).padStart(2, '0')}</span>
+            <span class="aul-num-t"><b>{it.t}</b><span>{it.d}</span></span>
+            {it.dato && <em class="aul-dato">{it.dato}</em>}
+          </li>
+        ))}
+      </ol>
+    )}
+
+    {estilo === 'tablero' && (
+      <div class="aul-tablero" role="img" aria-label={`Tarjetas del Tablero de moda: ${lista.items.map((it) => `${it.tag}, ${it.t}: ${it.d}`).join('. ')}`}>
+        <p class="aul-tab-top"><b>Hoy</b><span>Ordenado por fecha límite y dinero</span></p>
+        <div class="aul-tab-grid">
+          {lista.items.map((it, i) => (
+            <div class="aul-tab rv" style={`--i:${i}`}>
+              <span class="aul-tab-tag">{it.tag}</span>
+              <b>{it.t}</b>
+              <span>{it.d}</span>
+              <p><em>{it.dato}</em><i>Abrir nivelación →</i></p>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {lista.nota && <p class="aul-nota">{lista.nota}</p>}
+    {lista.cta && <a class="aul-cta" href={lista.cta.href}>{lista.cta.t} <span aria-hidden="true">→</span></a>}
+  </div>
+</section>
+
+<style>
+  .aul { --f: #F6F3EE; --t: #141414; --s: rgba(20, 20, 20, 0.66); --l: rgba(20, 20, 20, 0.14); --c: #fff; background: var(--f); color: var(--t); }
+  .aul--claro { --f: #fff; --c: #F6F4F0; }
+  .aul--azul { --f: #4B7BE5; --t: #fff; --s: rgba(255, 255, 255, 0.82); --l: rgba(255, 255, 255, 0.3); --c: rgba(255, 255, 255, 0.1); }
+  .aul--negro { --f: #0B0B0C; --t: #fff; --s: rgba(255, 255, 255, 0.7); --l: rgba(255, 255, 255, 0.16); --c: #17181B; }
+  .aul-in { max-width: 1160px; margin: 0 auto; padding: 88px 20px; }
+  .aul-folio { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin: 0 0 20px; padding-bottom: 12px; border-bottom: 1px solid var(--l); font: 600 11px/1.35 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; }
+  .aul-h { margin: 0; max-width: 16ch; color: var(--t); font: 700 clamp(36px, 5.6vw, 76px)/0.96 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; text-wrap: balance; }
+  .aul-bajada { margin: 18px 0 0; max-width: 56ch; font: 400 17px/1.55 var(--font-body); color: var(--s); }
+  .aul-grid { list-style: none; margin: 40px 0 0; padding: 0; display: grid; gap: 12px; }
+  .aul-card { display: flex; flex-direction: column; gap: 6px; padding: 20px 20px 18px; border-radius: 18px; background: var(--c); border: 1px solid var(--l); }
+  .aul-card b { font: 700 18px/1.25 var(--font-display); }
+  .aul-card > span:not(.aul-tag) { font: 400 15px/1.5 var(--font-body); color: var(--s); }
+  .aul-tag { align-self: flex-start; font: 700 10.5px/1 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--s); }
+  .aul-estado { align-self: flex-start; margin-top: auto; padding: 5px 10px; border-radius: 99px; font: 700 11px/1 var(--font-display); font-style: normal; }
+  .aul-card .aul-estado { margin-top: 10px; }
+  .aul-estado--hoy { background: #E3F6EC; color: #11734A; }
+  .aul-estado--tu { background: #E8EEFF; color: #2F4FC4; }
+  .aul-estado--servicio { background: #FFF1D6; color: #8A5A00; }
+  .aul-num { list-style: none; margin: 40px 0 0; padding: 0; }
+  .aul-num li { display: grid; grid-template-columns: 48px 1fr; gap: 6px 16px; padding: 22px 0; border-top: 1px solid var(--l); }
+  .aul-n { font: 700 14px/1.5 var(--font-display); color: var(--s); }
+  .aul-num-t b { display: block; font: 700 clamp(20px, 2.2vw, 26px)/1.2 var(--font-display); }
+  .aul-num-t span { display: block; margin-top: 6px; max-width: 60ch; font: 400 16px/1.55 var(--font-body); color: var(--s); }
+  .aul-dato { grid-column: 2; justify-self: start; padding: 5px 11px; border-radius: 99px; border: 1px solid var(--l); font: 700 12px/1 var(--font-display); font-style: normal; }
+  .aul-tablero { margin-top: 40px; padding: 18px; border-radius: 24px; background: #F5F6F8; color: #17181C; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35); }
+  .aul-tab-top { display: flex; align-items: baseline; gap: 12px; margin: 4px 4px 14px; }
+  .aul-tab-top b { font: 700 20px/1 var(--font-display); }
+  .aul-tab-top span { font: 500 13px/1.3 var(--font-body); color: #7A7F8C; }
+  .aul-tab-grid { display: grid; gap: 10px; }
+  .aul-tab { display: flex; flex-direction: column; gap: 5px; padding: 16px; border-radius: 16px; background: #fff; border: 1px solid #E5E7EC; }
+  .aul-tab-tag { align-self: flex-start; padding: 4px 9px; border-radius: 99px; background: #FDECEC; color: #B42318; font: 700 10.5px/1 var(--font-display); letter-spacing: 0.04em; }
+  .aul-tab:nth-child(2) .aul-tab-tag { background: #FFF3D6; color: #8A5A00; }
+  .aul-tab:nth-child(3) .aul-tab-tag { background: #EEF0F4; color: #50566A; }
+  .aul-tab:nth-child(4) .aul-tab-tag { background: #E8EEFF; color: #2F4FC4; }
+  .aul-tab b { font: 700 16px/1.25 var(--font-display); }
+  .aul-tab > span:not(.aul-tab-tag) { font: 400 14px/1.45 var(--font-body); color: #50566A; }
+  .aul-tab p { display: flex; justify-content: space-between; align-items: center; margin: 8px 0 0; padding-top: 10px; border-top: 1px solid #F0F1F4; }
+  .aul-tab em { font: 700 14px/1 var(--font-display); font-style: normal; color: #17181C; white-space: nowrap; }
+  .aul-tab i { font: 700 12px/1 var(--font-display); font-style: normal; color: #2F5BEA; white-space: nowrap; }
+  .aul-tab p { gap: 10px; }
+  .aul-nota { margin: 28px 0 0; max-width: 62ch; font: 500 16px/1.55 var(--font-body); color: var(--s); }
+  .aul-cta { display: inline-flex; gap: 8px; margin-top: 30px; padding-bottom: 3px; border-bottom: 1.5px solid currentColor; color: var(--t); font: 700 16px/1.2 var(--font-display); text-decoration: none; }
+  .aul-cta:hover { color: var(--t); text-decoration: none; opacity: 0.8; }
+  /* entran al verse */
+  :global(.js-rv) .aul .rv { opacity: 0; transform: translateY(16px); transition: opacity 0.6s ease calc(var(--i, 0) * 0.08s), transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) calc(var(--i, 0) * 0.08s); }
+  :global(.js-rv) .aul .rv:global(.is-on) { opacity: 1; transform: none; }
+  @media (min-width: 720px) {
+    .aul-grid { grid-template-columns: repeat(2, 1fr); }
+    .aul-tab-grid { grid-template-columns: repeat(2, 1fr); }
+    .aul-num li { grid-template-columns: 64px 1fr auto; align-items: start; }
+    .aul-dato { grid-column: 3; grid-row: 1; }
+  }
+  @media (min-width: 1040px) {
+    .aul-in { padding: 120px 5vw; }
+    .aul--tarjetas .aul-grid { grid-template-columns: repeat(4, 1fr); }
+    .aul--tres.aul--tarjetas .aul-grid { grid-template-columns: repeat(3, 1fr); }
+    .aul-tablero { padding: 24px; }
+    .aul-tab-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (min-width: 1040px) and (max-width: 1279px) { .aul-tab-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (prefers-reduced-motion: reduce) { :global(.js-rv) .aul .rv { opacity: 1; transform: none; transition: none; } }
+</style>

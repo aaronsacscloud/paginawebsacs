@@ -1,0 +1,282 @@
+---
+/**
+ * La conversación con AXO contada con el scroll (Automatiza, 3-oct-2026). En la línea de «La captura» de
+ * /experiencia/alta-de-productos: la escena se queda pegada mientras el riel pasa (scripts/experiencia/escenas.ts
+ * pone data-tramo) y en cada paso aparecen los mensajes de ese paso en el celular. La pantalla copia el chat de AXO
+ * en Sacs (cabecera «AXO · Operador de IA · En línea», burbujas, tarjetas de acción con Confirmar/Cancelar, nota de
+ * voz, tarjetas de indicadores, prendas con foto, radar). Los textos siguen el tono del prompt real: la cifra en
+ * negritas primero, 2–4 frases, español de México.
+ * Sin JS o con «reducir movimiento»: la conversación completa y los pasos en lista.
+ */
+import type { Chat, Msg } from '../../data/automatiza';
+interface Props { chat: Chat }
+const { chat } = Astro.props;
+const n = chat.pasos.length;
+const I = '/images/automatiza/';
+const AV = `${I}axo-avatar.webp`;
+const esCanal = chat.pantalla.startsWith('#') || chat.pantalla === 'Canales';
+
+// qué mensajes se esconden en cada paso (solo con la escena viva) y qué paso se ilumina
+let reglas = '';
+for (let j = 0; j < n; j++) {
+  const despues = Array.from({ length: n - 1 - j }, (_, i) => `[data-k="${j + 1 + i}"]`).join(',');
+  if (despues) reglas += `#${chat.id}.is-escena[data-tramo="${j}"] .auc-m:is(${despues}){display:none}`;
+  reglas += `#${chat.id}.is-escena[data-tramo="${j}"] .auc-paso[data-k="${j}"]{--on:1}`;
+}
+// la tarjeta de acción pasa a «Confirmado» desde el paso en que alguien dice que sí (sin escena: ya confirmada)
+chat.msgs.forEach((m, idx) => {
+  if (m.tipo !== 'accion' || m.confirma == null) return;
+  const sels = [`#${chat.id}:not(.is-escena) [data-c="${idx}"]`, ...Array.from({ length: n - m.confirma }, (_, i) => `#${chat.id}.is-escena[data-tramo="${m.confirma! + i}"] [data-c="${idx}"]`)];
+  const S = (x: string) => sels.map((q) => `${q} ${x}`).join(',');
+  reglas += `${S('.auc-chip--p')},${S('.auc-btns')}{display:none}${S('.auc-chip--ok')}{display:inline-block}${S('dl')}{opacity:.75}`;
+});
+// la cabecera cambia con el canal de cada paso
+if (chat.cabeceras) {
+  reglas += `#${chat.id} .auc-cab{display:none}#${chat.id}:not(.is-escena) .auc-cab[data-k="${n - 1}"]{display:inline}`;
+  for (let j = 0; j < n; j++) reglas += `#${chat.id}.is-escena[data-tramo="${j}"] .auc-cab[data-k="${j}"]{display:inline}`;
+}
+// en el teléfono solo se ve el paso de turno
+reglas += `@media (max-width:899px){${Array.from({ length: n }, (_, j) => `#${chat.id}.is-escena[data-tramo="${j}"] .auc-paso[data-k="${j}"]{display:grid}`).join('')}}`;
+// orden de entrada dentro de cada paso (para escalonar)
+const orden: Record<number, number> = {};
+const msgs = chat.msgs.map((m, idx) => {
+  const i = (orden[m.k] = (orden[m.k] ?? -1) + 1);
+  const prev = chat.msgs[idx - 1];
+  // AXO «escribe» cuando contesta a alguien (no en los avisos que llegan solos)
+  const escribe = m.tipo !== 'yo' && m.tipo !== 'otro' && m.tipo !== 'canal' && !!prev && (prev.tipo === 'yo' || prev.tipo === 'otro') && prev.k === m.k;
+  return { ...m, i, escribe, idx };
+});
+const limpio = (t: string) => t.replace(/<[^>]+>/g, '');
+const resumen = chat.msgs.map((m: Msg) => {
+  if (m.tipo === 'yo') return `Tú: ${limpio(m.t)}`;
+  if (m.tipo === 'axo') return `AXO: ${limpio(m.t)}`;
+  if (m.tipo === 'otro') return `${m.quien}: ${limpio(m.t)}`;
+  if (m.tipo === 'accion') return `Tarjeta «${m.titulo}»: ${m.filas.map((f) => f.join(' ')).join(', ')}`;
+  if (m.tipo === 'alerta') return `Aviso «${m.titulo}»: ${limpio(m.t)}`;
+  if (m.tipo === 'listo') return limpio(m.t);
+  if (m.tipo === 'kpis') return m.items.map((x) => `${x[0]} ${x[1]}`).join(', ');
+  if (m.tipo === 'barras') return `${m.titulo}: ${m.datos.map((d) => `${d[0]} ${d[2]}`).join(', ')}`;
+  if (m.tipo === 'prendas') return m.items.map((x) => `${x.t} ${x.d}`).join(', ');
+  return '';
+}).filter(Boolean).join('. ');
+const ini = (s: string) => s.split(/[\s·]+/).filter(Boolean).slice(0, 1).map((w) => w[0]).join('');
+const maxBarra = (m: any) => Math.max(...m.datos.map((d: any) => d[1]));
+---
+<section class="auc" id={chat.id} data-escena data-tramos={n} data-tramo={n - 1} style={`--n:${n}`} aria-labelledby={`${chat.id}-h`}>
+  <style is:inline set:html={reglas}></style>
+  <div class="auc-riel" data-riel>
+    <div class="auc-escena">
+      {chat.foto && (
+        <img class="auc-fondo" src={`${I}${chat.foto}-1280.webp`} srcset={`${I}${chat.foto}-1280.webp 1280w, ${I}${chat.foto}-1536.webp 1536w`} sizes="100vw" width="1536" height="1024" alt="" loading="lazy" decoding="async" />
+      )}
+      <div class="auc-velo" aria-hidden="true"></div>
+      <div class="auc-grid">
+        <div class="auc-txt">
+          <p class="auc-folio"><span>{chat.folio[0]}</span><span>{chat.folio[1]}</span></p>
+          <h2 class="auc-h" id={`${chat.id}-h`}>{chat.titulo}</h2>
+          <ol class="auc-pasos">
+            {chat.pasos.map((p, k) => (
+              <li class="auc-paso" data-k={k}>
+                <span class="auc-paso-n">{String(k + 1).padStart(2, '0')}</span>
+                <span class="auc-paso-t"><b>{p.t}</b><span>{p.d}</span></span>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <div class="auc-tel" role="img" aria-label={resumen}>
+          <div class="auc-pant">
+            <div class="auc-top">
+              {esCanal ? <span class="auc-av auc-av--canal">#</span> : <img class="auc-av" src={AV} alt="" width="40" height="40" loading="lazy" />}
+              <span class="auc-top-t"><b>{chat.cabeceras ? chat.cabeceras.map((c, k) => <span class="auc-cab" data-k={k}>{c}</span>) : chat.pantalla === 'Tu chat con AXO' ? 'AXO' : chat.pantalla}</b><small>{chat.pantalla === 'Tu chat con AXO' ? chat.sub : `${chat.sub} · con AXO`}</small></span>
+              <span class="auc-linea"><i></i>En línea</span>
+            </div>
+            <div class="auc-cuerpo">
+              <div class="auc-lista">
+                {msgs.map((m) => (<>
+                  {m.escribe && <div class="auc-m auc-esc" data-k={m.k} style={`--d:${m.i * 0.3}s`} aria-hidden="true"><img src={AV} alt="" width="26" height="26" loading="lazy" /><span><i></i><i></i><i></i></span></div>}
+                  <div class={`auc-m auc-m--${m.tipo}`} data-k={m.k} style={`--d:${m.i * 0.3 + (m.escribe ? 0.85 : 0)}s`}>
+                    {m.tipo === 'yo' && (
+                      <p class="auc-yo">
+                        {m.img && <img class="auc-yo-img" src={m.img} alt="" width="200" height="300" loading="lazy" />}
+                        {m.voz && <span class="auc-voz"><svg viewBox="0 0 64 16" aria-hidden="true">{[3,7,11,6,13,9,4,10,14,7,5,11,8,4,9,12,6,3].map((h, i) => <rect x={i * 3.5} y={8 - h / 2} width="2" height={h} rx="1" />)}</svg><em>{m.voz}</em></span>}
+                        <span set:html={m.t} />
+                      </p>
+                    )}
+                    {m.tipo === 'axo' && (
+                      <div class="auc-axo"><img src={AV} alt="" width="26" height="26" loading="lazy" /><p set:html={m.t} /></div>
+                    )}
+                    {m.tipo === 'otro' && (
+                      <div class="auc-otro"><span class="auc-ini">{ini(m.quien)}</span><div><small>{m.quien}</small><p set:html={m.t} /></div></div>
+                    )}
+                    {m.tipo === 'canal' && <p class="auc-canal"><span>{m.t}</span></p>}
+                    {m.tipo === 'kpis' && (
+                      <div class="auc-kpis">{m.items.map((x) => <span><small>{x[0]}</small><b>{x[1]}</b>{x[2] && <em>{x[2]}</em>}</span>)}</div>
+                    )}
+                    {m.tipo === 'barras' && (
+                      <div class="auc-card auc-barras"><small class="auc-card-k">{m.titulo}</small>
+                        {m.datos.map((d) => <div class="auc-barra"><span>{d[0]}</span><i style={`--w:${Math.round((d[1] / maxBarra(m)) * 100)}%`}><b></b></i><em>{d[2]}</em></div>)}
+                      </div>
+                    )}
+                    {m.tipo === 'prendas' && (
+                      <div class="auc-card auc-prendas">{m.items.map((x) => <div class="auc-prenda"><img src={x.img} alt="" width="44" height="44" loading="lazy" /><span>{x.t}</span><b>{x.d}</b></div>)}</div>
+                    )}
+                    {m.tipo === 'fotos' && (
+                      <div class="auc-card auc-fotos"><small class="auc-card-k">{m.titulo}</small>
+                        <div>{m.items.map((x) => <figure><img src={x.img} alt="" width="200" height="260" loading="lazy" /><figcaption>{x.t}</figcaption></figure>)}</div>
+                      </div>
+                    )}
+                    {m.tipo === 'accion' && (
+                      <div class="auc-card auc-accion" data-c={m.idx}>
+                        <p class="auc-accion-h">{m.hecho ? <span class="auc-chip auc-chip--ok auc-chip--fijo">Listo</span> : <><span class="auc-chip auc-chip--p">Por confirmar</span><span class="auc-chip auc-chip--ok">✓ Confirmado</span></>}<b>{m.titulo}</b></p>
+                        <dl>{m.filas.map((f) => <><dt>{f[0]}</dt><dd>{f[1]}</dd></>)}</dl>
+                        {m.hecho
+                          ? <p class="auc-btns"><span class="auc-btn auc-btn--uno">{m.boton || 'Abrir'}</span></p>
+                          : <p class="auc-btns"><span class="auc-btn">{m.boton || 'Confirmar'}</span><span class="auc-btn auc-btn--no">Cancelar</span></p>}
+                      </div>
+                    )}
+                    {m.tipo === 'alerta' && (
+                      <div class="auc-card auc-alerta"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><div><b>{m.titulo}</b><p set:html={m.t} /></div></div>
+                    )}
+                    {m.tipo === 'listo' && <p class="auc-listo"><span>✓</span>{m.t}</p>}
+                  </div>
+                </>))}
+              </div>
+            </div>
+            <div class="auc-input"><span>Pregúntale a AXO…</span>
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 17l-5-5-9 7"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .auc { position: relative; background: #0B0B0C; color: #fff; }
+  .auc-escena { position: relative; overflow: hidden; padding: 72px 20px; }
+  .auc-fondo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 30% 50%; }
+  .auc-velo { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11, 11, 12, 0.74), rgba(11, 11, 12, 0.86)); }
+  .auc-grid { position: relative; display: grid; gap: 36px; max-width: 1160px; margin: 0 auto; }
+
+  /* texto */
+  .auc-folio { display: flex; justify-content: space-between; gap: 12px; margin: 0 0 16px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.35); font: 600 11px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255, 255, 255, 0.85); }
+  .auc-h { margin: 0 0 22px; color: #fff; font: 700 clamp(34px, 5.2vw, 64px)/0.98 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; text-wrap: balance; }
+  .auc-pasos { list-style: none; margin: 0; padding: 0; }
+  .auc-paso { --on: 0; display: grid; grid-template-columns: 34px 1fr; gap: 10px; padding: 12px 0; border-top: 1px solid rgba(255, 255, 255, 0.16); }
+  .auc-paso-n { font: 700 12px/1.6 var(--font-display); color: rgba(255, 255, 255, calc(0.45 + var(--on) * 0.55)); }
+  .auc-paso-t b { display: block; font: 700 16px/1.3 var(--font-display); color: rgba(255, 255, 255, calc(0.6 + var(--on) * 0.4)); }
+  .auc-paso-t span { display: block; margin-top: 3px; font: 400 14px/1.45 var(--font-body); color: rgba(255, 255, 255, calc(0.68 + var(--on) * 0.22)); }
+
+  /* el celular */
+  .auc-tel { justify-self: center; width: min(100%, 384px); padding: 9px; border-radius: 46px; background: #121214; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5), inset 0 0 0 1.5px rgba(255, 255, 255, 0.14); }
+  .auc-pant { display: flex; flex-direction: column; height: 640px; border-radius: 37px; overflow: hidden; background: #F5F6F8; color: #17181C; }
+  .auc-top { display: flex; align-items: center; gap: 10px; padding: 18px 16px 12px; background: #fff; border-bottom: 1px solid #ECEDF1; }
+  .auc-av { width: 36px; height: 36px; border-radius: 11px; object-fit: cover; background: #F3E8FF; flex: none; }
+  .auc-av--canal { display: grid; place-items: center; background: #EEF2FF; color: #4B5BD6; font: 700 18px/1 var(--font-display); }
+  .auc-top-t { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+  .auc-top-t b { font: 700 15px/1.2 var(--font-display); }
+  .auc-top-t small { font: 500 12px/1.3 var(--font-body); color: #7A7F8C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .auc-linea { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 99px; background: #F1E9FF; color: #6B3FD6; font: 700 11px/1 var(--font-display); }
+  .auc-linea i { width: 6px; height: 6px; border-radius: 50%; background: #22B573; }
+  .auc-cuerpo { position: relative; flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; }
+  .auc-cuerpo::before { content: ''; position: absolute; inset: 0 0 auto; height: 36px; background: linear-gradient(#F5F6F8, rgba(245, 246, 248, 0)); z-index: 1; }
+  .auc-lista { display: flex; flex-direction: column; gap: 9px; padding: 14px 12px 10px; }
+  .auc-input { display: flex; align-items: center; gap: 12px; margin: 0 10px 12px; padding: 12px 14px; border-radius: 16px; background: #fff; border: 1px solid #E4E6EC; color: #9298A6; font: 500 13.5px/1 var(--font-body); }
+  .auc-input span { flex: 1; }
+
+  /* mensajes */
+  .auc-m { animation: auc-in 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: var(--d, 0s); }
+  @keyframes auc-in { 0% { opacity: 0; max-height: 0; transform: translateY(12px) scale(0.98); } 1% { max-height: 900px; } 100% { opacity: 1; max-height: 900px; transform: none; } }
+  /* AXO escribiendo: aparece, late y se cierra antes de su respuesta */
+  .auc-esc { display: flex; align-items: flex-end; gap: 7px; overflow: hidden; animation: auc-esc 0.95s ease both; animation-delay: var(--d, 0s); }
+  .auc-esc img { width: 26px; height: 26px; border-radius: 9px; background: #F3E8FF; }
+  .auc-esc span { display: inline-flex; gap: 4px; padding: 12px 14px; border-radius: 18px 18px 18px 5px; background: #fff; border: 1px solid #E8E9EE; }
+  .auc-esc i { width: 6px; height: 6px; border-radius: 50%; background: #A3A8B6; animation: auc-pt 0.9s infinite ease-in-out; }
+  .auc-esc i:nth-child(2) { animation-delay: 0.15s; } .auc-esc i:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes auc-pt { 0%, 80%, 100% { transform: translateY(0); opacity: 0.5; } 40% { transform: translateY(-3px); opacity: 1; } }
+  @keyframes auc-esc { 0% { opacity: 0; max-height: 50px; } 12% { opacity: 1; } 85% { opacity: 1; max-height: 50px; } 100% { opacity: 0; max-height: 0; margin-top: -9px; } }
+  .auc-yo { align-self: flex-end; max-width: 84%; margin: 0 0 0 auto; padding: 10px 13px; border-radius: 18px 18px 5px 18px; background: #2F5BEA; color: #fff; font: 500 13.5px/1.42 var(--font-body); }
+  .auc-m--yo { display: flex; }
+  .auc-voz { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .auc-voz svg { width: 64px; height: 16px; fill: rgba(255, 255, 255, 0.9); }
+  .auc-voz em { font: 600 11px/1 var(--font-display); font-style: normal; opacity: 0.85; }
+  .auc-axo { display: flex; align-items: flex-end; gap: 7px; max-width: 92%; }
+  .auc-axo img { width: 26px; height: 26px; border-radius: 9px; flex: none; background: #F3E8FF; }
+  .auc-axo p, .auc-otro p { margin: 0; padding: 10px 13px; border-radius: 18px 18px 18px 5px; background: #fff; border: 1px solid #E8E9EE; font: 400 13.5px/1.45 var(--font-body); color: #1D1F24; }
+  .auc-axo :global(b), .auc-otro :global(b), .auc-alerta :global(b) { font-weight: 700; }
+  .auc-otro { display: flex; align-items: flex-end; gap: 7px; max-width: 92%; }
+  .auc-otro small { display: block; margin: 0 0 3px 4px; font: 600 11px/1.2 var(--font-display); color: #6B7080; }
+  .auc-otro p { background: #EEF0F4; border-color: #EEF0F4; }
+  .auc-ini { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; flex: none; background: #1D1F24; color: #fff; font: 700 11px/1 var(--font-display); }
+  .auc-canal { margin: 4px 0 0; text-align: center; }
+  .auc-canal span { display: inline-block; padding: 4px 10px; border-radius: 99px; background: #E6E8EE; color: #50566A; font: 700 11px/1.2 var(--font-display); letter-spacing: 0.02em; }
+  .auc-card { margin-left: 33px; padding: 11px 12px; border-radius: 14px; background: #fff; border: 1px solid #E5E7EC; box-shadow: 0 6px 18px rgba(20, 24, 40, 0.06); }
+  .auc-card-k { display: block; margin-bottom: 8px; font: 700 10.5px/1.2 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: #7A7F8C; }
+  .auc-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-left: 33px; }
+  .auc-kpis span { display: flex; flex-direction: column; gap: 2px; padding: 9px 9px 8px; border-radius: 12px; background: #fff; border: 1px solid #E5E7EC; }
+  .auc-kpis small { font: 600 10px/1.2 var(--font-display); color: #7A7F8C; text-transform: uppercase; letter-spacing: 0.06em; }
+  .auc-kpis b { font: 700 15px/1.15 var(--font-display); color: #17181C; }
+  .auc-kpis em { font: 700 10.5px/1 var(--font-display); font-style: normal; color: #18A060; }
+  .auc-barra { display: grid; grid-template-columns: 74px 1fr auto; align-items: center; gap: 8px; margin-top: 7px; font: 500 12px/1.2 var(--font-body); }
+  .auc-barra i { height: 9px; border-radius: 6px; background: #EEF0F5; overflow: hidden; }
+  .auc-barra i b { display: block; width: var(--w); height: 100%; border-radius: 6px; background: linear-gradient(90deg, #6B3FD6, #8C6BF0); transform-origin: left; animation: auc-barra 0.9s 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  @keyframes auc-barra { from { transform: scaleX(0); } }
+  .auc-barra em { font: 700 11.5px/1 var(--font-display); font-style: normal; color: #17181C; }
+  .auc-prenda { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 10px; padding: 5px 0; font: 500 13px/1.3 var(--font-body); }
+  .auc-prenda + .auc-prenda { border-top: 1px solid #F0F1F4; }
+  .auc-prenda img { width: 44px; height: 44px; border-radius: 9px; object-fit: cover; background: #EEE; }
+  .auc-prenda b { font: 700 12.5px/1 var(--font-display); }
+  .auc-accion-h { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font: 700 14px/1.2 var(--font-display); }
+  .auc-chip--ok { display: none; background: #E3F6EC !important; color: #11734A !important; }
+  .auc-chip--fijo { display: inline-block; }
+  .auc-accion dl { transition: opacity 0.4s; }
+  .auc-yo:has(.auc-yo-img) { width: 210px; padding: 5px 5px 10px; }
+  .auc-yo-img { display: block; width: 100%; height: 240px; object-fit: cover; margin: 0 0 8px; border-radius: 14px; }
+  .auc-yo:has(.auc-yo-img) > span:last-child { display: block; padding: 0 8px; }
+  .auc-fotos > div { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .auc-fotos figure { margin: 0; }
+  .auc-fotos img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 10px; background: #EEE; animation: auc-foto 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .auc-fotos figure:nth-child(2) img { animation-delay: 0.25s; } .auc-fotos figure:nth-child(3) img { animation-delay: 0.5s; }
+  @keyframes auc-foto { from { opacity: 0; filter: blur(8px); transform: scale(0.94); } }
+  .auc-fotos figcaption { margin-top: 4px; font: 600 10.5px/1.2 var(--font-display); color: #50566A; text-align: center; }
+  .auc-chip { padding: 3px 8px; border-radius: 99px; background: #FFF3D6; color: #8A5A00; font: 700 10px/1.2 var(--font-display); letter-spacing: 0.03em; }
+  .auc-accion dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font: 400 12.5px/1.35 var(--font-body); }
+  .auc-accion dt { color: #7A7F8C; }
+  .auc-accion dd { margin: 0; text-align: right; font-weight: 600; color: #17181C; }
+  .auc-btns { display: flex; gap: 6px; margin: 10px 0 0; }
+  .auc-btn { flex: 1; padding: 8px 0; border-radius: 10px; background: #2F5BEA; color: #fff; text-align: center; font: 700 12.5px/1 var(--font-display); }
+  .auc-btn--no { background: #F1F2F5; color: #50566A; }
+  .auc-alerta { display: flex; gap: 10px; border-left: 4px solid #F06A3B; color: #C2410C; }
+  .auc-alerta b { display: block; font: 700 12.5px/1.2 var(--font-display); color: #C2410C; }
+  .auc-alerta p { margin: 3px 0 0; font: 400 12.5px/1.4 var(--font-body); color: #1D1F24; }
+  .auc-listo { align-self: center; margin: 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 99px; background: #E3F6EC; color: #11734A; font: 700 11.5px/1.2 var(--font-display); text-align: center; }
+  .auc-m--listo { display: flex; justify-content: center; }
+  .auc-listo span { display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: #18A060; color: #fff; font-size: 10px; }
+
+  /* escena viva: pegada a la pantalla */
+  .auc.is-escena .auc-riel { height: calc(100vh + var(--n) * 62vh); }
+  .auc.is-escena .auc-escena { position: sticky; top: 0; height: 100vh; padding: 0 20px; display: flex; align-items: center; }
+  .auc.is-escena .auc-grid { width: 100%; }
+
+  @media (min-width: 900px) {
+    .auc-grid { grid-template-columns: minmax(0, 1fr) 400px; align-items: center; gap: 64px; }
+    .auc-velo { background: linear-gradient(90deg, rgba(11, 11, 12, 0.88) 0%, rgba(11, 11, 12, 0.62) 48%, rgba(11, 11, 12, 0.38) 100%); }
+    .auc-txt { max-width: 520px; }
+    .auc.is-escena .auc-pant { height: min(700px, calc(100vh - 110px)); }
+    .auc.is-escena .auc-paso { transition: opacity 0.4s; opacity: calc(0.7 + var(--on) * 0.3); }
+  }
+  /* teléfono: el paso de turno arriba y el celular abajo */
+  @media (max-width: 899px) {
+    .auc.is-escena .auc-escena { align-items: flex-start; padding-top: 124px; }
+    .auc.is-escena .auc-grid { gap: 14px; }
+    .auc.is-escena .auc-h { font-size: 30px; margin-bottom: 10px; }
+    .auc.is-escena .auc-folio { margin-bottom: 10px; }
+    .auc.is-escena .auc-paso { display: none; border: 0; padding: 0; }
+    .auc.is-escena .auc-tel { width: min(100%, 360px); }
+    .auc.is-escena .auc-pant { height: calc(100svh - 350px); min-height: 360px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .auc-m, .auc-barra i b { animation: none; } .auc-esc { display: none; } }
+</style>

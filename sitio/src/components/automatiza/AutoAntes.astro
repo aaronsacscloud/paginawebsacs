@@ -1,0 +1,61 @@
+---
+/**
+ * «Antes y después» de una página de Automatiza: a la izquierda cómo era (renglones tachados), a la derecha en azul
+ * cómo es con AXO. Con el scroll (escenas.ts → --p) se tachan los renglones y entra el azul; sin JS o en reducir
+ * movimiento, todo a la vista.
+ */
+import type { Antes } from '../../data/automatiza';
+interface Props { antes: Antes }
+const { antes: a } = Astro.props;
+---
+<section class="aua" id={a.id} data-escena aria-labelledby={`${a.id}-h`}>
+  <div class="aua-in">
+    <p class="aua-folio"><span>{a.folio[0]}</span><span>{a.folio[1]}</span></p>
+    <h2 class="aua-h" id={`${a.id}-h`}>{a.titulo}</h2>
+  </div>
+  <div class="aua-riel" data-riel>
+    <div class="aua-escena">
+      <div class="aua-cols">
+        <div class="aua-col aua-col--antes">
+          <p class="aua-k">{a.antes.k}</p>
+          <p class="aua-total">{a.antes.total}</p>
+          <ol>{a.antes.pasos.map((p, k) => <li style={`--k:${k}`}><span>{p}</span></li>)}</ol>
+        </div>
+        <div class="aua-col aua-col--despues">
+          <p class="aua-k">{a.despues.k}</p>
+          <p class="aua-total">{a.despues.total}</p>
+          <ol>{a.despues.pasos.map((p, k) => <li style={`--k:${k}`}><span>{p}</span></li>)}</ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .aua { background: #F6F3EE; color: #141414; }
+  .aua-in { max-width: 1160px; margin: 0 auto; padding: 88px 20px 0; }
+  .aua-folio { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin: 0 0 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(20, 20, 20, 0.14); font: 600 11px/1.35 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; }
+  .aua-h { margin: 0; max-width: 16ch; color: #141414; font: 700 clamp(36px, 5.6vw, 76px)/0.96 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; text-wrap: balance; }
+  .aua-escena { max-width: 1160px; margin: 0 auto; padding: 40px 20px 88px; }
+  .aua-cols { display: grid; gap: 0; border-top: 2px solid #141414; }
+  .aua-col { padding: 26px 22px 28px; }
+  .aua-col--despues { background: #4B7BE5; color: #fff; }
+  .aua-k { margin: 0 0 6px; font: 700 11px/1.2 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; opacity: 0.75; }
+  .aua-total { margin: 0 0 18px; font: 700 clamp(34px, 4.4vw, 56px)/1 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; }
+  .aua-col--antes .aua-total { color: rgba(20, 20, 20, 0.55); }
+  .aua-col ol { list-style: none; margin: 0; padding: 0; }
+  .aua-col li { padding: 12px 0; border-top: 1px solid currentColor; border-color: rgba(20, 20, 20, 0.12); font: 500 15.5px/1.45 var(--font-body); }
+  .aua-col--despues li { border-color: rgba(255, 255, 255, 0.3); }
+  .aua-col--antes li span { color: rgba(20, 20, 20, 0.55); text-decoration: line-through; text-decoration-color: rgba(20, 20, 20, 0.45); }
+  /* con el scroll: se tacha lo de antes y entra lo nuevo */
+  .aua.is-escena .aua-riel { height: 150vh; }
+  .aua.is-escena .aua-escena { position: sticky; top: 8vh; }
+  .aua.is-escena .aua-col--antes li span { text-decoration-color: rgba(20, 20, 20, calc(0.45 * clamp(0, (var(--p, 0) * 3 - var(--k) * 0.4), 1))); }
+  .aua.is-escena .aua-col--despues { clip-path: inset(0 0 0 calc((1 - clamp(0, var(--p, 0) * 2.2 - 0.2, 1)) * 100%)); }
+  .aua.is-escena .aua-col--despues li { opacity: clamp(0, var(--p, 0) * 3 - 0.8 - var(--k) * 0.3, 1); }
+  @media (min-width: 800px) {
+    .aua-cols { grid-template-columns: 1fr 1fr; }
+    .aua-col { padding: 32px 36px 40px; }
+    .aua-in, .aua-escena { padding-left: 5vw; padding-right: 5vw; }
+  }
+</style>

@@ -1,0 +1,89 @@
+---
+/**
+ * El pronóstico de una prenda (Forecast de demanda): la pantalla de Demand Planning con la prenda, el evento y, por
+ * tienda, las piezas por talla con su rango probable al 80 % (lib/moda/pronostico.lib.js: base alineada por evento,
+ * tendencia acotada, talla por la curva de cada zona). Las barras crecen al verse (.rv); sin JS se ven completas.
+ * Cifras de ejemplo (Polanco Boutique, demo ficticia).
+ */
+import type { Pronostico } from '../../data/automatiza';
+interface Props { p: Pronostico }
+const { p } = Astro.props;
+const rangos = (r: string) => r.split('–').map(Number);
+const max = Math.max(...p.tiendas.flatMap((t) => t.tallas.map((x) => rangos(x[2])[1])));
+const pc = (v: number) => `${((v / max) * 100).toFixed(1)}%`;
+const I = '/images/automatiza/';
+---
+<section class="aup" id={p.id} aria-labelledby={`${p.id}-h`}>
+  <img class="aup-fondo" src={`${I}dp-escena-1280.webp`} srcset={`${I}dp-escena-1280.webp 1280w, ${I}dp-escena-1536.webp 1536w`} sizes="100vw" width="1536" height="1024" alt="" loading="lazy" decoding="async" />
+  <div class="aup-velo" aria-hidden="true"></div>
+  <div class="aup-in">
+    <div class="aup-txt">
+      <p class="aup-folio"><span>{p.folio[0]}</span><span>{p.folio[1]}</span></p>
+      <h2 class="aup-h" id={`${p.id}-h`}>{p.titulo}</h2>
+      <p class="aup-bajada">{p.bajada}</p>
+      <ul class="aup-notas">{p.notas.map((n) => <li>{n}</li>)}</ul>
+    </div>
+    <div class="aup-pant" role="img" aria-label={`Pronóstico de ${p.prenda.t} para ${p.prenda.evento}: ${p.tiendas.map((t) => `${t.n}: ${t.tallas.map((x) => `${x[0]} ${x[1]} piezas (rango ${x[2]})`).join(', ')}`).join('; ')}. Total ${p.total}.`}>
+      <div class="aup-top">
+        <img src={p.prenda.img} alt="" width="56" height="56" loading="lazy" />
+        <span><small>Pronóstico · {p.prenda.evento}</small><b>{p.prenda.t}</b></span>
+        <em><i class="aup-ley"></i>Rango al 80 %</em>
+      </div>
+      {p.tiendas.map((t, k) => (
+        <div class="aup-tienda rv" style={`--i:${k}`}>
+          <p class="aup-tn">{t.n}</p>
+          {t.tallas.map((x) => (
+            <div class="aup-fila">
+              <b class="aup-talla">{x[0]}</b>
+              <i class="aup-barra"><em class="aup-banda" style={`left:${pc(rangos(x[2])[0])};width:calc(${pc(rangos(x[2])[1])} - ${pc(rangos(x[2])[0])})`}></em><span style={`--w:${pc(x[1])}`}></span></i>
+              <span class="aup-pz"><b>{x[1]}</b> pzs</span>
+              <span class="aup-rango">{x[2]}</span>
+            </div>
+          ))}
+        </div>
+      ))}
+      <p class="aup-total"><span>Total de la red</span><b>{p.total}</b></p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .aup { position: relative; overflow: hidden; background: #0B0B0C; color: #fff; isolation: isolate; }
+  .aup-fondo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+  .aup-velo { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(11, 11, 12, 0.8), rgba(11, 11, 12, 0.9)); }
+  .aup-in { display: grid; gap: 36px; max-width: 1160px; margin: 0 auto; padding: 88px 20px; }
+  .aup-folio { display: flex; justify-content: space-between; gap: 12px; margin: 0 0 16px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.35); font: 600 11px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; }
+  .aup-h { margin: 0; color: #fff; font: 700 clamp(34px, 5.2vw, 64px)/0.98 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; text-wrap: balance; }
+  .aup-bajada { margin: 18px 0 0; max-width: 46ch; font: 400 17px/1.55 var(--font-body); color: rgba(255, 255, 255, 0.82); }
+  .aup-notas { list-style: none; margin: 22px 0 0; padding: 0; }
+  .aup-notas li { padding: 10px 0 10px 22px; border-top: 1px solid rgba(255, 255, 255, 0.16); position: relative; font: 500 15px/1.4 var(--font-body); color: rgba(255, 255, 255, 0.88); }
+  .aup-notas li::before { content: ''; position: absolute; left: 0; top: 16px; width: 8px; height: 8px; border-radius: 50%; background: #8C6BF0; }
+  .aup-pant { align-self: center; padding: 18px; border-radius: 26px; background: #F5F6F8; color: #17181C; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5), 0 0 0 8px rgba(255, 255, 255, 0.06); }
+  .aup-top { display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: 12px; padding: 4px 4px 14px; border-bottom: 1px solid #E5E7EC; }
+  .aup-top img { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; background: #EEE; }
+  .aup-top small { display: block; font: 700 10.5px/1.2 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: #6B3FD6; }
+  .aup-top b { display: block; margin-top: 3px; font: 700 16px/1.25 var(--font-display); }
+  .aup-ley { display: inline-block; width: 14px; height: 8px; margin-right: 6px; vertical-align: 0; border-radius: 3px; background: rgba(140, 107, 240, 0.35); border: 1.5px solid rgba(107, 63, 214, 0.55); }
+  .aup-top em { padding: 5px 10px; border-radius: 99px; background: #EEF0F4; color: #50566A; font: 700 11px/1 var(--font-display); font-style: normal; white-space: nowrap; }
+  .aup-tienda { padding: 12px 4px 6px; }
+  .aup-tienda + .aup-tienda { border-top: 1px solid #ECEDF1; }
+  .aup-tn { margin: 0 0 6px; font: 700 13px/1.2 var(--font-display); }
+  .aup-fila { display: grid; grid-template-columns: 22px 1fr 58px 56px; align-items: center; gap: 10px; padding: 4px 0; }
+  .aup-talla { font: 700 12.5px/1 var(--font-display); color: #50566A; }
+  .aup-barra { position: relative; height: 14px; border-radius: 7px; background: #E9EBF0; overflow: hidden; }
+  .aup-banda { position: absolute; top: 0; bottom: 0; background: rgba(140, 107, 240, 0.28); border-left: 2px solid rgba(107, 63, 214, 0.55); border-right: 2px solid rgba(107, 63, 214, 0.55); }
+  .aup-barra span { position: relative; display: block; width: var(--w); height: 100%; border-radius: 7px; background: linear-gradient(90deg, #4B7BE5, #8C6BF0); transform-origin: left; transition: transform 1s cubic-bezier(0.2, 0.8, 0.2, 1) calc(var(--i, 0) * 0.15s + 0.1s); }
+  .aup-pz { font: 500 12.5px/1 var(--font-body); color: #50566A; white-space: nowrap; }
+  .aup-pz b { font: 700 14px/1 var(--font-display); color: #17181C; }
+  .aup-rango { font: 600 11.5px/1 var(--font-display); color: #7A7F8C; text-align: right; white-space: nowrap; }
+  .aup-total { display: flex; justify-content: space-between; gap: 12px; margin: 10px 0 0; padding: 12px 4px 2px; border-top: 1px solid #E5E7EC; font: 500 13px/1.3 var(--font-body); color: #50566A; }
+  .aup-total b { font: 700 14px/1.3 var(--font-display); color: #17181C; text-align: right; }
+  :global(.js-rv) .aup .rv .aup-barra span { transform: scaleX(0); }
+  :global(.js-rv) .aup .rv:global(.is-on) .aup-barra span { transform: none; }
+  @media (min-width: 900px) {
+    .aup-in { grid-template-columns: minmax(0, 1fr) 480px; gap: 64px; padding: 120px 5vw; align-items: center; }
+    .aup-velo { background: linear-gradient(90deg, rgba(11, 11, 12, 0.9) 0%, rgba(11, 11, 12, 0.66) 50%, rgba(11, 11, 12, 0.45) 100%); }
+    .aup-pant { padding: 22px; }
+  }
+  @media (prefers-reduced-motion: reduce) { :global(.js-rv) .aup .rv .aup-barra span { transform: none; transition: none; } }
+</style>

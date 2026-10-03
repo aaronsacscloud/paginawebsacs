@@ -14,9 +14,11 @@ import FinalCTA from '../../components/FinalCTA.astro';
 import { pillars, getFeatureBySlug, getPillarForFeature, getAllSlugs } from '../../data/product';
 import { plans } from '../../data/plans';
 import { pageContent } from '../../data/product-pages';
+import { SLUGS_AUTOMATIZA } from '../../data/automatiza';
 
 export function getStaticPaths() {
-  return getAllSlugs().map((slug) => ({ params: { slug } }));
+  // Las 7 de Automatiza tienen su propia página (src/pages/producto/<slug>.astro, components/automatiza).
+  return getAllSlugs().filter((slug) => !SLUGS_AUTOMATIZA.includes(slug)).map((slug) => ({ params: { slug } }));
 }
 
 const { slug } = Astro.params;

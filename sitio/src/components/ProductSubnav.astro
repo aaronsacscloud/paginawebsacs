@@ -183,6 +183,13 @@ const activePillar = pillars.find((p) => p.id === currentPillar)!;
   .psn-features::-webkit-scrollbar {
     display: none;
   }
+  /* las pestañas que se salen se desvanecen en las orillas, en vez de cortarse a media palabra */
+  @media (max-width: 1023px) {
+    .psn-features {
+      -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%);
+      mask-image: linear-gradient(90deg, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%);
+    }
+  }
 
   /* Fade hint for scrollable overflow */
   .psn-features {
@@ -349,7 +356,10 @@ const activePillar = pillars.find((p) => p.id === currentPillar)!;
     requestAnimationFrame(() => {
       const navRect = featuresNav.getBoundingClientRect();
       const linkRect = activeLink.getBoundingClientRect();
-      const scrollLeft = linkRect.left - navRect.left - (navRect.width / 2) + (linkRect.width / 2);
+      // la pestaña activa alineada con el inicio de la anterior, para no cortar palabras a la izquierda
+      const prev = activeLink.previousElementSibling as HTMLElement | null;
+      const ancla = prev ? prev.getBoundingClientRect().left : linkRect.left;
+      const scrollLeft = ancla - navRect.left - 8;
       featuresNav.scrollBy({ left: scrollLeft, behavior: 'smooth' });
     });
   }

@@ -1,0 +1,99 @@
+---
+/**
+ * Página completa de Automatiza (/producto/<slug>): portada, las secciones de la página (chat con AXO, listas,
+ * antes y después, mapa de integraciones) en el orden de src/data/automatiza.ts, preguntas, el resto de Automatiza
+ * y el cierre. Usa ProductLayout para conservar el sub-menú de la sección.
+ */
+import ProductLayout from '../../layouts/ProductLayout.astro';
+import AutoHero from './AutoHero.astro';
+import AutoChat from './AutoChat.astro';
+import AutoLista from './AutoLista.astro';
+import AutoAntes from './AutoAntes.astro';
+import AutoHub from './AutoHub.astro';
+import AutoPronostico from './AutoPronostico.astro';
+import GiroFAQ from '../giros/GiroFAQ.astro';
+import FinalCTA from '../FinalCTA.astro';
+import StructuredData from '../StructuredData.astro';
+import { AUTOMATIZA, autoPorSlug } from '../../data/automatiza';
+import '../../styles/planeacion.css';
+
+interface Props { slug: string }
+const { slug } = Astro.props;
+const pg = autoPorSlug(slug);
+const otras = AUTOMATIZA.filter((p) => p.slug !== slug);
+const primera = pg.secciones[0]?.id || 'faq';
+const faqSchema = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: pg.faqs.map((p) => ({ '@type': 'Question', name: p.question, acceptedAnswer: { '@type': 'Answer', text: p.answer } })) };
+---
+<ProductLayout
+  title={pg.seo.title}
+  description={pg.seo.description}
+  currentSlug={slug}
+  currentPillar="automatiza"
+  preloadImage={`/images/automatiza/${pg.hero.foto}-vertical-1024.webp`}
+  image={`/images/automatiza/${pg.hero.foto}-og.jpg`}
+>
+  <StructuredData data={faqSchema} />
+  <div class="pd exp auto" data-auto={slug}>
+    <AutoHero n={pg.n} etiqueta={pg.hero.etiqueta} titulo={pg.hero.titulo} bajada={pg.hero.bajada} foto={pg.hero.foto} alt={pg.hero.alt} ancla={primera} aviso={pg.hero.aviso} foco={pg.hero.foco} />
+    {pg.secciones.map((s) => (
+      s.tipo === 'chat' ? <AutoChat chat={s} />
+      : s.tipo === 'lista' ? <AutoLista lista={s} />
+      : s.tipo === 'antes' ? <AutoAntes antes={s} />
+      : s.tipo === 'pronostico' ? <AutoPronostico p={s} />
+      : <AutoHub hub={s} />
+    ))}
+  </div>
+
+  <GiroFAQ title={`Preguntas frecuentes · ${pg.nombre}`} faqs={pg.faqs} />
+
+  <section class="auo" aria-labelledby="auo-h">
+    <div class="auo-in">
+      <p class="auo-folio"><span>Automatiza</span><span>La IA que trabaja contigo</span></p>
+      <h2 class="auo-h" id="auo-h">Más de Automatiza.</h2>
+      <ul class="auo-grid">
+        {otras.map((o) => (
+          <li><a href={`/producto/${o.slug}`} data-evento="automatiza_cruce">
+            <img src={`/images/automatiza/${o.hero.foto}-1280.webp`} alt="" width="1280" height="853" loading="lazy" decoding="async" />
+            <span class="auo-n">{o.n}</span>
+            <b>{o.nombre}</b>
+            <span class="auo-t">{o.hero.titulo}</span>
+          </a></li>
+        ))}
+      </ul>
+    </div>
+  </section>
+  <FinalCTA />
+</ProductLayout>
+
+<style>
+  .auo { background: #fff; color: #141414; }
+  .auo-in { max-width: 1160px; margin: 0 auto; padding: 88px 20px; }
+  .auo-folio { display: flex; justify-content: space-between; gap: 12px; margin: 0 0 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(20, 20, 20, 0.14); font: 600 11px/1.35 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; }
+  .auo-h { margin: 0 0 32px; font: 700 clamp(34px, 5vw, 64px)/1 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; }
+  .auo-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+  .auo-grid a { position: relative; display: flex; flex-direction: column; justify-content: flex-end; min-height: 220px; padding: 18px; border-radius: 18px; overflow: hidden; color: #fff; text-decoration: none; isolation: isolate; background: #0B0B0C; }
+  .auo-grid img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .auo-grid a::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(11, 11, 12, 0.05) 20%, rgba(11, 11, 12, 0.85) 100%); }
+  .auo-grid a:hover { color: #fff; text-decoration: none; }
+  .auo-grid a:hover img { transform: scale(1.04); }
+  .auo-n { font: 700 11px/1 var(--font-display); letter-spacing: 0.14em; opacity: 0.8; }
+  .auo-grid b { margin-top: 6px; font: 700 20px/1.15 var(--font-display); }
+  .auo-t { margin-top: 4px; font: 400 14px/1.4 var(--font-body); color: rgba(255, 255, 255, 0.82); }
+  @media (min-width: 720px) { .auo-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1040px) { .auo-in { padding: 110px 5vw; } .auo-grid { grid-template-columns: repeat(3, 1fr); } }
+</style>
+
+<script>
+  import { iniciaEscenas } from '../../scripts/experiencia/escenas';
+  iniciaEscenas();
+  (() => {
+    const rv = Array.from(document.querySelectorAll<HTMLElement>('.auto .rv'));
+    if (!rv.length || !('IntersectionObserver' in window)) return;
+    document.documentElement.classList.add('js-rv');
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-on'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -10% 0px' });
+    rv.forEach((el) => io.observe(el));
+  })();
+  const ph = (evento: string, props?: Record<string, unknown>) => { try { (window as any).sacsPH?.(evento, props); } catch { /* sin medición */ } };
+  const pag = document.querySelector<HTMLElement>('.auto')?.dataset.auto;
+  document.querySelectorAll<HTMLElement>('[data-evento^="automatiza_"]').forEach((a) => a.addEventListener('click', () => ph(a.dataset.evento!, { pagina: pag })));
+</script>
