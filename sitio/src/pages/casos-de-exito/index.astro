@@ -47,7 +47,7 @@ const cases = [
       { num: 'Diseño propio', label: 'colecciones nuevas cada año' },
       { num: 'Intermoda', label: 'fabricante y mayorista cada edición' },
       { num: 'Menudeo + mayoreo', label: 'al público y a otras boutiques' },
-      { num: '2 boutiques', label: 'en Zapopan y Guadalajara' },
+      { num: 'Boutiques propias', label: 'en Jalisco, y su ropa en boutiques de todo el país' },
     ],
     points: [
       { k: 'El diseño', t: 'Su propia colección, cada temporada.', d: 'Del cardigan y la blusa camisera al pantalón de vestir y el blazer oversized: todo combina, en los tonos de la temporada.' },
@@ -65,69 +65,15 @@ const cases = [
       { src: '/videos/sthela-intermoda-equipo.mp4', poster: '/videos/sthela-intermoda-equipo-poster.webp', cap: 'El equipo, cierre de edición' },
     ],
     web: 'https://sthela.com',
+    sucursalesUrl: 'https://sthela.com/pages/ubicacion-y-horarios-de-las-sucursales',
     stats: [], quote: '', author: '', highlights: [], image: '',
-  },
-  {
-    slug: 'la-bella-pandita',
-    brand: 'La Bella Pandita',
-    tagline: 'De 1 tienda en Querétaro a 42 sucursales en todo México.',
-    tag: 'Moda',
-    tagColor: '#6C5CE7',
-    image: '/images/case-bella-pandita.webp',
-    stats: [
-      { num: '42', label: 'sucursales sincronizadas' },
-      { num: '+300%', label: 'customer lifetime value' },
-      { num: '45%', label: 'clientes fidelizados' },
-      { num: '98%', label: 'precisión de inventario' },
-    ],
-    quote: '"La Bella Pandita dejó de ser solo una marca de retail físico para convertirse en una operación omnicanal completamente integrada."',
-    author: 'Equipo La Bella Pandita',
-    desc: 'Cadena de boutiques de moda y novedades que escaló de 1 tienda piloto a 42 sucursales en 3 años. SACS digitalizó toda su operación: POS móvil, programa de lealtad con wallet digital, y sincronización en tiempo real de 12,500+ productos.',
-    highlights: ['POS móvil — cobros en menos de 2 minutos', 'Recepción de mercancía de 4 horas a 30 minutos', 'Programa de lealtad con puntos y wallet digital', 'Flash sales y promociones automatizadas'],
-  },
-  {
-    slug: 'sandmade',
-    brand: 'Sandmade Swimwear',
-    tagline: 'Swimwear premium conectado de Tulum a Los Cabos.',
-    tag: 'Swimwear',
-    tagColor: '#00B894',
-    image: '/images/case-sandmade.webp',
-    stats: [
-      { num: '98%', label: 'precisión de inventario' },
-      { num: '8', label: 'boutiques turísticas' },
-      { num: '20s', label: 'tiempo por transacción' },
-      { num: '45', label: 'días de implementación' },
-    ],
-    quote: '"Cada venta se convirtió en una oportunidad de conectar auténticamente con los clientes sin perder agilidad ni precisión."',
-    author: 'Equipo Sandmade',
-    desc: 'Marca de swimwear con boutiques en los destinos turísticos más exclusivos de México. SACS unificó sus 8 tiendas, e-commerce Shopify, Instagram y WhatsApp en un solo sistema con inventario en tiempo real.',
-    highlights: ['Integración Shopify + Instagram + WhatsApp', 'Fulfillment de pickup en menos de 2 horas', 'Devoluciones procesadas en menos de 2 minutos', 'CEDIS conectado con todas las boutiques'],
-  },
-  {
-    slug: 'casa-maca',
-    brand: 'Casa Maca',
-    tagline: 'Moda consciente que ahora opera con datos.',
-    tag: 'Moda Consciente',
-    tagColor: '#FDCB6E',
-    tagTextColor: '#1A1A1A',
-    image: '/images/case-casa-maca.webp',
-    stats: [
-      { num: '-80%', label: 'trabajo manual' },
-      { num: '+25%', label: 'ticket promedio' },
-      { num: '98%', label: 'precisión inventario' },
-      { num: '30', label: 'días implementación' },
-    ],
-    quote: '"Casa Maca diseña desde la intuición, pero ahora opera con data."',
-    author: 'Equipo Casa Maca',
-    desc: 'Marca de moda sostenible en Guadalajara que pasó de Excel y procesos manuales a una operación omnicanal automatizada. 2 boutiques físicas + e-commerce + social commerce, todo conectado.',
-    highlights: ['De Excel a automatización completa', 'Catálogo sincronizado en WhatsApp e Instagram', 'Programa de lealtad integrado al cobro', 'Publicación automática en redes sociales'],
   },
 ];
 ---
 
 <BaseLayout
   title="Casos de éxito — Retailers que crecen con SACS"
-  description="Descubre cómo retailers mexicanos transforman su operación con SACS. Desde 1 tienda hasta 42 sucursales."
+  description="Marcas de moda reales que operan con SACS: del merch oficial de conciertos en estadios llenos a la moda femenina que se vende por mayoreo en Intermoda."
   structuredData={structuredData}
 >
 
@@ -135,8 +81,9 @@ const cases = [
 <section class="ce-hero">
   <div class="ce-hero-inner">
     <span class="ce-eyebrow">Casos de éxito</span>
-    <h1 class="ce-hero-title">Retailers reales.<br>Resultados reales.</h1>
-    <p class="ce-hero-subtitle">De la mercancía oficial de conciertos en estadios llenos a boutiques de swimwear en Tulum. Así opera el retail con SACS.</p>
+    <h1 class="ce-hero-title">No venden una prenda. Venden <span class="ce-rot"><span>una forma de vestir.</span><span aria-hidden="true">una temporada.</span><span aria-hidden="true">un recuerdo.</span><span aria-hidden="true">una comunidad.</span></span></h1>
+    <p class="ce-hero-subtitle">Trabajamos con empresarios que saben lo que hacen: líderes apasionados por su marca que construyen un ecosistema completo alrededor de ella. Por cómo hacen las cosas, sus marcas siguen creciendo.</p>
+    <p class="ce-hero-proof"><span>Con ellos trabajamos:</span> <a href="#liveshow">Live Shows Merchandising</a> <a href="#sthela">Sthela &amp; Co.</a></p>
   </div>
 </section>
 
@@ -183,6 +130,7 @@ const cases = [
           {c.sucursales?.map((sc) => (
             <div class="ce-claro-suc"><span class="ce-claro-suc-zona">{sc.zona}</span><strong>{sc.nombre}</strong><span>{sc.dir}</span></div>
           ))}
+          <a href={c.sucursalesUrl} target="_blank" rel="noopener" class="ce-claro-suc ce-claro-suc--todas"><span class="ce-claro-suc-zona">Sucursales</span><strong>Ver todas →</strong><span>Ubicaciones y horarios</span></a>
         </div>
         <a href={c.web} target="_blank" rel="noopener" class="ce-claro-link">
           Conoce sthela.com
@@ -286,43 +234,95 @@ const cases = [
 </BaseLayout>
 
 <style>
-  /* ── Hero ── */
+  /* ── Hero: la palabra que cambia, sobre degradado rosa · morado · un toque naranja ── */
   .ce-hero {
     padding: clamp(120px, 14vw, 180px) 0 clamp(60px, 8vw, 100px);
     text-align: center;
-    background: #fff;
+    background:
+      radial-gradient(ellipse 45% 55% at 6% 20%, rgba(219, 39, 119, 0.13), transparent 70%),
+      radial-gradient(ellipse 45% 55% at 96% 30%, rgba(147, 51, 234, 0.12), transparent 70%),
+      radial-gradient(ellipse 40% 35% at 55% 105%, rgba(249, 115, 22, 0.07), transparent 70%),
+      #fff;
   }
   .ce-hero-inner {
-    max-width: 800px;
+    max-width: 920px;
     margin: 0 auto;
-    padding: 0 24px;
+    padding: 0 16px;
   }
   .ce-eyebrow {
+    display: inline-block;
     font-family: var(--font-display);
     font-size: 13px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 2px;
-    color: var(--color-text-tertiary);
-    margin-bottom: 16px;
-    display: block;
+    letter-spacing: 2.4px;
+    margin-bottom: 18px;
+    background: linear-gradient(90deg, #DB2777, #9333EA 72%, #F97316);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
   .ce-hero-title {
     font-family: var(--font-display);
-    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-size: clamp(2.3rem, 6.4vw, 4.6rem);
     font-weight: 800;
     color: var(--color-text-primary);
-    letter-spacing: -0.04em;
-    line-height: 1.05;
-    margin: 0 0 24px;
+    letter-spacing: -0.045em;
+    line-height: 1.04;
+    margin: 0 auto 24px;
+    max-width: 15ch;
+    text-wrap: balance;
+  }
+  .ce-rot { display: inline-grid; vertical-align: bottom; }
+  .ce-rot > span {
+    grid-area: 1 / 1;
+    background: linear-gradient(90deg, #DB2777, #9333EA 72%, #F97316);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    opacity: 0;
+    animation: ce-rota 12s infinite;
+  }
+  .ce-rot > span:nth-child(2) { animation-delay: 3s; }
+  .ce-rot > span:nth-child(3) { animation-delay: 6s; }
+  .ce-rot > span:nth-child(4) { animation-delay: 9s; }
+  @keyframes ce-rota {
+    0% { opacity: 0; transform: translateY(0.45em); }
+    4%, 22% { opacity: 1; transform: none; }
+    26%, 100% { opacity: 0; transform: translateY(-0.45em); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ce-rot > span { animation: none; }
+    .ce-rot > span:first-child { opacity: 1; }
   }
   .ce-hero-subtitle {
     font-family: var(--font-body);
-    font-size: clamp(1rem, 1.5vw, 1.2rem);
+    font-size: clamp(1rem, 1.6vw, 1.18rem);
     color: var(--color-text-secondary);
-    line-height: 1.6;
-    max-width: 600px;
+    line-height: 1.65;
+    max-width: 640px;
     margin: 0 auto;
+  }
+  .ce-hero-proof {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 22px;
+    margin: 32px 0 0;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+  }
+  .ce-hero-proof a {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    text-decoration: none;
+  }
+  .ce-hero-proof a:hover { color: #9333EA; }
+  @media (max-width: 560px) {
+    .ce-hero-proof > span { flex-basis: 100%; }
   }
 
   /* ── Case Section ── */
@@ -570,6 +570,8 @@ const cases = [
   .ce-claro-sucs { display: flex; gap: clamp(20px, 4vw, 48px); flex-wrap: wrap; }
   .ce-claro-suc { display: flex; flex-direction: column; gap: 2px; font-family: var(--font-body); font-size: 14px; color: var(--color-text-secondary); }
   .ce-claro-suc strong { font-family: var(--font-display); font-size: 1.05rem; color: var(--color-text-primary); }
+  .ce-claro-suc--todas { text-decoration: none; }
+  .ce-claro-suc--todas:hover strong { color: #9333EA; }
   .ce-claro-suc-zona { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #DB2777; }
   .ce-claro-link { flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; color: #fff; font-family: var(--font-body); font-size: 15px; font-weight: 700; padding: 14px 26px; border-radius: 100px; text-decoration: none; background: linear-gradient(90deg, #DB2777, #9333EA); transition: gap 0.2s ease; }
   .ce-claro-link:hover { gap: 12px; text-decoration: none; }
