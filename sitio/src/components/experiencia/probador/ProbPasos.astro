@@ -121,30 +121,30 @@ const ESQUINAS = [[52.716, 20.72], [63.504, 19.61], [63.504, 59.41], [52.716, 58
   .pt-pantalla.is-calzada { left: 0; top: 0; width: 300px; height: 606px; padding: 8px; border-radius: 4px; transform-origin: 0 0; }
   .pt-vidrio { position: relative; width: 100%; height: 100%; overflow: hidden; background: #F5F3EF; color: #141414; container-type: size; }
   .pt-barra { position: absolute; left: 0; right: 0; top: 0; z-index: 4; display: flex; justify-content: space-between; align-items: center; padding: 4cqh 6cqw 2.6cqh; border-bottom: 1px solid rgba(20, 20, 20, 0.08); background: rgba(245, 243, 239, 0.96); }
-  .pt-barra b { font: 600 5cqw/1 var(--font-display); letter-spacing: 0.3em; }
-  .pt-barra span { padding: 1.8cqw 3.4cqw; border-radius: 99px; background: #141414; color: #fff; font: 600 4cqw/1 var(--font-display); }
+  .pt-barra b { font: 600 calc(5cqw * var(--ef, 1))/1 var(--font-display); letter-spacing: 0.3em; }
+  .pt-barra span { padding: 1.8cqw 3.4cqw; border-radius: 99px; background: #141414; color: #fff; font: 600 calc(4cqw * var(--ef, 1))/1 var(--font-display); }
   .pt-s { position: absolute; inset: 0; padding: 12.5cqh 6cqw 4cqh; opacity: 0; visibility: hidden; transition: opacity 0.5s ease, visibility 0s linear 0.5s; }
-  .pt-mini { margin: 0; font: 600 4.6cqw/1.2 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: #6B6862; }
+  .pt-mini { margin: 0; font: 600 calc(4.6cqw * var(--ef, 1))/1.2 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: #6B6862; }
 
   /* 01 · lo que busca */
-  .pt-tit { margin: 1.4cqh 0 0; font: 700 10.4cqw/1 var(--pd-clash, var(--font-display)); letter-spacing: -0.01em; }
+  .pt-tit { margin: 1.4cqh 0 0; font: 700 calc(10.4cqw * var(--ef, 1))/1 var(--pd-clash, var(--font-display)); letter-spacing: -0.01em; }
   .pt-chips { display: flex; gap: 2.4cqw; margin-top: 2.2cqh; }
-  .pt-chips span { padding: 2.2cqw 3.8cqw; border: 1px solid rgba(20, 20, 20, 0.18); border-radius: 99px; font: 600 4.4cqw/1 var(--font-display); }
+  .pt-chips span { padding: 2.2cqw 3.8cqw; border: 1px solid rgba(20, 20, 20, 0.18); border-radius: 99px; font: 600 calc(4.4cqw * var(--ef, 1))/1 var(--font-display); }
   .pt-chips .is-on { background: #141414; border-color: #141414; color: #fff; }
   .pt-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3cqw; margin: 2.6cqh 0 0; padding: 0; list-style: none; }
   .pt-gimg { display: block; overflow: hidden; border-radius: 2.6cqw; background: #ECE8E1; aspect-ratio: 2 / 3.6; }
   .pt-gimg img { display: block; width: 100%; height: 100%; object-fit: cover; }
-  .pt-grid small { display: block; margin-top: 1cqh; font: 600 3.6cqw/1.2 var(--font-display); color: #1F7A4C; }
-  .pt-cta { position: absolute; left: 6cqw; right: 6cqw; bottom: 3.6cqh; display: flex; justify-content: center; padding: 2.4cqh 0; border-radius: 99px; background: #141414; color: #fff; font: 700 5cqw/1 var(--font-display); }
+  .pt-grid small { display: block; margin-top: 1cqh; font: 600 calc(3.6cqw * var(--ef, 1))/1.2 var(--font-display); color: #1F7A4C; }
+  .pt-cta { position: absolute; left: 6cqw; right: 6cqw; bottom: 3.6cqh; display: flex; justify-content: center; padding: 2.4cqh 0; border-radius: 99px; background: #141414; color: #fff; font: 700 calc(5cqw * var(--ef, 1))/1 var(--font-display); }
 
   /* 02 · la talla */
-  .pt-campo { display: flex; justify-content: space-between; align-items: baseline; margin-top: 1.6cqh; padding: 2cqh 4.4cqw; border: 1px solid rgba(20, 20, 20, 0.16); border-radius: 3.4cqw; background: #fff; font: 500 5cqw/1 var(--font-body); }
+  .pt-campo { display: flex; justify-content: space-between; align-items: baseline; margin-top: 1.6cqh; padding: 2cqh 4.4cqw; border: 1px solid rgba(20, 20, 20, 0.16); border-radius: 3.4cqw; background: #fff; font: 500 calc(5cqw * var(--ef, 1))/1 var(--font-body); }
   .pt-s1 .pt-mini { margin-bottom: 1.4cqh; }
-  .pt-campo b { font: 700 6.4cqw/1 var(--font-display); }
+  .pt-campo b { font: 700 calc(6.4cqw * var(--ef, 1))/1 var(--font-display); }
   .pt-talla { display: grid; grid-template-columns: auto 1fr; column-gap: 5cqw; align-items: center; margin-top: 2.6cqh; padding: 2.4cqh 5cqw; border-radius: 4.4cqw; background: #141414; color: #fff; }
-  .pt-talla-k { grid-column: 1 / -1; font: 600 4cqw/1 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255, 255, 255, 0.7); }
-  .pt-talla b { font: 700 24cqw/1 var(--pd-clash, var(--font-display)); }
-  .pt-talla em { font: 700 6cqw/1.2 var(--font-display); font-style: normal; color: #6FD3A3; }
+  .pt-talla-k { grid-column: 1 / -1; font: 600 calc(4cqw * var(--ef, 1))/1 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255, 255, 255, 0.7); }
+  .pt-talla b { font: 700 calc(24cqw * var(--ef, 1))/1 var(--pd-clash, var(--font-display)); }
+  .pt-talla em { font: 700 calc(6cqw * var(--ef, 1))/1.2 var(--font-display); font-style: normal; color: #6FD3A3; }
 
   /* 03, 04 y 05 · la prenda puesta: la foto llena la pantalla */
   .pt-s2, .pt-s3, .pt-s4 { padding: 0; }
@@ -152,21 +152,21 @@ const ESQUINAS = [[52.716, 20.72], [63.504, 19.61], [63.504, 59.41], [52.716, 58
   .pt-prep { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2cqh; padding: 8cqw; background: #F5F3EF; text-align: center; opacity: 0; }
   .pt-cam { width: 16cqw; height: 12cqw; border-radius: 3cqw; border: 1.2cqw solid #141414; position: relative; }
   .pt-cam::after { content: ''; position: absolute; left: 50%; top: 50%; width: 5cqw; height: 5cqw; border-radius: 50%; border: 1.2cqw solid #141414; transform: translate(-50%, -50%); }
-  .pt-prep b { font: 700 6.4cqw/1.2 var(--font-display); }
-  .pt-prep small { font: 500 4.6cqw/1.3 var(--font-body); color: #6B6862; }
+  .pt-prep b { font: 700 calc(6.4cqw * var(--ef, 1))/1.2 var(--font-display); }
+  .pt-prep small { font: 500 calc(4.6cqw * var(--ef, 1))/1.3 var(--font-body); color: #6B6862; }
   .pt-anillo { width: 11cqw; height: 11cqw; border-radius: 50%; border: 1.2cqw solid rgba(20, 20, 20, 0.12); border-top-color: #E0457B; animation: ptGira 1s linear infinite; }
-  .pt-ia { position: absolute; left: 50%; top: 12cqh; z-index: 3; padding: 2cqw 4cqw; border-radius: 99px; background: rgba(20, 20, 20, 0.78); color: #fff; font: 600 3.9cqw/1 var(--font-display); white-space: nowrap; transform: translateX(-50%); }
-  .pt-pie { position: absolute; left: 5cqw; right: 5cqw; bottom: 3.6cqh; z-index: 3; display: flex; justify-content: space-between; align-items: baseline; padding: 2.2cqh 4.6cqw; border-radius: 4cqw; background: rgba(255, 255, 255, 0.95); font: 700 4.6cqw/1.2 var(--font-display); }
-  .pt-pie span { font: 500 4.2cqw/1.2 var(--font-body); color: #6B6862; }
+  .pt-ia { position: absolute; left: 50%; top: 12cqh; z-index: 3; padding: 2cqw 4cqw; border-radius: 99px; background: rgba(20, 20, 20, 0.78); color: #fff; font: 600 calc(3.9cqw * var(--ef, 1))/1 var(--font-display); white-space: nowrap; transform: translateX(-50%); }
+  .pt-pie { position: absolute; left: 5cqw; right: 5cqw; bottom: 3.6cqh; z-index: 3; display: flex; justify-content: space-between; align-items: baseline; padding: 2.2cqh 4.6cqw; border-radius: 4cqw; background: rgba(255, 255, 255, 0.95); font: 700 calc(4.6cqw * var(--ef, 1))/1.2 var(--font-display); }
+  .pt-pie span { font: 500 calc(4.2cqw * var(--ef, 1))/1.2 var(--font-body); color: #6B6862; }
   .pt-hoja { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; padding: 2.6cqh 6cqw 3.4cqh; border-radius: 6cqw 6cqw 0 0; background: rgba(245, 243, 239, 0.97); }
   .pt-colores { display: flex; justify-content: center; gap: 4cqw; }
   .pt-colores i { width: 8cqw; height: 8cqw; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1.2cqw #F5F3EF, 0 0 0 1.6cqw rgba(20, 20, 20, 0.2); }
   .pt-colores i.is-on { box-shadow: 0 0 0 1.2cqw #F5F3EF, 0 0 0 2cqw #141414; }
-  .pt-btn { display: flex; justify-content: center; margin-top: 2.2cqh; padding: 2.2cqh 0; border-radius: 99px; background: #141414; color: #fff; font: 700 5cqw/1 var(--font-display); }
-  .pt-ok { position: absolute; left: 50%; top: 20cqh; z-index: 4; padding: 2.6cqw 5cqw; border-radius: 99px; background: #1F9D63; color: #fff; font: 700 4.6cqw/1 var(--font-display); white-space: nowrap; transform: translate(-50%, -3cqh); opacity: 0; }
+  .pt-btn { display: flex; justify-content: center; margin-top: 2.2cqh; padding: 2.2cqh 0; border-radius: 99px; background: #141414; color: #fff; font: 700 calc(5cqw * var(--ef, 1))/1 var(--font-display); }
+  .pt-ok { position: absolute; left: 50%; top: 20cqh; z-index: 4; padding: 2.6cqw 5cqw; border-radius: 99px; background: #1F9D63; color: #fff; font: 700 calc(4.6cqw * var(--ef, 1))/1 var(--font-display); white-space: nowrap; transform: translate(-50%, -3cqh); opacity: 0; }
   .pt-res--loco { clip-path: inset(0 0 0 0); }
   .pt-fondos { position: absolute; left: 4cqw; right: 4cqw; bottom: 3.4cqh; z-index: 3; display: flex; justify-content: center; flex-wrap: wrap; gap: 2cqw; }
-  .pt-fondos span { padding: 2.2cqw 3.6cqw; border-radius: 99px; background: rgba(255, 255, 255, 0.92); font: 600 4cqw/1 var(--font-display); }
+  .pt-fondos span { padding: 2.2cqw 3.6cqw; border-radius: 99px; background: rgba(255, 255, 255, 0.92); font: 600 calc(4cqw * var(--ef, 1))/1 var(--font-display); }
   .pt-fondos .is-on { background: #E0457B; color: #fff; }
 
   /* ── el texto: los pasos ── */
@@ -233,7 +233,14 @@ const ESQUINAS = [[52.716, 20.72], [63.504, 19.61], [63.504, 59.41], [52.716, 58
   }
   /* teléfono con movimiento: arriba la tienda (centrada entre la clienta y la pantalla); abajo el paso actual */
   @media (max-width: 899px) {
-    .pt.is-escena .pt-lienzo { position: absolute; top: 0; left: calc(50vw - 64svh * 1.7684 * 0.52); width: calc(64svh * 1.7684); }
+    .pt.is-escena .pt-lienzo { position: absolute; top: 0; left: calc(50vw - 64svh * 1.7684 * 0.58); width: calc(64svh * 1.7684); }
+    /* la pantalla de la tienda, de frente y legible: una tarjeta a la derecha de la clienta (en lugar de la de la foto, que en el teléfono mide 100 px) */
+    .pt.is-escena .pt-pantalla.is-calzada { transform: none !important; left: calc(50vw - 16px + 64svh * 1.7684 * 0.58 - min(60vw, 28.7svh)); top: 3svh; width: auto; height: min(121.2vw, 58svh); aspect-ratio: 300 / 606; padding: 6px; border-radius: 20px; box-shadow: 0 14px 28px -14px rgba(0, 0, 0, 0.6); }
+    .pt.is-escena .pt-vidrio { border-radius: 15px; --ef: 1.25; }
+    /* la barra de la tienda en una sola línea (con la letra más grande se partía) */
+    .pt.is-escena .pt-barra { --ef: 1; }
+    .pt.is-escena .pt-barra b { letter-spacing: 0.2em; }
+    .pt.is-escena .pt-barra span { white-space: nowrap; --ef: 1.22; }
     .pt.is-escena .pt-txt { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 18px 20px 20px; background: linear-gradient(180deg, rgba(11, 11, 12, 0) 0%, #0B0B0C 20%); }
     .pt.is-escena .pt-k { margin-bottom: 8px; }
     .pt.is-escena .pt-h { font-size: clamp(30px, 8.6vw, 40px); }
@@ -245,6 +252,10 @@ const ESQUINAS = [[52.716, 20.72], [63.504, 19.61], [63.504, 59.41], [52.716, 58
   }
   @media (prefers-reduced-motion: reduce) {
     .pt * { animation: none !important; transition: none !important; }
+  }
+  /* teléfono: cada paso pide unas tres cuartas partes de pantalla de scroll (en escritorio, casi una completa) */
+  @media (max-width: 899px) {
+    .pt.is-escena .pt-riel { height: 475vh; }
   }
 </style>
 

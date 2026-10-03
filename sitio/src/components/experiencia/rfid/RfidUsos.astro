@@ -81,4 +81,8 @@ const ALT: Record<string, string> = {
     .ru.is-escena .ru-ui { left: 24px; bottom: 24px; padding: 16px 18px; }
     .ru.is-escena .ru-ui b { font-size: 19px; }
   }
+  /* teléfono: una sombra ligera (las grandes y difuminadas pesan al hacer scroll) */
+  @media (max-width: 767px) {
+    .ru-ui { box-shadow: 0 12px 24px -14px rgba(0, 0, 0, 0.5); }
+  }
 </style>

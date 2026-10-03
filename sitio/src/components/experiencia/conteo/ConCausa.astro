@@ -70,4 +70,8 @@ import { CON_CAUSA } from '../../../data/experiencia-conteo';
   @media (prefers-reduced-motion: reduce) {
     :global(.js-rv) .cca .rv { opacity: 1; transform: none; transition: none; }
   }
+  /* teléfono: una sombra ligera (las grandes y difuminadas pesan al hacer scroll) */
+  @media (max-width: 767px) {
+    .cca-caso { box-shadow: 0 12px 24px -14px rgba(0, 0, 0, 0.5); }
+  }
 </style>

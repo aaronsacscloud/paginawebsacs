@@ -80,7 +80,7 @@ const { tallas } = RFID_PASADA;
   .rp-pant { position: relative; width: min(100% - 40px, 340px); margin: 24px auto 0; padding: 16px 18px 18px; border-radius: 22px; background: #fff; color: #141414; box-shadow: 0 40px 80px -36px rgba(0, 0, 0, 0.85); min-height: 236px; }
   .rp-top { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; padding-bottom: 12px; border-bottom: 1px solid #ECE9E3; font: 600 12px/1.2 var(--font-display); }
   .rp-top b { flex: 1; font-weight: 600; color: #4A4741; }
-  .rp-top em { padding: 3px 7px; border-radius: 99px; background: #F2C46B; font-style: normal; font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .rp-top em { padding: 3px 7px; border-radius: 99px; background: #F2C46B; font-style: normal; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; }
   .rp-vivo { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 99px; background: #EAF0FD; color: #2F55C4; }
   .rp-vivo i { width: 7px; height: 7px; border-radius: 50%; background: #2F55C4; animation: rpLate 1.1s ease-in-out infinite; }
   @keyframes rpLate { 50% { opacity: 0.3; } }
@@ -158,5 +158,13 @@ const { tallas } = RFID_PASADA;
   }
   @media (prefers-reduced-motion: reduce) {
     .rp * { animation: none !important; transition: none !important; }
+  }
+  /* teléfono: una sombra ligera (las grandes y difuminadas pesan al hacer scroll) */
+  @media (max-width: 767px) {
+    .rp-pant { box-shadow: 0 12px 24px -14px rgba(0, 0, 0, 0.5); }
+  }
+  /* teléfono: cada paso pide unas tres cuartas partes de pantalla de scroll (en escritorio, casi una completa) */
+  @media (max-width: 899px) {
+    .rp.is-escena .rp-riel { height: 400vh; }
   }
 </style>

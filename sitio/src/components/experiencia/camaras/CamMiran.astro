@@ -55,4 +55,8 @@ const PALABRA = Array.from({ length: 3 }, () => 'LO MIRAN').join(' · ');
     .cm-mancha { animation: none; }
     :global(.js-rv) .cm .rv { opacity: 1; transform: none; transition: none; }
   }
+  /* teléfono: una sombra ligera (las grandes y difuminadas pesan al hacer scroll) */
+  @media (max-width: 767px) {
+    .cm-foto { box-shadow: 0 12px 24px -14px rgba(0, 0, 0, 0.5); }
+  }
 </style>

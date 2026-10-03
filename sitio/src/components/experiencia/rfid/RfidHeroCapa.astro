@@ -31,7 +31,7 @@ const VERTICAL = [[52, 19], [58, 20], [64, 21], [70, 19]];
   .rhc-onda::after { animation-delay: calc(var(--i) * 0.35s + 1.2s); }
   @keyframes rhcOnda { 0% { transform: scale(0.6); opacity: 0.95; } 100% { transform: scale(3.2); opacity: 0; } }
   .rhc-tarjeta { position: absolute; z-index: 1; right: 16px; top: 88px; display: grid; gap: 6px; width: 190px; padding: 14px 16px; border-radius: 18px; background: rgba(255, 255, 255, 0.95); color: #141414; box-shadow: 0 24px 50px -24px rgba(0, 0, 0, 0.55); }
-  .rhc-ej { position: absolute; right: 44px; top: 12px; padding: 3px 7px; border-radius: 99px; background: #F2C46B; font: 700 9.5px/1 var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; }
+  .rhc-ej { position: absolute; right: 44px; top: 12px; padding: 3px 7px; border-radius: 99px; background: #F2C46B; font: 700 10.5px/1 var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; }
   .rhc-k { display: flex; align-items: center; gap: 7px; margin: 0; font: 600 12px/1.2 var(--font-display); color: #4A4741; }
   .rhc-k svg { color: #2F55C4; }
   .rhc-n { display: flex; align-items: baseline; gap: 6px; margin: 4px 0 0; font: 700 40px/1 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; }
@@ -48,5 +48,9 @@ const VERTICAL = [[52, 19], [58, 20], [64, 21], [70, 19]];
   }
   @media (prefers-reduced-motion: reduce) {
     .rhc-onda::before, .rhc-onda::after { animation: none; opacity: 0; }
+  }
+  /* teléfono: una sombra ligera (las grandes y difuminadas pesan al hacer scroll) */
+  @media (max-width: 767px) {
+    .rhc-tarjeta { box-shadow: 0 12px 24px -14px rgba(0, 0, 0, 0.5); }
   }
 </style>

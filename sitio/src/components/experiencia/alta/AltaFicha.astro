@@ -184,4 +184,8 @@ const ORILLA = { izq: 24, der: 76 };
   @media (prefers-reduced-motion: reduce) {
     .af * { animation: none !important; transition: none !important; }
   }
+  /* teléfono: una sombra ligera (las grandes y difuminadas pesan al hacer scroll) */
+  @media (max-width: 767px) {
+    .af-marco, .af-ficha { box-shadow: 0 12px 24px -14px rgba(0, 0, 0, 0.5); }
+  }
 </style>

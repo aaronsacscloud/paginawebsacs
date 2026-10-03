@@ -1339,8 +1339,8 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   .exp-card:hover { text-decoration: none; color: #fff; }
   .exp-card:focus-visible { outline: 3px solid var(--ac, #E0457B); outline-offset: 3px; }
   /* teléfono: la tarjeta vertical a lo ancho del menú */
-  .mobile-exp { display: flex; gap: 12px; padding: 4px 16px 14px; overflow-x: auto; }
-  .mobile-exp-card { position: relative; flex: 0 0 auto; width: 62%; max-width: 240px; aspect-ratio: 2 / 3; overflow: hidden; border-radius: 12px; background: #1a1a1f; color: #fff; text-decoration: none; }
+  .mobile-exp { display: flex; gap: 12px; padding: 4px 16px 14px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 16px; overscroll-behavior-x: contain; }
+  .mobile-exp-card { position: relative; flex: 0 0 auto; scroll-snap-align: start; width: 62%; max-width: 240px; aspect-ratio: 2 / 3; overflow: hidden; border-radius: 12px; background: #1a1a1f; color: #fff; text-decoration: none; }
   .mobile-exp-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .mobile-exp-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 10, 14, 0) 45%, rgba(10, 10, 14, 0.8) 100%); }
   .mobile-exp-txt { position: absolute; left: 14px; right: 14px; bottom: 14px; z-index: 1; display: grid; gap: 4px; }

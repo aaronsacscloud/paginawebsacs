@@ -229,10 +229,14 @@ const piezas = PIEZAS.filas.reduce((s, f) => s + f.n.reduce((a, b) => a + b, 0),
     .ae.is-escena .ae-web-info { gap: 5px; padding: 12px; }
     .ae.is-escena .ae-web-n { font-size: 14.5px; }
     /* la caja abajo a la derecha, sin tapar la tienda; su barra ya dice «Caja» */
-    .ae.is-escena .ae-pub-caja { position: absolute; right: -6px; bottom: -64px; z-index: 2; width: 58%; }
+    /* la caja abajo a la IZQUIERDA, sobre las piernas de la modelo: a la derecha tapaba las tallas y el botón */
+    .ae.is-escena .ae-pub-caja { position: absolute; left: -6px; bottom: -64px; z-index: 2; width: 58%; }
     .ae.is-escena .ae-pub-caja .ae-donde { display: none; }
     .ae.is-escena .ae-caja-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .ae.is-escena .ae-tile.is-vacio:last-child { display: none; }
+    .ae.is-escena .ae-tile b { font-size: 11.5px; }
+    .ae.is-escena .ae-tile span { font-size: 11px; }
+    .ae.is-escena .ae-tile em { font-size: 10px; }
     .ae.is-escena .ae-regla, .ae.is-escena .ae-canales { display: none; }
     .ae.is-escena .ae-txt { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 40px 20px 18px; background: linear-gradient(180deg, transparent 0, var(--bg) 36px); transition: background 0.7s ease; }
     .ae.is-escena .ae-k { margin-bottom: 8px; }
@@ -244,5 +248,13 @@ const piezas = PIEZAS.filas.reduce((s, f) => s + f.n.reduce((a, b) => a + b, 0),
   }
   @media (prefers-reduced-motion: reduce) {
     .ae, .ae * { animation: none !important; transition: none !important; }
+  }
+  /* teléfono: una sombra ligera (las grandes y difuminadas pesan al hacer scroll) */
+  @media (max-width: 767px) {
+    .ae-web, .ae-caja, .ae.is-escena .ae-antes img, .ae.is-escena .ae-foto img { box-shadow: 0 12px 24px -14px rgba(0, 0, 0, 0.5); }
+  }
+  /* teléfono: cada paso pide unas tres cuartas partes de pantalla de scroll (en escritorio, casi una completa) */
+  @media (max-width: 899px) {
+    .ae.is-escena .ae-riel { height: 475vh; }
   }
 </style>

@@ -20,7 +20,7 @@ const conv = Math.round((tickets / total) * 100);
 
 <style>
   .cnh { position: absolute; z-index: 1; left: 16px; top: 86px; display: grid; gap: 8px; width: 200px; padding: 14px 16px 16px; border-radius: 18px; background: rgba(255, 255, 255, 0.95); color: #141414; box-shadow: 0 24px 50px -24px rgba(0, 0, 0, 0.55); pointer-events: none; }
-  .cnh-ej { position: absolute; right: 10px; top: 10px; padding: 3px 7px; border-radius: 99px; background: #F2C46B; font: 700 9.5px/1 var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; }
+  .cnh-ej { position: absolute; right: 10px; top: 10px; padding: 3px 7px; border-radius: 99px; background: #F2C46B; font: 700 10.5px/1 var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; }
   .cnh-k { display: flex; align-items: center; gap: 7px; margin: 0; font: 600 12px/1.2 var(--font-display); color: #4A4741; }
   .cnh-k svg { color: #2F55C4; }
   .cnh-n { margin: 0; font: 700 40px/1 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; color: #2F55C4; }
@@ -37,5 +37,9 @@ const conv = Math.round((tickets / total) * 100);
   }
   @media (prefers-reduced-motion: reduce) {
     .cnh-barras i { animation: none; }
+  }
+  /* teléfono: una sombra ligera (las grandes y difuminadas pesan al hacer scroll) */
+  @media (max-width: 767px) {
+    .cnh { box-shadow: 0 12px 24px -14px rgba(0, 0, 0, 0.5); }
   }
 </style>

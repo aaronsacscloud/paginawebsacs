@@ -120,7 +120,7 @@ const PICO = 8; // 18 a 19
   @media (max-width: 899px) {
     .cdi.is-escena .cdi-escena { display: block; padding: 0; }
     .cdi.is-escena .cdi-tablero { position: absolute; left: 16px; right: 16px; top: 3svh; padding: 16px 16px 12px; }
-    .cdi.is-escena .cdi-graf { height: 34svh; }
+    .cdi.is-escena .cdi-graf { height: clamp(190px, calc(100svh - 440px), 420px); }
     .cdi.is-escena .cdi-txt { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 20px 18px; background: linear-gradient(180deg, rgba(11, 11, 12, 0) 0, #0B0B0C 24px); }
     .cdi.is-escena .cdi-k { margin-bottom: 8px; }
     .cdi.is-escena .cdi-h { font-size: clamp(30px, 8.6vw, 40px); }
@@ -130,5 +130,13 @@ const PICO = 8; // 18 a 19
   }
   @media (prefers-reduced-motion: reduce) {
     .cdi * { animation: none !important; transition: none !important; }
+  }
+  /* teléfono: una sombra ligera (las grandes y difuminadas pesan al hacer scroll) */
+  @media (max-width: 767px) {
+    .cdi-tablero { box-shadow: 0 12px 24px -14px rgba(0, 0, 0, 0.5); }
+  }
+  /* teléfono: cada paso pide unas tres cuartas partes de pantalla de scroll (en escritorio, casi una completa) */
+  @media (max-width: 899px) {
+    .cdi.is-escena .cdi-riel { height: 400vh; }
   }
 </style>

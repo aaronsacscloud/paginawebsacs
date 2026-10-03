@@ -98,6 +98,9 @@
 .pd .pda-lista { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .pd .pda-sigue { display: flex; width: max-content; align-items: center; gap: 10px; margin-top: 48px; padding-bottom: 3px; border-bottom: 1.5px solid currentColor; font: 600 15px var(--font-display); color: var(--pd-texto); text-decoration: none; }
 .pd .pda-sigue:hover { color: var(--pd-texto); text-decoration: none; opacity: 0.75; }
+/* experiencias (teléfono): la zona de toque del enlace subrayado crece a 44 px sin mover el subrayado */
+.pd.exp .pda-sigue { position: relative; }
+.pd.exp .pda-sigue::after { content: ''; position: absolute; inset: -12px -10px; }
 .pd .pda-sigue:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
 
 /* negro: rayas de cebra como las paredes de la tienda; marino: líneas de neón y un resplandor abajo (los del home).

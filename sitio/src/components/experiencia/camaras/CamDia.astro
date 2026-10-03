@@ -29,7 +29,7 @@ const W = 1536, H = 1024;
           ))}
         </svg>
         {CAM_DIA.etiquetas.map((e, i) => (
-          <span class={`cd-et cd-et--${e.tipo}`} style={`left:${e.x}%;top:${e.y}%;--i:${i}`} aria-hidden="true"><i></i><b>{e.t}</b><em>{e.v}</em></span>
+          <span class={`cd-et cd-et--${e.tipo}`} data-i={i} style={`left:${e.x}%;top:${e.y}%;--i:${i}`} aria-hidden="true"><i></i><b>{e.t}</b><em>{e.v}</em></span>
         ))}
       </div>
 
@@ -139,10 +139,16 @@ const W = 1536, H = 1024;
     .cd.is-escena .cd-paso { display: none; padding: 10px 0 8px; }
     .cd.is-escena[data-tramo="0"] .cd-paso[data-k="0"], .cd.is-escena[data-tramo="1"] .cd-paso[data-k="1"], .cd.is-escena[data-tramo="2"] .cd-paso[data-k="2"], .cd.is-escena[data-tramo="3"] .cd-paso[data-k="3"] { display: grid; }
     .cd-et { padding: 6px 10px 7px 8px; }
+    /* en el teléfono el mapa del día no alcanza a enseñar los probadores (quedan fuera, a la derecha): sin su etiqueta cortada */
+    .cd-et[data-i="1"] { display: none; }
     .cd-et b { font-size: 12px; }
     .cd-et em { font-size: 11px; }
   }
   @media (prefers-reduced-motion: reduce) {
     .cd * { animation: none !important; transition: none !important; }
+  }
+  /* teléfono: cada paso pide unas tres cuartas partes de pantalla de scroll (en escritorio, casi una completa) */
+  @media (max-width: 899px) {
+    .cd.is-escena .cd-riel { height: 400vh; }
   }
 </style>
