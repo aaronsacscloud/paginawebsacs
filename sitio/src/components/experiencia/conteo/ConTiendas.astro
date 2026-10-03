@@ -2,7 +2,7 @@
 /**
  * «La que más vende no es la que mejor vende» (/experiencia/conteo-de-personas): tres tiendas con sus visitas, sus
  * tickets y su conversión en una barra; la Norte, que recibe más gente y convierte la mitad que la Centro, va marcada.
- * Marino con líneas. Ejemplo y en construcción; cada fila entra al verse (.rv → .is-on, script de la página).
+ * Marino con líneas. Números de ejemplo; cada fila entra al verse (.rv → .is-on, script de la página).
  */
 import { CON_TIENDAS } from '../../../data/experiencia-conteo';
 const PALABRA = Array.from({ length: 3 }, () => 'CONVERSIÓN').join(' · ');
@@ -25,7 +25,7 @@ const peor = Math.min(...filas.map((f) => f.conv));
     ))}
   </div>
   <p class="cti-nota">{CON_TIENDAS.nota}</p>
-  <p class="pda-nota">Ejemplo. En construcción: todavía no está disponible en Sacs.</p>
+  <p class="pda-nota">Ejemplo.</p>
 </section>
 
 <style>

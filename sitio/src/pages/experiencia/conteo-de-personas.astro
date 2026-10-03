@@ -1,17 +1,15 @@
 ---
 /**
- * /experiencia/conteo-de-personas — «Cuántas entran y cuántas compran», la Experiencia 04 (3-oct-2026). EN CONSTRUCCIÓN.
+ * /experiencia/conteo-de-personas — «Cuántas entran y cuántas compran», la Experiencia 04 (3-oct-2026).
  *
  * Recorrido: portada (la entrada con su sensor y la tarjeta de visitantes) → bajó la venta, ¿por qué? (las dos causas)
  * → tu sábado hora por hora (el tablero con el scroll) → horas pico y tu equipo → tus tiendas por conversión → lo que
- * resuelve → lo que ya hay y lo que falta → preguntas → cierre.
- * NADA de esto existe hoy como software (ver src/data/experiencia-conteo.ts): la página entera va marcada «en
- * construcción», sin fecha, y los números son de ejemplo. Lo que sí existe va en «Ya en Sacs».
+ * resuelve → preguntas → cierre. Se presenta como disponible (decisión del dueño, 3-oct-2026: ver
+ * src/data/experiencia-conteo.ts); los números son de ejemplo.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ExpHero from '../../components/experiencia/ExpHero.astro';
 import ExpLista from '../../components/experiencia/ExpLista.astro';
-import ExpHoy from '../../components/experiencia/ExpHoy.astro';
 import ConHeroCapa from '../../components/experiencia/conteo/ConHeroCapa.astro';
 import ConCausa from '../../components/experiencia/conteo/ConCausa.astro';
 import ConDia from '../../components/experiencia/conteo/ConDia.astro';
@@ -20,7 +18,7 @@ import ConTiendas from '../../components/experiencia/conteo/ConTiendas.astro';
 import GiroFAQ from '../../components/giros/GiroFAQ.astro';
 import FinalCTA from '../../components/FinalCTA.astro';
 import StructuredData from '../../components/StructuredData.astro';
-import { CONTEO, CON_RESUELVE, CON_HOY, PREGUNTAS_CONTEO, OBRA_AVISO } from '../../data/experiencia-conteo';
+import { CONTEO, CON_RESUELVE, PREGUNTAS_CONTEO } from '../../data/experiencia-conteo';
 import { experiencias } from '../../data/experiencias';
 import { SITIO } from '../../data/entidad';
 import { breadcrumbList } from '../../lib/breadcrumb';
@@ -28,7 +26,7 @@ import '../../styles/planeacion.css';
 
 const exp = experiencias.find((e) => e.slug === 'conteo-de-personas')!;
 const title = 'Conteo de personas y conversión para tiendas de moda | Sacs';
-const description = 'Así va a funcionar: cuántas personas entran a tu tienda y cuántas compran, hora por hora, tus horas pico y tus tiendas comparadas por conversión, junto a tu venta de Sacs. En construcción.';
+const description = 'Conteo de personas con IA para tiendas de moda: cuántas personas entran y cuántas compran, hora por hora, tus horas pico y tus tiendas comparadas por conversión, junto a tu venta de Sacs.';
 
 const pagina = { '@context': 'https://schema.org', '@type': 'WebPage', '@id': `${SITIO}${exp.href}#pagina`, name: exp.titulo, description, url: `${SITIO}${exp.href}`, inLanguage: 'es-MX' };
 const migas = breadcrumbList([{ name: 'Inicio', url: `${SITIO}/` }, { name: 'Experiencia', url: `${SITIO}/experiencia` }, { name: exp.titulo }]);
@@ -51,7 +49,6 @@ const faqSchema = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEn
       etiqueta={CONTEO.etiqueta}
       titulo={CONTEO.titulo}
       bajada={CONTEO.bajada}
-      aviso={OBRA_AVISO}
       ancha={{ s1280: '/images/experiencia/conteo-portada-1280.webp', s1920: '/images/experiencia/conteo-portada-1536.webp', alto1920: 1280 }}
       vertical={{ src: '/images/experiencia/conteo-vertical-1024.webp', ancho: 1024, alto: 1536 }}
       alt="Una pareja entra desde la calle a una boutique luminosa; sobre la puerta, un sensor discreto"
@@ -64,7 +61,6 @@ const faqSchema = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEn
     <ConSemana />
     <ConTiendas />
     <ExpLista id="con-resuelve" tema="pd-azul" palabra="LO QUE RESUELVE" folio={CON_RESUELVE.folio} titulo={CON_RESUELVE.titulo} puntos={CON_RESUELVE.puntos} />
-    <ExpHoy id="con-hoy" folio={CON_HOY.folio} titulo={CON_HOY.titulo} hoy={CON_HOY.hoy} obra={CON_HOY.obra} nota={CON_HOY.nota} />
   </div>
 
   <GiroFAQ title="Preguntas frecuentes sobre el conteo de personas" faqs={PREGUNTAS_CONTEO} />

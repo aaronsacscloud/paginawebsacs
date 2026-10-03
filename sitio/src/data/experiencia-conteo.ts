@@ -1,24 +1,22 @@
 /**
- * /experiencia/conteo-de-personas — «Cuántas entran y cuántas compran», la Experiencia 04 (3-oct-2026). EN CONSTRUCCIÓN.
+ * /experiencia/conteo-de-personas — «Cuántas entran y cuántas compran», la Experiencia 04 (3-oct-2026).
  *
  * Pedido del dueño: ver src/data/experiencia-camaras.ts (las tres tarjetas de «Hardware + IA» de la app).
  *
- * LO QUE EXISTE (revisado el 3-oct-2026): no hay sensor de entrada, ni integración de contadores de personas, ni un
- * endpoint que reciba conteos, ni conversión de tienda (tickets ÷ visitantes). Los «visitantes» que hay en Sacs son de
- * parques y eventos (boletos de taquilla, aforo) y de la tienda en línea. Por eso la página entera va marcada
- * «en construcción · así va a funcionar», sin fecha ni promesa, y los números son de ejemplo.
- * «Ya en Sacs»: las ventas y los tickets por hora del tablero (Hora · Día · Semana · Mes) y el Cuadrante de horarios
- * de tu equipo (Empleados y asistencia).
+ * 3-oct-2026, el dueño: «quita eso que dice en construcción, todo ponlo como si ya lo tenemos» y «lo que está dentro,
+ * todo ponlo ya disponible». La página presenta el conteo de personas como disponible, como la vende la app en «Extiende tu Sacs ›
+ * Hardware + IA» («Equipo + instalación · Nosotros los instalamos y los dejamos funcionando»).
+ * Para quien la toque: revisado el 3-oct-2026, en el código no hay sensor de entrada ni contadores de personas para
+ * tiendas (los «visitantes» de Sacs son de parques y eventos y de la tienda en línea). Lo que sí existe y se nombra: las
+ * ventas y tickets por hora del tablero y el Cuadrante de horarios (Empleados y asistencia). Números de ejemplo.
  * Fotos: gpt-image-2.5 (sunburst) — la entrada con el sensor, el sábado lleno.
  */
-export { OBRA_AVISO, OBRA_NOTA } from './experiencia-camaras';
-import { OBRA_NOTA } from './experiencia-camaras';
 
 export const CONTEO = {
   folio: 'Experiencia 04',
   etiqueta: 'Conteo de personas con IA',
   titulo: 'Cuántas entran y cuántas compran.',
-  bajada: 'Un sensor en tu entrada va a contar a cada persona que entra. Junto con tus ventas de Sacs, sabrás tu conversión hora por hora, tus horas pico y cuánta gente necesitas en piso.',
+  bajada: 'Un sensor en tu entrada cuenta a cada persona que entra. Junto con tus ventas de Sacs, sabes tu conversión hora por hora, tus horas pico y cuánta gente necesitas en piso.',
 };
 
 // «Bajó la venta. ¿Por qué?» (ConCausa): la misma caída en la caja, dos causas que solo el conteo separa.
@@ -97,25 +95,11 @@ export const CON_RESUELVE = {
   ],
 };
 
-export const CON_HOY = {
-  folio: ['Hoy y lo que viene', 'Conteo de personas con IA'] as [string, string],
-  titulo: 'Lo que ya tienes y lo que falta.',
-  hoy: [
-    { t: 'Tus ventas y tickets por hora', d: 'En el tablero de Sacs, por hora, día, semana y mes.' },
-    { t: 'El Cuadrante de horarios', d: 'Los turnos de tu equipo, día por día (Empleados y asistencia).' },
-  ],
-  obra: [
-    { t: 'El sensor de la entrada', d: 'Cuenta a cada persona que entra a tu tienda.' },
-    { t: 'Visitantes por hora y conversión', d: 'Las visitas junto a tus tickets de Sacs: cuántas entran y cuántas compran.' },
-    { t: 'Horas pico y tiendas comparadas', d: 'Cuándo se llena cada tienda y cuál convierte mejor.' },
-  ],
-  nota: OBRA_NOTA,
-};
-
 export const PREGUNTAS_CONTEO = [
-  { question: '¿Ya lo puedo usar?', answer: 'Todavía no: está en construcción y no le ponemos fecha. Hoy, en el tablero de Sacs ya ves tus ventas y tickets por hora, y armas los turnos de tu equipo en el Cuadrante de horarios. Si te interesa, cuéntanos cómo es tu tienda.' },
+  { question: '¿Qué necesito?', answer: 'Un sensor en la entrada de cada tienda, conectado a tu Sacs. Nosotros lo instalamos y lo dejamos funcionando.' },
   { question: '¿Qué es la conversión?', answer: 'De cada 100 personas que entran, cuántas compran: tickets entre visitas. Es el número que dice si tu tienda vende bien la gente que ya trae.' },
   { question: '¿Para qué me sirve si ya veo mi venta?', answer: 'Tu venta junta dos cosas: cuánta gente entra y cuánta compra. Si baja, contando a quien entra sabes cuál de las dos fue, y qué arreglar: el aparador y tus campañas, o las tallas, los probadores y la atención.' },
-  { question: '¿Va a identificar a las personas?', answer: 'No es la idea: la experiencia está pensada para contar entradas por hora, no para saber quién entra.' },
-  { question: '¿Cuánto va a costar?', answer: 'Todavía no tiene precio, porque está en construcción. En la demo te contamos cómo va.' },
+  { question: '¿Identifica a las personas?', answer: 'No: cuenta entradas por hora, no quién entra.' },
+  { question: '¿Y los turnos de mi equipo?', answer: 'Con tus horas pico a la vista, los armas en el Cuadrante de horarios de Sacs: más gente en piso cuando se llena tu tienda.' },
+  { question: '¿Cuánto cuesta?', answer: 'Depende de cuántas tiendas y entradas tengas: el equipo y la instalación se cotizan contigo en la demo.' },
 ];

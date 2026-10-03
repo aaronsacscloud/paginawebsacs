@@ -3,7 +3,7 @@
  * «La misma etiqueta, todo el día» (/experiencia/rfid): tres usos más allá del conteo — encontrar una prenda, recibir
  * la caja del proveedor sin abrirla y controlar las salidas —, cada uno con su foto, su color y su pantalla.
  * Escritorio con movimiento: una galería que corre de lado con el scroll (la escena se pega y la pista se recorre con
- * --p). Teléfono, sin JS o con «reducir movimiento»: una tarjeta debajo de otra. Ejemplo y en construcción.
+ * --p). Teléfono, sin JS o con «reducir movimiento»: una tarjeta debajo de otra. Números de ejemplo.
  */
 import { RFID_USOS } from '../../../data/experiencia-rfid';
 const I = '/images/experiencia/';
@@ -35,7 +35,7 @@ const ALT: Record<string, string> = {
                 <p class="ru-k">{String(i + 1).padStart(2, '0')} · {u.k}</p>
                 <h3 class="ru-t" id={`ru-t${i}`}>{u.t}</h3>
                 <p class="ru-d">{u.d}</p>
-                <p class="ru-obra">Ejemplo · en construcción</p>
+                <p class="ru-obra">Ejemplo</p>
               </div>
             </article>
           );

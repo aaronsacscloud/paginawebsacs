@@ -1,29 +1,25 @@
 /**
- * /experiencia/camaras-con-ia — «Lo que tu clienta mira, en un mapa», la Experiencia 03 (3-oct-2026). EN CONSTRUCCIÓN.
+ * /experiencia/camaras-con-ia — «Lo que tu clienta mira, en un mapa», la Experiencia 03 (3-oct-2026).
  *
  * Pedido del dueño: tres experiencias nuevas para moda con las tarjetas de «Extiende tu Sacs › Hardware + IA»
  * (sacs3 src/views/sacs-plugins/sacs-plugins.html: «Cámaras con IA», «Conteo de personas con IA», «RFID · Inventario
  * automatizado»): el paso a paso, los beneficios, los problemas que resuelve, fotos de gpt-image-2.5 y el mismo diseño
  * que las experiencias 01 y 02.
  *
- * LO QUE EXISTE (revisado el 3-oct-2026 en sacs_api, sacs3 y SACSMobile): NADA de esto existe como software. No hay
- * integración de cámaras (RTSP/ONVIF ni ningún proveedor), ni mapa de calor del piso, ni permanencia, ni zonas: solo la
- * tarjeta de venta en la app, cuyo «Solicitar demo» abre WhatsApp. Los «mapas de calor» que sí hay en Sacs son otros
- * (cobertura de inventario en Nivelación, sesiones de la tienda en línea, ventas por día y hora).
- * Por eso la página entera va marcada «en construcción · así va a funcionar», sin fecha ni promesa, y todos los números
- * son de ejemplo. «Ya en Sacs» solo cuenta lo que existe: las ventas y los tickets por hora del tablero, y la venta por
- * producto, talla y tienda.
+ * 3-oct-2026, el dueño: «quita eso que dice en construcción, todo ponlo como si ya lo tenemos» y «lo que está dentro,
+ * todo ponlo ya disponible». La página presenta la experiencia como disponible, como la vende la app en «Extiende tu Sacs ›
+ * Hardware + IA» («Equipo + instalación · Nosotros los instalamos y los dejamos funcionando»).
+ * Para quien la toque: revisado el 3-oct-2026, en el código de Sacs (sacs_api, sacs3, SACSMobile) no hay integración
+ * de cámaras, ni mapa de calor del piso, ni permanencia por zona; la tarjeta de la app abre WhatsApp. Los números son de
+ * ejemplo (su pastilla «Ejemplo» se queda).
  * Fotos: gpt-image-2.5 (sunburst) — la planta vista desde el techo, la mesa de novedades, el aparador.
  */
-
-export const OBRA_AVISO = 'En construcción · así va a funcionar';
-export const OBRA_NOTA = 'En construcción: todavía no está disponible en Sacs y no le ponemos fecha. Los números de esta página son de ejemplo.';
 
 export const CAMARAS = {
   folio: 'Experiencia 03',
   etiqueta: 'Cámaras con IA',
   titulo: 'Lo que tu clienta mira, en un mapa.',
-  bajada: 'Las cámaras de tu tienda te van a decir qué mesas, maniquíes y racks atraen a tu clienta, cuánto tiempo se queda y qué mira sin comprar. Para acomodar tu tienda con datos, no a ojo.',
+  bajada: 'Las cámaras de tu tienda te dicen qué mesas, maniquíes y racks atraen a tu clienta, cuánto tiempo se queda y qué mira sin comprar. Para acomodar tu tienda con datos, no a ojo.',
 };
 
 export const CAM_ANTES = {
@@ -49,7 +45,6 @@ export const CAM_ANTES = {
       { d: 'Zonas frías', t: 'Lo que nadie mira, para moverlo a donde sí.' },
     ],
   },
-  nota: OBRA_NOTA,
 };
 
 /**
@@ -120,25 +115,10 @@ export const CAM_RESUELVE = {
   ],
 };
 
-export const CAM_HOY = {
-  folio: ['Hoy y lo que viene', 'Cámaras con IA'] as [string, string],
-  titulo: 'Lo que ya tienes y lo que falta.',
-  hoy: [
-    { t: 'Tus ventas y tickets por hora', d: 'En el tablero de Sacs, por hora, día, semana y mes.' },
-    { t: 'Qué se vende, en qué talla y en qué tienda', d: 'Cada venta con su producto, su talla, su color y su sucursal.' },
-  ],
-  obra: [
-    { t: 'El mapa de calor de tu piso', d: 'Qué zonas se llenan y a qué hora, con las cámaras de tu tienda.' },
-    { t: 'La permanencia por zona', d: 'Cuánto se queda tu clienta en cada mesa, rack y probador.' },
-    { t: 'Lo que miran contra lo que se vende', d: 'La atención de cada zona junto a su venta y su inventario en Sacs.' },
-  ],
-  nota: OBRA_NOTA,
-};
-
 export const PREGUNTAS_CAMARAS = [
-  { question: '¿Ya lo puedo usar?', answer: 'Todavía no: está en construcción y no le ponemos fecha. Hoy, en el tablero de Sacs ya ves tus ventas y tickets por hora, y qué se vende en cada talla y en cada tienda. Si te interesa, cuéntanos cómo es tu tienda.' },
-  { question: '¿Qué va a medir?', answer: 'Por zona de tu piso: cuánta gente pasa, cuánto tiempo se queda y a qué hora se llena, para armar el mapa de calor del día. Las zonas son las que tú definas: la mesa de novedades, cada rack, los maniquíes, los probadores.' },
-  { question: '¿Va a reconocer caras?', answer: 'No es la idea: la experiencia está pensada para medir zonas y tiempos, no para saber quién es tu clienta.' },
-  { question: '¿Qué tiene que ver con mi inventario?', answer: 'Sacs ya sabe qué vendes, en qué talla y qué hay en cada tienda. Cruzarlo con lo que tu clienta mira es lo que dice por qué algo muy visto no se vende: muchas veces, la talla no está en piso.' },
-  { question: '¿Cuánto va a costar?', answer: 'Todavía no tiene precio, porque está en construcción. En la demo te contamos cómo va.' },
+  { question: '¿Qué necesito?', answer: 'Cámaras en tu piso de venta, conectadas a tu Sacs. Nosotros las instalamos y las dejamos funcionando; tú defines las zonas: la mesa de novedades, cada rack, los maniquíes, los probadores.' },
+  { question: '¿Qué mide?', answer: 'Por zona de tu piso: cuánta gente pasa, cuánto tiempo se queda y a qué hora se llena, para armar el mapa de calor del día.' },
+  { question: '¿Reconoce caras?', answer: 'No: mide zonas y tiempos, no quién es tu clienta.' },
+  { question: '¿Qué tiene que ver con mi inventario?', answer: 'Sacs sabe qué vendes, en qué talla y qué hay en cada tienda. Cruzarlo con lo que tu clienta mira dice por qué algo muy visto no se vende: muchas veces, la talla no está en piso.' },
+  { question: '¿Cuánto cuesta?', answer: 'Depende de tu tienda: el equipo y la instalación se cotizan contigo en la demo.' },
 ];

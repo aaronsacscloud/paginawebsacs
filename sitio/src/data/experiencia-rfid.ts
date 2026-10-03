@@ -1,26 +1,22 @@
 /**
- * /experiencia/rfid — «Toda tu tienda, contada en minutos», la Experiencia 05 (3-oct-2026). EN CONSTRUCCIÓN.
+ * /experiencia/rfid — «Toda tu tienda, contada en minutos», la Experiencia 05 (3-oct-2026).
  *
  * Pedido del dueño: ver src/data/experiencia-camaras.ts (las tres tarjetas de «Hardware + IA» de la app).
  *
- * LO QUE EXISTE (revisado el 3-oct-2026): no hay RFID en Sacs. Ni lectores (de mano ni antenas), ni EPC, ni control
- * de salidas, ni ubicación de piezas; las etiquetas de Sacs son de código de barras (LabelSDK: EAN13/CODE128) y el
- * escáner de SACSMobile lee códigos con la cámara. RFID solo aparece como tarjeta de venta en la app y en el catálogo
- * de complementos («se cotiza en la reunión»). Por eso la página entera va marcada «en construcción · así va a
- * funcionar», sin fecha ni promesa, y los números son de ejemplo.
- * «Ya en Sacs» (y fuerte): el conteo físico — completo, parcial, sorpresa y ciego; el conteo rápido con la cámara del
- * celular o un lector Bluetooth; el conteo dictado a AXO por voz (te dice cuántas llevas y avisa si no cuadra; el
- * inventario cambia hasta que alguien cierra el conteo); y el reporte que cruza con mermas (/producto/conteo-fisico).
+ * 3-oct-2026, el dueño: «quita eso que dice en construcción, todo ponlo como si ya lo tenemos» y «lo que está dentro,
+ * todo ponlo ya disponible». La página presenta RFID como disponible, como la vende la app en «Extiende tu Sacs ›
+ * Hardware + IA» («Equipo + instalación · Nosotros los instalamos y los dejamos funcionando»).
+ * Para quien la toque: revisado el 3-oct-2026, en el código no hay RFID (ni lectores, ni EPC, ni antenas; las
+ * etiquetas de Sacs son de código de barras). Lo que sí existe y se nombra en preguntas: el conteo físico — completo,
+ * parcial, sorpresa o ciego, con el celular o un lector Bluetooth, o dictado a AXO. Números de ejemplo.
  * Fotos: gpt-image-2.5 (sunburst) — el lector en el rack, la etiqueta, la puerta, la bodega.
  */
-export { OBRA_AVISO, OBRA_NOTA } from './experiencia-camaras';
-import { OBRA_NOTA } from './experiencia-camaras';
 
 export const RFID = {
   folio: 'Experiencia 05',
   etiqueta: 'RFID · Inventario automatizado',
   titulo: 'Toda tu tienda, contada en minutos.',
-  bajada: 'Con una etiqueta RFID en cada prenda, el lector va a contar un rack completo de una pasada, sin escanear pieza por pieza. Sabrás qué falta, dónde está cada talla y la puerta avisará si sale algo sin pagar.',
+  bajada: 'Con una etiqueta RFID en cada prenda, el lector cuenta un rack completo de una pasada, sin escanear pieza por pieza. Sabes qué falta, dónde está cada talla y la puerta avisa si sale algo sin pagar.',
 };
 
 export const RFID_ANTES = {
@@ -45,7 +41,6 @@ export const RFID_ANTES = {
       { d: 'Cada pieza', t: 'Sabes en qué rack o en qué caja está.' },
     ],
   },
-  nota: OBRA_NOTA,
 };
 
 /**
@@ -105,28 +100,11 @@ export const RFID_RESUELVE = {
   ],
 };
 
-export const RFID_HOY = {
-  folio: ['Hoy y lo que viene', 'RFID'] as [string, string],
-  titulo: 'Mientras tanto, ya cuentas con Sacs.',
-  hoy: [
-    { t: 'Conteo completo, parcial, sorpresa o ciego', d: 'Tú eliges qué contar y si quien cuenta ve lo que dice el sistema.' },
-    { t: 'Conteo rápido con escáner', d: 'Con la cámara del celular o un lector Bluetooth, sin comprar equipo.' },
-    { t: 'Conteo dictado a AXO', d: 'Le dices lo que cuentas por voz; te dice cuántas llevas y te avisa si no cuadra. El inventario cambia hasta que alguien cierra el conteo.' },
-    { t: 'El reporte del conteo', d: 'Las diferencias, cruzadas con tus mermas.' },
-  ],
-  obra: [
-    { t: 'Etiquetas y lectores RFID', d: 'El rack o la caja completa, de una pasada.' },
-    { t: 'Las diferencias, solas', d: 'Lo leído contra tu inventario de Sacs, por talla y color.' },
-    { t: 'Ubicación de cada pieza', d: 'En qué rack o en qué caja está.' },
-    { t: 'Control de salidas', d: 'Las antenas de la puerta avisan lo que sale sin pagar.' },
-  ],
-  nota: OBRA_NOTA,
-};
-
 export const PREGUNTAS_RFID = [
-  { question: '¿Ya lo puedo usar?', answer: 'Todavía no: está en construcción y no le ponemos fecha. Hoy ya cuentas tu inventario en Sacs: completo, parcial, sorpresa o ciego, con la cámara del celular o un lector Bluetooth, o dictándole a AXO por voz. Si te interesa, cuéntanos cómo es tu tienda.' },
+  { question: '¿Qué necesito?', answer: 'Etiquetas RFID en tus prendas y un lector de mano, conectados a tu Sacs; si quieres control de salidas, las antenas de la puerta. Nosotros lo instalamos y lo dejamos funcionando.' },
   { question: '¿Qué es una etiqueta RFID?', answer: 'Una etiqueta con un chip y una antena adentro. A diferencia del código de barras, se lee sin verla, a distancia y muchas a la vez: por eso un rack completo se cuenta de una pasada.' },
   { question: '¿Tengo que etiquetar toda mi mercancía?', answer: 'Para contar con RFID, cada pieza necesita su etiqueta. Lo normal es empezar con la mercancía que llega y con las tiendas donde más cuesta contar.' },
   { question: '¿Sustituye a mi código de barras?', answer: 'No: la etiqueta puede llevar los dos. La caja sigue cobrando con código de barras, y el RFID cuenta, busca y controla salidas.' },
-  { question: '¿Cuánto va a costar?', answer: 'Todavía no tiene precio, porque está en construcción. En la demo te contamos cómo va.' },
+  { question: '¿Y en las tiendas sin RFID?', answer: 'También cuentas tu inventario en Sacs: completo, parcial, sorpresa o ciego, con la cámara del celular o un lector Bluetooth, o dictándole a AXO por voz.' },
+  { question: '¿Cuánto cuesta?', answer: 'Depende de cuántas prendas y tiendas tengas: las etiquetas, el equipo y la instalación se cotizan contigo en la demo.' },
 ];

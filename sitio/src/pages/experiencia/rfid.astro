@@ -1,19 +1,17 @@
 ---
 /**
- * /experiencia/rfid — «Toda tu tienda, contada en minutos», la Experiencia 05 (3-oct-2026). EN CONSTRUCCIÓN.
+ * /experiencia/rfid — «Toda tu tienda, contada en minutos», la Experiencia 05 (3-oct-2026).
  *
  * Recorrido: portada (la vendedora con el lector y las etiquetas que responden) → el inventario ya no cierra la tienda
  * → una pasada por el rack (la pantalla del lector con el scroll) → la misma etiqueta todo el día (buscar, recibir sin
- * abrir, controlar salidas: la galería que corre de lado) → la etiqueta → lo que resuelve → mientras tanto, ya cuentas
- * con Sacs → preguntas → cierre.
- * NADA de RFID existe hoy en Sacs (ver src/data/experiencia-rfid.ts): la página entera va marcada «en construcción»,
- * sin fecha, y los números son de ejemplo. El conteo físico de hoy (celular, ciego, dictado a AXO) va en «Ya en Sacs».
+ * abrir, controlar salidas: la galería que corre de lado) → la etiqueta → lo que resuelve → preguntas → cierre.
+ * Se presenta como disponible (decisión del dueño, 3-oct-2026: ver src/data/experiencia-rfid.ts); los números son de
+ * ejemplo.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ExpHero from '../../components/experiencia/ExpHero.astro';
 import ExpAntesDespues from '../../components/experiencia/ExpAntesDespues.astro';
 import ExpLista from '../../components/experiencia/ExpLista.astro';
-import ExpHoy from '../../components/experiencia/ExpHoy.astro';
 import RfidHeroCapa from '../../components/experiencia/rfid/RfidHeroCapa.astro';
 import RfidPasada from '../../components/experiencia/rfid/RfidPasada.astro';
 import RfidUsos from '../../components/experiencia/rfid/RfidUsos.astro';
@@ -21,7 +19,7 @@ import RfidEtiqueta from '../../components/experiencia/rfid/RfidEtiqueta.astro';
 import GiroFAQ from '../../components/giros/GiroFAQ.astro';
 import FinalCTA from '../../components/FinalCTA.astro';
 import StructuredData from '../../components/StructuredData.astro';
-import { RFID, RFID_ANTES, RFID_RESUELVE, RFID_HOY, PREGUNTAS_RFID, OBRA_AVISO } from '../../data/experiencia-rfid';
+import { RFID, RFID_ANTES, RFID_RESUELVE, PREGUNTAS_RFID } from '../../data/experiencia-rfid';
 import { experiencias } from '../../data/experiencias';
 import { SITIO } from '../../data/entidad';
 import { breadcrumbList } from '../../lib/breadcrumb';
@@ -29,7 +27,7 @@ import '../../styles/planeacion.css';
 
 const exp = experiencias.find((e) => e.slug === 'rfid')!;
 const title = 'RFID para tiendas de moda: inventario en minutos | Sacs';
-const description = 'Así va a funcionar: el rack completo contado de una pasada, las diferencias contra tu inventario, dónde está cada talla y la puerta que avisa lo que sale sin pagar. En construcción; hoy ya cuentas con el celular o dictándole a AXO.';
+const description = 'RFID para tiendas de moda: el rack completo contado de una pasada, las diferencias contra tu inventario de Sacs, dónde está cada talla y la puerta que avisa lo que sale sin pagar.';
 
 const pagina = { '@context': 'https://schema.org', '@type': 'WebPage', '@id': `${SITIO}${exp.href}#pagina`, name: exp.titulo, description, url: `${SITIO}${exp.href}`, inLanguage: 'es-MX' };
 const migas = breadcrumbList([{ name: 'Inicio', url: `${SITIO}/` }, { name: 'Experiencia', url: `${SITIO}/experiencia` }, { name: exp.titulo }]);
@@ -52,7 +50,6 @@ const faqSchema = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEn
       etiqueta={RFID.etiqueta}
       titulo={RFID.titulo}
       bajada={RFID.bajada}
-      aviso={OBRA_AVISO}
       ancha={{ s1280: '/images/experiencia/rfid-portada-1280.webp', s1920: '/images/experiencia/rfid-portada-1536.webp', alto1920: 1280 }}
       vertical={{ src: '/images/experiencia/rfid-vertical-1024.webp', ancho: 1024, alto: 1536 }}
       alt="Una vendedora apunta un lector RFID de mano a un rack de prendas de lino en una boutique"
@@ -60,12 +57,11 @@ const faqSchema = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEn
     >
       <RfidHeroCapa />
     </ExpHero>
-    <ExpAntesDespues id="rfid-antes" folio={RFID_ANTES.folio} titulo={RFID_ANTES.titulo} antes={RFID_ANTES.antes} despues={RFID_ANTES.despues} nota={RFID_ANTES.nota} />
+    <ExpAntesDespues id="rfid-antes" folio={RFID_ANTES.folio} titulo={RFID_ANTES.titulo} antes={RFID_ANTES.antes} despues={RFID_ANTES.despues} />
     <RfidPasada />
     <RfidUsos />
     <RfidEtiqueta />
     <ExpLista id="rfid-resuelve" tema="pd-azul" palabra="LO QUE RESUELVE" folio={RFID_RESUELVE.folio} titulo={RFID_RESUELVE.titulo} puntos={RFID_RESUELVE.puntos} />
-    <ExpHoy id="rfid-hoy" folio={RFID_HOY.folio} titulo={RFID_HOY.titulo} hoy={RFID_HOY.hoy} obra={RFID_HOY.obra} nota={RFID_HOY.nota} />
   </div>
 
   <GiroFAQ title="Preguntas frecuentes sobre RFID" faqs={PREGUNTAS_RFID} />

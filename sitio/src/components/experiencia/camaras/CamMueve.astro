@@ -2,7 +2,7 @@
 /**
  * «Cambias el acomodo y ves si funcionó» (/experiencia/camaras-con-ia): un cambio de acomodo medido antes y después
  * (la mezclilla del fondo a la entrada; dos semanas con cada acomodo). Marino con líneas, como «Lo prendes tú» del
- * probador: dos columnas con el número grande y la flecha. Ejemplo y en construcción.
+ * probador: dos columnas con el número grande y la flecha. Números de ejemplo.
  */
 import { CAM_MUEVE } from '../../../data/experiencia-camaras';
 const PALABRA = Array.from({ length: 3 }, () => 'MUEVE Y MIDE').join(' · ');
@@ -10,7 +10,7 @@ const { antes, despues } = CAM_MUEVE;
 ---
 <section class="pda cmv pd-marino" aria-labelledby="cmv-h">
   <div class="pda-fondo" aria-hidden="true"><span>{PALABRA}</span><span>{PALABRA}</span></div>
-  <p class="pd-folio"><span>{CAM_MUEVE.k}</span><span>En construcción</span></p>
+  <p class="pd-folio"><span>{CAM_MUEVE.k}</span><span>Dos semanas</span></p>
   <h2 class="pda-h" id="cmv-h">{CAM_MUEVE.h}</h2>
   <div class="cmv-cols">
     <div class="cmv-col rv" style="--i:0">

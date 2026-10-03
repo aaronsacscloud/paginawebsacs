@@ -2,7 +2,7 @@
 /**
  * «Tu gente, en las horas que llegan» (/experiencia/conteo-de-personas): la semana de visitas por hora (lunes a
  * domingo × 10 a 21) en una rejilla de calor y las tres lecturas que salen de ella (cuándo reforzar el piso). Fucsia,
- * con su palabra gigante. El Cuadrante de horarios sí existe en Sacs (los turnos); las visitas, en construcción.
+ * con su palabra gigante, y los turnos en el Cuadrante de horarios de Sacs.
  */
 import { CON_SEMANA, DIAS, HORAS, SEMANA } from '../../../data/experiencia-conteo';
 const PALABRA = Array.from({ length: 3 }, () => 'HORAS PICO').join(' · ');
@@ -24,7 +24,7 @@ const PALABRA = Array.from({ length: 3 }, () => 'HORAS PICO').join(' · ');
           </>
         ))}
       </div>
-      <figcaption><span><i data-v="0"></i>Tranquilo</span><span><i data-v="4"></i>Lleno</span><em>Ejemplo · en construcción</em></figcaption>
+      <figcaption><span><i data-v="0"></i>Tranquilo</span><span><i data-v="4"></i>Lleno</span><em>Ejemplo</em></figcaption>
     </figure>
     <div class="csm-picos">
       {CON_SEMANA.picos.map((p, i) => <div class="csm-pico rv" style={`--i:${i + 1}`}><b>{p.t}</b><span>{p.d}</span></div>)}

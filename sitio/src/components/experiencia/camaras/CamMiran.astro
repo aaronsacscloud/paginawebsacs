@@ -2,8 +2,8 @@
 /**
  * «Lo miran, pero no lo compran» (/experiencia/camaras-con-ia): lo que la caja no ve. A la izquierda, la mesa de
  * novedades con su mancha de calor; a la derecha, lo que diría la cámara (se detienen, se quedan, compran) junto a lo
- * que Sacs YA sabe (la venta, la talla, lo que hay en piso) y la acción. En fucsia, con su palabra gigante. Ejemplo y
- * en construcción (la cámara); cada renglón entra al verse (.rv → .is-on, script de la página).
+ * que Sacs sabe (la venta, la talla, lo que hay en piso) y la acción. En fucsia, con su palabra gigante. Números de
+ * ejemplo; cada renglón entra al verse (.rv → .is-on, script de la página).
  */
 import { CAM_MIRAN } from '../../../data/experiencia-camaras';
 const I = '/images/experiencia/';
@@ -11,7 +11,7 @@ const PALABRA = Array.from({ length: 3 }, () => 'LO MIRAN').join(' · ');
 ---
 <section class="pda cm pd-fucsia" aria-labelledby="cm-h">
   <div class="pda-fondo" aria-hidden="true"><span>{PALABRA}</span><span>{PALABRA}</span></div>
-  <p class="pd-folio"><span>{CAM_MIRAN.k}</span><span>En construcción</span></p>
+  <p class="pd-folio"><span>{CAM_MIRAN.k}</span><span>Mesa de novedades</span></p>
   <div class="cm-grid">
     <figure class="cm-foto rv" style="--i:0">
       <img src={`${I}camaras-mesa-1280.webp`} srcset={`${I}camaras-mesa-1280.webp 1280w, ${I}camaras-mesa-1536.webp 1536w`} sizes="(min-width: 900px) 50vw, 100vw" width="1536" height="1024" alt="Una clienta revisa una camisa de lino mandarina en la mesa de novedades" loading="lazy" decoding="async" />

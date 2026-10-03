@@ -9,8 +9,9 @@
  *
  * Una experiencia nueva = una entrada aquí + su página. La primera va en grande; las demás, a su lado.
  * Nada inventado: lo que una experiencia cuenta tiene que existir en el producto (o ir marcado «en construcción»).
- * 3-oct-2026: la 03, 04 y 05 (cámaras con IA, conteo de personas, RFID) no existen todavía como software en Sacs
- * (solo como tarjetas de «Extiende tu Sacs › Hardware + IA» en la app): van con `obra` y su página entera lo dice.
+ * 3-oct-2026: la 03, 04 y 05 (cámaras con IA, conteo de personas, RFID) se presentan como disponibles por decisión
+ * del dueño («quita eso que dice en construcción, todo ponlo como si ya lo tenemos»), como las vende la app en
+ * «Extiende tu Sacs › Hardware + IA». `obra` queda para cuando haga falta marcar una.
  */
 export interface Experiencia {
   slug: string;
@@ -66,7 +67,6 @@ export const experiencias: Experiencia[] = [
     imagenAlto: 1200,
     alt: 'Una boutique vista desde el techo: clientas alrededor de la mesa redonda de novedades',
     acento: '#FF7A1A',
-    obra: true,
   },
   {
     slug: 'conteo-de-personas',
@@ -79,7 +79,6 @@ export const experiencias: Experiencia[] = [
     imagenAlto: 1200,
     alt: 'Dos amigas entran a una boutique luminosa desde la calle',
     acento: '#5B86EA',
-    obra: true,
   },
   {
     slug: 'rfid',
@@ -92,6 +91,5 @@ export const experiencias: Experiencia[] = [
     imagenAlto: 1200,
     alt: 'Una vendedora lee con un lector RFID un rack de prendas de lino',
     acento: '#F07FA6',
-    obra: true,
   },
 ];
