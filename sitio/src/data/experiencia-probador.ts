@@ -14,8 +14,11 @@
  *    créditos de IA de la marca. APAGADO por defecto: la marca lo enciende en Ajustes del Estudio.
  *  - «¿Cuál es mi talla?»: sus medidas contra la tabla de medidas de la prenda. «Míralo en alguien como tú»: el look en
  *    el cuerpo más parecido a ella (talla, estatura, complexión). Las dos en la misma ficha.
- *  - Funciona en cualquier navegador: en el PISO va en la tablet de la tienda o en el celular de la clienta. NO es un
- *    espejo con cámara ni un aparato aparte, y NO es en tiempo real (por eso aquí no se dice «en vivo»).
+ *  - Funciona en cualquier pantalla con navegador: en el PISO, una pantalla táctil grande, la tablet de la tienda o el
+ *    celular de la clienta. NO es un espejo con cámara en vivo ni es en tiempo real (por eso aquí no se dice «en vivo»):
+ *    la pantalla enseña la tienda en línea con el probador de la foto. 3-oct-2026 (dueño): «en vez del teléfono, que se
+ *    vea una tienda de lujo enorme como WOW Concept, con una pantalla grande y la clienta viendo cómo se ven los
+ *    productos con su talla, totalmente especializado a lo que ella esté buscando».
  * Fotos: escenas de tienda generadas con gpt-image-2.5 (Higgsfield); la clienta en su casa (antes y con el vestido)
  * son las de la sección de Tienda en línea (public/images/probador).
  */
@@ -30,7 +33,7 @@ export const LUGARES = {
   tienda: {
     k: '01 · En el piso',
     h: 'En tu tienda.',
-    p: 'En la tablet de tu tienda o en su celular: se ve con otra talla, otro color o el look completo, sin volver al probador.',
+    p: 'En una pantalla grande en el piso, en la tablet o en su celular: se ve con otra talla, otro color o el look completo, sin volver al probador.',
   },
   casa: {
     k: '02 · En línea',
@@ -52,11 +55,12 @@ export const FOTO = {
   nota: 'Con la misma foto se prueba otro color. Tú pones cuántas pruebas al día tiene cada persona.',
 };
 
+// La pantalla grande del piso (ProbPasos): lo que busca, su talla, la prenda puesta y otro color.
 export const PASOS = [
-  { n: '01', t: '¿Cuál es mi talla?', d: 'Pone sus medidas y le dice qué talla le queda, con la tabla de medidas de esa prenda.' },
-  { n: '02', t: 'Míralo en alguien como tú', d: 'El look en la modelo que más se parece a ella: talla, estatura y complexión.' },
-  { n: '03', t: 'Pruébatelo con tu foto', d: 'Se toma una foto y en menos de un minuto se ve con la prenda puesta.' },
-  { n: '04', t: 'Elige el color y compra', d: 'Lo agrega a la bolsa en su talla y lo recoge en tu tienda o se lo envías.' },
+  { n: '01', t: 'Lo que busca, en su talla', d: 'La pantalla le enseña solo lo que hay en su talla y lo que está buscando: vestidos de satén, en M.' },
+  { n: '02', t: '¿Cuál es mi talla?', d: 'Pone sus medidas y le dice qué talla le queda, con la tabla de medidas de esa prenda.' },
+  { n: '03', t: 'Se ve con la prenda puesta', d: 'Con una foto, en menos de un minuto se ve en grande con el vestido puesto.' },
+  { n: '04', t: 'Otro color, y lo aparta', d: 'Se prueba el verde y lo aparta en su talla para llevárselo.' },
 ];
 
 export const CUIDADO = {
@@ -80,7 +84,7 @@ export const MARCA = {
 };
 
 export const PREGUNTAS_PROBADOR = [
-  { question: '¿Funciona en mi tienda física?', answer: 'Sí. Es el mismo probador de tu tienda en línea de Sacs: en el piso lo usas en la tablet de tu tienda o tu clienta en su celular. No necesitas un aparato especial.' },
+  { question: '¿Funciona en mi tienda física?', answer: 'Sí. Es el mismo probador de tu tienda en línea de Sacs, así que corre en cualquier pantalla con navegador: una pantalla táctil grande en el piso, la tablet de tu tienda o el celular de tu clienta.' },
   { question: '¿Es en tiempo real?', answer: 'No. Tu clienta se toma una foto o la sube, y la imagen con la prenda puesta tarda de 30 a 60 segundos en estar lista. No es un espejo con cámara en vivo.' },
   { question: '¿Qué pasa con la foto de mi clienta?', answer: 'No se guarda: la foto y el resultado se borran al terminar. Antes de generar nada, ella acepta para qué se usa y confirma que es mayor de edad y que la foto es suya; la IA revisa que sea una sola persona, adulta y vestida. La imagen lleva su etiqueta de IA.' },
   { question: '¿Cómo sabe su talla?', answer: 'Con «¿Cuál es mi talla?»: pone sus medidas (busto, cintura, cadera o pie) y Sacs le recomienda la talla con la tabla de medidas de esa prenda. La foto no se usa para la talla.' },
