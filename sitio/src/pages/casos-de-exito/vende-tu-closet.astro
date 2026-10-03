@@ -1,0 +1,386 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { PRODUCTO_ID, ENTIDAD_ID } from '../../data/entidad';
+import { breadcrumbCaso } from '../../lib/breadcrumb';
+
+// Todo lo de esta página sale de lo que mandó el dueño y de vtc.mx
+// (Nosotros, Cómo vender, Entrupy, FAQ). Sin cifras de resultados ni citas:
+// no hay ninguna confirmada todavía. No se afirma qué funciones de SACS usan.
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: 'Vende Tu Clóset: la número 1 en lujo pre-loved de México',
+  description: 'De vender en línea desde Coatepec, Veracruz, a cuatro sucursales a pasos de Masaryk, Andares y San Pedro: así opera Vende Tu Clóset la consignación de lujo, con cada pieza autenticada por Entrupy.',
+  about: { '@id': PRODUCTO_ID },
+  author: { '@id': ENTIDAD_ID },
+};
+const structuredData = [articleSchema, breadcrumbCaso('Vende Tu Clóset')];
+
+const historia = [
+  { lugar: 'Coatepec, Veracruz', t: 'Nace en línea.', d: 'Instagram y TikTok hacen el resto: la confianza de sus clientes la lleva a crecer de forma exponencial.' },
+  { lugar: 'Xalapa · febrero 2022', t: 'Corporativo y showroom.', d: 'En Torre JV, en la ciudad que la vio nacer.' },
+  { lugar: 'Ciudad de México', t: 'A unos pasos de Masaryk.', d: 'Alejandro Dumas 135, Polanco: la avenida del lujo en México.' },
+  { lugar: 'Guadalajara', t: 'Su tienda más grande.', d: 'En Puerta Plata, a pocos minutos de Andares.' },
+  { lugar: 'Monterrey', t: 'San Pedro Garza García.', d: 'La cuarta sucursal: la expansión sigue.' },
+];
+
+const canales = [
+  { k: 'Instagram y TikTok', t: 'Donde nació la confianza.', d: 'Piezas nuevas, dinámicas y contenido que convierte seguidores en clientes. Ahí empezó todo, y ahí se sigue vendiendo.' },
+  { k: 'WhatsApp', t: 'La venta uno a uno.', d: 'Fotos, dudas, apartados y cierres de venta en la conversación, como con una asesora de confianza.' },
+  { k: 'vtc.mx', t: 'La tienda abierta siempre.', d: 'Catálogo con las grandes casas de moda, envío en 2 a 3 días hábiles en todo México y meses sin intereses.' },
+  { k: 'Showrooms', t: 'El lujo se ve en persona.', d: 'Cuatro sucursales donde se compra, se aparta y se lleva a consignar, con cita o sin ella.' },
+];
+
+const pasos = [
+  { t: 'Envía fotos o haz una cita.', d: 'Por WhatsApp, con el formulario de su sitio o visitando cualquiera de sus showrooms.' },
+  { t: 'Recibe tu valuación.', d: 'Su equipo evalúa cada pieza y te dice cuáles puede vender y a qué precio lo sugiere.' },
+  { t: 'Consigna y cobra.', d: 'Dejas tus piezas a consignación por 45 días. En cuanto se venden, recibes tu pago.' },
+];
+
+const sucursales = [
+  { ciudad: 'Ciudad de México', zona: 'Polanco', dir: 'Alejandro Dumas 135, Polanco, Miguel Hidalgo' },
+  { ciudad: 'Xalapa', zona: 'Corporativo y showroom', dir: 'Torre JV, piso 20, local E, Pastoresa' },
+  { ciudad: 'Guadalajara', zona: 'Puerta Plata', dir: 'Av. Universidad 1011, int. 23, Zapopan' },
+  { ciudad: 'Monterrey', zona: 'San Pedro Garza García', dir: 'Río de la Plata 200, Del Valle' },
+];
+
+const marcas = ['Chanel', 'Dior', 'Louis Vuitton', 'Hermès', 'Fendi', 'Prada', 'Saint Laurent', 'Bottega Veneta', 'Gucci', 'Balenciaga', 'Celine', 'Goyard', 'Loewe', 'Givenchy'];
+---
+
+<BaseLayout
+  title="Vende Tu Clóset — Caso de éxito SACS"
+  description="Vende Tu Clóset, la número 1 en lujo pre-loved de México: de vender en línea desde Coatepec a cuatro sucursales, con cada pieza autenticada por Entrupy."
+  structuredData={structuredData}
+  preloadImage="/videos/vtc-equipo-loop-poster.webp"
+>
+
+<!-- Hero -->
+<section class="vt-hero">
+  <div class="vt-hero-inner">
+    <div class="vt-hero-text">
+      <a href="/casos-de-exito#vende-tu-closet" class="vt-back">&larr; Todos los casos de éxito</a>
+      <img src="/images/vtc-logo-blanco.webp" alt="" width="287" height="220" class="vt-mono" />
+      <span class="vt-name">Vende Tu Clóset</span>
+      <div class="vt-chips"><span class="vt-n1">Nº 1 en México</span><span class="vt-tag">Lujo pre-loved · Consignación</span></div>
+      <h1 class="vt-title">El lujo que <em>vuelve a&nbsp;enamorar.</em></h1>
+      <p class="vt-lead">Vende Tu Clóset es la startup mexicana que convirtió la consignación de bolsas, ropa y accesorios de lujo en la tienda pre-loved más grande de México. Cada pieza llega revisada, autenticada y lista para su nueva dueña.</p>
+    </div>
+    <div class="vt-hero-media">
+      <video class="vt-hero-video" autoplay muted loop playsinline preload="metadata" poster="/videos/vtc-equipo-loop-poster.webp" width="960" height="540" aria-hidden="true">
+        <source src="/videos/vtc-equipo-loop.mp4" type="video/mp4" />
+      </video>
+    </div>
+  </div>
+</section>
+
+<!-- Cifras -->
+<section class="vt-stats" aria-label="Vende Tu Clóset en cifras">
+  <div class="vt-stats-inner">
+    <div class="vt-stat"><span class="vt-stat-num">4</span><span class="vt-stat-label">sucursales en México</span></div>
+    <div class="vt-stat"><span class="vt-stat-num">4</span><span class="vt-stat-label">canales de venta</span></div>
+    <div class="vt-stat"><span class="vt-stat-num">21</span><span class="vt-stat-label">casas que autentica con Entrupy</span></div>
+    <div class="vt-stat"><span class="vt-stat-num">45 días</span><span class="vt-stat-label">de consignación por pieza</span></div>
+  </div>
+</section>
+
+<!-- Marcas -->
+<div class="vt-marcas" aria-label="Algunas de las casas que vende">
+  <div class="vt-cinta">
+    {[0, 1].map((n) => (
+      <span class="vt-cinta-set" aria-hidden={n === 1 ? 'true' : undefined}>{marcas.map((m) => <span>{m}</span>)}</span>
+    ))}
+  </div>
+</div>
+
+<!-- Historia -->
+<section class="vt-sec">
+  <div class="vt-inner">
+    <span class="vt-eyebrow">Su historia</span>
+    <h2 class="vt-h2">De una cuenta de Instagram a la avenida del lujo.</h2>
+    <p class="vt-p">Con el objetivo de crecer en el mercado del lujo de segunda mano en Latinoamérica, Vende Tu Clóset empezó en Coatepec, Veracruz, vendiendo en línea. La aceptación y la confianza que ganó en Instagram y TikTok la hicieron crecer de forma exponencial.</p>
+    <ol class="vt-historia">
+      {historia.map((h) => (
+        <li><span class="vt-lugar">{h.lugar}</span><strong>{h.t}</strong><span>{h.d}</span></li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<!-- Cómo venden -->
+<section class="vt-sec vt-sec--alt">
+  <div class="vt-inner vt-inner--wide">
+    <div class="vt-split">
+      <div>
+        <span class="vt-eyebrow">Cómo venden</span>
+        <h2 class="vt-h2">Una pieza, cuatro vitrinas.</h2>
+        <p class="vt-p">Cada bolsa es única y puede venderse en cualquiera de sus canales. Por eso apartan desde el 30% de enganche (15 días para liquidar calzado y 30 para lo demás) y la pieza queda reservada en todos lados a la vez.</p>
+        <div class="vt-canales">
+          {canales.map((c) => (
+            <div class="vt-canal"><span class="vt-lugar">{c.k}</span><h3>{c.t}</h3><p>{c.d}</p></div>
+          ))}
+        </div>
+      </div>
+      <div class="vt-fotos2">
+        <img src="/images/vtc-monterrey.webp" alt="Conversación en la sucursal de Vende Tu Clóset en Monterrey, con bolsas Hermès al fondo" width="640" height="1136" loading="lazy" class="vt-foto-alta" />
+        <img src="/images/vtc-espejo.webp" alt="Clienta con vestido rojo frente al espejo «Good taste looks good on you»" width="1000" height="1248" loading="lazy" class="vt-foto-chica" />
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Consignación -->
+<section class="vt-sec">
+  <div class="vt-inner">
+    <span class="vt-eyebrow">Para quien vende</span>
+    <h2 class="vt-h2">Así se consigna una pieza de lujo.</h2>
+    <ol class="vt-pasos">
+      {pasos.map((p, i) => (
+        <li class="vt-paso"><span class="vt-paso-n">{i + 1}</span><div><h3>{p.t}</h3><p>{p.d}</p></div></li>
+      ))}
+    </ol>
+    <div class="vt-comision">
+      <div><span class="vt-comision-num">20%</span><span>de comisión en artículos de más de $6,000</span></div>
+      <div><span class="vt-comision-num">30%</span><span>en artículos de menor precio</span></div>
+      <p>Si una pieza no se vende en 45 días, quien la consignó decide: la retira o la deja más tiempo con un precio especial.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Entrupy -->
+<section class="vt-sec vt-sec--alt">
+  <div class="vt-inner vt-inner--wide">
+    <div class="vt-split vt-split--rev">
+      <img src="/images/vtc-bolsas.webp" alt="Bolsas Dior y Fendi en exhibición" width="1000" height="1248" loading="lazy" class="vt-foto-entrupy" />
+      <div>
+        <span class="vt-eyebrow">La confianza</span>
+        <h2 class="vt-h2">Cada pieza, autenticada con Entrupy.</h2>
+        <p class="vt-p">Comprar lujo a través de un intermediario puede causar dudas. Por eso cada bolsa pasa por Entrupy: un mini microscopio enlazado a una aplicación que, con inteligencia artificial y una extensa base de datos, revisa el tejido, el color y la herrería, y emite un certificado de autenticidad válido a nivel internacional.</p>
+        <div class="vt-pilares">
+          <div class="vt-pilar"><h3>Certificación</h3><p>Todos sus productos se verifican como auténticos con Entrupy.</p></div>
+          <div class="vt-pilar"><h3>Seguridad</h3><p>Las compras están protegidas a través de su pasarela de pagos.</p></div>
+          <div class="vt-pilar"><h3>Atención</h3><p>Todo su equipo está atento a cada solicitud, en todo momento.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- El equipo -->
+<section class="vt-sec">
+  <div class="vt-inner vt-inner--wide">
+    <span class="vt-eyebrow">Las personas</span>
+    <h2 class="vt-h2">«Podemos hacer lo que amamos.»</h2>
+    <p class="vt-p">Detrás de cada pieza hay alguien que la fotografía, la valúa, la empaca y la entrega. Su equipo lo contó a su manera, en un cortometraje.</p>
+    <div class="vt-equipo">
+      <figure class="vt-film">
+        <video controls playsinline preload="none" poster="/videos/vtc-cortometraje-poster.webp" width="960" height="540">
+          <source src="/videos/vtc-cortometraje.mp4" type="video/mp4" />
+        </video>
+        <figcaption>Un día en Vende Tu Clóset, contado por su equipo.</figcaption>
+      </figure>
+      <figure class="vt-equipo-foto">
+        <img src="/images/vtc-equipo.webp" alt="El equipo de Vende Tu Clóset en su stand" width="1000" height="1248" loading="lazy" />
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- Por qué es un caso para SACS -->
+<section class="vt-sec vt-sec--alt">
+  <div class="vt-inner">
+    <span class="vt-eyebrow">La operación</span>
+    <h2 class="vt-h2">Piezas únicas, en cuatro canales y cuatro ciudades.</h2>
+    <p class="vt-p">En el lujo pre-loved no hay tallas ni reposición: cada pieza tiene una consignante, una valuación, un plazo de 45 días y un certificado. Si se aparta en WhatsApp, deja de estar disponible en Instagram, en vtc.mx y en el showroom en ese mismo momento. Venderla dos veces no es una opción.</p>
+    <ul class="vt-retos">
+      <li><strong>Una pieza, un dueño.</strong> Cada artículo sabe quién lo consignó, en cuánto y hasta cuándo.</li>
+      <li><strong>Un solo inventario.</strong> Cuatro sucursales y cuatro canales ven la misma pieza al mismo tiempo.</li>
+      <li><strong>Apartados con plazo.</strong> El enganche del 30% reserva la pieza y el sistema cuenta los días.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- Sucursales -->
+<section class="vt-sec">
+  <div class="vt-inner vt-inner--wide">
+    <span class="vt-eyebrow">Visítalas</span>
+    <h2 class="vt-h2">Cuatro sucursales.</h2>
+    <div class="vt-sucs">
+      {sucursales.map((s) => (
+        <div class="vt-suc"><span class="vt-lugar">{s.zona}</span><h3>{s.ciudad}</h3><p>{s.dir}</p></div>
+      ))}
+    </div>
+    <div class="vt-sucs-foot">
+      <a href="https://www.vtc.mx/" target="_blank" rel="noopener" class="vt-btn vt-btn--light">Conoce vtc.mx</a>
+      <a href="https://www.instagram.com/vendetuclosetmexico/" target="_blank" rel="noopener" class="vt-btn vt-btn--ghost">Síguelos en Instagram</a>
+      <a href="/giros/consignacion" class="vt-giro">Cómo funciona SACS para tiendas de consignación &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="vt-cta">
+  <div class="vt-cta-inner">
+    <h2 class="vt-cta-title">¿Tu marca también vende piezas que no se repiten?</h2>
+    <p class="vt-cta-sub">Platiquemos de tu operación, tus canales y tus sucursales.</p>
+    <div class="vt-cta-actions">
+      <a href="/contacto" class="vt-btn vt-btn--light">Agenda una demo</a>
+      <a href="/prueba-gratis" class="vt-btn vt-btn--ghost">Empieza gratis</a>
+    </div>
+  </div>
+</section>
+
+</BaseLayout>
+
+<style>
+  /* Negro de la sección de casos (como Live Shows) con el degradado rosa · morado · un toque naranja */
+  .vt-hero, .vt-stats, .vt-marcas, .vt-sec, .vt-cta {
+    --tinta: #0b0a10; --panel: #15121c; --blanco: #fff; --gris: rgba(255, 255, 255, 0.68); --gris-2: rgba(255, 255, 255, 0.5); --linea: rgba(255, 255, 255, 0.12); --rosa: #FF7AB6;
+    --grad: linear-gradient(90deg, #EC4899, #A855F7 72%, #FB923C);
+  }
+
+  /* ── Hero ── */
+  .vt-hero { background:
+      radial-gradient(ellipse 50% 45% at 0% 10%, rgba(236, 72, 153, 0.20), transparent 70%),
+      radial-gradient(ellipse 45% 45% at 100% 60%, rgba(168, 85, 247, 0.18), transparent 70%),
+      var(--tinta); color: var(--blanco); padding: clamp(40px, 6vw, 80px) 16px clamp(56px, 7vw, 96px); }
+  .vt-hero-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.1fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
+  .vt-back { display: inline-block; font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--gris-2); text-decoration: none; margin-bottom: 32px; }
+  .vt-back:hover { color: var(--blanco); }
+  .vt-mono { display: block; width: 84px; height: auto; }
+  .vt-name { display: block; margin-top: 12px; font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 0.5em; text-transform: uppercase; }
+  .vt-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 26px; }
+  .vt-n1 { font-family: var(--font-display); font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #fff; background: var(--grad); padding: 6px 12px; border-radius: 100px; }
+  .vt-tag { font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--rosa); }
+  .vt-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(2.6rem, 5.6vw, 4.6rem); line-height: 1.02; letter-spacing: -0.045em; margin: 18px 0 20px; color: var(--blanco); text-wrap: balance; }
+  .vt-title em { font-style: normal; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .vt-lead { font-family: var(--font-body); font-size: clamp(1rem, 1.5vw, 1.15rem); line-height: 1.7; color: var(--gris); margin: 0; max-width: 520px; }
+  .vt-hero-media { position: relative; }
+  .vt-hero-media::before { content: ''; position: absolute; top: -14px; right: -14px; width: 55%; height: 60%; border-radius: 20px; background: var(--grad); }
+  .vt-hero-video { position: relative; display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 16px; background: var(--panel); }
+
+  /* ── Cifras ── */
+  .vt-stats { background: #15121c; }
+  .vt-stats-inner { max-width: 1040px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
+  .vt-stat { padding: 30px 18px; text-align: center; border-right: 1px solid var(--linea); }
+  .vt-stat:last-child { border-right: none; }
+  .vt-stat-num { display: block; font-family: var(--font-display); font-size: clamp(1.6rem, 3vw, 2.4rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .vt-stat-label { display: block; margin-top: 8px; font-family: var(--font-body); font-size: 13px; color: var(--gris-2); }
+
+  /* ── Marcas ── */
+  .vt-marcas { background: var(--tinta); border-bottom: 1px solid var(--linea); padding: 20px 0; overflow: hidden; }
+  .vt-cinta { display: flex; width: max-content; animation: vt-cinta 60s linear infinite; }
+  .vt-cinta-set { display: flex; flex-shrink: 0; }
+  .vt-cinta-set span { display: inline-flex; align-items: center; font-family: var(--font-display); font-weight: 700; letter-spacing: -0.02em; font-size: clamp(1.2rem, 2.3vw, 1.7rem); color: var(--blanco); padding: 0 clamp(16px, 2.2vw, 28px); white-space: nowrap; }
+  .vt-cinta-set span::after { content: ''; width: 7px; height: 7px; border-radius: 50%; margin-left: clamp(16px, 2.2vw, 28px); background: var(--grad); }
+  @keyframes vt-cinta { to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) { .vt-cinta { animation: none; } }
+
+  /* ── Secciones ── */
+  .vt-sec { background: var(--tinta); color: var(--blanco); padding: clamp(64px, 8vw, 110px) 16px; }
+  .vt-sec--alt { background:
+      radial-gradient(ellipse 45% 50% at 100% 0%, rgba(168, 85, 247, 0.12), transparent 70%),
+      radial-gradient(ellipse 40% 40% at 0% 100%, rgba(251, 146, 60, 0.07), transparent 70%),
+      #0f0d15; }
+  .vt-inner { max-width: 880px; margin: 0 auto; }
+  .vt-inner--wide { max-width: 1160px; }
+  .vt-eyebrow { display: block; font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--rosa); margin-bottom: 14px; }
+  .vt-h2 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.9rem, 3.8vw, 2.9rem); line-height: 1.08; letter-spacing: -0.035em; color: var(--blanco); margin: 0 0 20px; text-wrap: balance; }
+  .vt-p { font-family: var(--font-body); font-size: 17px; line-height: 1.7; color: var(--gris); margin: 0 0 16px; max-width: 680px; }
+  .vt-lugar { font-family: var(--font-body); font-size: 11px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: var(--rosa); }
+
+  /* Historia */
+  .vt-historia { position: relative; list-style: none; margin: 40px 0 0; padding: 0 0 0 26px; display: grid; gap: 28px; }
+  .vt-historia::before { content: ''; position: absolute; top: 6px; bottom: 6px; left: 5px; width: 2px; border-radius: 2px; background: linear-gradient(180deg, #EC4899, #A855F7 72%, #FB923C); }
+  .vt-historia li { position: relative; display: flex; flex-direction: column; gap: 4px; font-family: var(--font-body); font-size: 15px; line-height: 1.55; color: var(--gris); }
+  .vt-historia li::before { content: ''; position: absolute; top: 3px; left: -26px; width: 12px; height: 12px; border-radius: 50%; background: var(--tinta); border: 2px solid var(--rosa); }
+  .vt-historia li:last-child::before { background: var(--rosa); box-shadow: 0 0 0 5px rgba(255, 122, 182, 0.22); }
+  .vt-historia strong { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; letter-spacing: -0.02em; color: var(--blanco); }
+
+  /* Cómo venden */
+  .vt-split { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: clamp(32px, 5vw, 64px); align-items: center; }
+  .vt-split--rev { grid-template-columns: 0.8fr 1.2fr; }
+  .vt-canales { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 28px; }
+  .vt-canal { padding: 18px; border-radius: 14px; border: 1px solid transparent; background: linear-gradient(var(--panel), var(--panel)) padding-box, var(--grad) border-box; }
+  .vt-canal h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; letter-spacing: -0.02em; color: var(--blanco); margin: 8px 0 6px; }
+  .vt-canal p { font-family: var(--font-body); font-size: 14px; line-height: 1.6; color: var(--gris); margin: 0; }
+  .vt-fotos2 { position: relative; padding: 0 0 18% 22%; }
+  .vt-fotos2 img { display: block; height: auto; object-fit: cover; border-radius: 14px; }
+  .vt-foto-alta { width: 100%; aspect-ratio: 9 / 14; }
+  .vt-foto-chica { position: absolute; left: 0; bottom: 0; width: 46%; aspect-ratio: 4 / 5; border: 6px solid #0f0d15; }
+
+  /* Consignación */
+  .vt-pasos { list-style: none; margin: 32px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .vt-paso { display: flex; flex-direction: column; gap: 14px; padding: 22px; border-radius: 16px; background: var(--panel); border: 1px solid var(--linea); }
+  .vt-paso-n { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--grad); font-family: var(--font-display); font-weight: 800; color: #fff; }
+  .vt-paso h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; letter-spacing: -0.02em; color: var(--blanco); margin: 0 0 6px; }
+  .vt-paso p { font-family: var(--font-body); font-size: 14px; line-height: 1.6; color: var(--gris); margin: 0; }
+  .vt-comision { display: grid; grid-template-columns: auto auto 1fr; gap: 16px 32px; align-items: center; margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--linea); }
+  .vt-comision > div { display: flex; flex-direction: column; gap: 2px; font-family: var(--font-body); font-size: 13px; color: var(--gris-2); max-width: 180px; }
+  .vt-comision-num { font-family: var(--font-display); font-weight: 800; font-size: 2rem; letter-spacing: -0.03em; line-height: 1; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .vt-comision p { margin: 0; font-family: var(--font-body); font-size: 14px; line-height: 1.6; color: var(--gris); }
+
+  /* Entrupy */
+  .vt-foto-entrupy { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 16px; }
+  .vt-pilares { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 24px; }
+  .vt-pilar { padding: 16px; border-radius: 14px; border: 1px solid transparent; background: linear-gradient(var(--panel), var(--panel)) padding-box, var(--grad) border-box; }
+  .vt-pilar h3 { margin: 0 0 6px; font-family: var(--font-body); font-size: 12px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: var(--rosa); }
+  .vt-pilar p { margin: 0; font-family: var(--font-body); font-size: 14px; line-height: 1.55; color: var(--gris); }
+
+  /* Equipo */
+  .vt-equipo { display: grid; grid-template-columns: 1.6fr 0.7fr; gap: 20px; align-items: stretch; margin-top: 32px; }
+  .vt-film { margin: 0; }
+  .vt-film video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: 16px; background: var(--panel); }
+  .vt-film figcaption { font-family: var(--font-body); font-size: 13px; color: var(--gris-2); margin-top: 10px; }
+  .vt-equipo-foto { margin: 0; }
+  .vt-equipo-foto img { display: block; width: 100%; height: 100%; max-height: 520px; object-fit: cover; border-radius: 16px; }
+
+  /* Operación */
+  .vt-retos { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 12px; }
+  .vt-retos li { font-family: var(--font-body); font-size: 16px; line-height: 1.6; color: var(--gris); padding: 16px 18px 16px 22px; border-radius: 12px; background: var(--panel); border-left: 3px solid var(--rosa); }
+  .vt-retos strong { color: var(--blanco); }
+
+  /* Sucursales */
+  .vt-sucs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 28px; }
+  .vt-suc { padding: 20px; border-radius: 14px; background: var(--panel); border: 1px solid var(--linea); }
+  .vt-suc h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; letter-spacing: -0.02em; color: var(--blanco); margin: 8px 0 6px; }
+  .vt-suc p { font-family: var(--font-body); font-size: 14px; line-height: 1.55; color: var(--gris); margin: 0; }
+  .vt-sucs-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-top: 32px; }
+  .vt-giro { font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--rosa); text-decoration: none; margin-left: auto; }
+  .vt-giro:hover { text-decoration: underline; }
+
+  /* Botones y CTA */
+  .vt-btn { display: inline-block; font-family: var(--font-body); font-size: 15px; font-weight: 700; padding: 14px 28px; border-radius: 100px; text-decoration: none; transition: transform 0.2s ease; }
+  .vt-btn:hover { transform: translateY(-2px); text-decoration: none; }
+  .vt-btn--light { background: #fff; color: #0b0a10; }
+  .vt-btn--ghost { color: #fff; border: 1.5px solid rgba(255, 255, 255, 0.3); }
+  .vt-cta { background:
+      radial-gradient(ellipse 50% 60% at 50% 120%, rgba(236, 72, 153, 0.22), transparent 70%),
+      var(--tinta); padding: clamp(80px, 10vw, 140px) 16px; text-align: center; }
+  .vt-cta-inner { max-width: 640px; margin: 0 auto; }
+  .vt-cta-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -0.03em; line-height: 1.1; color: #fff; margin: 0 0 12px; text-wrap: balance; }
+  .vt-cta-sub { font-family: var(--font-body); font-size: 1.1rem; color: rgba(255, 255, 255, 0.62); margin: 0 0 32px; }
+  .vt-cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  @media (max-width: 900px) {
+    .vt-hero-inner, .vt-split, .vt-split--rev { grid-template-columns: 1fr; }
+    .vt-hero-media { order: -1; }
+    .vt-back { margin-bottom: 20px; }
+    .vt-pasos, .vt-pilares { grid-template-columns: 1fr; }
+    .vt-sucs { grid-template-columns: 1fr 1fr; }
+    .vt-equipo { grid-template-columns: 1fr; }
+    .vt-equipo-foto img { max-height: 420px; }
+    .vt-giro { margin-left: 0; flex-basis: 100%; }
+  }
+  @media (max-width: 560px) {
+    .vt-stats-inner { grid-template-columns: 1fr 1fr; }
+    .vt-stat { border-right: none; border-bottom: 1px solid var(--linea); padding: 22px 10px; }
+    .vt-stat:nth-child(odd) { border-right: 1px solid var(--linea); }
+    .vt-stat:nth-child(n+3) { border-bottom: none; }
+    .vt-canales, .vt-sucs { grid-template-columns: 1fr; }
+    .vt-comision { grid-template-columns: 1fr 1fr; }
+    .vt-comision p { grid-column: 1 / -1; }
+    .vt-hero-media::before { top: -8px; right: -8px; }
+    .vt-foto-chica { border-width: 4px; }
+    .vt-sucs-foot .vt-btn { width: 100%; text-align: center; }
+  }
+</style>
