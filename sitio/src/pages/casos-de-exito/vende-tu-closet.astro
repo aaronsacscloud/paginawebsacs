@@ -26,9 +26,9 @@ const historia = [
 
 const canales = [
   { k: 'Instagram y TikTok', t: 'Donde nació la confianza.', d: 'Piezas nuevas, dinámicas y contenido que convierte seguidores en clientes. Ahí empezó todo, y ahí se sigue vendiendo.' },
-  { k: 'WhatsApp', t: 'La venta uno a uno.', d: 'Fotos, dudas, apartados y cierres de venta en la conversación, como con una asesora de confianza.' },
+  { k: 'WhatsApp', t: 'La venta uno a uno.', d: 'Fotos, dudas y cierres de venta en la conversación, como con una asesora de confianza.' },
   { k: 'vtc.mx', t: 'La tienda abierta siempre.', d: 'Catálogo con las grandes casas de moda, envío en 2 a 3 días hábiles en todo México y meses sin intereses.' },
-  { k: 'Showrooms', t: 'El lujo se ve en persona.', d: 'Cuatro sucursales donde se compra, se aparta y se lleva a consignar, con cita o sin ella.' },
+  { k: 'Showrooms', t: 'El lujo se ve en persona.', d: 'Cuatro sucursales donde se compra y se lleva a consignar, con cita o sin ella.' },
 ];
 
 const pasos = [
@@ -113,7 +113,7 @@ const marcas = ['Chanel', 'Dior', 'Louis Vuitton', 'Hermès', 'Fendi', 'Prada', 
       <div>
         <span class="vt-eyebrow">Cómo venden</span>
         <h2 class="vt-h2">Una pieza, cuatro vitrinas.</h2>
-        <p class="vt-p">Cada bolsa es única y puede venderse en cualquiera de sus canales. Por eso apartan desde el 30% de enganche (15 días para liquidar calzado y 30 para lo demás) y la pieza queda reservada en todos lados a la vez.</p>
+        <p class="vt-p">Cada bolsa es única y puede venderse en cualquiera de sus canales: en cuanto alguien la elige, tiene que dejar de estar disponible en todos los demás.</p>
         <div class="vt-canales">
           {canales.map((c) => (
             <div class="vt-canal"><span class="vt-lugar">{c.k}</span><h3>{c.t}</h3><p>{c.d}</p></div>
@@ -138,11 +138,6 @@ const marcas = ['Chanel', 'Dior', 'Louis Vuitton', 'Hermès', 'Fendi', 'Prada', 
         <li class="vt-paso"><span class="vt-paso-n">{i + 1}</span><div><h3>{p.t}</h3><p>{p.d}</p></div></li>
       ))}
     </ol>
-    <div class="vt-comision">
-      <div><span class="vt-comision-num">20%</span><span>de comisión en artículos de más de $6,000</span></div>
-      <div><span class="vt-comision-num">30%</span><span>en artículos de menor precio</span></div>
-      <p>Si una pieza no se vende en 45 días, quien la consignó decide: la retira o la deja más tiempo con un precio especial.</p>
-    </div>
   </div>
 </section>
 
@@ -190,11 +185,10 @@ const marcas = ['Chanel', 'Dior', 'Louis Vuitton', 'Hermès', 'Fendi', 'Prada', 
   <div class="vt-inner">
     <span class="vt-eyebrow">La operación</span>
     <h2 class="vt-h2">Piezas únicas, en cuatro canales y cuatro ciudades.</h2>
-    <p class="vt-p">En el lujo pre-loved no hay tallas ni reposición: cada pieza tiene una consignante, una valuación, un plazo de 45 días y un certificado. Si se aparta en WhatsApp, deja de estar disponible en Instagram, en vtc.mx y en el showroom en ese mismo momento. Venderla dos veces no es una opción.</p>
+    <p class="vt-p">En el lujo pre-loved no hay tallas ni reposición: cada pieza tiene una consignante, una valuación, un plazo de 45 días y un certificado. Si se vende en WhatsApp, deja de estar disponible en Instagram, en vtc.mx y en el showroom en ese mismo momento. Venderla dos veces no es una opción.</p>
     <ul class="vt-retos">
       <li><strong>Una pieza, un dueño.</strong> Cada artículo sabe quién lo consignó, en cuánto y hasta cuándo.</li>
       <li><strong>Un solo inventario.</strong> Cuatro sucursales y cuatro canales ven la misma pieza al mismo tiempo.</li>
-      <li><strong>Apartados con plazo.</strong> El enganche del 30% reserva la pieza y el sistema cuenta los días.</li>
     </ul>
   </div>
 </section>
@@ -314,10 +308,6 @@ const marcas = ['Chanel', 'Dior', 'Louis Vuitton', 'Hermès', 'Fendi', 'Prada', 
   .vt-paso-n { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--grad); font-family: var(--font-display); font-weight: 800; color: #fff; }
   .vt-paso h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; letter-spacing: -0.02em; color: var(--blanco); margin: 0 0 6px; }
   .vt-paso p { font-family: var(--font-body); font-size: 14px; line-height: 1.6; color: var(--gris); margin: 0; }
-  .vt-comision { display: grid; grid-template-columns: auto auto 1fr; gap: 16px 32px; align-items: center; margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--linea); }
-  .vt-comision > div { display: flex; flex-direction: column; gap: 2px; font-family: var(--font-body); font-size: 13px; color: var(--gris-2); max-width: 180px; }
-  .vt-comision-num { font-family: var(--font-display); font-weight: 800; font-size: 2rem; letter-spacing: -0.03em; line-height: 1; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .vt-comision p { margin: 0; font-family: var(--font-body); font-size: 14px; line-height: 1.6; color: var(--gris); }
 
   /* Entrupy */
   .vt-foto-entrupy { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 16px; }
@@ -377,9 +367,7 @@ const marcas = ['Chanel', 'Dior', 'Louis Vuitton', 'Hermès', 'Fendi', 'Prada', 
     .vt-stat:nth-child(odd) { border-right: 1px solid var(--linea); }
     .vt-stat:nth-child(n+3) { border-bottom: none; }
     .vt-canales, .vt-sucs { grid-template-columns: 1fr; }
-    .vt-comision { grid-template-columns: 1fr 1fr; }
-    .vt-comision p { grid-column: 1 / -1; }
-    .vt-hero-media::before { top: -8px; right: -8px; }
+        .vt-hero-media::before { top: -8px; right: -8px; }
     .vt-foto-chica { border-width: 4px; }
     .vt-sucs-foot .vt-btn { width: 100%; text-align: center; }
   }
