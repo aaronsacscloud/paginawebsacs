@@ -105,6 +105,17 @@ const cases = [
     web: 'https://www.instagram.com/alazanast/',
     stats: [], quote: '', author: '', highlights: [], image: '',
   },
+  {
+    slug: 'mits',
+    estilo: 'mits',
+    brand: 'Mexico Is The Shit',
+    tag: 'Moda mexicana · Hecho en México',
+    lead: 'MITS es una marca hecha en México y pensada para recordarle al mundo que lo hecho en México está bien hecho. Del fútbol a la lucha libre, cada colección es una forma de expresar amor por la cultura mexicana, con un mensaje que se lleva puesto.',
+    valores: ['Amor', 'Respeto', 'Confianza'],
+    colecciones: ['Demasiado Fútbol', 'Lucha Libre x MITS', 'Sindicato Mexicano del Runner', 'MITS University', 'Mexico Is The Shit Racing', 'Demasiado Fino', 'Amor de MITS Amores'],
+    web: 'https://mexicoistheshit.store/',
+    stats: [], quote: '', author: '', highlights: [], image: '',
+  },
 ];
 ---
 
@@ -120,7 +131,7 @@ const cases = [
     <span class="ce-eyebrow">Casos de éxito</span>
     <h1 class="ce-hero-title">No venden una prenda. Venden <span class="ce-rot"><span>una forma de vestir.</span><span aria-hidden="true">una temporada.</span><span aria-hidden="true">un recuerdo.</span><span aria-hidden="true">una comunidad.</span></span></h1>
     <p class="ce-hero-subtitle">Trabajamos con empresarios que saben lo que hacen: líderes apasionados por su marca que construyen un ecosistema completo alrededor de ella. Por cómo hacen las cosas, sus marcas siguen creciendo.</p>
-    <p class="ce-hero-proof"><span>Con ellos trabajamos:</span> <a href="#liveshow">Live Shows Merchandising</a> <a href="#sthela">Sthela &amp; Co.</a> <a href="#vende-tu-closet">Vende Tu Clóset</a> <a href="#las-alazanas">Las Alazanas</a></p>
+    <p class="ce-hero-proof"><span>Con ellos trabajamos:</span> <a href="#liveshow">Live Shows Merchandising</a> <a href="#sthela">Sthela &amp; Co.</a> <a href="#vende-tu-closet">Vende Tu Clóset</a> <a href="#las-alazanas">Las Alazanas</a> <a href="#mits">Mexico Is The Shit</a></p>
   </div>
 </section>
 
@@ -166,6 +177,51 @@ const cases = [
           Ver más de Vende Tu Clóset
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
+      </div>
+    </div>
+  </section>
+) : c.estilo === 'mits' ? (
+  <section class="ce-mits" id={c.slug}>
+    <div class="ce-mits-inner">
+      <div class="ce-mits-top">
+        <div class="ce-mits-head">
+          <span class="ce-mits-marca">MEXICO <span>IS THE</span> SHIT</span>
+          <span class="ce-mits-tag">{c.tag}</span>
+          <h2 class="ce-mits-title">¿Quién dice que en México no hay <em>moda y sentido de conciencia?</em></h2>
+          <p class="ce-mits-lead">{c.lead}</p>
+          <div class="ce-mits-valores" aria-label="Sus valores">
+            {c.valores?.map((v) => <span>{v}</span>)}
+          </div>
+          <p class="ce-mits-lema">Amor, respeto y confianza: eso es MITS.</p>
+        </div>
+        <div class="ce-mits-mosaico">
+          <img src="/images/mits-mujeres-espalda.webp" alt="Mujer con la playera «Mujeres en la lucha» de MITS frente a la pantalla de la colección" width="1000" height="1333" loading="lazy" class="ce-mits-foto ce-mits-foto--alta" />
+          <figure class="ce-mits-reel">
+            <video autoplay muted loop playsinline preload="none" poster="/videos/mits-cultura-poster.webp" width="540" height="960"><source src="/videos/mits-cultura.mp4" type="video/mp4" /></video>
+          </figure>
+          <img src="/images/mits-poncho.webp" alt="Mujer en la barra con el poncho «Mexico Is The Shit»" width="900" height="1200" loading="lazy" class="ce-mits-foto" />
+        </div>
+      </div>
+    </div>
+    <div class="ce-mits-greca" aria-hidden="true"></div>
+    <div class="ce-mits-cinta" aria-label="Algunas de sus colecciones">
+      <div class="ce-mits-cinta-track">
+        {[0, 1].map((n) => (
+          <span class="ce-mits-cinta-set" aria-hidden={n === 1 ? 'true' : undefined}>{c.colecciones?.map((m) => <span>{m}</span>)}</span>
+        ))}
+      </div>
+    </div>
+    <div class="ce-mits-inner">
+      <div class="ce-mits-foot">
+        <a href={`/casos-de-exito/${c.slug}`} class="ce-mits-mas">
+          Conoce más de MITS
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a href={c.web} target="_blank" rel="noopener" class="ce-mits-link">
+          mexicoistheshit.store
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <span class="ce-mits-spread">Hecho en México · Spread the word</span>
       </div>
     </div>
   </section>
@@ -917,5 +973,54 @@ const cases = [
     .ce-vaq-foto--alta { grid-row: auto; }
     .ce-vaq-reel { display: none; }
     .ce-vaq-sello { width: 92px; height: 92px; bottom: 34px; }
+  }
+  /* ── Mexico Is The Shit · sección NEGRA (va después de Las Alazanas, que es blanca) ──
+     El acento propio es la greca del poncho MITS (franja blanco/negro) y una cinta
+     con sus colecciones. Se conserva el degradado rosa · morado · naranja de la página. */
+  .ce-mits { --mits-tinta: #0b0a10; --mits-gris: rgba(255, 255, 255, 0.72); --mits-linea: rgba(255, 255, 255, 0.14);
+    --mits-grad: linear-gradient(90deg, #EC4899, #A855F7 72%, #FB923C);
+    position: relative; overflow: hidden; color: #fff; padding: clamp(72px, 9vw, 120px) 0 clamp(56px, 7vw, 90px); background:
+      radial-gradient(ellipse 50% 40% at 100% 8%, rgba(236, 72, 153, 0.22), transparent 70%),
+      radial-gradient(ellipse 45% 40% at 0% 50%, rgba(168, 85, 247, 0.18), transparent 70%),
+      radial-gradient(ellipse 40% 30% at 60% 100%, rgba(251, 146, 60, 0.12), transparent 70%),
+      var(--mits-tinta); }
+  .ce-mits-inner { position: relative; max-width: 1200px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px); }
+  .ce-mits-top { display: grid; grid-template-columns: 1fr 1.05fr; gap: clamp(36px, 6vw, 80px); align-items: center; }
+  .ce-mits-marca { display: inline-block; font-family: var(--font-display); font-size: 15px; font-weight: 800; letter-spacing: 0.22em; }
+  .ce-mits-marca span { font-size: 10px; letter-spacing: 0.3em; vertical-align: middle; color: var(--mits-gris); }
+  .ce-mits-tag { display: block; margin-top: 18px; font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #FF7AB6; }
+  .ce-mits-title { font-family: var(--font-display); font-size: clamp(2.1rem, 4.4vw, 3.5rem); font-weight: 800; letter-spacing: -0.04em; line-height: 1.04; margin: 12px 0 20px; color: #fff; text-wrap: balance; }
+  .ce-mits-title em { font-style: normal; background: var(--mits-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .ce-mits-lead { font-family: var(--font-body); font-size: clamp(1rem, 1.4vw, 1.08rem); line-height: 1.7; color: var(--mits-gris); margin: 0 0 24px; }
+  .ce-mits-valores { display: flex; flex-wrap: wrap; gap: 10px; }
+  .ce-mits-valores span { padding: 10px 18px; border-radius: 999px; border: 1.5px solid transparent; background: linear-gradient(#0b0a10, #0b0a10) padding-box, var(--mits-grad) border-box; font-family: var(--font-display); font-size: 15px; font-weight: 800; letter-spacing: 0.04em; }
+  .ce-mits-lema { margin: 18px 0 0; font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; color: #fff; }
+  .ce-mits-mosaico { display: grid; grid-template-columns: 1.15fr 1fr; grid-template-rows: 1fr 1fr; gap: 12px; height: clamp(460px, 48vw, 620px); }
+  .ce-mits-mosaico img, .ce-mits-mosaico video { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 18px; }
+  .ce-mits-foto--alta { grid-row: 1 / 3; }
+  .ce-mits-reel { margin: 0; }
+  /* La greca del poncho: rombos blanco/negro en una franja */
+  .ce-mits-greca { height: 34px; margin-top: clamp(48px, 6vw, 72px); background:
+      linear-gradient(135deg, transparent 37%, #fff 37% 43%, transparent 43% 57%, #fff 57% 63%, transparent 63%) 0 0 / 34px 34px,
+      linear-gradient(45deg, transparent 37%, #fff 37% 43%, transparent 43% 57%, #fff 57% 63%, transparent 63%) 0 0 / 34px 34px;
+    border-top: 3px solid #fff; border-bottom: 3px solid #fff; opacity: 0.9; }
+  .ce-mits-cinta { overflow: hidden; padding: 18px 0; border-bottom: 1px solid var(--mits-linea); }
+  .ce-mits-cinta-track { display: flex; width: max-content; animation: ce-mits-corre 38s linear infinite; }
+  .ce-mits-cinta-set { display: flex; }
+  .ce-mits-cinta-set span { padding: 0 28px; font-family: var(--font-display); font-size: clamp(1.1rem, 2vw, 1.5rem); font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; }
+  .ce-mits-cinta-set span::after { content: '✕'; margin-left: 56px; color: #FF7AB6; font-size: 0.7em; }
+  @keyframes ce-mits-corre { to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) { .ce-mits-cinta-track { animation: none; } }
+  .ce-mits-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 28px; margin-top: clamp(32px, 4vw, 48px); }
+  .ce-mits-mas { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 24px; border-radius: 100px; background: #fff; color: #0b0a10; font-family: var(--font-display); font-size: 15px; font-weight: 700; text-decoration: none; transition: gap 0.2s; }
+  .ce-mits-mas:hover { gap: 14px; text-decoration: none; }
+  .ce-mits-link { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); font-size: 15px; font-weight: 700; color: #fff; text-decoration: none; border-bottom: 2px solid #EC4899; padding-bottom: 3px; }
+  .ce-mits-spread { margin-left: auto; font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--mits-gris); }
+  @media (max-width: 900px) {
+    .ce-mits-top { grid-template-columns: 1fr; }
+    .ce-mits-spread { margin-left: 0; flex-basis: 100%; }
+  }
+  @media (max-width: 560px) {
+    .ce-mits-mosaico { height: 520px; }
   }
 </style>

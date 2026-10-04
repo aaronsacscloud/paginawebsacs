@@ -1,0 +1,246 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { PRODUCTO_ID, ENTIDAD_ID } from '../../data/entidad';
+import { breadcrumbCaso } from '../../lib/breadcrumb';
+
+// Todo lo de esta página sale de lo que mandó el dueño (fotos, reels, «amor,
+// respeto y confianza») y de mexicoistheshit.store (colecciones, colaboraciones,
+// «Hecho en México / Spread the word», puntos de venta). Sin cifras de
+// resultados ni citas: no hay ninguna confirmada todavía. No se afirma qué
+// funciones de SACS usan. Sección NEGRA: en /casos-de-exito va después de
+// Las Alazanas, que es blanca.
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: 'Mexico Is The Shit: ¿quién dice que en México no hay moda y sentido de conciencia?',
+  description: 'MITS es una marca hecha en México que expresa amor por la cultura mexicana: fútbol, lucha libre y colecciones con mensaje. Amor, respeto y confianza.',
+  about: { '@id': PRODUCTO_ID },
+  author: { '@id': ENTIDAD_ID },
+};
+const structuredData = [articleSchema, breadcrumbCaso('Mexico Is The Shit')];
+
+const valores = [
+  { k: 'Amor', d: 'Por México y por lo que se hace aquí. Cada colección es una carta de amor a la cultura mexicana.' },
+  { k: 'Respeto', d: 'Por las historias que inspiran cada prenda: del fútbol a la lucha libre, se cuentan con orgullo y con cuidado.' },
+  { k: 'Confianza', d: 'Lo hecho en México está bien hecho. Esa es la promesa de cada pieza que lleva su nombre.' },
+];
+
+const colecciones = ['Demasiado Fútbol', 'Lucha Libre x MITS', 'Sindicato Mexicano del Runner', 'MITS University Collection', 'Mexico Is The Shit Racing', 'Demasiado Fino', 'Amor de MITS Amores'];
+
+const puntos = [
+  { nombre: 'Flagship store', zona: 'Roma Norte, CDMX', dir: 'Mérida 151, Colonia Roma Norte, Cuauhtémoc' },
+  { nombre: 'Casa Dinamarca', zona: 'Juárez, CDMX', dir: 'C. Dinamarca 64, Juárez, Cuauhtémoc' },
+  { nombre: 'Arena México', zona: 'Doctores, CDMX', dir: 'Dr. Lavista 189, Doctores, Cuauhtémoc' },
+];
+---
+
+<BaseLayout
+  title="Mexico Is The Shit (MITS) — Caso de éxito SACS"
+  description="¿Quién dice que en México no hay moda y sentido de conciencia? MITS: moda hecha en México con amor, respeto y confianza, del fútbol a la lucha libre."
+  structuredData={structuredData}
+  preloadImage="/videos/mits-cultura-poster.webp"
+>
+
+<!-- Hero -->
+<section class="mt-hero">
+  <div class="mt-hero-inner">
+    <div class="mt-hero-text">
+      <a href="/casos-de-exito#mits" class="mt-back">&larr; Todos los casos de éxito</a>
+      <span class="mt-marca">MEXICO <span>IS THE</span> SHIT</span>
+      <span class="mt-tag">Moda mexicana · Hecho en México</span>
+      <h1 class="mt-title">¿Quién dice que en México no hay <em>moda y sentido de conciencia?</em></h1>
+      <p class="mt-lead">MITS es más que una marca: es una forma de expresar amor por la cultura mexicana. Cada producto está hecho en México y pensado para recordarle al mundo que lo hecho en México está bien hecho.</p>
+      <p class="mt-lema">Amor, respeto y confianza: eso es MITS.</p>
+    </div>
+    <div class="mt-hero-media">
+      <video autoplay muted loop playsinline preload="metadata" poster="/videos/mits-cultura-poster.webp" width="540" height="960" aria-hidden="true">
+        <source src="/videos/mits-cultura.mp4" type="video/mp4" />
+      </video>
+    </div>
+  </div>
+</section>
+
+<div class="mt-greca" aria-hidden="true"></div>
+
+<!-- Valores -->
+<section class="mt-sec">
+  <div class="mt-inner mt-inner--wide">
+    <span class="mt-eyebrow">Lo que los mueve</span>
+    <h2 class="mt-h2">Más que una marca, una forma de expresión.</h2>
+    <p class="mt-p">Vemos y amamos la pasión. Por eso MITS tiene un lugar especial entre nuestros clientes: lo que venden no es solo ropa, es orgullo por lo que somos.</p>
+    <div class="mt-valores">
+      {valores.map((v, i) => (
+        <div class="mt-valor"><span class="mt-valor-n">{String(i + 1).padStart(2, '0')}</span><h3>{v.k}</h3><p>{v.d}</p></div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- Mujeres en la lucha -->
+<section class="mt-sec mt-sec--alt">
+  <div class="mt-inner mt-inner--wide">
+    <div class="mt-split">
+      <div>
+        <span class="mt-eyebrow">Lucha Libre x MITS</span>
+        <h2 class="mt-h2">Mujeres en la lucha.</h2>
+        <p class="mt-p">Dentro de su línea Lucha Libre x MITS, «Mujeres en la lucha» celebra a las mujeres del ring: luchadoras que se levantan, se apoyan y suben juntas. Moda con mensaje, para llevarla puesta.</p>
+        <p class="mt-p">Ese es el sentido de conciencia: una playera también puede contar una historia que importa.</p>
+      </div>
+      <div class="mt-fotos3">
+        <img src="/images/mits-mujeres-espalda.webp" alt="Mujer con la playera «Mujeres en la lucha» frente a la pantalla de la colección" width="1000" height="1333" loading="lazy" class="mt-foto-alta" />
+        <img src="/images/mits-mujeres-pecho.webp" alt="Detalle del estampado «Mujeres en la lucha» de MITS" width="900" height="1200" loading="lazy" />
+        <img src="/images/mits-maniquies.webp" alt="Maniquíes con la playera, la mascada y la gorra de la colección" width="900" height="1200" loading="lazy" />
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Hecho en México -->
+<section class="mt-sec">
+  <div class="mt-inner mt-inner--wide">
+    <div class="mt-split mt-split--rev">
+      <img src="/images/mits-poncho.webp" alt="Mujer en la barra con el poncho «Mexico Is The Shit»" width="900" height="1200" loading="lazy" class="mt-foto-poncho" />
+      <div>
+        <span class="mt-eyebrow">Hecho en México</span>
+        <h2 class="mt-h2">Spread the word.</h2>
+        <p class="mt-p">El poncho MITS, tejido con grecas, resume la idea: una prenda de aquí, con diseño de aquí, que se luce en cualquier lugar del mundo.</p>
+        <blockquote class="mt-quote">«Cada producto de MEXICO IS THE SHIT está hecho en México y pensado para recordarle al mundo que lo hecho en México está bien hecho.»<cite>— mexicoistheshit.store</cite></blockquote>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Colaboraciones y colecciones -->
+<section class="mt-sec mt-sec--alt">
+  <div class="mt-inner mt-inner--wide">
+    <div class="mt-split">
+      <div>
+        <span class="mt-eyebrow">Colaboraciones</span>
+        <h2 class="mt-h2">Mexico Is The Shit × Bala Di Gala.</h2>
+        <p class="mt-p">Las colaboraciones son otra forma de contar México: con Bala Di Gala, las botas MITS; con el CMLL, la lucha libre. Cada caja se abre como lo que es: algo hecho con cariño.</p>
+        <div class="mt-colecciones">
+          {colecciones.map((c) => <span>{c}</span>)}
+        </div>
+      </div>
+      <figure class="mt-reel">
+        <video controls playsinline preload="none" poster="/videos/mits-baladigala-poster.webp" width="540" height="960">
+          <source src="/videos/mits-baladigala.mp4" type="video/mp4" />
+        </video>
+        <figcaption>Mexico Is The Shit × Bala Di Gala.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- Puntos de venta -->
+<section class="mt-sec">
+  <div class="mt-inner mt-inner--wide">
+    <span class="mt-eyebrow">Dónde encontrarlos</span>
+    <h2 class="mt-h2">En el corazón de la Ciudad de México.</h2>
+    <div class="mt-puntos">
+      {puntos.map((p) => (
+        <div class="mt-punto"><span class="mt-zona">{p.zona}</span><h3>{p.nombre}</h3><p>{p.dir}</p></div>
+      ))}
+    </div>
+    <div class="mt-foot">
+      <a href="https://mexicoistheshit.store/" target="_blank" rel="noopener" class="mt-btn mt-btn--light">Conoce mexicoistheshit.store</a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="mt-cta">
+  <div class="mt-cta-inner">
+    <h2 class="mt-cta-title">¿Tu marca también cuenta algo que importa?</h2>
+    <p class="mt-cta-sub">Platiquemos de tu marca, tus colecciones y tus puntos de venta.</p>
+    <div class="mt-cta-actions">
+      <a href="/contacto" class="mt-btn mt-btn--light">Agenda una demo</a>
+      <a href="/prueba-gratis" class="mt-btn mt-btn--ghost">Empieza gratis</a>
+    </div>
+  </div>
+</section>
+
+</BaseLayout>
+
+<style>
+  /* Negro de la sección de casos (como Live Shows y Vende Tu Clóset) con el degradado
+     rosa · morado · naranja. Acento propio: la greca del poncho MITS. */
+  .mt-hero, .mt-sec, .mt-cta, .mt-greca {
+    --tinta: #0b0a10; --panel: #15121c; --gris: rgba(255, 255, 255, 0.72); --gris-2: rgba(255, 255, 255, 0.5); --linea: rgba(255, 255, 255, 0.14); --rosa: #FF7AB6;
+    --grad: linear-gradient(90deg, #EC4899, #A855F7 72%, #FB923C);
+  }
+  .mt-hero { color: #fff; padding: clamp(40px, 6vw, 80px) 16px clamp(56px, 7vw, 96px); background:
+      radial-gradient(ellipse 50% 45% at 100% 10%, rgba(236, 72, 153, 0.22), transparent 70%),
+      radial-gradient(ellipse 45% 45% at 0% 60%, rgba(168, 85, 247, 0.18), transparent 70%),
+      var(--tinta); }
+  .mt-hero-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1.2fr 0.8fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
+  .mt-back { display: inline-block; font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--gris-2); text-decoration: none; margin-bottom: 32px; }
+  .mt-back:hover { color: #fff; }
+  .mt-marca { display: block; font-family: var(--font-display); font-size: 16px; font-weight: 800; letter-spacing: 0.22em; }
+  .mt-marca span { font-size: 10px; letter-spacing: 0.3em; vertical-align: middle; color: var(--gris); }
+  .mt-tag { display: block; margin-top: 20px; font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--rosa); }
+  .mt-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(2.4rem, 5.2vw, 4.3rem); line-height: 1.02; letter-spacing: -0.045em; margin: 14px 0 20px; color: #fff; text-wrap: balance; }
+  .mt-title em { font-style: normal; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .mt-lead { font-family: var(--font-body); font-size: clamp(1rem, 1.5vw, 1.15rem); line-height: 1.7; color: var(--gris); margin: 0; max-width: 560px; }
+  .mt-lema { margin: 18px 0 0; font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: #fff; }
+  .mt-hero-media { position: relative; max-width: 340px; width: 100%; justify-self: center; }
+  .mt-hero-media::before { content: ''; position: absolute; top: -14px; right: -14px; width: 60%; height: 55%; border-radius: 20px; background: var(--grad); }
+  .mt-hero-media video { position: relative; display: block; width: 100%; height: auto; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 18px; background: var(--panel); }
+  .mt-greca { height: 34px; background:
+      linear-gradient(135deg, transparent 37%, #fff 37% 43%, transparent 43% 57%, #fff 57% 63%, transparent 63%) 0 0 / 34px 34px,
+      linear-gradient(45deg, transparent 37%, #fff 37% 43%, transparent 43% 57%, #fff 57% 63%, transparent 63%) 0 0 / 34px 34px,
+      var(--tinta);
+    border-top: 3px solid #fff; border-bottom: 3px solid #fff; }
+  .mt-sec { background: var(--tinta); color: #fff; padding: clamp(64px, 8vw, 110px) 16px; }
+  .mt-sec--alt { background:
+      radial-gradient(ellipse 50% 45% at 0% 0%, rgba(236, 72, 153, 0.12), transparent 70%),
+      var(--panel); }
+  .mt-inner { max-width: 880px; margin: 0 auto; }
+  .mt-inner--wide { max-width: 1160px; }
+  .mt-eyebrow { display: block; font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--rosa); margin-bottom: 14px; }
+  .mt-h2 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.9rem, 3.8vw, 2.9rem); line-height: 1.08; letter-spacing: -0.035em; color: #fff; margin: 0 0 20px; text-wrap: balance; }
+  .mt-p { font-family: var(--font-body); font-size: 17px; line-height: 1.7; color: var(--gris); margin: 0 0 16px; max-width: 680px; }
+  .mt-valores { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 32px; }
+  .mt-valor { padding: 28px; border-radius: 20px; border: 1.5px solid transparent; background: linear-gradient(#15121c, #15121c) padding-box, var(--grad) border-box; }
+  .mt-valor-n { font-family: var(--font-display); font-size: 13px; font-weight: 700; color: var(--rosa); }
+  .mt-valor h3 { margin: 8px 0 10px; font-family: var(--font-display); font-size: clamp(1.8rem, 3vw, 2.4rem); font-weight: 800; letter-spacing: -0.03em; color: #fff; }
+  .mt-valor p { margin: 0; font-family: var(--font-body); font-size: 15px; line-height: 1.6; color: var(--gris); }
+  .mt-split { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
+  .mt-split--rev { grid-template-columns: 0.85fr 1.15fr; }
+  .mt-fotos3 { display: grid; grid-template-columns: 1.2fr 1fr; grid-template-rows: 1fr 1fr; gap: 12px; height: 560px; }
+  .mt-fotos3 img { width: 100%; height: 100%; object-fit: cover; border-radius: 18px; display: block; }
+  .mt-foto-alta { grid-row: 1 / 3; }
+  .mt-foto-poncho { width: 100%; height: auto; border-radius: 20px; display: block; }
+  .mt-quote { margin: 24px 0 0; padding: 22px 26px; border-radius: 18px; background: var(--panel); border-left: 0; font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; line-height: 1.45; color: #fff; }
+  .mt-quote cite { display: block; margin-top: 12px; font-family: var(--font-body); font-size: 13px; font-style: normal; font-weight: 500; color: var(--gris-2); }
+  .mt-colecciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+  .mt-colecciones span { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--linea); font-family: var(--font-display); font-size: 13px; font-weight: 700; }
+  .mt-reel { margin: 0; max-width: 340px; justify-self: center; width: 100%; }
+  .mt-reel video { display: block; width: 100%; height: auto; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 18px; background: var(--panel); }
+  .mt-reel figcaption { margin-top: 10px; font-family: var(--font-body); font-size: 13px; color: var(--gris-2); }
+  .mt-puntos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 24px; }
+  .mt-punto { padding: 22px; border-radius: 18px; background: var(--panel); border: 1px solid var(--linea); }
+  .mt-zona { font-family: var(--font-body); font-size: 12px; color: var(--rosa); }
+  .mt-punto h3 { margin: 6px 0 6px; font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; color: #fff; }
+  .mt-punto p { margin: 0; font-family: var(--font-body); font-size: 14px; line-height: 1.5; color: var(--gris); }
+  .mt-foot { margin-top: 28px; }
+  .mt-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 24px; border-radius: 100px; font-family: var(--font-display); font-size: 15px; font-weight: 700; text-decoration: none; }
+  .mt-btn--light { background: #fff; color: #0b0a10; }
+  .mt-btn--ghost { border: 1.5px solid rgba(255, 255, 255, 0.7); color: #fff; }
+  .mt-cta { color: #fff; text-align: center; padding: clamp(64px, 8vw, 110px) 16px; background:
+      radial-gradient(ellipse 50% 45% at 0% 10%, rgba(236, 72, 153, 0.24), transparent 70%),
+      radial-gradient(ellipse 45% 45% at 100% 70%, rgba(168, 85, 247, 0.22), transparent 70%),
+      var(--tinta); border-top: 1px solid var(--linea); }
+  .mt-cta-inner { max-width: 720px; margin: 0 auto; }
+  .mt-cta-title { color: #fff; font-family: var(--font-display); font-weight: 800; font-size: clamp(1.9rem, 4vw, 3rem); letter-spacing: -0.035em; line-height: 1.08; margin: 0 0 14px; }
+  .mt-cta-sub { font-family: var(--font-body); font-size: 17px; color: var(--gris); margin: 0 0 28px; }
+  .mt-cta-actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+  @media (max-width: 900px) {
+    .mt-hero-inner, .mt-split, .mt-split--rev { grid-template-columns: 1fr; }
+    .mt-hero-media { max-width: 280px; }
+    .mt-valores, .mt-puntos { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    .mt-fotos3 { height: 480px; }
+  }
+</style>
