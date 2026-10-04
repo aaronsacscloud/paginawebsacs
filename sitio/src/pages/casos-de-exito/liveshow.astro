@@ -96,8 +96,13 @@ const paises = ['México', 'Costa Rica', 'Perú', 'Colombia', 'Argentina', 'Chil
   </div>
   <div class="ls-biz">
     <figure class="ls-biz-photo">
-      <img src="/images/ls-stand-sacrifice.webp" alt="Stand oficial de The Sacrifice Tour con playeras, sudaderas y la lista de precios" width="1200" height="900" loading="lazy" />
-      <figcaption>Stand oficial de The Sacrifice Tour: diseño de prenda y branding del punto de venta, hechos por la casa.</figcaption>
+      <div class="ls-biz-galeria">
+        <img src="/images/ls-tienda-racks.webp" alt="Equipo de Live Shows acomodando playeras de giras por talla en los racks de la tienda" width="900" height="1200" loading="lazy" />
+        <img src="/images/ls-playera-madonna.webp" alt="Playera oficial de Madonna, Who's That Girl World Tour" width="900" height="1200" loading="lazy" />
+        <img src="/images/ls-playera-morrissey.webp" alt="Playera oficial de Morrissey con fotografía a color" width="900" height="1200" loading="lazy" />
+        <img src="/images/ls-bolsas-mr-merch.webp" alt="Bolsas de Mr Merch Store selladas con la cinta de Live Shows Merchandising" width="900" height="1200" loading="lazy" />
+      </div>
+      <figcaption>De los racks por talla a la bolsa sellada de Mr Merch: playeras oficiales de cada gira, diseñadas y vendidas por la casa.</figcaption>
     </figure>
     <div class="ls-biz-cards">
       <div class="ls-card">
@@ -345,6 +350,8 @@ const paises = ['México', 'Costa Rica', 'Perú', 'Colombia', 'Argentina', 'Chil
   .ls-biz { max-width: 1120px; margin: 40px auto 0; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
   .ls-biz-photo { margin: 0; }
   .ls-biz-photo img { width: 100%; height: auto; border-radius: 18px; display: block; }
+  .ls-biz-galeria { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .ls-biz-galeria img { aspect-ratio: 3 / 4; object-fit: cover; border-radius: 16px; }
   .ls-biz-photo figcaption { font-family: var(--font-body); font-size: 13px; color: var(--color-text-tertiary); margin-top: 10px; line-height: 1.5; }
   .ls-biz-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .ls-card { background: #fff; border: 1px solid var(--color-bg-secondary); border-radius: 16px; padding: 20px; }
