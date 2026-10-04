@@ -91,6 +91,20 @@ const cases = [
     web: 'https://www.vtc.mx/',
     stats: [], quote: '', author: '', highlights: [], image: '',
   },
+  {
+    slug: 'las-alazanas',
+    estilo: 'vaquero',
+    brand: 'Talabartería Las Alazanas',
+    tag: 'Ropa vaquera · Talabartería',
+    lead: 'Las Alazanas viste a quienes viven el campo y el caballo todos los días. Sombreros de paja y fieltro, botas, camisas, cinturones y piezas de talabartería que salen de su propio taller, trabajadas a mano. Lo que venden es lo que viven: su equipo lleva la herradura de la marca en la espalda y su casa se llama #FamiliaAlazanas.',
+    hechos: [
+      { num: 'Taller propio', label: 'talabartería trabajada a mano' },
+      { num: '4 sucursales', label: 'Edomex, Morelos y Yucatán' },
+      { num: 'Tienda en línea', label: 'para quien vive lejos de una sucursal' },
+    ],
+    web: 'https://www.instagram.com/alazanast/',
+    stats: [], quote: '', author: '', highlights: [], image: '',
+  },
 ];
 ---
 
@@ -106,7 +120,7 @@ const cases = [
     <span class="ce-eyebrow">Casos de éxito</span>
     <h1 class="ce-hero-title">No venden una prenda. Venden <span class="ce-rot"><span>una forma de vestir.</span><span aria-hidden="true">una temporada.</span><span aria-hidden="true">un recuerdo.</span><span aria-hidden="true">una comunidad.</span></span></h1>
     <p class="ce-hero-subtitle">Trabajamos con empresarios que saben lo que hacen: líderes apasionados por su marca que construyen un ecosistema completo alrededor de ella. Por cómo hacen las cosas, sus marcas siguen creciendo.</p>
-    <p class="ce-hero-proof"><span>Con ellos trabajamos:</span> <a href="#liveshow">Live Shows Merchandising</a> <a href="#sthela">Sthela &amp; Co.</a> <a href="#vende-tu-closet">Vende Tu Clóset</a></p>
+    <p class="ce-hero-proof"><span>Con ellos trabajamos:</span> <a href="#liveshow">Live Shows Merchandising</a> <a href="#sthela">Sthela &amp; Co.</a> <a href="#vende-tu-closet">Vende Tu Clóset</a> <a href="#las-alazanas">Las Alazanas</a></p>
   </div>
 </section>
 
@@ -150,6 +164,54 @@ const cases = [
         </div>
         <a href={`/casos-de-exito/${c.slug}`} class="ce-lujo-link">
           Ver más de Vende Tu Clóset
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+) : c.estilo === 'vaquero' ? (
+  <section class="ce-vaq" id={c.slug}>
+    <div class="ce-vaq-inner">
+      <div class="ce-vaq-top">
+        <div class="ce-vaq-head">
+          <div class="ce-vaq-marca">
+            <img src="/images/alazanas-logo.webp" alt="" width="213" height="203" loading="lazy" class="ce-vaq-logo" />
+            <span class="ce-vaq-name">{c.brand}</span>
+          </div>
+          <span class="ce-vaq-tag">{c.tag}</span>
+          <h2 class="ce-vaq-title">Ser vaquero no es una moda. <em>Es una forma de vivir.</em></h2>
+          <p class="ce-vaq-lead">{c.lead}</p>
+          <div class="ce-vaq-hechos">
+            {c.hechos?.map((h) => (
+              <div class="ce-vaq-hecho"><span class="ce-vaq-hecho-num">{h.num}</span><span class="ce-vaq-hecho-label">{h.label}</span></div>
+            ))}
+          </div>
+        </div>
+        <div class="ce-vaq-mosaico">
+          <figure class="ce-vaq-taller">
+            <div class="ce-vaq-piel">
+              <video autoplay muted loop playsinline preload="metadata" poster="/videos/alazanas-taller-poster.webp" width="540" height="960"><source src="/videos/alazanas-taller.mp4" type="video/mp4" /></video>
+            </div>
+            <figcaption>Taller Alazanas · piel trabajada a mano</figcaption>
+            <span class="ce-vaq-sello" aria-hidden="true">
+              <svg viewBox="0 0 120 120" class="ce-vaq-sello-giro"><defs><path id="ce-vaq-circulo" d="M60,60 m-46,0 a46,46 0 1,1 92,0 a46,46 0 1,1 -92,0" /></defs><text><textPath href="#ce-vaq-circulo">#FAMILIAALAZANAS · TALABARTERÍA · TALLER PROPIO ·</textPath></text></svg>
+              <img src="/images/alazanas-logo.webp" alt="" width="213" height="203" loading="lazy" />
+            </span>
+          </figure>
+          <img src="/images/alazanas-sombreros.webp" alt="Pared de sombreros de paja y fieltro en Las Alazanas" width="900" height="1200" loading="lazy" class="ce-vaq-foto ce-vaq-foto--alta" />
+          <img src="/images/alazanas-cliente.webp" alt="Cliente con sombrero negro y camisa de Las Alazanas recorriendo la tienda" width="900" height="973" loading="lazy" class="ce-vaq-foto" />
+          <figure class="ce-vaq-reel">
+            <video autoplay muted loop playsinline preload="none" poster="/videos/alazanas-tienda-poster.webp" width="540" height="960"><source src="/videos/alazanas-tienda.mp4" type="video/mp4" /></video>
+          </figure>
+        </div>
+      </div>
+      <div class="ce-vaq-foot">
+        <a href={`/casos-de-exito/${c.slug}`} class="ce-vaq-mas">
+          Conoce más de Las Alazanas
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a href={c.web} target="_blank" rel="noopener" class="ce-vaq-link">
+          Síguelos en Instagram
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
       </div>
@@ -799,5 +861,61 @@ const cases = [
     .ce-case-stats {
       grid-template-columns: repeat(2, 1fr);
     }
+  }
+  /* ── Las Alazanas · vida vaquera (sección BLANCA: va después de Vende Tu Clóset, que es negra) ──
+     El acento es la piel: el video del taller va enmarcado como un cinturón
+     pespunteado y el sello gira con #FamiliaAlazanas alrededor de su herradura. */
+  .ce-vaq { --vaq-piel: #7A4A26; --vaq-pespunte: rgba(255, 226, 190, 0.85); --vaq-tinta: #1c140e;
+    position: relative; overflow: hidden; padding: clamp(64px, 8vw, 110px) 0; color: var(--vaq-tinta); background:
+      radial-gradient(ellipse 55% 45% at 92% 8%, rgba(236, 72, 153, 0.14), transparent 70%),
+      radial-gradient(ellipse 50% 45% at 6% 40%, rgba(147, 51, 234, 0.12), transparent 70%),
+      radial-gradient(ellipse 45% 35% at 50% 100%, rgba(251, 146, 60, 0.12), transparent 70%),
+      #fff; }
+  .ce-vaq-inner { max-width: 1200px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px); }
+  .ce-vaq-top { display: grid; grid-template-columns: 1fr 1.08fr; gap: clamp(36px, 6vw, 80px); align-items: center; }
+  .ce-vaq-marca { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+  .ce-vaq-logo { width: 56px; height: auto; border-radius: 14px; background: #120d09; padding: 6px; }
+  .ce-vaq-name { font-family: var(--font-display); font-size: 15px; font-weight: 700; letter-spacing: 0.04em; }
+  .ce-vaq-tag { display: inline-block; font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; background: linear-gradient(90deg, #DB2777, #9333EA 75%, #F97316); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .ce-vaq-title { font-family: var(--font-display); font-size: clamp(2.1rem, 4.6vw, 3.6rem); font-weight: 800; letter-spacing: -0.04em; line-height: 1.04; margin: 12px 0 20px; text-wrap: balance; }
+  .ce-vaq-title em { font-style: normal; background: linear-gradient(90deg, #DB2777, #9333EA 72%, #F97316); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .ce-vaq-lead { font-family: var(--font-body); font-size: clamp(1rem, 1.4vw, 1.08rem); line-height: 1.7; color: #4a3f36; margin: 0 0 26px; }
+  .ce-vaq-hechos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  .ce-vaq-hecho { display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 2px dashed rgba(122, 74, 38, 0.45); }
+  .ce-vaq-hecho-num { font-family: var(--font-display); font-size: 1.05rem; font-weight: 800; }
+  .ce-vaq-hecho-label { font-family: var(--font-body); font-size: 13px; line-height: 1.45; color: #6b5d50; }
+  .ce-vaq-mosaico { display: grid; grid-template-columns: 1.1fr 1fr 0.9fr; grid-template-rows: 1fr 1fr; gap: 12px; height: clamp(440px, 46vw, 600px); }
+  .ce-vaq-mosaico img, .ce-vaq-mosaico video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ce-vaq-taller { position: relative; grid-row: 1 / 3; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  .ce-vaq-taller figcaption { font-family: var(--font-body); font-size: 12px; color: #6b5d50; }
+  .ce-vaq-piel { flex: 1; min-height: 0; padding: 9px; border-radius: 20px; background: var(--vaq-piel); box-shadow: 0 18px 40px rgba(60, 30, 10, 0.25); }
+  .ce-vaq-piel video { border-radius: 13px; }
+  .ce-vaq-piel { position: relative; }
+  .ce-vaq-piel::after { content: ''; position: absolute; inset: 4px; border-radius: 16px; border: 2px dashed var(--vaq-pespunte); pointer-events: none; }
+  .ce-vaq-foto { border-radius: 18px; }
+  .ce-vaq-foto--alta { grid-row: 1 / 3; }
+  .ce-vaq-reel { margin: 0; border-radius: 18px; overflow: hidden; }
+  .ce-vaq-sello { position: absolute; right: -26px; bottom: 64px; width: 118px; height: 118px; border-radius: 50%; background: #120d09; display: grid; place-items: center; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3); }
+  .ce-vaq-sello img { grid-area: 1 / 1; width: 46px; height: auto; }
+  .ce-vaq-sello-giro { grid-area: 1 / 1; width: 100%; height: 100%; animation: ce-vaq-gira 18s linear infinite; }
+  .ce-vaq-sello-giro text { font-family: var(--font-display); font-size: 9.4px; font-weight: 700; letter-spacing: 1.6px; fill: #E9C78F; }
+  @keyframes ce-vaq-gira { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .ce-vaq-sello-giro { animation: none; } }
+  .ce-vaq-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 14px 28px; margin-top: clamp(36px, 5vw, 56px); padding-top: 24px; border-top: 2px dashed rgba(122, 74, 38, 0.35); }
+  .ce-vaq-link { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--vaq-tinta); text-decoration: none; border-bottom: 2px solid #DB2777; padding-bottom: 3px; transition: gap 0.2s; }
+  .ce-vaq-link:hover { gap: 12px; }
+  .ce-vaq-mas { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 24px; border-radius: 100px; background: var(--vaq-tinta); color: #fff; font-family: var(--font-display); font-size: 15px; font-weight: 700; text-decoration: none; transition: gap 0.2s; }
+  .ce-vaq-mas:hover { gap: 14px; }
+  @media (max-width: 900px) {
+    .ce-vaq-top { grid-template-columns: 1fr; }
+    .ce-vaq-sello { right: 10px; }
+  }
+  @media (max-width: 560px) {
+    .ce-vaq-hechos { grid-template-columns: 1fr; }
+    .ce-vaq-mosaico { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; height: 560px; }
+    .ce-vaq-taller { grid-row: 1 / 3; }
+    .ce-vaq-foto--alta { grid-row: auto; }
+    .ce-vaq-reel { display: none; }
+    .ce-vaq-sello { width: 92px; height: 92px; bottom: 34px; }
   }
 </style>

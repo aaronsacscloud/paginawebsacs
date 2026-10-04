@@ -1,0 +1,290 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { PRODUCTO_ID, ENTIDAD_ID } from '../../data/entidad';
+import { breadcrumbCaso } from '../../lib/breadcrumb';
+
+// Todo lo de esta página sale de lo que mandó el dueño (fotos y videos de la
+// tienda y del taller, sus sucursales y su Instagram). Sin cifras de resultados
+// ni citas: no hay ninguna confirmada todavía. No se afirma qué funciones de
+// SACS usan. Sección BLANCA: en /casos-de-exito va después de Vende Tu Clóset.
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: 'Talabartería Las Alazanas: ser vaquero es una forma de vivir',
+  description: 'Ropa vaquera, sombreros, botas y talabartería hecha a mano en su propio taller. Las Alazanas viste la vida western desde Chalco, Juchitepec, Cuautla y Mérida.',
+  about: { '@id': PRODUCTO_ID },
+  author: { '@id': ENTIDAD_ID },
+};
+const structuredData = [articleSchema, breadcrumbCaso('Las Alazanas')];
+
+const proceso = [
+  { t: 'El trazo.', d: 'El dibujo se marca a mano sobre la piel, con compás y punzón, línea por línea.' },
+  { t: 'El repujado.', d: 'El dibujo se levanta en relieve hasta que la pieza cuenta su propia historia.' },
+  { t: 'El acabado.', d: 'Se tiñe, se cose y se revisa a mano antes de llegar a la vitrina.' },
+];
+
+const sucursales = [
+  { ciudad: 'Chalco', zona: 'Estado de México' },
+  { ciudad: 'Juchitepec', zona: 'Estado de México' },
+  { ciudad: 'Cuautla', zona: 'Morelos' },
+  { ciudad: 'Mérida', zona: 'Yucatán' },
+];
+---
+
+<BaseLayout
+  title="Las Alazanas — Caso de éxito SACS"
+  description="Talabartería Las Alazanas: ropa vaquera, sombreros, botas y piel trabajada a mano en su propio taller. Ser vaquero no es una moda, es una forma de vivir."
+  structuredData={structuredData}
+  preloadImage="/videos/alazanas-taller-poster.webp"
+>
+
+<!-- Hero -->
+<section class="la-hero">
+  <div class="la-hero-inner">
+    <div class="la-hero-text">
+      <a href="/casos-de-exito#las-alazanas" class="la-back">&larr; Todos los casos de éxito</a>
+      <div class="la-marca">
+        <img src="/images/alazanas-logo.webp" alt="" width="213" height="203" class="la-logo" />
+        <span class="la-name">Talabartería Las Alazanas</span>
+      </div>
+      <span class="la-tag">Ropa vaquera · Talabartería · Vida western</span>
+      <h1 class="la-title">Ser vaquero no es una moda. <em>Es una forma de vivir.</em></h1>
+      <p class="la-lead">Las Alazanas viste a quienes viven el campo y el caballo todos los días. Sombreros, botas, camisas, cinturones y piezas de talabartería que salen de su propio taller, trabajadas a mano. Lo que venden es lo que viven.</p>
+    </div>
+    <div class="la-hero-media">
+      <div class="la-piel">
+        <video autoplay muted loop playsinline preload="metadata" poster="/videos/alazanas-taller-poster.webp" width="540" height="960" aria-hidden="true">
+          <source src="/videos/alazanas-taller.mp4" type="video/mp4" />
+        </video>
+      </div>
+      <span class="la-sello" aria-hidden="true">
+        <svg viewBox="0 0 120 120" class="la-sello-giro"><defs><path id="la-circulo" d="M60,60 m-46,0 a46,46 0 1,1 92,0 a46,46 0 1,1 -92,0" /></defs><text><textPath href="#la-circulo">#FAMILIAALAZANAS · TALABARTERÍA · TALLER PROPIO ·</textPath></text></svg>
+        <img src="/images/alazanas-logo.webp" alt="" width="213" height="203" />
+      </span>
+    </div>
+  </div>
+</section>
+
+<!-- Cifras -->
+<section class="la-stats" aria-label="Las Alazanas en cifras">
+  <div class="la-stats-inner">
+    <div class="la-stat"><span class="la-stat-num">Taller propio</span><span class="la-stat-label">piel trabajada a mano</span></div>
+    <div class="la-stat"><span class="la-stat-num">4</span><span class="la-stat-label">sucursales</span></div>
+    <div class="la-stat"><span class="la-stat-num">3</span><span class="la-stat-label">estados: Edomex, Morelos y Yucatán</span></div>
+    <div class="la-stat"><span class="la-stat-num">En línea</span><span class="la-stat-label">para quien vive lejos</span></div>
+  </div>
+</section>
+
+<!-- La vida western -->
+<section class="la-sec">
+  <div class="la-inner la-inner--wide">
+    <div class="la-split">
+      <div>
+        <span class="la-eyebrow">La vida western</span>
+        <h2 class="la-h2">No es un disfraz de fin de semana. Es el día a día.</h2>
+        <p class="la-p">Para quien vive el campo, lo vaquero no es una tendencia de temporada: es la ropa con la que se trabaja, se monta, se va a la feria y se llega a la fiesta del pueblo con la familia. Un sombrero que aguanta el sol, una bota que aguanta el estribo, una camisa que se vuelve a poner al otro día.</p>
+        <p class="la-p">Las Alazanas nace de esa vida y la viste. Por eso en su piso de venta no hay disfraces: hay lo que su propia gente usa.</p>
+      </div>
+      <figure class="la-foto-alta">
+        <img src="/images/alazanas-cliente.webp" alt="Cliente con sombrero negro y camisa de Las Alazanas recorriendo la tienda" width="900" height="973" loading="lazy" />
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- Proceso artesanal -->
+<section class="la-sec la-sec--piel">
+  <div class="la-inner la-inner--wide">
+    <div class="la-split la-split--rev">
+      <figure class="la-reel">
+        <video controls playsinline preload="none" poster="/videos/alazanas-taller-poster.webp" width="540" height="960">
+          <source src="/videos/alazanas-taller.mp4" type="video/mp4" />
+        </video>
+        <figcaption>Taller Alazanas: el dibujo se trabaja a mano sobre la piel.</figcaption>
+      </figure>
+      <div>
+        <span class="la-eyebrow">Un proceso artesanal</span>
+        <h2 class="la-h2">Antes de llegar a la vitrina, pasa por unas manos.</h2>
+        <p class="la-p">La talabartería es un oficio que se aprende viendo y se perfecciona con los años. En su taller, cada pieza de piel se hace como se ha hecho siempre: despacio y a mano.</p>
+        <ol class="la-pasos">
+          {proceso.map((p, i) => (
+            <li class="la-paso"><span class="la-paso-n">{i + 1}</span><div><h3>{p.t}</h3><p>{p.d}</p></div></li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Representar lo que te gusta -->
+<section class="la-sec">
+  <div class="la-inner la-inner--wide">
+    <span class="la-eyebrow">Representar lo que te gusta</span>
+    <h2 class="la-h2">Vestirte también es decir de dónde eres.</h2>
+    <p class="la-p">El sombrero, la bota y el cinturón grabado no son solo prendas: son la forma de decir qué te gusta y de dónde vienes, sin decir una palabra. Las Alazanas acompaña a su cliente a encontrar la pieza que lo representa, de paja para el sol o de fieltro para la fiesta.</p>
+    <div class="la-galeria">
+      <img src="/images/alazanas-sombreros.webp" alt="Pared de sombreros de paja y fieltro en Las Alazanas" width="900" height="1200" loading="lazy" />
+      <figure class="la-galeria-reel">
+        <video autoplay muted loop playsinline preload="none" poster="/videos/alazanas-tienda-poster.webp" width="540" height="960" aria-hidden="true">
+          <source src="/videos/alazanas-tienda.mp4" type="video/mp4" />
+        </video>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- Dar valor a la cultura -->
+<section class="la-sec la-sec--piel">
+  <div class="la-inner la-inner--wide">
+    <span class="la-eyebrow">Dar valor a la cultura</span>
+    <h2 class="la-h2">Cuidar una cultura también es saber venderla.</h2>
+    <p class="la-p">La cultura del campo y del caballo es parte de lo que somos. Las Alazanas la honra con un oficio que se hereda, con piezas que duran y con un equipo que la vive: todos llevan la herradura de la marca en la espalda y se llaman a sí mismos #FamiliaAlazanas.</p>
+    <figure class="la-equipo">
+      <img src="/images/alazanas-equipo.webp" alt="El equipo de Las Alazanas de espaldas, con la herradura de la marca en la camisa" width="1200" height="864" loading="lazy" />
+      <figcaption>#FamiliaAlazanas: la misma identidad en el piso de venta, en redes y en la calle.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- Sucursales -->
+<section class="la-sec">
+  <div class="la-inner la-inner--wide">
+    <span class="la-eyebrow">Dónde encontrarlos</span>
+    <h2 class="la-h2">Del Estado de México a Yucatán.</h2>
+    <div class="la-sucs">
+      {sucursales.map((s) => (
+        <div class="la-suc"><span class="la-lugar">{s.zona}</span><h3>{s.ciudad}</h3></div>
+      ))}
+      <div class="la-suc la-suc--linea"><span class="la-lugar">Desde cualquier lugar</span><h3>Tienda en línea</h3></div>
+    </div>
+    <div class="la-sucs-foot">
+      <a href="https://www.instagram.com/alazanast/" target="_blank" rel="noopener" class="la-btn la-btn--dark">Síguelos en Instagram</a>
+      <a href="https://www.facebook.com/talabarterialasalazanas/" target="_blank" rel="noopener" class="la-btn la-btn--ghost">Facebook</a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="la-cta">
+  <div class="la-cta-inner">
+    <h2 class="la-cta-title">¿Tu marca también vende una forma de vivir?</h2>
+    <p class="la-cta-sub">Platiquemos de tu tienda, tu taller y tus sucursales.</p>
+    <div class="la-cta-actions">
+      <a href="/contacto" class="la-btn la-btn--light">Agenda una demo</a>
+      <a href="/prueba-gratis" class="la-btn la-btn--ghost-light">Empieza gratis</a>
+    </div>
+  </div>
+</section>
+
+</BaseLayout>
+
+<style>
+  /* Blanco de la sección de casos (como Sthela) con el degradado rosa · morado · un toque naranja.
+     El acento propio es la piel: marco pespunteado y fondo cálido en las secciones de oficio. */
+  .la-hero, .la-stats, .la-sec, .la-cta {
+    --tinta: #1c140e; --gris: #5a4d42; --gris-2: #8a7a6c; --piel: #7A4A26; --pespunte: rgba(255, 226, 190, 0.85);
+    --crema: #FBF6EF; --linea: rgba(122, 74, 38, 0.22);
+    --grad: linear-gradient(90deg, #DB2777, #9333EA 72%, #F97316);
+  }
+
+  /* ── Hero ── */
+  .la-hero { color: var(--tinta); padding: clamp(40px, 6vw, 80px) 16px clamp(56px, 7vw, 96px); background:
+      radial-gradient(ellipse 55% 45% at 92% 10%, rgba(236, 72, 153, 0.14), transparent 70%),
+      radial-gradient(ellipse 50% 45% at 4% 50%, rgba(147, 51, 234, 0.12), transparent 70%),
+      radial-gradient(ellipse 45% 35% at 50% 100%, rgba(251, 146, 60, 0.12), transparent 70%),
+      #fff; }
+  .la-hero-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1.15fr 0.85fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
+  .la-back { display: inline-block; font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--gris-2); text-decoration: none; margin-bottom: 32px; }
+  .la-back:hover { color: var(--tinta); }
+  .la-marca { display: flex; align-items: center; gap: 14px; }
+  .la-logo { width: 64px; height: auto; border-radius: 16px; background: #120d09; padding: 8px; }
+  .la-name { font-family: var(--font-display); font-size: 14px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+  .la-tag { display: inline-block; margin-top: 24px; font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .la-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(2.6rem, 5.6vw, 4.6rem); line-height: 1.02; letter-spacing: -0.045em; margin: 14px 0 20px; text-wrap: balance; }
+  .la-title em { font-style: normal; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .la-lead { font-family: var(--font-body); font-size: clamp(1rem, 1.5vw, 1.15rem); line-height: 1.7; color: var(--gris); margin: 0; max-width: 540px; }
+  .la-hero-media { position: relative; max-width: 360px; justify-self: center; width: 100%; }
+  .la-piel { position: relative; padding: 10px; border-radius: 24px; background: var(--piel); box-shadow: 0 24px 50px rgba(60, 30, 10, 0.28); }
+  .la-piel::after { content: ''; position: absolute; inset: 5px; border-radius: 19px; border: 2px dashed var(--pespunte); pointer-events: none; }
+  .la-piel video { display: block; width: 100%; height: auto; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 15px; background: #2a1a0e; }
+  .la-sello { position: absolute; left: -46px; bottom: 40px; width: 124px; height: 124px; border-radius: 50%; background: #120d09; display: grid; place-items: center; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3); }
+  .la-sello img { grid-area: 1 / 1; width: 50px; height: auto; }
+  .la-sello-giro { grid-area: 1 / 1; width: 100%; height: 100%; animation: la-gira 18s linear infinite; }
+  .la-sello-giro text { font-family: var(--font-display); font-size: 9.4px; font-weight: 700; letter-spacing: 1.6px; fill: #E9C78F; }
+  @keyframes la-gira { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .la-sello-giro { animation: none; } }
+
+  /* ── Cifras ── */
+  .la-stats { background: var(--crema); border-top: 2px dashed var(--linea); border-bottom: 2px dashed var(--linea); }
+  .la-stats-inner { max-width: 1040px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
+  .la-stat { padding: 28px 18px; text-align: center; border-right: 1px solid var(--linea); }
+  .la-stat:last-child { border-right: none; }
+  .la-stat-num { display: block; font-family: var(--font-display); font-size: clamp(1.3rem, 2.4vw, 2rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .la-stat-label { display: block; margin-top: 8px; font-family: var(--font-body); font-size: 13px; line-height: 1.4; color: var(--gris); }
+
+  /* ── Secciones ── */
+  .la-sec { background: #fff; color: var(--tinta); padding: clamp(64px, 8vw, 110px) 16px; }
+  .la-sec--piel { background:
+      radial-gradient(ellipse 50% 45% at 100% 0%, rgba(236, 72, 153, 0.08), transparent 70%),
+      var(--crema); }
+  .la-inner { max-width: 880px; margin: 0 auto; }
+  .la-inner--wide { max-width: 1160px; }
+  .la-eyebrow { display: block; font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #9333EA; margin-bottom: 14px; }
+  .la-h2 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.9rem, 3.8vw, 2.9rem); line-height: 1.08; letter-spacing: -0.035em; margin: 0 0 20px; text-wrap: balance; }
+  .la-p { font-family: var(--font-body); font-size: 17px; line-height: 1.7; color: var(--gris); margin: 0 0 16px; max-width: 680px; }
+  .la-split { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
+  .la-split--rev { grid-template-columns: 0.75fr 1.25fr; }
+  .la-foto-alta { margin: 0; }
+  .la-foto-alta img { display: block; width: 100%; height: auto; border-radius: 22px; }
+  .la-reel { margin: 0; }
+  .la-reel video { display: block; width: 100%; height: auto; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 20px; background: #2a1a0e; border: 8px solid var(--piel); }
+  .la-reel figcaption { margin-top: 10px; font-family: var(--font-body); font-size: 13px; color: var(--gris-2); }
+  .la-pasos { list-style: none; margin: 28px 0 0; padding: 0; display: flex; flex-direction: column; gap: 18px; }
+  .la-paso { display: flex; gap: 18px; align-items: flex-start; padding-top: 18px; border-top: 2px dashed var(--linea); }
+  .la-paso-n { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--piel); color: #fff; font-family: var(--font-display); font-weight: 800; }
+  .la-paso h3 { margin: 0 0 4px; font-family: var(--font-display); font-size: 1.15rem; font-weight: 800; }
+  .la-paso p { margin: 0; font-family: var(--font-body); font-size: 15px; line-height: 1.6; color: var(--gris); }
+  .la-galeria { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; margin-top: 32px; }
+  .la-galeria img, .la-galeria video { display: block; width: 100%; height: 560px; object-fit: cover; border-radius: 20px; }
+  .la-galeria-reel { margin: 0; }
+  .la-equipo { margin: 32px 0 0; position: relative; border-radius: 24px; overflow: hidden; }
+  .la-equipo img { display: block; width: 100%; height: clamp(280px, 40vw, 520px); object-fit: cover; object-position: center 70%; }
+  .la-equipo figcaption { position: absolute; left: 20px; bottom: 18px; right: 20px; width: fit-content; padding: 10px 16px; border-radius: 16px; background: rgba(255, 255, 255, 0.94); font-family: var(--font-display); font-size: 14px; font-weight: 700; }
+  .la-sucs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-top: 24px; }
+  .la-suc { padding: 18px; border-radius: 16px; border: 1px solid var(--linea); background: #fff; }
+  .la-suc--linea { background: var(--crema); }
+  .la-lugar { font-family: var(--font-body); font-size: 12px; color: var(--gris-2); }
+  .la-suc h3 { margin: 4px 0 0; font-family: var(--font-display); font-size: 1.1rem; font-weight: 800; }
+  .la-sucs-foot { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  .la-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 24px; border-radius: 100px; font-family: var(--font-display); font-size: 15px; font-weight: 700; text-decoration: none; }
+  .la-btn--dark { background: var(--tinta); color: #fff; }
+  .la-btn--ghost { border: 1.5px solid var(--tinta); color: var(--tinta); }
+  .la-btn--light { background: #fff; color: var(--tinta); }
+  .la-btn--ghost-light { border: 1.5px solid rgba(255, 255, 255, 0.7); color: #fff; }
+
+  /* ── CTA ── */
+  .la-cta { color: #fff; text-align: center; padding: clamp(64px, 8vw, 110px) 16px; background:
+      radial-gradient(ellipse 50% 45% at 0% 10%, rgba(236, 72, 153, 0.22), transparent 70%),
+      radial-gradient(ellipse 45% 45% at 100% 70%, rgba(168, 85, 247, 0.2), transparent 70%),
+      #1c140e; }
+  .la-cta-inner { max-width: 720px; margin: 0 auto; }
+  .la-cta-title { color: #fff; font-family: var(--font-display); font-weight: 800; font-size: clamp(1.9rem, 4vw, 3rem); letter-spacing: -0.035em; line-height: 1.08; margin: 0 0 14px; }
+  .la-cta-sub { font-family: var(--font-body); font-size: 17px; color: rgba(255, 255, 255, 0.72); margin: 0 0 28px; }
+  .la-cta-actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+
+  @media (max-width: 900px) {
+    .la-hero-inner, .la-split, .la-split--rev { grid-template-columns: 1fr; }
+    .la-hero-media { max-width: 300px; }
+    .la-sello { left: auto; right: -20px; }
+    .la-stats-inner { grid-template-columns: repeat(2, 1fr); }
+    .la-stat:nth-child(2) { border-right: none; }
+    .la-sucs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .la-galeria img, .la-galeria video { height: 420px; }
+  }
+  @media (max-width: 560px) {
+    .la-galeria { grid-template-columns: 1fr; }
+    .la-galeria-reel { display: none; }
+    .la-sello { width: 96px; height: 96px; right: -8px; }
+    .la-reel { max-width: 320px; }
+  }
+</style>
