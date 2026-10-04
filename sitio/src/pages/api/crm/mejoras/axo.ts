@@ -1,4 +1,4 @@
-// SOLICITUDES DE MEJORA que llegan desde AXO (el asistente dentro de Sacs), 2026-10-04.
+// OPORTUNIDADES DE MEJORA (antes «Solicitudes de mejora») que llegan desde AXO (el asistente dentro de Sacs), 2026-10-04.
 //
 // El cliente le dice a AXO «¿pueden agregar…?» y AXO la registra en su cuenta de Sacs
 // (sacs_api, colección axo_mejoras). Aquí el equipo las ve, decide gratis o con costo, pone
@@ -53,6 +53,12 @@ export const GET: APIRoute = async ({ request }) => {
   const user = await getCurrentUser(request);
   if (!user) return json({ error: 'No autorizado' }, 401);
   try {
+    // Fase 4: de paso se copia el catálogo de plugins (`plans`, categoria 'plugin') a Sacs, para que
+    // las oportunidades que AXO detecta muestren el precio REAL (sin precio → «Por cotizar»). Best-effort.
+    try {
+      const { data: planes } = await supabase.from('plans').select('slug, nombre, precio_mensual, precio_anual, precio_vitalicio, a_la_medida, activo').eq('categoria', 'plugin');
+      if (planes && planes.length) await puente('/interno/crm/axo-mejoras/catalogo', { planes });
+    } catch (e) { /* el catálogo no tumba la lista */ }
     const j = await puente('/interno/crm/axo-mejoras/listar', {});
     const lista = j.mejoras || [];
     const emp = await empresasPorCuenta(Array.from(new Set(lista.map((x: any) => x.account))));
@@ -88,7 +94,8 @@ export const POST: APIRoute = async ({ request }) => {
     if (emp && mej) {
       const fila: any = {
         company_id: emp.id, titulo: mej.titulo, descripcion: mej.descripcion || null,
-        estado: estadoCrm(mej.etapa), origen: 'axo', tipo: 'mejora', categoria: 'personalizacion',
+        estado: estadoCrm(mej.etapa), origen: 'axo', tipo: 'mejora',
+        categoria: mej.tipo === 'Plugin' ? 'plugin' : (mej.tipo === 'Integración' ? 'otro' : (mej.tipo === 'Ajuste' ? 'ajuste' : 'personalizacion')),
         valor: mej.costo === 'con_costo' ? mej.monto : 0,
         cobro: mej.costo === 'gratis' ? 'cortesia' : (['pago_confirmado', 'desarrollo', 'lista'].includes(mej.etapa) && mej.costo === 'con_costo' ? 'pagada' : null),
         fecha_compromiso: mej.fechaEstimada || null, visible_cliente: true, creado_por: 'AXO',
