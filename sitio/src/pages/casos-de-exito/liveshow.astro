@@ -36,6 +36,14 @@ const eventos = ['Conciertos', 'Festivales', 'Eventos especiales', 'Eventos depo
 const productos = ['Playeras', 'Chamarras', 'Sudaderas', 'Prendas de corte especial', 'Paliacates', 'Muñequeras', 'Llaveros', 'Pins', 'Posters', 'Tour books', 'Tazas', 'Cilindros'];
 const recintos = ['Arenas', 'Estadios', 'Teatros', 'Foros', 'Parques de diversiones', 'Explanadas públicas'];
 const paises = ['México', 'Costa Rica', 'Perú', 'Colombia', 'Argentina', 'Chile', 'Brasil', 'Estados Unidos'];
+// Las mismas listas, ordenadas para ENSEÑAR algo (dueño, 4-oct-2026: «que sea
+// más didáctico»): los recintos cerrados de menor a mayor aforo y los países
+// de norte a sur, como se recorre la operación en el mapa.
+const escalaRecintos = [
+  { n: 'Foros', t: 14 }, { n: 'Teatros', t: 22 }, { n: 'Arenas', t: 32 }, { n: 'Estadios', t: 44 },
+];
+const aireLibre = ['Parques de diversiones', 'Explanadas públicas'];
+const rutaPaises = ['Estados Unidos', 'México', 'Costa Rica', 'Colombia', 'Perú', 'Brasil', 'Chile', 'Argentina'];
 ---
 
 <BaseLayout
@@ -104,23 +112,51 @@ const paises = ['México', 'Costa Rica', 'Perú', 'Colombia', 'Argentina', 'Chil
       </div>
       <figcaption>De los racks por talla a la bolsa sellada de Mr Merch: playeras oficiales de cada gira, diseñadas y vendidas por la casa.</figcaption>
     </figure>
-    <div class="ls-biz-cards">
+    <div class="ls-biz-cards" id="ls-biz-cards">
       <div class="ls-card">
-        <h3>Dónde venden</h3>
-        <div class="ls-chips">{eventos.map((e) => <span class="ls-chip">{e}</span>)}</div>
+        <div class="ls-card-h">
+          <span class="ls-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h16v3a2 2 0 0 0 0 4v3H4v-3a2 2 0 0 0 0-4z"/><path d="M14 7v10" stroke-dasharray="2 2"/></svg></span>
+          <div class="ls-card-t"><h3>Dónde venden</h3>
+          <span class="ls-num"><b data-n={eventos.length}>{eventos.length}</b> tipos de evento</span></div>
+        </div>
+        <div class="ls-chips">{eventos.map((e, i) => <span class="ls-chip ls-pop" style={`--i:${i}`}>{e}</span>)}</div>
       </div>
       <div class="ls-card">
-        <h3>Qué fabrican</h3>
-        <div class="ls-chips">{productos.map((p) => <span class="ls-chip">{p}</span>)}<span class="ls-chip ls-chip--muted">y mucho más</span></div>
+        <div class="ls-card-h">
+          <span class="ls-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 4l-4 3 2 4 2-1v10h8V10l2 1 2-4-4-3c-.5 1.5-2 2.5-4 2.5S8.5 5.5 8 4z"/></svg></span>
+          <div class="ls-card-t"><h3>Qué fabrican</h3>
+          <span class="ls-num"><b data-n={productos.length}>{productos.length}</b>+ productos</span></div>
+        </div>
+        <div class="ls-chips">{productos.map((p, i) => <span class="ls-chip ls-pop" style={`--i:${i}`}>{p}</span>)}<span class="ls-chip ls-chip--muted ls-pop" style={`--i:${productos.length}`}>y mucho más</span></div>
       </div>
       <div class="ls-card">
-        <h3>En qué recintos</h3>
-        <div class="ls-chips">{recintos.map((r) => <span class="ls-chip">{r}</span>)}</div>
+        <div class="ls-card-h">
+          <span class="ls-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 20h18M5 20V10l7-5 7 5v10M9 20v-5h6v5"/></svg></span>
+          <div class="ls-card-t"><h3>En qué recintos</h3>
+          <span class="ls-num"><b data-n={escalaRecintos.length + aireLibre.length}>{escalaRecintos.length + aireLibre.length}</b> tipos de recinto</span></div>
+        </div>
+        <div class="ls-escala-k">Cerrados, por aforo</div>
+        <div class="ls-escala">
+          {escalaRecintos.map((r, i) => (
+            <div class="ls-escala-p ls-pop" style={`--i:${i}`}>
+              <span class="ls-escala-dot" style={`--t:${r.t}px`}></span>
+              <span class="ls-escala-n">{r.n}</span>
+            </div>
+          ))}
+        </div>
+        <div class="ls-escala-k">Al aire libre</div>
+        <div class="ls-chips">{aireLibre.map((r, i) => <span class="ls-chip ls-chip--aire ls-pop" style={`--i:${i + escalaRecintos.length}`}>{r}</span>)}</div>
       </div>
       <div class="ls-card">
-        <h3>Oficinas operativas</h3>
-        <div class="ls-chips">{paises.map((p) => <span class="ls-chip ls-chip--pais">{p}</span>)}</div>
-        <p class="ls-card-note">Cubren la operación de venta en toda América Latina, en recintos abiertos o cerrados.</p>
+        <div class="ls-card-h">
+          <span class="ls-ico ls-ico--rosa" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>
+          <div class="ls-card-t"><h3>Oficinas operativas</h3>
+          <span class="ls-num ls-num--rosa"><b data-n={rutaPaises.length}>{rutaPaises.length}</b> países</span></div>
+        </div>
+        <ol class="ls-ruta">
+          {rutaPaises.map((p, i) => <li class="ls-pop" style={`--i:${i}`}><span class="ls-ruta-pin"></span>{p}</li>)}
+        </ol>
+        <p class="ls-card-note">De norte a sur: cubren la operación de venta en toda América Latina, en recintos abiertos o cerrados.</p>
       </div>
     </div>
   </div>
@@ -277,6 +313,28 @@ const paises = ['México', 'Costa Rica', 'Perú', 'Colombia', 'Argentina', 'Chil
 </BaseLayout>
 
 <script>
+  // Tarjetas de «El negocio»: al entrar a pantalla, las etiquetas aparecen en
+  // cascada y las cifras cuentan hacia arriba. Una sola vez por tarjeta.
+  const tarjetas = document.getElementById('ls-biz-cards');
+  if (tarjetas && 'IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    tarjetas.classList.add('js-anim');
+    const contar = (el: HTMLElement) => {
+      const fin = Number(el.dataset.n || 0); const t0 = performance.now(); const dur = 900;
+      const paso = (t: number) => { const k = Math.min(1, (t - t0) / dur); el.textContent = String(Math.round(fin * (1 - Math.pow(1 - k, 3)))); if (k < 1) requestAnimationFrame(paso); };
+      el.textContent = '0'; requestAnimationFrame(paso);
+    };
+    const io = new IntersectionObserver((entradas) => {
+      for (const e of entradas) {
+        if (!e.isIntersecting) continue;
+        const card = e.target as HTMLElement;
+        requestAnimationFrame(() => requestAnimationFrame(() => card.classList.add('on')));
+        card.querySelectorAll<HTMLElement>('.ls-num b[data-n]').forEach(contar);
+        io.unobserve(card);
+      }
+    }, { threshold: 0.25 });
+    tarjetas.querySelectorAll('.ls-card').forEach((c) => io.observe(c));
+  }
+
   // Rejilla de módulos: cada punto es un punto de venta; se ilumina al azar
   // como si cobrara. Solo corre mientras está en pantalla y la pestaña visible.
   const grid = document.getElementById('ls-grid');
@@ -363,6 +421,44 @@ const paises = ['México', 'Costa Rica', 'Perú', 'Colombia', 'Argentina', 'Chil
   .ls-sec--alt .ls-inner > .ls-chips .ls-chip { background: #fff; border: 1px solid var(--color-bg-secondary); }
   .ls-chip--muted { background: transparent; color: var(--color-text-tertiary); }
   .ls-chip--pais { background: #FBE7F0; color: #8A1B50; }
+  /* ── Tarjetas didácticas (4-oct-2026) ── */
+  .ls-card-h { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .ls-card-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .ls-card-h h3 { margin: 0; }
+  .ls-ico { width: 40px; height: 40px; border-radius: 10px; background: #EAF0FD; display: grid; place-items: center; flex: none; }
+  .ls-ico svg { width: 19px; height: 19px; fill: none; stroke: var(--color-primary-texto); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .ls-ico--rosa { background: #FBE7F0; }
+  .ls-ico--rosa svg { stroke: #8A1B50; }
+  .ls-num { font-family: var(--font-body); font-size: 12px; color: var(--color-text-tertiary); white-space: nowrap; line-height: 1.2; }
+  .ls-num b { font-family: var(--font-display); font-size: 1.15rem; font-weight: 800; color: var(--color-primary-texto); letter-spacing: -0.02em; margin-right: 3px; font-variant-numeric: tabular-nums; }
+  .ls-num--rosa b { color: #8A1B50; }
+  .ls-chip { transition: background .2s, color .2s, transform .2s; }
+  .ls-chip:hover { background: #EAF0FD; color: var(--color-primary-texto); transform: translateY(-1px); }
+  .ls-chip--muted:hover { background: transparent; color: var(--color-text-tertiary); transform: none; }
+  .ls-escala-k { font-family: var(--font-body); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--color-text-tertiary); margin: 4px 0 10px; }
+  .ls-escala { display: grid; grid-template-columns: repeat(4, 1fr); align-items: end; gap: 6px; margin-bottom: 16px; position: relative; }
+  .ls-escala::before { content: ""; position: absolute; left: 8%; right: 8%; bottom: 28px; height: 2px; background: linear-gradient(90deg, #D6E1FA, var(--color-primary)); border-radius: 2px; }
+  .ls-escala-p { display: flex; flex-direction: column; align-items: center; gap: 8px; position: relative; }
+  .ls-escala-dot { width: var(--t); height: var(--t); border-radius: 50%; background: var(--color-primary); opacity: .85; box-shadow: 0 0 0 4px #fff; }
+  .ls-escala-n { font-family: var(--font-body); font-size: 12px; font-weight: 600; color: var(--color-text-secondary); }
+  .ls-chip--aire { background: #EAF7F1; color: #1E7A55; }
+  .ls-ruta { list-style: none; margin: 0; padding: 0 0 0 4px; display: grid; grid-template-columns: auto auto; justify-content: start; column-gap: 22px; position: relative; }
+  .ls-ruta li { display: flex; align-items: center; gap: 10px; font-family: var(--font-body); font-size: 13.5px; font-weight: 600; color: #8A1B50; padding: 6px 0; position: relative; white-space: nowrap; }
+  .ls-ruta li::after { content: ""; position: absolute; left: 5px; top: 22px; bottom: -8px; width: 2px; background: #F3C6DA; }
+  .ls-ruta li:nth-child(4)::after, .ls-ruta li:last-child::after { display: none; }
+  .ls-ruta { grid-auto-flow: column; grid-template-rows: repeat(4, auto); }
+  .ls-ruta-pin { width: 12px; height: 12px; border-radius: 50%; background: #D9538E; box-shadow: 0 0 0 3px #FBE7F0; flex: none; position: relative; z-index: 1; }
+
+  /* La animación solo arranca con JS (sin JS todo se ve quieto y completo) y
+     respeta a quien pidió menos movimiento. */
+  @media (prefers-reduced-motion: no-preference) {
+    .ls-biz-cards.js-anim .ls-card:not(.on) .ls-pop { opacity: 0; transform: translateY(8px) scale(.96); }
+    .ls-biz-cards.js-anim .ls-pop { transition: opacity .45s ease, transform .45s cubic-bezier(.2,.8,.3,1.2); transition-delay: calc(var(--i, 0) * 45ms); }
+    .ls-biz-cards.js-anim .ls-card:not(.on) .ls-escala-dot { transform: scale(0); }
+    .ls-biz-cards.js-anim .ls-escala-dot { transition: transform .6s cubic-bezier(.2,.8,.3,1.4); transition-delay: calc(120ms + var(--i, 0) * 110ms); }
+    .ls-biz-cards.js-anim .ls-card.on .ls-ruta-pin { animation: ls-pin 1.6s ease-out calc(var(--i, 0) * 120ms) 1 both; }
+    @keyframes ls-pin { 0% { box-shadow: 0 0 0 0 rgba(217,83,142,.55); } 70% { box-shadow: 0 0 0 9px rgba(217,83,142,0); } 100% { box-shadow: 0 0 0 3px #FBE7F0; } }
+  }
 
   /* ── Escala (oscuro) ── */
   .ls-dark { padding: clamp(64px, 8vw, 110px) 24px; background: #0b0a10; color: #fff; }
