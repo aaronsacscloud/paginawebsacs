@@ -36,14 +36,37 @@ const eventos = ['Conciertos', 'Festivales', 'Eventos especiales', 'Eventos depo
 const productos = ['Playeras', 'Chamarras', 'Sudaderas', 'Prendas de corte especial', 'Paliacates', 'Muñequeras', 'Llaveros', 'Pins', 'Posters', 'Tour books', 'Tazas', 'Cilindros'];
 const recintos = ['Arenas', 'Estadios', 'Teatros', 'Foros', 'Parques de diversiones', 'Explanadas públicas'];
 const paises = ['México', 'Costa Rica', 'Perú', 'Colombia', 'Argentina', 'Chile', 'Brasil', 'Estados Unidos'];
-// Las mismas listas, ordenadas para ENSEÑAR algo (dueño, 4-oct-2026: «que sea
-// más didáctico»): los recintos cerrados de menor a mayor aforo y los países
-// de norte a sur, como se recorre la operación en el mapa.
-const escalaRecintos = [
-  { n: 'Foros', t: 14 }, { n: 'Teatros', t: 22 }, { n: 'Arenas', t: 32 }, { n: 'Estadios', t: 44 },
+// «El negocio» sin tarjetas ni etiquetas (dueño, 4-oct-2026: «no quiero que se
+// vea en texto»): cada dato se ENSEÑA con una forma propia.
+//  · Dónde venden → lista vertical que va palomeando cada tipo de evento.
+//  · Qué fabrican → un ícono por producto, que se van encendiendo.
+//  · En qué recintos → siluetas que crecen del foro al estadio.
+//  · Oficinas → mapa de América; cada país se puede cliquear.
+import mapa from '../../data/ls-mapa-america.json';
+const ICONO: Record<string, string> = {
+  'Playeras': 'M8 4l-4 3 2 4 2-1v10h8V10l2 1 2-4-4-3c-.5 1.5-2 2.5-4 2.5S8.5 5.5 8 4z',
+  'Chamarras': 'M8 3L4 6v13h4V9M16 3l4 3v13h-4V9M8 3c1 1.5 2.5 2 4 2s3-.5 4-2M8 9v12h8V9M12 5v16',
+  'Sudaderas': 'M8 6a4 4 0 0 1 8 0l4 2-2 4-2-1v10H8V11l-2 1-2-4zM10 6c0 2 1 3 2 3s2-1 2-3M10 16h4',
+  'Prendas de corte especial': 'M6 4a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM6 15a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM8 8l12 9M8 16l12-9',
+  'Paliacates': 'M4 4h16L4 20zM9 8h.01M7 12h.01M12 7h.01',
+  'Muñequeras': 'M5 9c0-2 3-3 7-3s7 1 7 3v6c0 2-3 3-7 3s-7-1-7-3zM5 9c0 2 3 3 7 3s7-1 7-3',
+  'Llaveros': 'M8 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM11 11l8 8M16 16l2-2M18 18l2-2',
+  'Pins': 'M12 21v-6M8 3h8l-1 6 3 3H6l3-3z',
+  'Posters': 'M5 3h14v18H5zM5 16l4-4 3 3 3-3 4 4M10 8h.01',
+  'Tour books': 'M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 19a2 2 0 0 1 2-2h13',
+  'Tazas': 'M5 8h11v7a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4zM16 10h2a2 2 0 0 1 0 4h-2M8 3v2M11 3v2',
+  'Cilindros': 'M7 4h10l-1 16H8zM7 8h10',
+};
+const RECINTOS = [
+  { n: 'Foros', t: 46, d: 'M3 20h18M5 20v-8h14v8M5 12l7-5 7 5M10 20v-4h4v4' },
+  { n: 'Teatros', t: 60, d: 'M3 20h18M4 9l8-5 8 5zM6 9v11M10 9v11M14 9v11M18 9v11' },
+  { n: 'Arenas', t: 76, d: 'M3 20h18M4 20v-6a8 6 0 0 1 16 0v6M8 14v6M12 12v8M16 14v6' },
+  { n: 'Estadios', t: 88, d: 'M2 19h20M3 13c0-2 4-4 9-4s9 2 9 4v6H3zM3 13c0 2 4 3 9 3s9-1 9-3M7 9V6M17 9V6' },
 ];
-const aireLibre = ['Parques de diversiones', 'Explanadas públicas'];
-const rutaPaises = ['Estados Unidos', 'México', 'Costa Rica', 'Colombia', 'Perú', 'Brasil', 'Chile', 'Argentina'];
+const AIRE_LIBRE = [
+  { n: 'Parques de diversiones', t: 58, d: 'M12 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM12 4v14M5 11h14M7 6l10 10M17 6L7 16M9 21l3-10 3 10' },
+  { n: 'Explanadas públicas', t: 58, d: 'M3 20h18M4 20l4-9 4 9M12 20l4-9 4 9M8 11V6l3 1.5L8 9' },
+];
 ---
 
 <BaseLayout
@@ -112,51 +135,74 @@ const rutaPaises = ['Estados Unidos', 'México', 'Costa Rica', 'Colombia', 'Per�
       </div>
       <figcaption>De los racks por talla a la bolsa sellada de Mr Merch: playeras oficiales de cada gira, diseñadas y vendidas por la casa.</figcaption>
     </figure>
-    <div class="ls-biz-cards" id="ls-biz-cards">
-      <div class="ls-card">
-        <div class="ls-card-h">
-          <span class="ls-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h16v3a2 2 0 0 0 0 4v3H4v-3a2 2 0 0 0 0-4z"/><path d="M14 7v10" stroke-dasharray="2 2"/></svg></span>
-          <div class="ls-card-t"><h3>Dónde venden</h3>
-          <span class="ls-num"><b data-n={eventos.length}>{eventos.length}</b> tipos de evento</span></div>
+    <div class="ls-neg" id="ls-neg">
+      <div class="ls-neg-b">
+        <span class="ls-neg-k">Dónde venden</span>
+        <div class="ls-tick" id="ls-tick" aria-label={`Venden en: ${eventos.join(', ')}`}>
+          <ul class="ls-tick-l">
+            {[...eventos, ...eventos].map((e, i) => (
+              <li aria-hidden={i >= eventos.length ? 'true' : undefined}>
+                <span class="ls-tick-c"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg></span>{e}
+              </li>
+            ))}
+          </ul>
         </div>
-        <div class="ls-chips">{eventos.map((e, i) => <span class="ls-chip ls-pop" style={`--i:${i}`}>{e}</span>)}</div>
       </div>
-      <div class="ls-card">
-        <div class="ls-card-h">
-          <span class="ls-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 4l-4 3 2 4 2-1v10h8V10l2 1 2-4-4-3c-.5 1.5-2 2.5-4 2.5S8.5 5.5 8 4z"/></svg></span>
-          <div class="ls-card-t"><h3>Qué fabrican</h3>
-          <span class="ls-num"><b data-n={productos.length}>{productos.length}</b>+ productos</span></div>
-        </div>
-        <div class="ls-chips">{productos.map((p, i) => <span class="ls-chip ls-pop" style={`--i:${i}`}>{p}</span>)}<span class="ls-chip ls-chip--muted ls-pop" style={`--i:${productos.length}`}>y mucho más</span></div>
+      <div class="ls-neg-b">
+        <span class="ls-neg-k">Qué fabrican</span>
+        <ul class="ls-prod" id="ls-prod">
+          {productos.map((p, i) => (
+            <li style={`--i:${i}`}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d={ICONO[p]} /></svg>
+              <span>{p}</span>
+            </li>
+          ))}
+        </ul>
+        <span class="ls-prod-mas">y mucho más</span>
       </div>
-      <div class="ls-card">
-        <div class="ls-card-h">
-          <span class="ls-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 20h18M5 20V10l7-5 7 5v10M9 20v-5h6v5"/></svg></span>
-          <div class="ls-card-t"><h3>En qué recintos</h3>
-          <span class="ls-num"><b data-n={escalaRecintos.length + aireLibre.length}>{escalaRecintos.length + aireLibre.length}</b> tipos de recinto</span></div>
-        </div>
-        <div class="ls-escala-k">Cerrados, por aforo</div>
-        <div class="ls-escala">
-          {escalaRecintos.map((r, i) => (
-            <div class="ls-escala-p ls-pop" style={`--i:${i}`}>
-              <span class="ls-escala-dot" style={`--t:${r.t}px`}></span>
-              <span class="ls-escala-n">{r.n}</span>
-            </div>
+    </div>
+  </div>
+
+  <div class="ls-mundo">
+    <div class="ls-mapa-w">
+      <span class="ls-neg-k">Oficinas operativas</span>
+      <div class="ls-mapa" id="ls-mapa">
+        <svg viewBox={`0 0 ${mapa.W} ${mapa.H}`} role="img" aria-label="Mapa de América con las oficinas operativas de Live Shows">
+          <path class="ls-mapa-base" d={mapa.base} />
+          <g set:html={mapa.ofis} />
+        </svg>
+        {mapa.pins.map((pin: any) => (
+          <button type="button" class="ls-pin" data-pais={pin.pais} aria-pressed="false"
+            style={`left:${(pin.x / mapa.W * 100).toFixed(2)}%;top:${(pin.y / mapa.H * 100).toFixed(2)}%`}>
+            <span class="ls-pin-d"></span><span class="ls-pin-n">{pin.pais}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+    <div class="ls-mundo-der">
+      <div class="ls-pais" id="ls-pais" aria-live="polite">
+        <span class="ls-pais-k">Oficina operativa</span>
+        <strong class="ls-pais-n" id="ls-pais-n">México</strong>
+        <span class="ls-pais-c"><b>8</b> países · de Estados Unidos a Argentina</span>
+      </div>
+      <div class="ls-rec" id="ls-rec">
+        <span class="ls-neg-k">En qué recintos</span>
+        <div class="ls-rec-l">
+          {RECINTOS.map((r, i) => (
+            <figure class="ls-rec-i" style={`--i:${i}`}>
+              <svg viewBox="0 0 24 24" style={`width:${r.t}px;height:${r.t}px`} aria-hidden="true"><path d={r.d} /></svg>
+              <figcaption>{r.n}</figcaption>
+            </figure>
+          ))}
+          <span class="ls-rec-sep" aria-hidden="true"></span>
+          {AIRE_LIBRE.map((r, i) => (
+            <figure class="ls-rec-i ls-rec-i--aire" style={`--i:${i + RECINTOS.length}`}>
+              <svg viewBox="0 0 24 24" style={`width:${r.t}px;height:${r.t}px`} aria-hidden="true"><path d={r.d} /></svg>
+              <figcaption>{r.n}</figcaption>
+            </figure>
           ))}
         </div>
-        <div class="ls-escala-k">Al aire libre</div>
-        <div class="ls-chips">{aireLibre.map((r, i) => <span class="ls-chip ls-chip--aire ls-pop" style={`--i:${i + escalaRecintos.length}`}>{r}</span>)}</div>
-      </div>
-      <div class="ls-card">
-        <div class="ls-card-h">
-          <span class="ls-ico ls-ico--rosa" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>
-          <div class="ls-card-t"><h3>Oficinas operativas</h3>
-          <span class="ls-num ls-num--rosa"><b data-n={rutaPaises.length}>{rutaPaises.length}</b> países</span></div>
-        </div>
-        <ol class="ls-ruta">
-          {rutaPaises.map((p, i) => <li class="ls-pop" style={`--i:${i}`}><span class="ls-ruta-pin"></span>{p}</li>)}
-        </ol>
-        <p class="ls-card-note">De norte a sur: cubren la operación de venta en toda América Latina, en recintos abiertos o cerrados.</p>
+        <div class="ls-rec-esc" aria-hidden="true"><span>Cerrados · de menor a mayor aforo</span><span>Al aire libre</span></div>
       </div>
     </div>
   </div>
@@ -313,26 +359,75 @@ const rutaPaises = ['Estados Unidos', 'México', 'Costa Rica', 'Colombia', 'Per�
 </BaseLayout>
 
 <script>
-  // Tarjetas de «El negocio»: al entrar a pantalla, las etiquetas aparecen en
-  // cascada y las cifras cuentan hacia arriba. Una sola vez por tarjeta.
-  const tarjetas = document.getElementById('ls-biz-cards');
-  if (tarjetas && 'IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    tarjetas.classList.add('js-anim');
-    const contar = (el: HTMLElement) => {
-      const fin = Number(el.dataset.n || 0); const t0 = performance.now(); const dur = 900;
-      const paso = (t: number) => { const k = Math.min(1, (t - t0) / dur); el.textContent = String(Math.round(fin * (1 - Math.pow(1 - k, 3)))); if (k < 1) requestAnimationFrame(paso); };
-      el.textContent = '0'; requestAnimationFrame(paso);
+  // «El negocio» (4-oct-2026). Todo corre solo mientras se ve y con la pestaña
+  // visible; con «reducir movimiento» la lista queda completa y palomeada.
+  const quietoNeg = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const enPantalla = (el: Element, on: () => void, off: () => void) =>
+    new IntersectionObserver(([e]) => (e.isIntersecting ? on() : off()), { threshold: 0.2 }).observe(el);
+
+  // Dónde venden: rueda un renglón cada 1.6 s y palomea el del centro.
+  const tick = document.getElementById('ls-tick');
+  if (tick) {
+    const lista = tick.querySelector('.ls-tick-l') as HTMLElement;
+    const items = Array.from(lista.children) as HTMLElement[];
+    const n = items.length / 2;
+    if (quietoNeg) { items.forEach((li) => li.classList.add('hecho')); tick.style.height = 'auto'; }
+    else {
+      let i = 0, t: number | undefined, vivo = false;
+      const h = () => items[0].getBoundingClientRect().height;
+      const pinta = (anim = true) => {
+        lista.style.transition = anim ? '' : 'none';
+        lista.style.transform = `translateY(${-(i - 2) * h()}px)`;
+        items.forEach((li, k) => { li.classList.toggle('on', k === i); li.classList.toggle('hecho', k < i && k > i - 3); });
+      };
+      const paso = () => {
+        i++;
+        if (i >= n + 2) { i = 2; pinta(false); requestAnimationFrame(() => requestAnimationFrame(() => { i = 3; pinta(); })); return; }
+        pinta();
+      };
+      i = 2; pinta(false);
+      const arranca = () => { if (!t && vivo && !document.hidden) t = window.setInterval(paso, 1600); };
+      const para = () => { if (t) { clearInterval(t); t = undefined; } };
+      enPantalla(tick, () => { vivo = true; arranca(); }, () => { vivo = false; para(); });
+      document.addEventListener('visibilitychange', () => (document.hidden ? para() : arranca()));
+    }
+  }
+
+  // Qué fabrican: se enciende un ícono a la vez, en orden.
+  const prod = document.getElementById('ls-prod');
+  if (prod && !quietoNeg) {
+    const ps = Array.from(prod.children) as HTMLElement[];
+    let k = 0, t2: number | undefined, vivo2 = false;
+    const enciende = () => { ps.forEach((p, j) => p.classList.toggle('on', j === k)); k = (k + 1) % ps.length; };
+    const a2 = () => { if (!t2 && vivo2 && !document.hidden) { enciende(); t2 = window.setInterval(enciende, 900); } };
+    const p2 = () => { if (t2) { clearInterval(t2); t2 = undefined; } };
+    enPantalla(prod, () => { vivo2 = true; a2(); }, () => { vivo2 = false; p2(); });
+    document.addEventListener('visibilitychange', () => (document.hidden ? p2() : a2()));
+  }
+
+  // Mapa: cada país (o su pin) se puede cliquear; el nombre grande cambia.
+  const mapaEl = document.getElementById('ls-mapa');
+  const nombre = document.getElementById('ls-pais-n');
+  if (mapaEl && nombre) {
+    const elige = (pais: string) => {
+      mapaEl.querySelectorAll<SVGPathElement>('.ls-mapa-pais').forEach((pth) => pth.classList.toggle('on', pth.dataset.pais === pais));
+      mapaEl.querySelectorAll<HTMLButtonElement>('.ls-pin').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pais === pais)));
+      nombre.textContent = pais;
+      nombre.classList.remove('cambio'); requestAnimationFrame(() => requestAnimationFrame(() => nombre.classList.add('cambio')));
     };
-    const io = new IntersectionObserver((entradas) => {
-      for (const e of entradas) {
-        if (!e.isIntersecting) continue;
-        const card = e.target as HTMLElement;
-        requestAnimationFrame(() => requestAnimationFrame(() => card.classList.add('on')));
-        card.querySelectorAll<HTMLElement>('.ls-num b[data-n]').forEach(contar);
-        io.unobserve(card);
-      }
-    }, { threshold: 0.25 });
-    tarjetas.querySelectorAll('.ls-card').forEach((c) => io.observe(c));
+    mapaEl.addEventListener('click', (ev) => {
+      const el = (ev.target as Element).closest('[data-pais]') as HTMLElement | null;
+      if (el?.dataset.pais) elige(el.dataset.pais);
+    });
+    elige('México');
+  }
+
+  // Recintos: las siluetas suben, de la más chica a la más grande, una vez.
+  const rec = document.getElementById('ls-rec');
+  if (rec && 'IntersectionObserver' in window && !quietoNeg) {
+    rec.classList.add('js-anim');
+    const io2 = new IntersectionObserver(([e]) => { if (e.isIntersecting) { requestAnimationFrame(() => requestAnimationFrame(() => rec.classList.add('on'))); io2.disconnect(); } }, { threshold: 0.3 });
+    io2.observe(rec);
   }
 
   // Rejilla de módulos: cada punto es un punto de venta; se ilumina al azar
@@ -411,7 +506,6 @@ const rutaPaises = ['Estados Unidos', 'México', 'Costa Rica', 'Colombia', 'Per�
   .ls-biz-galeria { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .ls-biz-galeria img { aspect-ratio: 3 / 4; object-fit: cover; border-radius: 16px; }
   .ls-biz-photo figcaption { font-family: var(--font-body); font-size: 13px; color: var(--color-text-tertiary); margin-top: 10px; line-height: 1.5; }
-  .ls-biz-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .ls-card { background: #fff; border: 1px solid var(--color-bg-secondary); border-radius: 16px; padding: 20px; }
   .ls-card h3 { font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: var(--color-text-primary); margin: 0 0 12px; letter-spacing: -0.01em; }
   .ls-card-note { font-family: var(--font-body); font-size: 13px; color: var(--color-text-tertiary); line-height: 1.5; margin: 12px 0 0; }
@@ -421,47 +515,71 @@ const rutaPaises = ['Estados Unidos', 'México', 'Costa Rica', 'Colombia', 'Per�
   .ls-sec--alt .ls-inner > .ls-chips .ls-chip { background: #fff; border: 1px solid var(--color-bg-secondary); }
   .ls-chip--muted { background: transparent; color: var(--color-text-tertiary); }
   .ls-chip--pais { background: #FBE7F0; color: #8A1B50; }
-  /* ── Tarjetas didácticas (4-oct-2026) ── */
-  .ls-card-h { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
-  .ls-card-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-  .ls-card-h h3 { margin: 0; }
-  .ls-ico { width: 40px; height: 40px; border-radius: 10px; background: #EAF0FD; display: grid; place-items: center; flex: none; }
-  .ls-ico svg { width: 19px; height: 19px; fill: none; stroke: var(--color-primary-texto); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-  .ls-ico--rosa { background: #FBE7F0; }
-  .ls-ico--rosa svg { stroke: #8A1B50; }
-  .ls-num { font-family: var(--font-body); font-size: 12px; color: var(--color-text-tertiary); white-space: nowrap; line-height: 1.2; }
-  .ls-num b { font-family: var(--font-display); font-size: 1.15rem; font-weight: 800; color: var(--color-primary-texto); letter-spacing: -0.02em; margin-right: 3px; font-variant-numeric: tabular-nums; }
-  .ls-num--rosa b { color: #8A1B50; }
-  .ls-chip { transition: background .2s, color .2s, transform .2s; }
-  .ls-chip:hover { background: #EAF0FD; color: var(--color-primary-texto); transform: translateY(-1px); }
-  .ls-chip--muted:hover { background: transparent; color: var(--color-text-tertiary); transform: none; }
-  .ls-escala-k { font-family: var(--font-body); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--color-text-tertiary); margin: 4px 0 10px; }
-  .ls-escala { display: grid; grid-template-columns: repeat(4, 1fr); align-items: end; gap: 6px; margin-bottom: 16px; position: relative; }
-  .ls-escala::before { content: ""; position: absolute; left: 8%; right: 8%; bottom: 28px; height: 2px; background: linear-gradient(90deg, #D6E1FA, var(--color-primary)); border-radius: 2px; }
-  .ls-escala-p { display: flex; flex-direction: column; align-items: center; gap: 8px; position: relative; }
-  .ls-escala-dot { width: var(--t); height: var(--t); border-radius: 50%; background: var(--color-primary); opacity: .85; box-shadow: 0 0 0 4px #fff; }
-  .ls-escala-n { font-family: var(--font-body); font-size: 12px; font-weight: 600; color: var(--color-text-secondary); }
-  .ls-chip--aire { background: #EAF7F1; color: #1E7A55; }
-  .ls-ruta { list-style: none; margin: 0; padding: 0 0 0 4px; display: grid; grid-template-columns: auto auto; justify-content: start; column-gap: 22px; position: relative; }
-  .ls-ruta li { display: flex; align-items: center; gap: 10px; font-family: var(--font-body); font-size: 13.5px; font-weight: 600; color: #8A1B50; padding: 6px 0; position: relative; white-space: nowrap; }
-  .ls-ruta li::after { content: ""; position: absolute; left: 5px; top: 22px; bottom: -8px; width: 2px; background: #F3C6DA; }
-  .ls-ruta li:nth-child(4)::after, .ls-ruta li:last-child::after { display: none; }
-  .ls-ruta { grid-auto-flow: column; grid-template-rows: repeat(4, auto); }
-  .ls-ruta-pin { width: 12px; height: 12px; border-radius: 50%; background: #D9538E; box-shadow: 0 0 0 3px #FBE7F0; flex: none; position: relative; z-index: 1; }
+  /* ── «El negocio» sin tarjetas (4-oct-2026) ── */
+  .ls-neg { display: flex; flex-direction: column; gap: 34px; padding-top: 6px; }
+  .ls-neg-k { display: block; font-family: var(--font-body); font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--color-primary-texto); margin-bottom: 14px; }
+  /* Dónde venden: lista que rueda hacia arriba y palomea el renglón del centro */
+  .ls-tick { --h: 46px; height: calc(var(--h) * 5); overflow: hidden; position: relative;
+    -webkit-mask-image: linear-gradient(180deg, transparent, #000 28%, #000 72%, transparent); mask-image: linear-gradient(180deg, transparent, #000 28%, #000 72%, transparent); }
+  .ls-tick-l { list-style: none; margin: 0; padding: 0; transition: transform .7s cubic-bezier(.65,0,.35,1); }
+  .ls-tick-l li { height: var(--h); display: flex; align-items: center; gap: 14px; font-family: var(--font-display); font-size: clamp(1.15rem, 2vw, 1.5rem); font-weight: 800; letter-spacing: -.02em; color: #c9cede; transition: color .4s; }
+  .ls-tick-c { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #d6dbea; display: grid; place-items: center; flex: none; transition: background .4s, border-color .4s, transform .4s; }
+  .ls-tick-c svg { width: 16px; height: 16px; fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 22; stroke-dashoffset: 22; transition: stroke-dashoffset .45s .15s; }
+  .ls-tick-l li.on { color: var(--color-text-primary); }
+  .ls-tick-l li.on .ls-tick-c { background: var(--color-primary); border-color: var(--color-primary); transform: scale(1.1); }
+  .ls-tick-l li.on .ls-tick-c svg, .ls-tick-l li.hecho .ls-tick-c svg { stroke-dashoffset: 0; }
+  .ls-tick-l li.hecho { color: #8f97ad; }
+  .ls-tick-l li.hecho .ls-tick-c { background: #9db7ef; border-color: #9db7ef; }
+  /* Qué fabrican: un ícono por producto */
+  .ls-prod { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px 10px; }
+  .ls-prod li { display: flex; flex-direction: column; align-items: center; gap: 7px; text-align: center; }
+  .ls-prod svg { width: 40px; height: 40px; fill: none; stroke: #9aa3b8; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: stroke .35s, transform .35s; }
+  .ls-prod span { font-family: var(--font-body); font-size: 11.5px; font-weight: 600; color: var(--color-text-tertiary); line-height: 1.25; transition: color .35s; }
+  .ls-prod li.on svg { stroke: var(--color-primary); transform: translateY(-3px) scale(1.12); }
+  .ls-prod li.on span { color: var(--color-text-primary); }
+  .ls-prod-mas { display: block; font-family: var(--font-body); font-size: 13px; color: var(--color-text-tertiary); margin-top: 14px; text-align: right; }
 
-  /* La animación solo arranca con JS (sin JS todo se ve quieto y completo) y
-     respeta a quien pidió menos movimiento. */
+  /* Mapa + recintos */
+  .ls-mundo { max-width: 1120px; margin: 64px auto 0; display: grid; grid-template-columns: 1.05fr 1fr; gap: 40px; align-items: center; }
+  .ls-mapa { position: relative; width: 100%; max-width: 460px; margin: 0 auto; aspect-ratio: 520 / 760; }
+  .ls-mapa svg { width: 100%; height: 100%; display: block; }
+  .ls-mapa-base { fill: #e6e9f1; stroke: #fff; stroke-width: .8; }
+  .ls-mapa :global(.ls-mapa-pais) { fill: #F3C6DA; stroke: #fff; stroke-width: .8; cursor: pointer; transition: fill .3s; }
+  .ls-mapa :global(.ls-mapa-pais:hover) { fill: #EFA6CA; }
+  .ls-mapa :global(.ls-mapa-pais.on) { fill: #D9538E; }
+  .ls-pin { position: absolute; transform: translate(-50%, -50%); background: none; border: 0; padding: 6px; cursor: pointer; display: block; line-height: 0; }
+  .ls-pin:focus-visible { outline: 2px solid var(--color-primary); border-radius: 8px; }
+  .ls-pin-d { display: block; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 3px solid #8A1B50; box-sizing: border-box; }
+  .ls-pin-n { position: absolute; left: 22px; top: 50%; line-height: 1.3; font-family: var(--font-body); font-size: 11px; font-weight: 700; color: #8A1B50; background: rgba(255,255,255,.94); border-radius: 6px; padding: 2px 6px; white-space: nowrap; opacity: 0; transform: translate(-4px, -50%); transition: opacity .25s, transform .25s; pointer-events: none; }
+  .ls-pin:hover .ls-pin-n, .ls-pin[aria-pressed="true"] .ls-pin-n { opacity: 1; transform: translate(0, -50%); }
+  .ls-pin[aria-pressed="true"] .ls-pin-d { background: #8A1B50; animation: ls-latido 1.6s ease-out infinite; }
+  @keyframes ls-latido { 0% { box-shadow: 0 0 0 0 rgba(217,83,142,.5); } 80%, 100% { box-shadow: 0 0 0 12px rgba(217,83,142,0); } }
+  .ls-mundo-der { display: flex; flex-direction: column; gap: 46px; }
+  .ls-pais-k { display: block; font-family: var(--font-body); font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #8A1B50; }
+  .ls-pais-n { display: block; font-family: var(--font-display); font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 800; letter-spacing: -.03em; color: var(--color-text-primary); line-height: 1.05; margin: 6px 0 8px; }
+  .ls-pais-n.cambio { animation: ls-entra .45s cubic-bezier(.2,.8,.3,1); }
+  @keyframes ls-entra { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .ls-pais-c { font-family: var(--font-body); font-size: 14px; color: var(--color-text-tertiary); }
+  .ls-pais-c b { color: #8A1B50; }
+  .ls-rec-l { display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap; border-bottom: 2px solid #e1e5ef; padding-bottom: 10px; }
+  .ls-rec-i { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .ls-rec-i svg { fill: none; stroke: var(--color-primary-texto); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; max-width: 100%; }
+  .ls-rec-i--aire svg { stroke: #1E7A55; }
+  .ls-rec-i figcaption { font-family: var(--font-body); font-size: 11.5px; font-weight: 600; color: var(--color-text-secondary); text-align: center; max-width: 70px; line-height: 1.2; }
+  .ls-rec-sep { width: 1px; align-self: stretch; background: #e1e5ef; margin: 0 4px; }
+  .ls-rec-esc { display: flex; justify-content: space-between; font-family: var(--font-body); font-size: 11px; color: var(--color-text-tertiary); margin-top: 8px; gap: 10px; }
   @media (prefers-reduced-motion: no-preference) {
-    .ls-biz-cards.js-anim .ls-card:not(.on) .ls-pop { opacity: 0; transform: translateY(8px) scale(.96); }
-    .ls-biz-cards.js-anim .ls-pop { transition: opacity .45s ease, transform .45s cubic-bezier(.2,.8,.3,1.2); transition-delay: calc(var(--i, 0) * 45ms); }
-    .ls-biz-cards.js-anim .ls-card:not(.on) .ls-escala-dot { transform: scale(0); }
-    .ls-biz-cards.js-anim .ls-escala-dot { transition: transform .6s cubic-bezier(.2,.8,.3,1.4); transition-delay: calc(120ms + var(--i, 0) * 110ms); }
-    .ls-biz-cards.js-anim .ls-card.on .ls-ruta-pin { animation: ls-pin 1.6s ease-out calc(var(--i, 0) * 120ms) 1 both; }
-    @keyframes ls-pin { 0% { box-shadow: 0 0 0 0 rgba(217,83,142,.55); } 70% { box-shadow: 0 0 0 9px rgba(217,83,142,0); } 100% { box-shadow: 0 0 0 3px #FBE7F0; } }
+    .ls-rec.js-anim:not(.on) .ls-rec-i { opacity: 0; transform: translateY(14px) scale(.85); }
+    .ls-rec.js-anim .ls-rec-i { transition: opacity .5s, transform .55s cubic-bezier(.2,.8,.3,1.3); transition-delay: calc(var(--i) * 110ms); transform-origin: bottom center; }
   }
-
-  /* ── Escala (oscuro) ── */
-  .ls-dark { padding: clamp(64px, 8vw, 110px) 24px; background: #0b0a10; color: #fff; }
+  @media (max-width: 900px) {
+    .ls-mundo { grid-template-columns: 1fr; gap: 28px; margin-top: 44px; }
+  }
+  @media (max-width: 480px) {
+    .ls-prod { grid-template-columns: repeat(3, 1fr); }
+    /* Las seis siluetas en un solo renglón: se escala el conjunto completo. */
+    .ls-rec-l { flex-wrap: nowrap; gap: 6px; zoom: .74; }
+  }
   .ls-grid-wrap { max-width: 980px; margin: 40px auto 48px; }
   .ls-grid { display: grid; grid-template-columns: repeat(20, 1fr); gap: 10px; }
   .ls-grid :global(span) { aspect-ratio: 1; border-radius: 50%; background: rgba(255,255,255,0.12); }
@@ -539,7 +657,6 @@ const rutaPaises = ['Estados Unidos', 'México', 'Costa Rica', 'Colombia', 'Per�
     .ls-sec, .ls-dark { padding-left: 16px; padding-right: 16px; }
     .ls-split { grid-template-columns: 1fr; }
     .ls-mosaic-b { box-shadow: 0 4px 10px rgba(0,0,0,0.15); border-width: 4px; }
-    .ls-biz-cards { grid-template-columns: 1fr; }
     .ls-grid { grid-template-columns: repeat(12, 1fr); gap: 8px; }
     .ls-pillars { grid-template-columns: 1fr; }
     .ls-results { grid-template-columns: 1fr; }
