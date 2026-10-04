@@ -1,0 +1,14 @@
+---
+// Solicitudes de mejora que llegan desde AXO (el asistente dentro de Sacs). Equipo interno.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AxoMejorasPanel from '../../components/admin/AxoMejorasPanel';
+import { requireFounder } from '../../lib/auth/requireFounder';
+
+export const prerender = false;
+const gate = await requireFounder(Astro);
+if (gate) return gate;
+---
+
+<BaseLayout title="Mejoras desde AXO — Sacs" description="Solicitudes de mejora de los clientes" noindex={true} bareLayout={true}>
+  <AxoMejorasPanel client:only="react" />
+</BaseLayout>
