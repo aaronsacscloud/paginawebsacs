@@ -60,7 +60,7 @@ export function breadcrumbSolucion(href: string) {
 export function breadcrumbProducto(slug: string) {
   const plataforma = navLinks.find((n) => n.label === 'Plataforma');
   for (const pilar of plataforma?.pillars ?? []) {
-    const item = pilar.items.find((it) => it.href === `/producto/${slug}`);
+    const item = pilar.items.find((it) => it.href === `/producto/${slug}` || it.producto === slug);
     if (item) {
       return breadcrumbList([
         INICIO,

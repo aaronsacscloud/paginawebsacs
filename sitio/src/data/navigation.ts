@@ -5,6 +5,9 @@ export interface NavSubItem {
   href: string;
   description?: string;
   icon?: string;
+  /** La página /producto/<slug> a la que llevaba antes este renglón: así su miga de pan sigue encontrando su pilar
+   *  (p. ej. «Gastos» ahora lleva a /plugins/administracion, pero /producto/gastos sigue colgando de Controla). */
+  producto?: string;
 }
 
 export interface NavPillar {
@@ -784,8 +787,9 @@ export const navLinks: NavLink[] = [
           { label: 'Conteo físico', href: '/producto/conteo-fisico' },
           { label: 'Nivelación entre tiendas', href: '/producto/nivelacion-de-inventario' },
           { label: 'Compras y reabasto por curva', href: '/producto/ordenes-de-compra' },
-          { label: 'Gastos', href: '/producto/gastos' },
-          { label: 'Cuentas por pagar', href: '/producto/cuentas-por-pagar' },
+          // Gastos y Cuentas por pagar llevan a la página del plugin Administración (4-oct-2026, pedido del dueño)
+          { label: 'Gastos', href: '/plugins/administracion', producto: 'gastos' },
+          { label: 'Cuentas por pagar', href: '/plugins/administracion#admin-pagar', producto: 'cuentas-por-pagar' },
           { label: 'Sell-through, ABC y reportes', href: '/producto/reportes-y-analitica' },
         ],
       },
@@ -865,8 +869,8 @@ export const footerLinks = {
     { label: 'Conteo físico', href: '/producto/conteo-fisico' },
     { label: 'Nivelación entre tiendas', href: '/producto/nivelacion-de-inventario' },
     { label: 'Compras y reabasto por curva', href: '/producto/ordenes-de-compra' },
-    { label: 'Gastos', href: '/producto/gastos' },
-    { label: 'Cuentas por pagar', href: '/producto/cuentas-por-pagar' },
+    { label: 'Gastos', href: '/plugins/administracion' },
+    { label: 'Cuentas por pagar', href: '/plugins/administracion#admin-pagar' },
     { label: 'Sell-through, ABC y reportes', href: '/producto/reportes-y-analitica' },
   ],
   fideliza: [
