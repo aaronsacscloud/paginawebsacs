@@ -1,0 +1,108 @@
+---
+/**
+ * «Los cambios ya no se discuten» (/producto/punto-de-venta): la foto del cambio de talla en el mostrador (gpt-image-2.5),
+ * que entra con un barrido (clip-path), y tres casos en pestañas — Cambio Exprés, cambio por otra prenda y devolución —
+ * cada uno con su pantalla REAL del punto de venta (cuenta demo). Al cambiar de pestaña la pantalla entra de lado.
+ * Sin JS se ven los tres casos, uno debajo de otro. Marfil.
+ */
+import { CAMBIOS, I } from '../../../data/producto-pos';
+import StaffVentana from '../../plugins/staff/StaffVentana.astro';
+---
+<section class="pda pcm pd-marfil" id="pos-cambios" aria-labelledby="pcm-h">
+  <p class="pd-folio"><span>{CAMBIOS.k}</span><span>En el mostrador</span></p>
+  <div class="pcm-cab">
+    <h2 class="pda-h" id="pcm-h">{CAMBIOS.h}</h2>
+    <p class="pcm-p">{CAMBIOS.p}</p>
+  </div>
+  <div class="pcm-grid">
+    <figure class="pcm-foto rv">
+      <img src={`${I}cambio-1280.webp`} srcset={`${I}cambio-900.webp 900w, ${I}cambio-1280.webp 1280w`} sizes="(min-width: 900px) 42vw, 100vw" width="1280" height="853" alt="En el mostrador, la vendedora revisa la talla de un vestido que la clienta trae para cambiar" loading="lazy" decoding="async" />
+    </figure>
+    <div class="pcm-casos" data-pcm>
+      <div class="pcm-tabs" role="tablist" aria-label="Casos de cambio y devolución">
+        {CAMBIOS.casos.map((c, i) => (
+          <button type="button" role="tab" id={`pcm-tab-${c.id}`} aria-controls={`pcm-pan-${c.id}`} aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1} data-tab={c.id}><b>{String(i + 1).padStart(2, '0')}</b>{c.t}</button>
+        ))}
+      </div>
+      <div class="pcm-paneles">
+        {CAMBIOS.casos.map((c, i) => (
+          <div class="pcm-panel" role="tabpanel" id={`pcm-pan-${c.id}`} aria-labelledby={`pcm-tab-${c.id}`} data-panel={c.id} data-activo={i === 0 ? '' : undefined}>
+            <p class="pcm-d">{c.d}</p>
+            <StaffVentana src={`${I}${c.img}.webp`} w={c.w} h={c.h} alt={c.alt} barra="Punto de venta" />
+          </div>
+        ))}
+      </div>
+      <ul class="pcm-extra">{CAMBIOS.extra.map((x) => <li>{x}</li>)}</ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .pcm-cab { display: grid; gap: 14px; }
+  .pcm-p { margin: 0; max-width: 48ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .pcm-grid { display: grid; gap: 24px; margin-top: 36px; }
+  .pcm-foto { margin: 0; overflow: hidden; border-radius: 20px; }
+  .pcm-foto img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 64% 50%; }
+  .pcm-casos { display: grid; gap: 16px; align-content: start; min-width: 0; }
+  .pcm-tabs { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+  .pcm-tabs::-webkit-scrollbar { display: none; }
+  .pcm-tabs button { display: inline-flex; align-items: center; gap: 8px; flex: none; padding: 11px 16px; border: 1px solid rgba(20, 20, 20, 0.14); border-radius: 99px; background: #fff; color: #141414; font: 700 14px/1 var(--font-display); cursor: pointer; transition: background 0.25s, color 0.25s, border-color 0.25s; }
+  .pcm-tabs button b { font: 700 12px/1 var(--pd-clash); color: #2F55C4; }
+  .pcm-tabs button[aria-selected='true'] { background: #141414; border-color: #141414; color: #fff; }
+  .pcm-tabs button[aria-selected='true'] b { color: #9DB8F5; }
+  .pcm-tabs button:focus-visible { outline: 3px solid #2F55C4; outline-offset: 2px; }
+  .pcm-paneles { position: relative; overflow: hidden; }
+  .pcm-panel + .pcm-panel { margin-top: 20px; }
+  .pcm-d { margin: 0 0 14px; max-width: 56ch; font: 500 16px/1.55 var(--font-body); color: #45433E; }
+  .pcm-extra { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 0; padding: 0; list-style: none; }
+  .pcm-extra li { padding: 8px 13px; border-radius: 99px; background: rgba(20, 20, 20, 0.06); font: 600 13px/1.2 var(--font-display); color: #141414; }
+  :global(.js-tabs-pcm) .pcm-panel { display: none; margin: 0; }
+  :global(.js-tabs-pcm) .pcm-panel[data-activo] { display: block; animation: pcmEntra 0.55s cubic-bezier(0.22, 1, 0.36, 1); }
+  :global(.js-tabs-pcm) .pcm-panel[data-activo][data-desde='izq'] { animation-name: pcmEntraIzq; }
+  @keyframes pcmEntra { from { opacity: 0; transform: translateX(48px); } to { opacity: 1; transform: none; } }
+  @keyframes pcmEntraIzq { from { opacity: 0; transform: translateX(-48px); } to { opacity: 1; transform: none; } }
+  /* la foto entra con un barrido */
+  :global(.js-rv) .pcm-foto.rv { clip-path: inset(0 100% 0 0 round 20px); transition: clip-path 1.2s cubic-bezier(0.65, 0, 0.35, 1); }
+  :global(.js-rv) .pcm-foto.rv img { transform: scale(1.08); transition: transform 1.6s cubic-bezier(0.22, 1, 0.36, 1); }
+  :global(.js-rv) .pcm-foto.rv.is-on { clip-path: inset(0 0 0 0 round 20px); }
+  :global(.js-rv) .pcm-foto.rv.is-on img { transform: none; }
+  @media (min-width: 900px) {
+    .pcm-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .pcm-grid { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 4vw; margin-top: 52px; align-items: start; }
+    .pcm-foto { position: sticky; top: 90px; aspect-ratio: 4 / 5; }
+  }
+  @media (max-width: 899px) {
+    .pcm-foto { aspect-ratio: 4 / 3; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-tabs-pcm) .pcm-panel[data-activo] { animation: none; }
+    :global(.js-rv) .pcm-foto.rv, :global(.js-rv) .pcm-foto.rv img { clip-path: none; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // Pestañas de los casos: clic o flechas; la pantalla entra del lado hacia donde vas. Sin JS se ven todas.
+  (() => {
+    const caja = document.querySelector<HTMLElement>('[data-pcm]');
+    if (!caja) return;
+    document.documentElement.classList.add('js-tabs-pcm');
+    const tabs = Array.from(caja.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    const paneles = Array.from(caja.querySelectorAll<HTMLElement>('[data-panel]'));
+    let actual = 0;
+    const activa = (n: number, foco = false) => {
+      const desde = n < actual ? 'izq' : 'der';
+      actual = n;
+      tabs.forEach((t, i) => { const on = i === n; t.setAttribute('aria-selected', on ? 'true' : 'false'); t.tabIndex = on ? 0 : -1; if (on && foco) t.focus(); });
+      paneles.forEach((p, i) => { if (i === n) { p.setAttribute('data-activo', ''); p.dataset.desde = desde; } else p.removeAttribute('data-activo'); });
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => activa(i));
+      t.addEventListener('keydown', (e) => {
+        const k = (e as KeyboardEvent).key;
+        if (k !== 'ArrowRight' && k !== 'ArrowLeft') return;
+        e.preventDefault();
+        activa((i + (k === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length, true);
+      });
+    });
+  })();
+</script>

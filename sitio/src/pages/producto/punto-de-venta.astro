@@ -1,0 +1,76 @@
+---
+/**
+ * /producto/punto-de-venta — rediseño con la línea de los plugins (4-oct-2026). Pedido del dueño: «solo dejamos la
+ * parte del video inicial y de ahí optimizas con esta misma lógica [la de /plugins/staff y /plugins/administracion],
+ * cambiando un poco entre secciones la lógica de entrada y metiendo animaciones diferentes»; Punto de venta va primero
+ * y después el resto de «Vende».
+ *
+ * Recorrido: el video de siempre (ProductoHeroVideo) → todo lo que incluye → una venta con el scroll (las pantallas
+ * reales dentro de la tablet de la foto) → cambios y devoluciones → sin internet → corte de caja → tu equipo → precios
+ * y clientes → el ticket → en el celular → lo que deja de pasar → preguntas → cierre.
+ * Qué existe y qué no, y de dónde salen las pantallas: src/data/producto-pos.ts.
+ * Esta página estática le gana a src/pages/producto/[slug].astro para «punto-de-venta» (como tienda-en-linea.astro).
+ */
+import ProductLayout from '../../layouts/ProductLayout.astro';
+import ProductoHeroVideo from '../../components/producto/ProductoHeroVideo.astro';
+import ExpLista from '../../components/experiencia/ExpLista.astro';
+import PosIncluye from '../../components/producto/pos/PosIncluye.astro';
+import PosVenta from '../../components/producto/pos/PosVenta.astro';
+import PosCambios from '../../components/producto/pos/PosCambios.astro';
+import PosOffline from '../../components/producto/pos/PosOffline.astro';
+import PosCorte from '../../components/producto/pos/PosCorte.astro';
+import PosEquipo from '../../components/producto/pos/PosEquipo.astro';
+import PosClientes from '../../components/producto/pos/PosClientes.astro';
+import PosTicket from '../../components/producto/pos/PosTicket.astro';
+import PosCelular from '../../components/producto/pos/PosCelular.astro';
+import GiroFAQ from '../../components/giros/GiroFAQ.astro';
+import FinalCTA from '../../components/FinalCTA.astro';
+import StructuredData from '../../components/StructuredData.astro';
+import { getFeatureBySlug, getPillarForFeature } from '../../data/product';
+import { pageContent } from '../../data/product-pages';
+import { RESUELVE, PREGUNTAS_POS } from '../../data/producto-pos';
+import '../../styles/planeacion.css';
+
+const slug = 'punto-de-venta';
+const feature = getFeatureBySlug(slug)!;
+const pillar = getPillarForFeature(slug)!;
+const hero = pageContent[slug].hero;
+const faqSchema = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: PREGUNTAS_POS.map((p) => ({ '@type': 'Question', name: p.question, acceptedAnswer: { '@type': 'Answer', text: p.answer } })) };
+---
+<ProductLayout title={feature.title} description={feature.description} currentSlug={slug} currentPillar={pillar.id} preloadImage={hero.videoPoster || hero.image}>
+  <StructuredData data={faqSchema} />
+  <ProductoHeroVideo titulo={hero.title} video={hero.video} poster={hero.videoPoster} imagen={hero.image} alt={hero.imageAlt} />
+
+  <div class="pd exp">
+    <div id="pos-incluye"><PosIncluye /></div>
+    <PosVenta />
+    <PosCambios />
+    <PosOffline />
+    <PosCorte />
+    <PosEquipo />
+    <PosClientes />
+    <PosTicket />
+    <PosCelular />
+    <ExpLista id="pos-resuelve" tema="pd-fucsia" palabra="LO QUE RESUELVE" folio={RESUELVE.folio} titulo={RESUELVE.titulo} puntos={RESUELVE.puntos} />
+  </div>
+
+  <GiroFAQ title="Preguntas frecuentes sobre el punto de venta" faqs={PREGUNTAS_POS} />
+  <FinalCTA />
+</ProductLayout>
+
+<script>
+  import { iniciaEscenas } from '../../scripts/experiencia/escenas';
+  iniciaEscenas();
+
+  // Lo que entra al verse (sin JS se ve completo).
+  (() => {
+    const rv = Array.from(document.querySelectorAll<HTMLElement>('.exp .rv'));
+    if (!rv.length || !('IntersectionObserver' in window)) return;
+    document.documentElement.classList.add('js-rv');
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-on'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -10% 0px' });
+    rv.forEach((el) => io.observe(el));
+  })();
+
+  const ph = (evento: string, props?: Record<string, unknown>) => { try { (window as any).sacsPH?.(evento, props); } catch { /* sin medición */ } };
+  document.querySelector('.final-cta-btn')?.addEventListener('click', () => ph('producto_cta_prueba', { producto: 'punto-de-venta' }));
+</script>

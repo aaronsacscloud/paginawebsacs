@@ -1,0 +1,87 @@
+---
+/**
+ * «Todo se resuelve desde el carrito» (/producto/punto-de-venta): precios, crédito, apartados, pedidos, promociones,
+ * monedero y tarjetas de regalo en un carrusel que se desliza (scroll-snap), con flechas en escritorio. Las tarjetas con
+ * pantalla llevan recortes REALES (el apartado desde el carrito y la venta con su cobro); las demás, la etiqueta tal como
+ * la muestra Sacs. Entrada: las tarjetas llegan desde la derecha, escalonadas. Marino.
+ */
+import { CLIENTES, I } from '../../../data/producto-pos';
+const PANTALLAS: Record<number, { src: string; w: number; h: number; alt: string }> = {
+  3: { src: `${I}pantalla-apartar-recorte.webp`, w: 760, h: 869, alt: 'Crear apartado desde el carrito: los productos, la sucursal, el anticipo a cobrar ahora (mínimo el 20 %) y su método de pago' },
+  6: { src: `${I}pantalla-cobro-recorte.webp`, w: 760, h: 668, alt: 'Registrar venta: el total a cobrar y las formas de pago, con la opción de usar varias' },
+};
+---
+<section class="pda pcl pd-marino" id="pos-clientes" aria-labelledby="pcl-h">
+  <div class="pda-fondo" aria-hidden="true"><span>CLIENTES · PRECIOS · CRÉDITO</span><span>CLIENTES · PRECIOS · CRÉDITO</span></div>
+  <p class="pd-folio"><span>{CLIENTES.k}</span><span>Sin salir de la venta</span></p>
+  <div class="pcl-cab">
+    <h2 class="pda-h" id="pcl-h">{CLIENTES.h}</h2>
+    <div class="pcl-cab-der">
+      <p class="pcl-p">{CLIENTES.p}</p>
+      <div class="pcl-flechas" aria-hidden="true">
+        <button type="button" class="pcl-fl" data-dir="-1" tabindex="-1">←</button>
+        <button type="button" class="pcl-fl" data-dir="1" tabindex="-1">→</button>
+      </div>
+    </div>
+  </div>
+  <p class="pcl-desliza" aria-hidden="true">Desliza →</p>
+  <ul class="pcl-carril" data-pcl tabindex="0" aria-label="Precios, crédito, apartados y más, desde el carrito">
+    {CLIENTES.tarjetas.map((x, i) => (
+      <li class:list={['pcl-t', 'rv', { 'pcl-t--pantalla': PANTALLAS[i] }]} style={`--i:${i}`}>
+        <span class="pcl-tag">{x.tag}</span>
+        <b>{x.t}</b>
+        <span class="pcl-d">{x.d}</span>
+        {PANTALLAS[i] ? <span class="pcl-img"><img src={PANTALLAS[i].src} width={PANTALLAS[i].w} height={PANTALLAS[i].h} alt={PANTALLAS[i].alt} loading="lazy" decoding="async" /></span> : <span class="pcl-num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>}
+      </li>
+    ))}
+  </ul>
+</section>
+
+<style>
+  .pcl-cab { display: grid; gap: 14px; }
+  .pcl-cab-der { display: grid; gap: 18px; }
+  .pcl-p { margin: 0; max-width: 46ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .pcl-flechas { display: none; gap: 10px; }
+  .pcl-fl { display: grid; place-items: center; width: 48px; height: 48px; border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 50%; background: transparent; color: #fff; font: 700 18px/1 var(--font-display); cursor: pointer; transition: background 0.25s, color 0.25s; }
+  .pcl-fl:hover { background: #fff; color: #0A1648; }
+  .pcl-desliza { display: none; }
+  .pcl-carril { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(260px, 78%); gap: 14px; margin: 36px -20px 0; padding: 4px 20px 18px; list-style: none; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-left: 20px; overscroll-behavior-x: contain; scrollbar-width: none; max-width: none; }
+  .pcl-carril::-webkit-scrollbar { display: none; }
+  .pcl-carril:focus-visible { outline: 3px solid #9DB8F5; outline-offset: 4px; }
+  .pcl-t { scroll-snap-align: start; display: flex; flex-direction: column; gap: 10px; min-height: 280px; padding: 22px 20px 0; border-radius: 22px; background: #13215C; box-shadow: inset 0 0 0 1px rgba(157, 184, 245, 0.22); overflow: hidden; }
+  .pcl-tag { align-self: flex-start; padding: 6px 11px; border-radius: 99px; background: rgba(157, 184, 245, 0.16); color: #C9D8FB; font: 700 11.5px/1.2 var(--font-display); }
+  .pcl-t b { font: 700 clamp(20px, 2vw, 26px)/1.1 var(--pd-clash); color: #fff; letter-spacing: -0.01em; }
+  .pcl-d { font: 500 14.5px/1.5 var(--font-body); color: rgba(255, 255, 255, 0.82); }
+  .pcl-t:not(.pcl-t--pantalla) .pcl-d { padding-bottom: 8px; }
+  /* las tarjetas sin pantalla cierran con su número grande, en trazo */
+  .pcl-num { margin-top: auto; align-self: flex-end; padding: 0 0 14px; font: 700 clamp(64px, 7vw, 104px)/0.8 var(--pd-clash); color: transparent; -webkit-text-stroke: 1.5px rgba(157, 184, 245, 0.45); letter-spacing: -0.03em; }
+  .pcl-img { position: relative; flex: 1; min-height: 190px; margin: 6px -4px 0; overflow: hidden; border-radius: 14px 14px 0 0; background: #fff; }
+  .pcl-img img { position: absolute; left: 0; top: 0; width: 100%; height: auto; }
+  :global(.js-rv) .pcl-carril .rv { opacity: 0; transform: translateX(60px); transition: opacity 0.6s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.07s); }
+  :global(.js-rv) .pcl-carril .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .pcl-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .pcl-flechas { display: flex; }
+    .pcl-carril { grid-auto-columns: calc((100% - 3 * 16px) / 3.4); gap: 16px; margin: 52px calc(-5vw) 0; padding: 4px 5vw 22px; scroll-padding-left: 5vw; }
+    .pcl-t { min-height: 380px; padding: 26px 24px 0; }
+  }
+  @media (max-width: 767px) {
+    .pcl-desliza { display: block; margin: 24px 0 -24px; font: 700 12.5px/1 var(--font-display); color: #9DB8F5; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .pcl-carril .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // Flechas del carrusel (escritorio): avanzan una tarjeta.
+  (() => {
+    const carril = document.querySelector<HTMLElement>('[data-pcl]');
+    if (!carril) return;
+    document.querySelectorAll<HTMLButtonElement>('.pcl-fl').forEach((b) => b.addEventListener('click', () => {
+      const t = carril.querySelector<HTMLElement>('.pcl-t');
+      const paso = t ? t.getBoundingClientRect().width + 16 : 320;
+      carril.scrollBy({ left: Number(b.dataset.dir) * paso, behavior: 'smooth' });
+    }));
+  })();
+</script>

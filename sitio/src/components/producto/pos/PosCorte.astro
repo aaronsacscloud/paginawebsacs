@@ -1,0 +1,74 @@
+---
+/**
+ * «El corte, sin sorpresas» (/producto/punto-de-venta): el cierre de caja. La foto del cierre en la boutique de noche
+ * (gpt-image-2.5), que al verse se aleja despacio (zoom de 1.12 a 1), y la pantalla REAL del cierre de caja de la cuenta
+ * demo (Información general y el desglose por forma de pago: estimado, contado, diferencia), que sube encima. Debajo, lo
+ * que hace el corte (corte ciego, el efectivo que se queda, retiros, PIN de supervisor, historial) y AXO por WhatsApp. Azul.
+ */
+import { CORTE, I } from '../../../data/producto-pos';
+import StaffVentana from '../../plugins/staff/StaffVentana.astro';
+---
+<section class="pda pco pd-azul" id="pos-corte" aria-labelledby="pco-h">
+  <p class="pd-folio"><span>{CORTE.k}</span><span>Apertura, corte y arqueo</span></p>
+  <div class="pco-cab">
+    <h2 class="pda-h" id="pco-h">{CORTE.h}</h2>
+    <p class="pco-p">{CORTE.p}</p>
+  </div>
+  <div class="pco-escena">
+    <figure class="pco-foto rv">
+      <img src={`${I}cierre-1280.webp`} srcset={`${I}cierre-900.webp 900w, ${I}cierre-1280.webp 1280w`} sizes="(min-width: 900px) 60vw, 100vw" width="1280" height="853" alt="De noche, la gerente de la boutique revisa el día en la tablet junto a los billetes del corte" loading="lazy" decoding="async" />
+    </figure>
+    <div class="pco-pantalla rv" style="--i:1">
+      <StaffVentana src={`${I}pantalla-corte.webp`} w={1400} h={1240} alt="El cierre de caja: el resumen de pagos del día (ventas, abonos, movimientos de caja, cambios y devoluciones) y el desglose por forma de pago con lo estimado, lo contado y la diferencia en cero" barra="Cierre de caja" />
+    </div>
+  </div>
+  <ol class="pco-notas">
+    {CORTE.notas.map((n, i) => <li class="rv" style={`--i:${i + 2}`}><b>{n.n}</b><span><strong>{n.t}</strong>{n.d}</span></li>)}
+  </ol>
+  <div class="pco-pie">
+    <ul class="pco-extra">{CORTE.extra.map((x) => <li>{x}</li>)}</ul>
+    <p class="pco-axo"><span class="pco-axo-av" aria-hidden="true">✦</span>{CORTE.axo}</p>
+  </div>
+</section>
+
+<style>
+  .pco-cab { display: grid; gap: 14px; }
+  .pco-p { margin: 0; max-width: 48ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .pco-escena { position: relative; display: grid; gap: 16px; margin-top: 36px; }
+  .pco-foto { margin: 0; overflow: hidden; border-radius: 22px; aspect-ratio: 4 / 3; }
+  .pco-foto img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 62% 50%; }
+  .pco-notas { display: grid; gap: 0; margin: 36px 0 0; padding: 0; list-style: none; border-top: 2px solid #fff; }
+  .pco-notas li { display: grid; grid-template-columns: 44px 1fr; gap: 8px; padding: 16px 0; border-bottom: 1px solid var(--pd-linea); }
+  .pco-notas b { font: 700 18px/1.3 var(--pd-clash); color: #fff; }
+  .pco-notas span { display: grid; gap: 4px; font: 500 15px/1.5 var(--font-body); color: var(--pd-tenue); }
+  .pco-notas strong { font: 700 17px/1.25 var(--font-display); color: #fff; }
+  .pco-pie { display: grid; gap: 18px; margin-top: 28px; }
+  .pco-extra { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .pco-extra li { padding: 8px 13px; border-radius: 99px; background: rgba(255, 255, 255, 0.16); font: 600 13px/1.2 var(--font-display); color: #fff; }
+  .pco-axo { display: flex; align-items: center; gap: 12px; margin: 0; max-width: 60ch; padding: 14px 18px; border-radius: 16px 16px 16px 4px; background: #fff; color: #141414; font: 600 15px/1.45 var(--font-display); }
+  .pco-axo-av { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #F07FA6, #5B86EA); color: #fff; font-size: 14px; }
+  /* entrada: la foto se aleja; la pantalla sube */
+  :global(.js-rv) .pco-foto.rv { opacity: 0; transition: opacity 0.8s ease; }
+  :global(.js-rv) .pco-foto.rv img { transform: scale(1.12); transition: transform 2.4s cubic-bezier(0.22, 1, 0.36, 1); }
+  :global(.js-rv) .pco-foto.rv.is-on { opacity: 1; }
+  :global(.js-rv) .pco-foto.rv.is-on img { transform: none; }
+  :global(.js-rv) .pco .rv:not(.pco-foto) { opacity: 0; transform: translateY(40px); transition: opacity 0.7s ease, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i, 0) * 0.12s + 0.2s); }
+  :global(.js-rv) .pco .rv:not(.pco-foto).is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .pco-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .pco-escena { display: block; margin-top: 52px; padding-bottom: 40px; }
+    .pco-foto { width: 64%; aspect-ratio: 4 / 3.2; }
+    .pco-pantalla { position: absolute; right: 0; bottom: 0; width: 52%; }
+    .pco-notas { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; border-top: 0; margin-top: 48px; }
+    .pco-notas li { grid-template-columns: 40px 1fr; border-top: 2px solid #fff; border-bottom: 0; padding-top: 18px; }
+    .pco-pie { grid-template-columns: 1fr auto; align-items: center; gap: 4vw; }
+  }
+  @media (max-width: 767px) {
+    /* la pantalla del corte se desliza: a lo ancho del teléfono no se leería */
+    .pco-pantalla { overflow-x: auto; overscroll-behavior-x: contain; border-radius: 10px; }
+    .pco-pantalla > :global(.sv) { width: 640px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .pco .rv, :global(.js-rv) .pco .rv img { opacity: 1 !important; transform: none !important; transition: none !important; }
+  }
+</style>

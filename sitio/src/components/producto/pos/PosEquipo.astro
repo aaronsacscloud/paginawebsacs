@@ -1,0 +1,107 @@
+---
+/**
+ * «Cada quien entra con lo suyo» (/producto/punto-de-venta): el equipo en la caja. La foto de la apertura con dos
+ * vendedoras (gpt-image-2.5) y encima la pantalla de bloqueo dibujada con sus textos reales («Introduce tu código o
+ * escanéalo»): al verse, los cuatro puntos del PIN se llenan y entra la vendedora (nombre de ejemplo). A un lado, los
+ * permisos REALES del punto de venta (Configuración › Grupos) que se van encendiendo, y lo demás que controla el dueño.
+ * Blanco.
+ */
+import { EQUIPO, I } from '../../../data/producto-pos';
+---
+<section class="pda peq" id="pos-equipo" aria-labelledby="peq-h">
+  <p class="pd-folio"><span>{EQUIPO.k}</span><span>Usuarios, PIN y permisos</span></p>
+  <div class="peq-grid">
+    <figure class="peq-foto" data-peq>
+      <img src={`${I}equipo-1280.webp`} srcset={`${I}equipo-900.webp 900w, ${I}equipo-1280.webp 1280w`} sizes="(min-width: 900px) 50vw, 100vw" width="1280" height="853" alt="Dos vendedoras abren la caja de la boutique: una teclea su PIN en la tablet, la otra dobla suéteres" loading="lazy" decoding="async" />
+      <div class="peq-bloqueo" role="img" aria-label="La pantalla de bloqueo del punto de venta: la vendedora teclea su PIN de cuatro dígitos y entra">
+        <small>Introduce tu código o escanéalo</small>
+        <span class="peq-puntos">{[0, 1, 2, 3].map((d) => <i style={`--d:${d}`}></i>)}</span>
+        <span class="peq-teclas">{['1', '2', '3', '4', '5', '6', '7', '8', '9', '⌫', '0', 'Entrar'].map((k) => <u class:list={{ 'is-ok': k === 'Entrar' }}>{k}</u>)}</span>
+        <span class="peq-hola"><b>✓</b>Hola, Mariana · Caja Polanco</span>
+      </div>
+    </figure>
+    <div class="peq-lado">
+      <h2 class="pda-h" id="peq-h">{EQUIPO.h}</h2>
+      <p class="peq-p">{EQUIPO.p}</p>
+      <ul class="peq-permisos" aria-label="Permisos del punto de venta por grupo">
+        {EQUIPO.permisos.map((x, i) => <li class="rv" style={`--i:${i}`}><span class="peq-sw" aria-hidden="true"><i></i></span>{x}</li>)}
+      </ul>
+    </div>
+  </div>
+  <ul class="peq-puntos-lista">
+    {EQUIPO.puntos.map((x, i) => <li class="rv" style={`--i:${i}`}><b>{x.t}</b><span>{x.d}</span></li>)}
+  </ul>
+</section>
+
+<style>
+  .peq { background: #fff; color: #141414; --pd-texto: #141414; --pd-tenue: #45433E; --pd-filete: rgba(20, 20, 20, 0.16); }
+  .peq-grid { display: grid; gap: 28px; margin-top: 8px; }
+  .peq-foto { position: relative; margin: 0; overflow: hidden; border-radius: 22px; aspect-ratio: 4 / 3; }
+  .peq-foto > img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 60% 50%; }
+  .peq-bloqueo { position: absolute; left: 16px; bottom: 16px; display: grid; justify-items: center; gap: 10px; width: min(250px, 58%); padding: 16px 16px 14px; border-radius: 20px; background: rgba(255, 255, 255, 0.97); box-shadow: 0 18px 34px -18px rgba(0, 0, 0, 0.6); }
+  .peq-bloqueo small { font: 600 12px/1.3 var(--font-display); color: #45433E; text-align: center; }
+  .peq-puntos { display: flex; gap: 10px; }
+  .peq-puntos i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #2F55C4; background: #2F55C4; }
+  .peq-teclas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; }
+  .peq-teclas u { display: grid; place-items: center; height: 30px; border-radius: 9px; background: #F2F3F6; color: #141414; font: 700 13px/1 var(--font-display); text-decoration: none; }
+  .peq-teclas u.is-ok { background: #2F55C4; color: #fff; font-size: 11.5px; }
+  .peq-hola { display: none; align-items: center; gap: 8px; font: 700 13px/1.2 var(--font-display); color: #17804F; }
+  .peq-hola b { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #E3F4EA; font-size: 12px; }
+  /* al verse: el PIN se teclea solo (6 s en loop) */
+  .peq-foto.is-on .peq-puntos i { animation: peqDot 6s ease infinite; animation-delay: calc(0.5s + var(--d) * 0.35s); background: transparent; }
+  .peq-foto.is-on .peq-teclas u.is-ok { animation: peqOk 6s ease infinite; }
+  .peq-foto.is-on .peq-hola { display: inline-flex; animation: peqHola 6s ease infinite; }
+  @keyframes peqDot { 0% { background: transparent; transform: scale(1); } 4% { background: #2F55C4; transform: scale(1.25); } 7%, 60% { background: #2F55C4; transform: scale(1); } 66%, 100% { background: transparent; } }
+  @keyframes peqOk { 0%, 34% { box-shadow: none; } 37% { box-shadow: 0 0 0 4px rgba(47, 85, 196, 0.25); } 42%, 100% { box-shadow: none; } }
+  @keyframes peqHola { 0%, 40% { opacity: 0; transform: translateY(6px); } 45%, 62% { opacity: 1; transform: none; } 68%, 100% { opacity: 0; } }
+  .peq-lado { display: grid; gap: 14px; align-content: start; }
+  .peq-p { margin: 0; max-width: 46ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .peq-permisos { display: grid; gap: 8px; margin: 10px 0 0; padding: 0; list-style: none; }
+  .peq-permisos li { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; background: #F6F6F4; font: 600 14.5px/1.3 var(--font-display); }
+  .peq-sw { position: relative; flex: none; width: 34px; height: 20px; border-radius: 99px; background: #D7DAE1; transition: background 0.35s ease; transition-delay: calc(0.3s + var(--i) * 0.12s); }
+  .peq-sw i { position: absolute; left: 3px; top: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1); transition-delay: calc(0.3s + var(--i) * 0.12s); }
+  .peq-permisos li.is-on .peq-sw, .peq-permisos li:not(.rv) .peq-sw { background: #1F9D63; }
+  .peq-permisos li.is-on .peq-sw i, .peq-permisos li:not(.rv) .peq-sw i { transform: translateX(14px); }
+  :global(html:not(.js-rv)) .peq-sw { background: #1F9D63; }
+  :global(html:not(.js-rv)) .peq-sw i { transform: translateX(14px); }
+  .peq-puntos-lista { display: grid; gap: 0; margin: 36px 0 0; padding: 0; list-style: none; border-top: 2px solid #141414; }
+  .peq-puntos-lista li { display: grid; gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--pd-filete); }
+  .peq-puntos-lista b { font: 700 17px/1.25 var(--font-display); }
+  .peq-puntos-lista span { font: 500 14.5px/1.5 var(--font-body); color: var(--pd-tenue); }
+  :global(.js-rv) .peq .rv { opacity: 0; transform: translateX(-14px); transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i, 0) * 0.08s); }
+  :global(.js-rv) .peq .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .peq-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 4.5vw; align-items: center; }
+    .peq-foto { aspect-ratio: 5 / 6; }
+    .peq-bloqueo { left: 24px; bottom: 24px; }
+    .peq-permisos { grid-template-columns: 1fr 1fr; }
+    .peq-puntos-lista { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px; border-top: 0; margin-top: 56px; }
+    .peq-puntos-lista li { border-top: 2px solid #141414; border-bottom: 0; padding-top: 16px; }
+  }
+  @media (max-width: 767px) {
+    /* más chico: que no tape a las vendedoras de la foto */
+    .peq-foto > img { object-position: 72% 50%; }
+    .peq-bloqueo { left: 12px; bottom: 12px; width: min(176px, 46%); gap: 7px; padding: 11px 11px 10px; border-radius: 16px; }
+    .peq-bloqueo small { font-size: 10.5px; }
+    .peq-puntos i { width: 10px; height: 10px; }
+    .peq-teclas { gap: 4px; }
+    .peq-teclas u { height: 22px; border-radius: 7px; font-size: 11px; }
+    .peq-teclas u.is-ok { font-size: 9.5px; }
+    .peq-hola { font-size: 11px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .peq-foto.is-on * { animation: none !important; }
+    .peq-foto.is-on .peq-puntos i { background: #2F55C4; }
+    .peq-foto.is-on .peq-hola { display: none; }
+    :global(.js-rv) .peq .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // El PIN se teclea solo mientras la foto se ve.
+  (() => {
+    const el = document.querySelector<HTMLElement>('[data-peq]');
+    if (!el || !('IntersectionObserver' in window)) return;
+    new IntersectionObserver((es) => es.forEach((e) => el.classList.toggle('is-on', e.isIntersecting)), { threshold: 0.35 }).observe(el);
+  })();
+</script>

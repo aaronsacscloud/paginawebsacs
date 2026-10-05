@@ -1,0 +1,108 @@
+---
+/**
+ * «Todo lo que incluye» (/producto/punto-de-venta): el mapa del punto de venta en una rejilla de tarjetas de color
+ * (como /plugins/staff y /plugins/administracion), cada una con su pantalla real (cuenta demo) y un enlace a su sección.
+ * El equipo (PIN) y el ticket van dibujados con los textos reales. Entrada distinta a la de los plugins: cada tarjeta se
+ * levanta desde atrás con una inclinación (rotateX), escalonada.
+ */
+import { INCLUYE, I } from '../../../data/producto-pos';
+const PALABRA = Array.from({ length: 3 }, () => 'TODO INCLUIDO').join(' · ');
+---
+<section class="pda pin pd-negro" aria-labelledby="pin-h">
+  <div class="pda-fondo" aria-hidden="true"><span>{PALABRA}</span><span>{PALABRA}</span></div>
+  <p class="pd-folio"><span>Todo lo que incluye</span><span>8 piezas, una sola caja</span></p>
+  <h2 class="pda-h" id="pin-h">Todo lo que pasa en la caja.</h2>
+  <p class="pin-p">Esto es el punto de venta completo. Toca cualquier pieza para verla por dentro, con pantallas reales de Sacs.</p>
+  <ul class="pin-rejilla">
+    {INCLUYE.map((x, i) => (
+      <li class:list={['pin-t', `pin-t--${x.tono}`, { 'pin-t--ancha': x.ancha, 'pin-t--alta': x.alto }, 'rv']} style={`--i:${i}`}>
+        <a href={`#${x.id}`}>
+          <span class="pin-txt"><b>{x.t}</b><span>{x.d}</span><em aria-hidden="true">Ver →</em></span>
+          {x.img ? (
+            <span class="pin-img"><img src={`${I}${x.img}.webp`} width={x.w} height={x.h} alt="" loading="lazy" decoding="async" /></span>
+          ) : x.icono === 'pin' ? (
+            <span class="pin-dib pin-dib--pin" aria-hidden="true">
+              <span class="pin-pad">
+                <small>Introduce tu código o escanéalo</small>
+                <span class="pin-puntos"><i></i><i></i><i></i><i></i></span>
+                <span class="pin-teclas">{['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'].map((k) => <u>{k}</u>)}</span>
+              </span>
+            </span>
+          ) : (
+            <span class="pin-dib pin-dib--ticket" aria-hidden="true">
+              <span class="pin-tk">
+                <b>Gracias por tu compra</b>
+                <i></i><i></i><i></i>
+                <span class="pin-tk-tot"><span>Total</span><span>$5,780.00</span></span>
+                <small>¿Necesitas factura? Código y PIN</small>
+              </span>
+              <span class="pin-burbuja">Ticket enviado por WhatsApp ✓✓</span>
+            </span>
+          )}
+        </a>
+      </li>
+    ))}
+  </ul>
+</section>
+
+<style>
+  .pin-p { margin: 18px 0 0; max-width: 52ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .pin-rejilla { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 36px auto 0; padding: 0; list-style: none; perspective: 1400px; }
+  .pin-t a { position: relative; display: flex; flex-direction: column; height: 100%; overflow: hidden; border-radius: 20px; background: var(--fondo); color: var(--tinta); text-decoration: none; transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
+  .pin-t a:hover { transform: translateY(-4px); color: var(--tinta); text-decoration: none; }
+  .pin-t a:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  .pin-t--negro { --fondo: #1C1C1F; --tinta: #fff; --tenue: rgba(255, 255, 255, 0.72); --acento: #9DB8F5; }
+  .pin-t--fucsia { --fondo: #D03A70; --tinta: #fff; --tenue: rgba(255, 255, 255, 0.9); --acento: #fff; }
+  .pin-t--marfil { --fondo: #F5F3EE; --tinta: #141414; --tenue: #45433E; --acento: #2F55C4; }
+  .pin-t--marino { --fondo: #0A1648; --tinta: #fff; --tenue: rgba(255, 255, 255, 0.78); --acento: #9DB8F5; }
+  .pin-t--azul { --fondo: #4470D8; --tinta: #fff; --tenue: rgba(255, 255, 255, 0.92); --acento: #fff; }
+  .pin-txt { display: grid; gap: 5px; padding: 16px 16px 12px; }
+  .pin-txt b { font: 700 clamp(17px, 1.5vw, 22px)/1.12 var(--pd-clash); letter-spacing: -0.01em; }
+  .pin-txt > span { font: 500 13.5px/1.45 var(--font-body); color: var(--tenue); }
+  .pin-txt em { margin-top: 4px; font: 700 12.5px/1 var(--font-display); font-style: normal; color: var(--acento); }
+  .pin-img { position: relative; flex: 1; min-height: 110px; margin: 0 12px; overflow: hidden; border-radius: 12px 12px 0 0; background: #fff; box-shadow: 0 -10px 30px -18px rgba(0, 0, 0, 0.5); }
+  .pin-img img { position: absolute; left: 0; top: 0; width: 100%; height: auto; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+  .pin-t a:hover .pin-img img { transform: translateY(-3%); }
+  .pin-t--alta { grid-row: span 2; }
+  .pin-t--ancha { grid-column: span 2; }
+  .pin-t--ancha a { flex-direction: row; align-items: stretch; }
+  .pin-t--ancha .pin-txt { flex: 1; align-content: center; }
+  .pin-t--ancha .pin-img, .pin-t--ancha .pin-dib { flex: 0 0 54%; margin: 14px 14px 0 0; border-radius: 14px 14px 0 0; }
+  /* dibujos: el PIN y el ticket */
+  .pin-dib { position: relative; display: grid; place-items: end center; flex: 1; min-height: 120px; padding: 0 14px; overflow: hidden; }
+  .pin-pad { display: grid; justify-items: center; gap: 8px; width: min(100%, 210px); padding: 14px 14px 12px; border-radius: 14px 14px 0 0; background: #fff; color: #141414; }
+  .pin-pad small { font: 600 10.5px/1.2 var(--font-display); color: #45433E; text-align: center; }
+  .pin-puntos { display: flex; gap: 8px; }
+  .pin-puntos i { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid #2F55C4; }
+  .pin-teclas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; width: 100%; }
+  .pin-teclas u { display: grid; place-items: center; height: 22px; border-radius: 7px; background: #F2F3F6; font: 700 11px/1 var(--font-display); text-decoration: none; }
+  .pin-dib--ticket { place-items: end start; padding: 0 0 0 10px; }
+  .pin-tk { display: grid; gap: 6px; width: min(64%, 220px); padding: 14px 14px 18px; border-radius: 12px 12px 0 0; background: #FBFAF6; color: #2A2A2A; font: 500 10px/1.3 'JetBrains Mono', ui-monospace, monospace; }
+  .pin-tk b { font-size: 11px; }
+  .pin-tk i { height: 5px; border-radius: 3px; background: #E7E5DE; }
+  .pin-tk i:nth-of-type(2) { width: 80%; }
+  .pin-tk i:nth-of-type(3) { width: 62%; }
+  .pin-tk-tot { display: flex; justify-content: space-between; font-weight: 800; }
+  .pin-tk small { color: #6B6A64; }
+  .pin-burbuja { position: absolute; right: 12px; top: 16px; max-width: 58%; padding: 9px 12px; border-radius: 14px 14px 4px 14px; background: #DCF8C6; color: #0B3D0B; font: 600 11.5px/1.3 var(--font-display); box-shadow: 0 10px 20px -12px rgba(0, 0, 0, 0.6); }
+  /* entrada: se levantan inclinadas */
+  :global(.js-rv) .pin-rejilla .rv { opacity: 0; transform: translateY(26px) rotateX(16deg); transform-origin: 50% 100%; transition: opacity 0.7s ease, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.07s); }
+  :global(.js-rv) .pin-rejilla .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .pin-rejilla { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: minmax(230px, auto); gap: 16px; margin-top: 48px; }
+    .pin-txt { padding: 20px 20px 14px; }
+    .pin-img { margin: 0 16px; min-height: 120px; }
+    .pin-t--ancha .pin-txt { padding: 24px; }
+    .pin-t--ancha .pin-txt b { font-size: clamp(22px, 2.2vw, 32px); }
+  }
+  @media (max-width: 899px) {
+    .pin-t--ancha a { flex-direction: column; }
+    .pin-t--ancha .pin-img { flex: none; height: 150px; margin: 0 12px; border-radius: 12px 12px 0 0; }
+    .pin-t--ancha .pin-dib { flex: none; height: 150px; margin: 0 12px; }
+    .pin-img { min-height: 104px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .pin-rejilla .rv { opacity: 1; transform: none; transition: none; }
+    .pin-t a, .pin-img img { transition: none; }
+  }
+</style>

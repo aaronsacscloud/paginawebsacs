@@ -1,0 +1,92 @@
+---
+/**
+ * «Se fue el internet. La venta no.» (/producto/punto-de-venta): el modo sin internet. Una pastilla con los estados
+ * REALES del encabezado del punto de venta («Conexión estable» → «Sin conexión» → «Ventas por sincronizar (3)» →
+ * «Sincronizando ventas...» → «¡Felicidades! Todas tus ventas se han sincronizado») que corre sola al verse, junto a dos
+ * pantallas reales: la descarga de catálogos al equipo («Sincronizando datos») y el aviso «Sin conexión». Negro.
+ */
+import { OFFLINE, I } from '../../../data/producto-pos';
+import StaffVentana from '../../plugins/staff/StaffVentana.astro';
+---
+<section class="pda pof pd-negro" id="pos-offline" aria-labelledby="pof-h">
+  <p class="pd-folio"><span>{OFFLINE.k}</span><span>Modo offline</span></p>
+  <div class="pof-cab">
+    <h2 class="pda-h" id="pof-h">{OFFLINE.h}</h2>
+    <p class="pof-p">{OFFLINE.p}</p>
+  </div>
+  <div class="pof-grid">
+    <div class="pof-izq">
+      <div class="pof-escena" data-pof>
+        <div class="pof-linea" aria-hidden="true">
+          <span class="pof-wifi"><svg viewBox="0 0 24 24"><path d="M2 8.5a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0" /><circle cx="12" cy="19" r="1.3" /></svg><i></i></span>
+          <span class="pof-pastillas">
+            {OFFLINE.estados.map((e, i) => <span class={`pof-est pof-est--${e.c}`} style={`--i:${i}`}><i></i>{e.t}</span>)}
+          </span>
+          <span class="pof-cola">{[0, 1, 2].map((n) => <b style={`--n:${n}`}>Venta</b>)}</span>
+        </div>
+      </div>
+      <div class="pof-a rv"><StaffVentana src={`${I}pantalla-sync.webp`} w={1400} h={800} alt="Sincronizando datos: el punto de venta descarga al equipo los catálogos (productos, variantes, precios, clientes e imágenes) y lleva el registro de cada uno" barra="Punto de venta · Sincronizando datos" /></div>
+      <ul class="pof-notas">
+        {OFFLINE.notas.map((n, i) => <li class="rv" style={`--i:${i}`}><b>{n.t}</b><span>{n.d}</span></li>)}
+      </ul>
+    </div>
+    <div class="pof-b rv" style="--i:1"><StaffVentana src={`${I}pantalla-offline.webp`} w={968} h={1464} alt="El aviso Sin conexión: el punto de venta entró en modo offline y tus ventas se guardan en este equipo" barra="Punto de venta · Sin conexión" /></div>
+  </div>
+</section>
+
+<style>
+  .pof-cab { display: grid; gap: 14px; }
+  .pof-p { margin: 0; max-width: 50ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .pof-grid { display: grid; gap: 16px; margin-top: 36px; }
+  .pof-izq { display: grid; gap: 16px; align-content: start; min-width: 0; }
+  /* la línea de estados */
+  .pof-linea { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 16px 18px; border-radius: 18px; background: #141418; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
+  .pof-wifi { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: rgba(111, 211, 163, 0.14); }
+  .pof-wifi svg { width: 24px; height: 24px; fill: none; stroke: #6FD3A3; stroke-width: 2; stroke-linecap: round; }
+  .pof-wifi svg circle { fill: #6FD3A3; stroke: none; }
+  .pof-wifi i { position: absolute; width: 30px; height: 2.5px; border-radius: 2px; background: #FCA5A5; transform: rotate(-45deg) scaleX(0); }
+  .pof-pastillas { position: relative; display: grid; flex: 1; min-width: 240px; }
+  .pof-est { grid-area: 1 / 1; display: inline-flex; align-items: center; gap: 8px; justify-self: start; padding: 9px 14px; border-radius: 99px; font: 700 14px/1.2 var(--font-display); opacity: 0; }
+  .pof-est i { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+  .pof-est--ok { background: rgba(111, 211, 163, 0.14); color: #6FD3A3; }
+  .pof-est--mal { background: rgba(248, 113, 113, 0.16); color: #FCA5A5; }
+  .pof-est--cola { background: rgba(242, 196, 107, 0.16); color: #F2C46B; }
+  .pof-est--sync { background: rgba(157, 184, 245, 0.16); color: #9DB8F5; }
+  .pof-est:first-child { opacity: 1; }
+  .pof-cola { display: flex; gap: 6px; }
+  .pof-cola b { padding: 6px 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.8); font: 700 11.5px/1 var(--font-display); opacity: 0; }
+  /* corre sola al verse (8 s en loop) */
+  .pof-escena.is-on .pof-est { animation: pofEst 8s linear infinite; animation-delay: calc(var(--i) * 1.6s - 8s); }
+  .pof-escena.is-on .pof-wifi { animation: pofWifi 8s linear infinite; }
+  .pof-escena.is-on .pof-wifi i { animation: pofCorte 8s linear infinite; }
+  .pof-escena.is-on .pof-wifi svg { animation: pofSvg 8s linear infinite; }
+  .pof-escena.is-on .pof-cola b { animation: pofCola 8s ease infinite; animation-delay: calc(var(--n) * 0.35s); }
+  @keyframes pofEst { 0% { opacity: 0; transform: translateY(8px); } 3%, 18% { opacity: 1; transform: none; } 21%, 100% { opacity: 0; transform: translateY(-8px); } }
+  @keyframes pofWifi { 0%, 19% { background: rgba(111, 211, 163, 0.14); } 20%, 58% { background: rgba(248, 113, 113, 0.16); } 60%, 100% { background: rgba(111, 211, 163, 0.14); } }
+  @keyframes pofCorte { 0%, 19% { transform: rotate(-45deg) scaleX(0); } 21%, 58% { transform: rotate(-45deg) scaleX(1); } 60%, 100% { transform: rotate(-45deg) scaleX(0); } }
+  @keyframes pofSvg { 0%, 19% { stroke: #6FD3A3; } 20%, 58% { stroke: #FCA5A5; } 60%, 100% { stroke: #6FD3A3; } }
+  @keyframes pofCola { 0%, 24% { opacity: 0; transform: translateY(6px); } 28%, 62% { opacity: 1; transform: none; } 70%, 100% { opacity: 0; transform: translateX(16px); } }
+  .pof-notas { display: grid; gap: 0; margin: 12px 0 0; padding: 0; list-style: none; border-top: 2px solid #fff; }
+  .pof-notas li { display: grid; gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--pd-filete); }
+  .pof-notas b { font: 700 17px/1.25 var(--font-display); color: #fff; }
+  .pof-notas span { font: 500 14.5px/1.5 var(--font-body); color: var(--pd-tenue); }
+  :global(.js-rv) .pof .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i, 0) * 0.12s); }
+  :global(.js-rv) .pof .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .pof-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .pof-grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr); gap: 4vw; margin-top: 52px; align-items: start; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pof-escena.is-on * { animation: none !important; }
+    :global(.js-rv) .pof .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // La línea de estados corre solo mientras se ve (y no corre con «reducir movimiento»).
+  (() => {
+    const el = document.querySelector<HTMLElement>('[data-pof]');
+    if (!el || !('IntersectionObserver' in window)) return;
+    new IntersectionObserver((es) => es.forEach((e) => el.classList.toggle('is-on', e.isIntersecting)), { threshold: 0.3 }).observe(el);
+  })();
+</script>

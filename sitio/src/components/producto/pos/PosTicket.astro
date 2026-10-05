@@ -1,0 +1,96 @@
+---
+/**
+ * «El ticket, donde lo quiera» (/producto/punto-de-venta): la clienta que recibe su ticket en el celular (foto
+ * gpt-image-2.5) y un teléfono con la conversación de WhatsApp: al verse, aparece «escribiendo…» y llega el ticket con
+ * el texto que arma Sacs («Gracias por tu compra…», los artículos, el total y «¿Necesitas factura?» con código y PIN;
+ * datos de ejemplo). A un lado, las formas de imprimir reales (58/80 mm, Bluetooth y RawBT en Android, sin diálogo en
+ * Windows, reimpresión). Marfil.
+ */
+import { TICKET, I } from '../../../data/producto-pos';
+---
+<section class="pda ptk pd-marfil" id="pos-ticket" aria-labelledby="ptk-h">
+  <p class="pd-folio"><span>{TICKET.k}</span><span>Impreso, WhatsApp o correo</span></p>
+  <div class="ptk-grid">
+    <div class="ptk-escena" data-ptk>
+      <figure class="ptk-foto">
+        <img src={`${I}whatsapp-1280.webp`} srcset={`${I}whatsapp-900.webp 900w, ${I}whatsapp-1280.webp 1280w`} sizes="(min-width: 900px) 52vw, 100vw" width="1280" height="853" alt="En la caja de la boutique, una clienta sonríe mientras recibe su ticket en el celular" loading="lazy" decoding="async" />
+      </figure>
+      <div class="ptk-tel" role="img" aria-label="Ejemplo del ticket que llega por WhatsApp: gracias por tu compra, los artículos, el total y cómo facturar con código y PIN">
+        <div class="ptk-tel-cab"><span class="ptk-av">PB</span><span><b>Polanco Boutique</b><small>en línea</small></span></div>
+        <div class="ptk-chat">
+          <span class="ptk-escribe"><i></i><i></i><i></i></span>
+          <p class="ptk-msg">
+            {TICKET.mensaje.map((l, k) => <span class:list={{ 'ptk-l1': k === 0, 'ptk-tot': l.startsWith('Total') }}>{l}</span>)}
+            <small>12:41 ✓✓</small>
+          </p>
+        </div>
+        <span class="ptk-ej">Ejemplo</span>
+      </div>
+    </div>
+    <div class="ptk-lado">
+      <h2 class="pda-h" id="ptk-h">{TICKET.h}</h2>
+      <p class="ptk-p">{TICKET.p}</p>
+      <ul class="ptk-imp">
+        {TICKET.impresion.map((x, i) => <li class="rv" style={`--i:${i}`}><b>{x.t}</b><span>{x.d}</span></li>)}
+      </ul>
+      <a class="ptk-link" href="/producto/facturacion-electronica">Ver facturación electrónica →</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .ptk-grid { display: grid; gap: 28px; margin-top: 8px; }
+  .ptk-escena { position: relative; }
+  .ptk-foto { margin: 0; overflow: hidden; border-radius: 22px; aspect-ratio: 4 / 3; }
+  .ptk-foto img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 70% 50%; }
+  .ptk-tel { position: relative; width: min(300px, 86%); margin: -90px auto 0; padding: 8px; border-radius: 34px; background: #111; box-shadow: 0 30px 50px -26px rgba(0, 0, 0, 0.7); }
+  .ptk-tel-cab { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 27px 27px 0 0; background: #075E54; color: #fff; }
+  .ptk-av { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #E9D8C2; color: #5B4632; font: 800 11px/1 var(--font-display); }
+  .ptk-tel-cab b { display: block; font: 700 13.5px/1.2 var(--font-display); }
+  .ptk-tel-cab small { font: 500 11px/1.2 var(--font-body); opacity: 0.8; }
+  .ptk-chat { display: grid; align-content: end; gap: 8px; min-height: 280px; padding: 14px 12px 16px; border-radius: 0 0 27px 27px; background: #ECE5DD; }
+  .ptk-escribe { display: none; justify-self: start; gap: 4px; padding: 10px 12px; border-radius: 12px; background: #fff; }
+  .ptk-escribe i { width: 6px; height: 6px; border-radius: 50%; background: #9AA0AD; }
+  .ptk-msg { position: relative; justify-self: start; display: grid; gap: 3px; max-width: 92%; margin: 0; padding: 10px 12px 18px; border-radius: 4px 14px 14px 14px; background: #fff; color: #141414; font: 500 12.5px/1.4 var(--font-body); box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08); }
+  .ptk-l1 { font-weight: 700; }
+  .ptk-tot { font-weight: 800; }
+  .ptk-msg small { position: absolute; right: 10px; bottom: 4px; font: 500 10px/1 var(--font-body); color: #53BDEB; }
+  .ptk-ej { position: absolute; top: -10px; right: 18px; padding: 4px 9px; border-radius: 99px; background: #F2C46B; color: #141414; font: 700 10px/1 var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; }
+  /* al verse: escribiendo… y llega el ticket (7 s en loop) */
+  .ptk-escena.is-on .ptk-escribe { display: inline-flex; animation: ptkEscribe 7s ease infinite; }
+  .ptk-escena.is-on .ptk-escribe i { animation: ptkPunto 0.9s ease infinite; }
+  .ptk-escena.is-on .ptk-escribe i:nth-child(2) { animation-delay: 0.15s; }
+  .ptk-escena.is-on .ptk-escribe i:nth-child(3) { animation-delay: 0.3s; }
+  .ptk-escena.is-on .ptk-msg { animation: ptkMsg 7s cubic-bezier(0.22, 1, 0.36, 1) infinite; transform-origin: 0 0; }
+  @keyframes ptkEscribe { 0%, 22% { opacity: 1; } 25%, 100% { opacity: 0; height: 0; padding: 0; } }
+  @keyframes ptkPunto { 0%, 100% { transform: none; opacity: 0.5; } 50% { transform: translateY(-3px); opacity: 1; } }
+  @keyframes ptkMsg { 0%, 24% { opacity: 0; transform: scale(0.85); } 30%, 92% { opacity: 1; transform: none; } 98%, 100% { opacity: 0; } }
+  .ptk-lado { display: grid; gap: 14px; align-content: start; }
+  .ptk-p { margin: 0; max-width: 46ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .ptk-imp { display: grid; gap: 0; margin: 10px 0 0; padding: 0; list-style: none; border-top: 2px solid var(--pd-texto); }
+  .ptk-imp li { display: grid; gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--pd-filete); }
+  .ptk-imp b { font: 700 17px/1.25 var(--font-display); color: var(--pd-texto); }
+  .ptk-imp span { font: 500 14.5px/1.5 var(--font-body); color: var(--pd-tenue); }
+  .ptk-link { justify-self: start; margin-top: 6px; font: 700 14.5px/1.2 var(--font-display); color: #2F55C4; text-decoration: none; }
+  .ptk-link:hover { text-decoration: underline; }
+  :global(.js-rv) .ptk .rv { opacity: 0; transform: translateY(16px); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i, 0) * 0.08s); }
+  :global(.js-rv) .ptk .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .ptk-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 4.5vw; align-items: center; }
+    .ptk-foto { aspect-ratio: 5 / 4; }
+    .ptk-tel { position: absolute; right: -28px; bottom: -40px; width: 280px; margin: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ptk-escena.is-on * { animation: none !important; }
+    .ptk-escena.is-on .ptk-escribe { display: none; }
+    :global(.js-rv) .ptk .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  (() => {
+    const el = document.querySelector<HTMLElement>('[data-ptk]');
+    if (!el || !('IntersectionObserver' in window)) return;
+    new IntersectionObserver((es) => es.forEach((e) => el.classList.toggle('is-on', e.isIntersecting)), { threshold: 0.35 }).observe(el);
+  })();
+</script>

@@ -1,0 +1,513 @@
+---
+/**
+ * La portada de una página de producto (/producto/*) con su video en el marco de iPad: título, «Prueba gratis» /
+ * «Agenda una demo» y el iPad que flota, se inclina con el mouse y toma la proporción real del video. Es la misma de
+ * src/pages/producto/[slug].astro (marcado, estilos y script copiados tal cual), separada para las páginas de «Vende»
+ * que se rehacen con la línea de los plugins (4-oct-2026, pedido del dueño: «solo dejamos la parte del video inicial»).
+ */
+interface Props {
+  titulo: string;
+  video?: { mp4: string; webm?: string };
+  poster?: string;
+  imagen?: string;
+  alt: string;
+}
+const { titulo, video, poster, imagen, alt } = Astro.props;
+---
+<section class="pf-hero-centered">
+  <div class="pf-hero-centered-inner container">
+    <h1 class="pf-hero-title">{titulo}</h1>
+    <div class="pf-hero-ctas">
+      <a href="/prueba-gratis" class="pf-hero-btn pf-hero-btn--outline">Prueba gratis</a>
+      <a href="/contacto" class="pf-hero-btn pf-hero-btn--solid">Agenda una demo</a>
+    </div>
+  </div>
+  <div class="pf-hero-media container">
+    <div class={`pf-hero-media-wrap pf-hero-media-wrap--mock${video ? ' pf-hero-media-wrap--has-video' : ''}`}>
+      <div class="pf-ipad-perspective" id="pf-ipad-perspective">
+        <div class="pf-ipad-idle">
+          <div class="pf-hero-video-frame pf-hero-video-frame--ipad">
+            <span class="pf-ipad-cam" aria-hidden="true"></span>
+            <div class="pf-ipad-screen">
+              {video ? (
+                <video class="pf-hero-media-video" id="pf-hero-video" autoplay muted loop playsinline preload="metadata" disablepictureinpicture controlslist="nodownload nofullscreen noremoteplayback" poster={poster || imagen} width="1200" height="1200" aria-label={alt}>
+                  {video.webm && <source src={video.webm} type="video/webm" />}
+                  <source src={video.mp4} type="video/mp4" />
+                </video>
+              ) : imagen ? (
+                <img src={imagen} alt={alt} width="1200" height="675" loading="eager" fetchpriority="high" />
+              ) : (
+                <div class="pf-ipad-placeholder" aria-hidden="true"></div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .pf-hero-centered {
+    padding: clamp(80px, 10vw, 140px) 0 0;
+    background: #fff;
+    text-align: center;
+  }
+
+  .pf-hero-centered-inner {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .pf-hero-eyebrow {
+    display: inline-block;
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--color-text-tertiary, #8c8c8c);
+    margin-bottom: 20px;
+    animation: heroFadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
+  }
+
+  .pf-hero-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 800;
+    color: var(--color-text-primary, #1a1a2e);
+    letter-spacing: -0.04em;
+    line-height: 1.0;
+    margin: 0 0 32px;
+    animation: heroFadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+  }
+
+  .pf-hero-ctas {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: clamp(40px, 5vw, 64px);
+    animation: heroFadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+  }
+
+  .pf-hero-btn {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    padding: 13px 28px;
+    border-radius: var(--radius-full, 50px);
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    display: inline-block;
+    line-height: 1;
+  }
+
+  .pf-hero-btn:hover {
+    transform: translateY(-2px);
+    text-decoration: none;
+  }
+
+  .pf-hero-btn--outline {
+    background: transparent;
+    color: var(--color-text-primary, #1a1a2e);
+    border: 1.5px solid rgba(0, 0, 0, 0.15);
+  }
+
+  .pf-hero-btn--outline:hover {
+    border-color: rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  .pf-hero-btn--solid {
+    background: #2563EB;
+    color: #fff;
+    border: 1.5px solid transparent;
+  }
+
+  .pf-hero-btn--solid:hover {
+    background: #1D4FD7;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.25);
+  }
+
+  /* Hero media */
+  .pf-hero-media {
+    animation: heroFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both;
+  }
+
+  .pf-hero-media-wrap {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+  }
+
+  .pf-hero-media-wrap img,
+  .pf-hero-media-wrap .pf-hero-media-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Square-style ambient hero: centered device with blurred warm backdrop */
+  .pf-hero-media-wrap--mock {
+    display: grid;
+    place-items: center;
+    padding: clamp(24px, 5vw, 80px);
+    background:
+      radial-gradient(ellipse at 50% 40%, #ffffff 0%, #f7f7f9 60%, #ececf0 100%);
+    isolation: isolate;
+  }
+
+  .pf-hero-media-wrap--mock::before {
+    /* Tech grid overlay (dark on white) */
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+    background-size: 60px 60px, 60px 60px;
+    mask-image: radial-gradient(ellipse at center, black 55%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 55%, transparent 100%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .pf-hero-media-wrap--mock::after {
+    /* Soft darker halo for depth on white */
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(95%, 1100px);
+    aspect-ratio: 1 / 1;
+    max-height: 120%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle at center, rgba(0, 0, 0, 0.06) 0%, rgba(0, 0, 0, 0.03) 30%, rgba(0, 0, 0, 0) 60%);
+    filter: blur(42px);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .pf-hero-media-wrap--mock .pf-hero-video-frame {
+    position: relative;
+    border-radius: 28px;
+  }
+
+  .pf-ipad-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #f0f0f2;
+    display: block;
+  }
+
+  .pf-hero-video-frame--ipad .pf-ipad-screen img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Outer: scroll reveal + mouse-parallax tilt */
+  .pf-ipad-perspective {
+    position: relative;
+    width: min(88%, 960px);
+    aspect-ratio: 16 / 9;
+    transform:
+      perspective(1400px)
+      rotateX(var(--tilt-x, 0deg))
+      rotateY(var(--tilt-y, 0deg))
+      scale(var(--reveal-scale, 0.94));
+    opacity: var(--reveal-opacity, 0.6);
+    transition:
+      transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 0.7s ease-out;
+    transform-style: preserve-3d;
+    z-index: 1;
+  }
+
+  .pf-ipad-perspective.is-visible {
+    --reveal-scale: 1;
+    --reveal-opacity: 1;
+  }
+
+  /* Mid: idle breathing animation */
+  .pf-ipad-idle {
+    width: 100%;
+    height: 100%;
+    animation: sacsIpadFloat 7s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  @keyframes sacsIpadFloat {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-6px); }
+  }
+
+  /* iPad Pro–inspired bezel */
+  .pf-hero-video-frame--ipad {
+    width: 100%;
+    height: 100%;
+    padding: 18px 20px;
+    background:
+      linear-gradient(145deg, #2a2a2e 0%, #1a1a1e 35%, #161619 65%, #232326 100%);
+    box-shadow:
+      0 40px 80px rgba(0, 0, 0, 0.22),
+      0 16px 32px rgba(0, 0, 0, 0.14),
+      0 4px 12px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+  }
+
+  /* Ambient sheen — one-time studio light sweep on reveal */
+  .pf-hero-video-frame--ipad::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      110deg,
+      transparent 0%,
+      transparent 35%,
+      rgba(255, 255, 255, 0.22) 48%,
+      rgba(255, 255, 255, 0.35) 50%,
+      rgba(255, 255, 255, 0.22) 52%,
+      transparent 65%,
+      transparent 100%
+    );
+    background-size: 250% 100%;
+    background-position: -150% 0;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    opacity: 0;
+  }
+
+  .pf-ipad-perspective.is-visible .pf-hero-video-frame--ipad::after {
+    animation: sacsIpadSheen 1.6s ease-out 0.35s forwards;
+  }
+
+  @keyframes sacsIpadSheen {
+    0%   { background-position: -150% 0; opacity: 0; }
+    15%  { opacity: 1; }
+    100% { background-position: 250% 0; opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pf-ipad-idle { animation: none; }
+    .pf-ipad-perspective { transition: none; }
+    .pf-ipad-perspective.is-visible .pf-hero-video-frame--ipad::after { animation: none; }
+  }
+
+  .pf-hero-video-frame--ipad::before {
+    /* Subtle glass sheen across the top of the bezel */
+    content: '';
+    position: absolute;
+    inset: 1px 1px auto 1px;
+    height: 40%;
+    border-radius: 26px 26px 0 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 70%);
+    pointer-events: none;
+  }
+
+  .pf-hero-video-frame--ipad .pf-ipad-cam {
+    position: absolute;
+    top: 9px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #4a4a52, #0a0a0c);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    z-index: 2;
+  }
+
+  .pf-hero-video-frame--ipad .pf-ipad-screen {
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #000;
+    position: relative;
+    cursor: pointer;
+  }
+
+
+  .pf-hero-media-wrap--has-video .pf-hero-video-frame .pf-hero-media-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    background: #000;
+  }
+
+  @media (max-width: 640px) {
+    .pf-hero-media-wrap--mock {
+      padding: clamp(6px, 1.6vw, 12px);
+    }
+    /* teléfono: el marco crece con la pantalla 16:9 del video para que nada se corte */
+    .pf-hero-media-wrap--mock { aspect-ratio: auto; padding: 14px 0; overflow: visible; background: none; }
+    .pf-hero-media-wrap--mock::before, .pf-hero-media-wrap--mock::after { display: none; }
+    .pf-ipad-perspective {
+      width: 100%;
+      aspect-ratio: auto;
+      transform: scale(var(--reveal-scale, 1));
+    }
+    .pf-ipad-idle, .pf-hero-video-frame--ipad { height: auto; }
+    .pf-hero-video-frame--ipad .pf-ipad-screen { height: auto; aspect-ratio: var(--ar, 16 / 9); }
+    /* No mouse parallax on mobile */
+    .pf-ipad-perspective.is-visible {
+      --reveal-scale: 1.01;
+    }
+    .pf-ipad-idle { animation: none; }
+    .pf-hero-video-frame--ipad {
+      padding: 9px 9px;
+      border-radius: 20px;
+    }
+    /* Mobile perf: drop the heavy blur */
+    .pf-hero-media-wrap--mock::before {
+      filter: saturate(0.9) brightness(1.02);
+      transform: scale(1.02);
+    }
+  }
+
+  .pf-hero-media-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    padding: clamp(24px, 4vw, 48px);
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, transparent 60%);
+  }
+
+  .pf-hero-media-text {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.125rem, 2vw, 1.5rem);
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.35;
+    max-width: 600px;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  @keyframes heroFadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pf-hero-eyebrow,
+    .pf-hero-title,
+    .pf-hero-ctas,
+    .pf-hero-media {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  // Hero video play/pause on click + mouse-parallax + scroll reveal
+  (() => {
+    const video = document.getElementById('pf-hero-video') as HTMLVideoElement | null;
+    // la pantalla del iPad toma la proporción real del video (en el teléfono no se recorta nada)
+    if (video) {
+      const ajusta = () => { if (video.videoWidth && video.videoHeight) (video.closest('.pf-ipad-screen') as HTMLElement | null)?.style.setProperty('--ar', `${video.videoWidth} / ${video.videoHeight}`); };
+      if (video.readyState >= 1) ajusta(); else video.addEventListener('loadedmetadata', ajusta, { once: true });
+    }
+    const perspective = document.getElementById('pf-ipad-perspective') as HTMLElement | null;
+    if (!video) return;
+    const screen = video.parentElement;
+    if (!screen) return;
+    // Remove native controls if the browser surfaces any
+    video.removeAttribute('controls');
+    const togglePlay = (e: Event) => {
+      e.preventDefault();
+      if (video.paused) {
+        video.play().catch(() => {});
+      } else {
+        video.pause();
+      }
+    };
+    screen.addEventListener('click', togglePlay);
+
+    // Mouse-parallax tilt + scroll reveal (respects reduced motion)
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const touch = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+
+    if (perspective) {
+      // Scroll reveal
+      if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (entry.isIntersecting) {
+                perspective.classList.add('is-visible');
+              }
+            }
+          },
+          { threshold: 0.25 },
+        );
+        io.observe(perspective);
+      } else {
+        perspective.classList.add('is-visible');
+      }
+
+      // Mouse-parallax (desktop only, no reduced motion)
+      if (!reduced && !touch) {
+        const wrap = perspective.closest('.pf-hero-media-wrap--has-video') as HTMLElement | null;
+        if (wrap) {
+          let ticking = false;
+          let targetX = 0;
+          let targetY = 0;
+          let currentX = 0;
+          let currentY = 0;
+
+          wrap.addEventListener('mousemove', (e) => {
+            const rect = wrap.getBoundingClientRect();
+            const nx = (e.clientX - rect.left) / rect.width - 0.5; // -0.5..0.5
+            const ny = (e.clientY - rect.top) / rect.height - 0.5;
+            targetY = nx * 6;   // rotateY based on X pos — max ±6°
+            targetX = -ny * 4;  // rotateX inverse Y — max ±4°
+            if (!ticking) {
+              ticking = true;
+              requestAnimationFrame(tick);
+            }
+          });
+
+          wrap.addEventListener('mouseleave', () => {
+            targetX = 0;
+            targetY = 0;
+            if (!ticking) {
+              ticking = true;
+              requestAnimationFrame(tick);
+            }
+          });
+
+          const tick = () => {
+            currentX += (targetX - currentX) * 0.1;
+            currentY += (targetY - currentY) * 0.1;
+            perspective.style.setProperty('--tilt-x', `${currentX.toFixed(2)}deg`);
+            perspective.style.setProperty('--tilt-y', `${currentY.toFixed(2)}deg`);
+            if (Math.abs(targetX - currentX) > 0.01 || Math.abs(targetY - currentY) > 0.01) {
+              requestAnimationFrame(tick);
+            } else {
+              ticking = false;
+            }
+          };
+        }
+      }
+    }
+  })();
+</script>

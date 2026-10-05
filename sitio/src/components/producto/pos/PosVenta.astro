@@ -1,0 +1,178 @@
+---
+/**
+ * «De la prenda al ticket» (/producto/punto-de-venta): la venta con el scroll (data-tramos="4"). La foto del mostrador
+ * (gpt-image-2.5, la tablet con la pantalla en blanco) y, calzada en la pantalla de la tablet con una homografía
+ * (matrix3d, como el kiosco de /plugins/staff), la pantalla REAL del punto de venta de cada paso (cuenta demo, Polanco
+ * Boutique): buscar · la matriz de existencias · el carrito · el cobro combinado. Del paso 1 en adelante la «cámara» se
+ * acerca a la tablet para que la pantalla se lea. En el teléfono la pantalla sale de frente: un recorte legible de cada
+ * paso sobre la foto oscurecida. Sin JS o con «reducir movimiento»: los cuatro pasos en lista, cada uno con su pantalla.
+ */
+import { VENTA, I } from '../../../data/producto-pos';
+// las 4 esquinas de la pantalla de la tablet en mostrador-1536 (% de 1536×1024), medidas sobre el blanco de la foto
+const ESQUINAS = [[54.818, 43.262], [79.297, 44.434], [77.539, 69.922], [51.953, 67.09]];
+---
+<section class="pve" id="pos-venta" data-escena data-tramos="4" data-tramo="3" aria-labelledby="pve-h">
+  <div class="pve-riel" data-riel>
+    <div class="pve-escena">
+      <div class="pve-marco">
+        <div class="pve-lienzo" data-esquinas={JSON.stringify(ESQUINAS)}>
+          <img class="pve-foto" src={`${I}mostrador-1536.webp`} srcset={`${I}mostrador-1280.webp 1280w, ${I}mostrador-1536.webp 1536w`} sizes="(min-width: 900px) 100vw, 160vw" width="1536" height="1024" alt="El mostrador de una boutique con la tablet de Sacs en su base, una terminal de tarjetas y un suéter con su etiqueta" loading="lazy" decoding="async" />
+          <div class="pve-pantalla" aria-hidden="true">
+            {VENTA.tramos.map((t, k) => <img class="pve-shot" data-k={k} src={`${I}${t.img}.webp`} width="1800" height="1200" alt="" loading="lazy" decoding="async" />)}
+          </div>
+        </div>
+      </div>
+
+      <!-- teléfono: la pantalla de cada paso de frente, recortada para que se lea -->
+      <div class="pve-tel" aria-hidden="true">
+        {VENTA.tramos.map((t, k) => <img class="pve-tel-shot" data-k={k} src={`${I}${t.img}-movil.webp`} width={t.mw} height={t.mh} alt="" loading="lazy" decoding="async" />)}
+      </div>
+
+      <div class="pve-txt">
+        <p class="pve-k">{VENTA.k}</p>
+        <h2 class="pve-h" id="pve-h">{VENTA.h}</h2>
+        <ol class="pve-pasos">
+          {VENTA.tramos.map((p, k) => (
+            <li class="pve-paso" data-k={k}>
+              <span class="pve-paso-n">{p.n}</span>
+              <span class="pve-paso-t"><b>{p.t}</b><span>{p.d}</span></span>
+              <i class="pve-barra" aria-hidden="true"><b></b></i>
+              <figure class="pve-quieta"><img src={`${I}${p.img}.webp`} width="1800" height="1200" alt={p.alt} loading="lazy" decoding="async" /></figure>
+            </li>
+          ))}
+        </ol>
+        <ul class="pve-extra">{VENTA.extra.map((x) => <li>{x}</li>)}</ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .pve { position: relative; background: #0B0B0C; color: #fff; }
+  .pve-escena { position: relative; overflow: hidden; }
+  .pve-foto { display: block; width: 100%; height: auto; }
+
+  /* ── sin escena: la foto arriba y los pasos en lista con su pantalla ── */
+  .pve-marco { position: relative; }
+  .pve-lienzo { position: relative; width: 100%; aspect-ratio: 1536 / 1024; }
+  .pve-lienzo .pve-foto { position: absolute; inset: 0; height: 100%; }
+  .pve-pantalla { display: none; }
+  .pve-tel { display: none; }
+  .pve-quieta { margin: 12px 0 0; overflow: hidden; border-radius: 12px; box-shadow: 0 20px 40px -24px rgba(0, 0, 0, 0.8); }
+  .pve-quieta img { display: block; width: 100%; height: auto; }
+
+  /* ── el texto ── */
+  .pve-txt { padding: 36px 20px 56px; }
+  .pve-k { margin: 0 0 14px; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: #9DB8F5; }
+  .pve-h { margin: 0; color: #fff; font: 700 clamp(34px, 3.8vw, 58px)/0.98 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; text-wrap: balance; }
+  .pve-pasos { margin: 22px 0 0; padding: 0; list-style: none; border-top: 1px solid rgba(255, 255, 255, 0.3); }
+  .pve-paso { position: relative; display: grid; grid-template-columns: 40px 1fr; gap: 4px; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.18); }
+  .pve-paso .pve-quieta { grid-column: 1 / -1; }
+  .pve-paso-n { font: 700 19px/1.2 var(--pd-clash, var(--font-display)); color: #9DB8F5; }
+  .pve-paso-t { display: grid; gap: 3px; }
+  .pve-paso-t b { font: 700 16px/1.3 var(--font-display); color: #fff; }
+  .pve-paso-t > span { font: 500 14.5px/1.45 var(--font-body); color: rgba(255, 255, 255, 0.82); }
+  .pve-barra { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; overflow: hidden; }
+  .pve-barra b { display: block; height: 100%; background: #5B86EA; transform: scaleX(0); transform-origin: 0 50%; }
+  .pve-extra { display: grid; gap: 6px; margin: 16px 0 0; padding: 0; list-style: none; }
+  .pve-extra li { position: relative; padding-left: 18px; font: 500 13.5px/1.45 var(--font-body); color: rgba(255, 255, 255, 0.72); }
+  .pve-extra li::before { content: '✓'; position: absolute; left: 0; color: #6FD3A3; font-weight: 700; }
+
+  /* ══ con el scroll ══ */
+  .pve.is-escena .pve-riel { height: 480vh; }
+  /* pegada debajo de la barra de «Vende» (ProductSubnav, sticky): --sub la pone el script */
+  .pve.is-escena .pve-escena { position: sticky; top: var(--sub, 0px); height: calc(100vh - var(--sub, 0px)); height: calc(100svh - var(--sub, 0px)); }
+  .pve.is-escena .pve-marco { position: absolute; inset: 0; overflow: hidden; }
+  .pve.is-escena .pve-quieta { display: none; }
+  /* la pantalla de la tablet: base 600×400, la homografía la lleva a las 4 esquinas (script) */
+  .pve.is-escena .pve-pantalla { position: absolute; left: 0; top: 0; z-index: 2; display: block; width: 600px; height: 400px; overflow: hidden; background: #F4F6FA; transform-origin: 0 0; outline: 1px solid transparent; backface-visibility: hidden; }
+  .pve-shot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.6s ease; }
+  .pve.is-escena[data-tramo="0"] .pve-shot[data-k="0"], .pve.is-escena[data-tramo="1"] .pve-shot[data-k="1"], .pve.is-escena[data-tramo="2"] .pve-shot[data-k="2"], .pve.is-escena[data-tramo="3"] .pve-shot[data-k="3"] { opacity: 1; }
+  .pve.is-escena .pve-paso-n { color: rgba(255, 255, 255, 0.45); }
+  .pve.is-escena[data-tramo="0"] .pve-paso[data-k="0"] .pve-paso-n, .pve.is-escena[data-tramo="1"] .pve-paso[data-k="1"] .pve-paso-n, .pve.is-escena[data-tramo="2"] .pve-paso[data-k="2"] .pve-paso-n, .pve.is-escena[data-tramo="3"] .pve-paso[data-k="3"] .pve-paso-n { color: #9DB8F5; }
+  .pve.is-escena[data-tramo="0"] .pve-paso[data-k="0"] .pve-barra b, .pve.is-escena[data-tramo="1"] .pve-paso[data-k="1"] .pve-barra b, .pve.is-escena[data-tramo="2"] .pve-paso[data-k="2"] .pve-barra b, .pve.is-escena[data-tramo="3"] .pve-paso[data-k="3"] .pve-barra b { animation: pveBarra 4.5s linear both; }
+  @keyframes pveBarra { from { transform: scaleX(0); } to { transform: none; } }
+
+  @media (min-width: 900px) {
+    .pve.is-escena .pve-escena::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; background: linear-gradient(90deg, rgba(8, 8, 10, 0.92) 0%, rgba(8, 8, 10, 0.66) 26%, rgba(8, 8, 10, 0) 46%); }
+    /* la foto llena la pantalla; desde el paso 1 la cámara se acerca a la tablet (su centro está en 66 % × 56 %) */
+    .pve.is-escena .pve-lienzo { position: absolute; left: 50%; top: 50%; width: max(100vw, calc((100svh - var(--sub, 0px)) * 1.5)); transform: translate(-50%, -50%) scale(var(--zoom, 1)); transform-origin: 66% 56%; transition: transform 1.3s cubic-bezier(0.65, 0, 0.35, 1); }
+    .pve.is-escena:not([data-tramo="0"]) .pve-lienzo { --zoom: 2.05; }
+    .pve.is-escena .pve-txt { position: absolute; left: 0; top: 50%; z-index: 4; width: min(34vw, 470px); padding: 0 0 0 4.4vw; transform: translateY(-50%); text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45); }
+    .pve.is-escena .pve-paso-t > span { display: none; }
+    .pve.is-escena[data-tramo="0"] .pve-paso[data-k="0"] .pve-paso-t > span, .pve.is-escena[data-tramo="1"] .pve-paso[data-k="1"] .pve-paso-t > span, .pve.is-escena[data-tramo="2"] .pve-paso[data-k="2"] .pve-paso-t > span, .pve.is-escena[data-tramo="3"] .pve-paso[data-k="3"] .pve-paso-t > span { display: block; }
+    /* sin escena en escritorio: la lista en dos columnas */
+    .pve:not(.is-escena) .pve-pasos { display: grid; grid-template-columns: 1fr 1fr; column-gap: 32px; }
+    .pve:not(.is-escena) .pve-txt { max-width: 1160px; margin: 0 auto; }
+  }
+  @media (max-width: 899px) {
+    .pve.is-escena .pve-riel { height: 400vh; }
+    /* el escenario arriba (la foto oscurecida y la pantalla de frente), el paso abajo */
+    .pve.is-escena .pve-marco { bottom: auto; height: calc((100svh - var(--sub, 0px)) * 0.56); }
+    .pve.is-escena .pve-lienzo { position: absolute; top: 0; left: calc(50vw - (100svh - var(--sub, 0px)) * 0.56 * 1.5 * 0.66); width: auto; height: 100%; }
+    .pve.is-escena .pve-marco::after { content: ''; position: absolute; inset: 0; background: rgba(8, 8, 10, 0.6); }
+    .pve.is-escena .pve-pantalla { display: none; }
+    .pve.is-escena .pve-tel { position: absolute; left: 16px; right: 16px; top: 12px; z-index: 2; display: block; height: calc((100svh - var(--sub, 0px)) * 0.56 - 24px); }
+    .pve-tel-shot { position: absolute; left: 50%; top: 0; width: auto; max-width: 100%; height: 100%; object-fit: contain; border-radius: 14px; box-shadow: 0 18px 30px -16px rgba(0, 0, 0, 0.8); opacity: 0; transform: translate(-50%, 14px); transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+    .pve.is-escena[data-tramo="0"] .pve-tel-shot[data-k="0"], .pve.is-escena[data-tramo="1"] .pve-tel-shot[data-k="1"], .pve.is-escena[data-tramo="2"] .pve-tel-shot[data-k="2"], .pve.is-escena[data-tramo="3"] .pve-tel-shot[data-k="3"] { opacity: 1; transform: translate(-50%, 0); }
+    .pve.is-escena .pve-txt { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; padding: 24px 20px 18px; background: linear-gradient(180deg, rgba(11, 11, 12, 0) 0, #0B0B0C 22px); }
+    .pve.is-escena .pve-k { margin-bottom: 8px; }
+    .pve.is-escena .pve-h { font-size: clamp(25px, 7.2vw, 34px); }
+    .pve.is-escena .pve-pasos { margin-top: 10px; }
+    .pve.is-escena .pve-paso { display: none; padding: 10px 0 8px; }
+    .pve.is-escena[data-tramo="0"] .pve-paso[data-k="0"], .pve.is-escena[data-tramo="1"] .pve-paso[data-k="1"], .pve.is-escena[data-tramo="2"] .pve-paso[data-k="2"], .pve.is-escena[data-tramo="3"] .pve-paso[data-k="3"] { display: grid; }
+    .pve.is-escena .pve-extra { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pve * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<script>
+  // Calza la pantalla (600×400) en la de la tablet de la foto: homografía a las 4 esquinas (un pelo hacia adentro), como
+  // matrix3d. Se recalcula si cambia el tamaño del lienzo. En el teléfono no se usa (va la pantalla de frente).
+  (() => {
+    const lienzo = document.querySelector<HTMLElement>('.pve-lienzo');
+    const pantalla = lienzo?.querySelector<HTMLElement>('.pve-pantalla');
+    if (!lienzo || !pantalla) return;
+    const base: [number, number][] = JSON.parse(lienzo.dataset.esquinas || '[]');
+    const cx = base.reduce((s, p) => s + p[0], 0) / 4, cy = base.reduce((s, p) => s + p[1], 0) / 4;
+    const esquinas = base.map(([x, y]) => [cx + (x - cx) * 0.99, cy + (y - cy) * 0.99]);
+    const W0 = 600, H0 = 400;
+    const resuelve = (A: number[][], b: number[]) => {
+      const n = b.length, M = A.map((fila, i) => [...fila, b[i]]);
+      for (let c = 0; c < n; c++) {
+        let p = c; for (let f = c + 1; f < n; f++) if (Math.abs(M[f][c]) > Math.abs(M[p][c])) p = f;
+        [M[c], M[p]] = [M[p], M[c]];
+        for (let f = 0; f < n; f++) if (f !== c) { const k = M[f][c] / M[c][c]; for (let j = c; j <= n; j++) M[f][j] -= k * M[c][j]; }
+      }
+      return M.map((fila, i) => fila[n] / fila[i]);
+    };
+    const calza = () => {
+      const w = lienzo.offsetWidth, h = lienzo.offsetHeight;
+      if (!w || !h) return;
+      const dst = esquinas.map(([x, y]) => [x / 100 * w, y / 100 * h]);
+      const src = [[0, 0], [W0, 0], [W0, H0], [0, H0]];
+      const A: number[][] = [], b: number[] = [];
+      for (let i = 0; i < 4; i++) {
+        const [x, y] = src[i], [X, Y] = dst[i];
+        A.push([x, y, 1, 0, 0, 0, -X * x, -X * y]); b.push(X);
+        A.push([0, 0, 0, x, y, 1, -Y * x, -Y * y]); b.push(Y);
+      }
+      const [a, bb, c, d, e, f, g, hh] = resuelve(A, b);
+      pantalla.style.transform = `matrix3d(${a},${d},0,${g},${bb},${e},0,${hh},0,0,1,0,${c},${f},0,1)`;
+    };
+    new ResizeObserver(calza).observe(lienzo);
+    calza();
+  })();
+
+  // La escena se pega debajo de la barra de «Vende» (sticky en /producto/*): su altura va en --sub.
+  (() => {
+    const sec = document.querySelector<HTMLElement>('.pve');
+    const sub = document.getElementById('product-subnav');
+    if (!sec || !sub) return;
+    const pon = () => sec.style.setProperty('--sub', Math.round(sub.getBoundingClientRect().height) + 'px');
+    pon();
+    new ResizeObserver(pon).observe(sub);
+  })();
+</script>
