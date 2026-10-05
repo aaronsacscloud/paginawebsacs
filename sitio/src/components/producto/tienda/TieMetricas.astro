@@ -1,0 +1,47 @@
+---
+/**
+ * «Sabes qué pasa en tu tienda» (/producto/tienda-en-linea): las Métricas del sitio web. La pantalla REAL de sacs3 de la
+ * cuenta demo (ventas del periodo, ticket promedio, lo que necesita tu atención y los indicadores de carritos, cupones,
+ * chats, visitantes y % que compra) y la lista de lo que mide, que se palomea al verse. Entrada: la ventana se acerca
+ * desde un poco más chica. Blanco.
+ */
+import { METRICAS, I } from '../../../data/producto-tienda';
+import StaffVentana from '../../plugins/staff/StaffVentana.astro';
+---
+<section class="pda tme" id="tie-metricas" aria-labelledby="tme-h">
+  <p class="pd-folio"><span>{METRICAS.k}</span><span>Tienda en línea › Métricas</span></p>
+  <div class="tme-grid">
+    <div class="tme-lado">
+      <h2 class="pda-h" id="tme-h">{METRICAS.h}</h2>
+      <p class="tme-p">{METRICAS.p}</p>
+      <ul class="tme-lista">{METRICAS.lista.map((x, i) => <li class="rv" style={`--i:${i}`}><i aria-hidden="true">✓</i>{x}</li>)}</ul>
+    </div>
+    <div class="tme-ventana rv"><StaffVentana src={`${I}pantalla-metricas.webp`} w={1400} h={716} alt="Métricas del sitio web: las ventas del periodo con su gráfica, el pedido y el ticket promedio, lo que necesita tu atención (productos agotados con demanda; muchas vistas, pocas compras) y los indicadores de carritos abandonados, cupones usados, chats de WhatsApp, visitantes y porcentaje que compra" barra="Métricas del sitio web" /></div>
+  </div>
+</section>
+
+<style>
+  .tme { background: #fff; color: #141414; --pd-texto: #141414; --pd-tenue: #45433E; --pd-filete: rgba(20, 20, 20, 0.16); }
+  .tme-grid { display: grid; gap: 32px; margin-top: 8px; }
+  .tme-lado { display: grid; gap: 16px; align-content: start; }
+  .tme-p { margin: 0; max-width: 46ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .tme-lista { display: grid; gap: 8px; margin: 8px 0 0; padding: 0; list-style: none; }
+  .tme-lista li { display: flex; align-items: center; gap: 12px; font: 600 15.5px/1.3 var(--font-display); }
+  .tme-lista i { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; background: #E3F4EA; color: #17804F; font: 800 13px/1 var(--font-display); font-style: normal; }
+  :global(.js-rv) .tme-lista .rv { opacity: 0; transform: translateX(-12px); transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.08s + 0.2s); }
+  :global(.js-rv) .tme-lista .rv.is-on { opacity: 1; transform: none; }
+  :global(.js-rv) .tme-lista .rv i { transform: scale(0); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); transition-delay: calc(var(--i) * 0.08s + 0.45s); }
+  :global(.js-rv) .tme-lista .rv.is-on i { transform: none; }
+  :global(.js-rv) .tme-ventana.rv { opacity: 0; transform: scale(0.92); transform-origin: 70% 40%; transition: opacity 0.7s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1); }
+  :global(.js-rv) .tme-ventana.rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .tme-grid { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 4.5vw; align-items: center; }
+  }
+  @media (max-width: 767px) {
+    .tme-ventana { overflow-x: auto; overscroll-behavior-x: contain; border-radius: 10px; }
+    .tme-ventana > :global(.sv) { width: 640px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .tme .rv, :global(.js-rv) .tme .rv i { opacity: 1; transform: none; transition: none; }
+  }
+</style>

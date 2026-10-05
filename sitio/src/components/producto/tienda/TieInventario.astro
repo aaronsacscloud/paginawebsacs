@@ -1,0 +1,126 @@
+---
+/**
+ * «Un solo inventario. Tus reglas.» (/producto/tienda-en-linea): almacenes y enrutamiento. Un diagrama dibujado en el
+ * que un pedido en línea viaja, uno tras otro, al almacén que le toca según la regla (un código postal, un estado, el
+ * orden de preferencia), con las sucursales de la cuenta demo; y la ventana REAL «Almacenes y enrutamiento» de sacs3
+ * (un solo almacén o multi-almacén, el origen por defecto). Entrada: la ventana sube; los puntos, escalonados. Marino.
+ */
+import { INVENTARIO, I } from '../../../data/producto-tienda';
+import StaffVentana from '../../plugins/staff/StaffVentana.astro';
+---
+<section class="pda tin pd-marino" id="tie-inventario" aria-labelledby="tin-h">
+  <div class="pda-fondo" aria-hidden="true"><span>UN SOLO INVENTARIO</span><span>UN SOLO INVENTARIO</span></div>
+  <p class="pd-folio"><span>{INVENTARIO.k}</span><span>Tienda en línea + sucursales</span></p>
+  <div class="tin-cab">
+    <h2 class="pda-h" id="tin-h">{INVENTARIO.h}</h2>
+    <p class="tin-p">{INVENTARIO.p}</p>
+  </div>
+  <div class="tin-grid">
+    <div class="tin-mapa" data-tin role="img" aria-label="Un pedido en línea va al almacén que le toca: por código postal a Polanco, por estado a Querétaro y, si no aplica otra regla, por orden de preferencia a Bodega">
+      <span class="tin-origen" aria-hidden="true"><small>Pedido en línea</small><b>PED-POL-41</b></span>
+      <span class="tin-reglas" aria-hidden="true">{INVENTARIO.rutas.map((r, i) => <em data-i={i}>{r.regla}</em>)}</span>
+      <span class="tin-ficha" aria-hidden="true">🛍</span>
+      <span class="tin-almacenes" aria-hidden="true">{INVENTARIO.almacenes.map((a, i) => <span data-i={i}><i>🏬</i><b>{a}</b></span>)}</span>
+    </div>
+    <div class="tin-ventana rv"><StaffVentana src={`${I}pantalla-origen.webp`} w={1100} h={922} alt="Almacenes y enrutamiento: cómo surte tu tienda en línea, con un solo almacén (una sucursal y un almacén) o multi-almacén (varios almacenes suman existencias), y la sucursal y el almacén por defecto" barra="Almacenes y enrutamiento" /></div>
+  </div>
+  <div class="tin-pie">
+    <div class="tin-modos">
+      {INVENTARIO.modos.map((m) => <span><b>{m.t}</b><small>{m.d}</small></span>)}
+      <ul>{INVENTARIO.reglas.map((r) => <li>{r}</li>)}</ul>
+    </div>
+    <ul class="tin-puntos">{INVENTARIO.puntos.map((x, i) => <li class="rv" style={`--i:${i}`}><b>{x.t}</b><span>{x.d}</span></li>)}</ul>
+  </div>
+</section>
+
+<style>
+  .tin-cab { display: grid; gap: 14px; }
+  .tin-p { margin: 0; max-width: 48ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .tin-grid { display: grid; gap: 22px; margin-top: 36px; }
+
+  /* el mapa: el pedido viaja al almacén de cada regla (9 s en loop mientras se ve) */
+  .tin-mapa { position: relative; display: block; min-height: 300px; padding: 22px; border-radius: 22px; background: #13215C; box-shadow: inset 0 0 0 1px rgba(157, 184, 245, 0.22); overflow: hidden; }
+  .tin-origen { position: absolute; left: 22px; top: 22px; display: grid; gap: 2px; padding: 10px 14px; border-radius: 12px; background: #fff; color: #0A1648; }
+  .tin-origen small { font: 600 11px/1.2 var(--font-display); color: #6B6A64; }
+  .tin-origen b { font: 700 15px/1.2 'JetBrains Mono', ui-monospace, monospace; }
+  .tin-reglas { position: absolute; right: 22px; top: 28px; display: grid; justify-items: end; gap: 6px; }
+  .tin-reglas em { padding: 6px 11px; border-radius: 99px; background: rgba(157, 184, 245, 0.16); color: rgba(255, 255, 255, 0.6); font: 700 12px/1.2 var(--font-display); font-style: normal; transition: background 0.3s ease, color 0.3s ease; }
+  .tin-almacenes { position: absolute; left: 22px; right: 22px; bottom: 22px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .tin-almacenes span { display: grid; justify-items: center; gap: 6px; padding: 14px 8px; border-radius: 14px; background: rgba(255, 255, 255, 0.07); box-shadow: inset 0 0 0 1px rgba(157, 184, 245, 0.25); transition: background 0.3s ease, box-shadow 0.3s ease; }
+  .tin-almacenes i { font-size: 22px; font-style: normal; }
+  .tin-almacenes b { font: 700 14px/1.2 var(--font-display); color: #fff; }
+  .tin-ficha { position: absolute; left: 64px; top: 92px; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: #fff; font-size: 18px; box-shadow: 0 10px 20px -8px rgba(0, 0, 0, 0.6); }
+  .tin-mapa.is-on .tin-ficha { animation: tinViaje 9s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
+  @keyframes tinViaje {
+    0%, 6% { transform: translate(0, 0); opacity: 1; }
+    24%, 30% { transform: translate(var(--x0, 40px), var(--y, 120px)); opacity: 1; }
+    32% { opacity: 0; transform: translate(var(--x0, 40px), var(--y, 120px)); }
+    33% { opacity: 0; transform: translate(0, 0); }
+    36%, 40% { opacity: 1; transform: translate(0, 0); }
+    58%, 64% { transform: translate(var(--x2, 300px), var(--y, 120px)); opacity: 1; }
+    66% { opacity: 0; transform: translate(var(--x2, 300px), var(--y, 120px)); }
+    67% { opacity: 0; transform: translate(0, 0); }
+    70%, 74% { opacity: 1; transform: translate(0, 0); }
+    92%, 98% { transform: translate(var(--x1, 170px), var(--y, 120px)); opacity: 1; }
+    100% { opacity: 0; transform: translate(var(--x1, 170px), var(--y, 120px)); }
+  }
+  .tin-mapa.is-on .tin-reglas em[data-i="0"] { animation: tinRegla0 9s linear infinite; }
+  .tin-mapa.is-on .tin-reglas em[data-i="1"] { animation: tinRegla1 9s linear infinite; }
+  .tin-mapa.is-on .tin-reglas em[data-i="2"] { animation: tinRegla2 9s linear infinite; }
+  .tin-mapa.is-on .tin-almacenes span[data-i="0"] { animation: tinAlm0 9s linear infinite; }
+  .tin-mapa.is-on .tin-almacenes span[data-i="2"] { animation: tinAlm2 9s linear infinite; }
+  .tin-mapa.is-on .tin-almacenes span[data-i="1"] { animation: tinAlm1 9s linear infinite; }
+  @keyframes tinRegla0 { 0%, 31% { background: #fff; color: #0A1648; } 33%, 100% { background: rgba(157, 184, 245, 0.16); color: rgba(255, 255, 255, 0.6); } }
+  @keyframes tinRegla1 { 0%, 34% { background: rgba(157, 184, 245, 0.16); color: rgba(255, 255, 255, 0.6); } 36%, 65% { background: #fff; color: #0A1648; } 67%, 100% { background: rgba(157, 184, 245, 0.16); color: rgba(255, 255, 255, 0.6); } }
+  @keyframes tinRegla2 { 0%, 68% { background: rgba(157, 184, 245, 0.16); color: rgba(255, 255, 255, 0.6); } 70%, 99% { background: #fff; color: #0A1648; } 100% { background: rgba(157, 184, 245, 0.16); color: rgba(255, 255, 255, 0.6); } }
+  @keyframes tinAlm0 { 0%, 22% { background: rgba(255, 255, 255, 0.07); } 25%, 31% { background: rgba(157, 184, 245, 0.35); } 33%, 100% { background: rgba(255, 255, 255, 0.07); } }
+  @keyframes tinAlm2 { 0%, 56% { background: rgba(255, 255, 255, 0.07); } 59%, 65% { background: rgba(157, 184, 245, 0.35); } 67%, 100% { background: rgba(255, 255, 255, 0.07); } }
+  @keyframes tinAlm1 { 0%, 90% { background: rgba(255, 255, 255, 0.07); } 93%, 99% { background: rgba(157, 184, 245, 0.35); } 100% { background: rgba(255, 255, 255, 0.07); } }
+
+  .tin-pie { display: grid; gap: 24px; margin-top: 36px; }
+  .tin-modos { display: grid; gap: 10px; align-content: start; }
+  .tin-modos > span { display: grid; gap: 3px; padding: 14px 16px; border-radius: 14px; background: rgba(255, 255, 255, 0.08); }
+  .tin-modos b { font: 700 16px/1.2 var(--font-display); color: #fff; }
+  .tin-modos small { font: 500 14px/1.45 var(--font-body); color: var(--pd-tenue); }
+  .tin-modos ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; padding: 0; list-style: none; }
+  .tin-modos li { padding: 8px 13px; border-radius: 99px; background: #fff; color: #0A1648; font: 700 13px/1.2 var(--font-display); }
+  .tin-puntos { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; border-top: 2px solid #fff; }
+  .tin-puntos li { display: grid; gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--pd-linea); }
+  .tin-puntos b { font: 700 17px/1.25 var(--font-display); color: #fff; }
+  .tin-puntos span { font: 500 14.5px/1.5 var(--font-body); color: var(--pd-tenue); }
+  :global(.js-rv) .tin .rv { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i, 0) * 0.08s); }
+  :global(.js-rv) .tin .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .tin-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .tin-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 3vw; margin-top: 52px; align-items: stretch; }
+    .tin-mapa { min-height: 360px; }
+    .tin-pie { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 4.5vw; margin-top: 52px; }
+  }
+  @media (max-width: 767px) {
+    .tin-ventana { overflow-x: auto; overscroll-behavior-x: contain; border-radius: 10px; }
+    .tin-ventana > :global(.sv) { width: 560px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tin-mapa.is-on * { animation: none !important; }
+    :global(.js-rv) .tin .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // El pedido viaja solo mientras el mapa se ve; las distancias se miden para que llegue al centro de cada almacén.
+  (() => {
+    const mapa = document.querySelector<HTMLElement>('[data-tin]');
+    if (!mapa || !('IntersectionObserver' in window)) return;
+    const ficha = mapa.querySelector<HTMLElement>('.tin-ficha');
+    const alms = Array.from(mapa.querySelectorAll<HTMLElement>('.tin-almacenes span'));
+    const mide = () => {
+      if (!ficha || alms.length < 3) return;
+      const f = ficha.getBoundingClientRect();
+      alms.forEach((a, i) => { const r = a.getBoundingClientRect(); mapa.style.setProperty(`--x${i}`, Math.round(r.left + r.width / 2 - (f.left + f.width / 2)) + 'px'); });
+      const r0 = alms[0].getBoundingClientRect();
+      mapa.style.setProperty('--y', Math.round(r0.top - f.bottom - 4) + 'px');
+    };
+    new ResizeObserver(() => { ficha?.style.setProperty('animation', 'none'); mide(); requestAnimationFrame(() => ficha?.style.removeProperty('animation')); }).observe(mapa);
+    new IntersectionObserver((es) => es.forEach((e) => mapa.classList.toggle('is-on', e.isIntersecting)), { threshold: 0.35 }).observe(mapa);
+  })();
+</script>

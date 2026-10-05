@@ -122,7 +122,7 @@ export const pillars: Pillar[] = [
         hero: {
           eyebrow: 'Vende',
           headline: 'Facturación electrónica sin fricción',
-          subtitle: 'CFDI desde el punto de venta, autofacturación para clientes y factura global automática.',
+          subtitle: 'CFDI desde el punto de venta, autofacturación para clientes y factura global del día.',
         },
         status: 'live',
       },

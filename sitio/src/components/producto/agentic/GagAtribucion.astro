@@ -1,0 +1,65 @@
+---
+/**
+ * «Sabes qué IA te trajo cada venta» (/producto/agentic-commerce): la atribución por asistente de IA. Barras que crecen
+ * al verse (ChatGPT, Gemini, Perplexity, Claude; proporciones de ejemplo, sin cifras de resultados) y lo que se mide.
+ * Visión del producto (ver src/data/producto-agentic.ts). Marino.
+ */
+import { ATRIBUCION } from '../../../data/producto-agentic';
+const MIDE = ['Pedidos por asistente', 'Prendas más recomendadas', 'Tallas que más piden', 'Ventas contra tus otros canales'];
+---
+<section class="pda gat pd-marino" id="gag-atribucion" aria-labelledby="gat-h">
+  <p class="pd-folio"><span>{ATRIBUCION.k}</span><span>Ventas por asistente de IA</span></p>
+  <div class="gat-grid">
+    <div class="gat-lado">
+      <h2 class="pda-h" id="gat-h">{ATRIBUCION.h}</h2>
+      <p class="gat-p">{ATRIBUCION.p}</p>
+      <ul class="gat-mide">{MIDE.map((x) => <li>{x}</li>)}</ul>
+    </div>
+    <figure class="gat-graf" data-gat role="img" aria-label="Gráfica de ejemplo: ventas por asistente de IA, de mayor a menor: ChatGPT, Gemini, Perplexity y Claude">
+      <figcaption aria-hidden="true"><b>Ventas por asistente de IA</b><small>Ejemplo</small></figcaption>
+      <span class="gat-barras" aria-hidden="true">
+        {ATRIBUCION.barras.map((x, i) => (
+          <span class="gat-b" style={`--w:${x.v}%;--i:${i}`}><span>{x.t}</span><i><b></b></i></span>
+        ))}
+      </span>
+    </figure>
+  </div>
+</section>
+
+<style>
+  .gat-grid { display: grid; gap: 36px; }
+  .gat-lado { display: grid; gap: 16px; align-content: start; }
+  .gat-p { margin: 0; max-width: 46ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .gat-mide { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; padding: 0; list-style: none; }
+  .gat-mide li { padding: 8px 13px; border-radius: 99px; background: rgba(157, 184, 245, 0.16); box-shadow: inset 0 0 0 1px rgba(157, 184, 245, 0.3); font: 600 13.5px/1.2 var(--font-display); color: #fff; }
+  .gat-graf { display: grid; gap: 18px; margin: 0; padding: 24px; border-radius: 22px; background: #13215C; box-shadow: inset 0 0 0 1px rgba(157, 184, 245, 0.22); }
+  .gat-graf figcaption { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .gat-graf figcaption b { font: 700 16px/1.2 var(--font-display); color: #fff; }
+  .gat-graf figcaption small { font: 600 12px/1 var(--font-display); color: #9DB8F5; }
+  .gat-barras { display: grid; gap: 16px; }
+  .gat-b { display: grid; gap: 8px; }
+  .gat-b > span { font: 700 15px/1.2 var(--font-display); color: #fff; }
+  .gat-b i { display: block; height: 14px; border-radius: 99px; background: rgba(157, 184, 245, 0.14); overflow: hidden; }
+  .gat-b i b { display: block; width: var(--w); height: 100%; border-radius: 99px; background: linear-gradient(90deg, #5B86EA, #D03A70); transform-origin: 0 50%; }
+  :global(.js-rv) .gat-graf:not(.is-on) .gat-b i b { transform: scaleX(0); }
+  .gat-graf.is-on .gat-b i b { transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1); transition-delay: calc(var(--i) * 0.15s); }
+  @media (min-width: 900px) {
+    .gat-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 5vw; align-items: center; }
+    .gat-graf { padding: 30px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .gat-graf:not(.is-on) .gat-b i b { transform: none; }
+    .gat-graf.is-on .gat-b i b { transition: none; }
+  }
+</style>
+
+<script>
+  // Las barras crecen la primera vez que la gráfica se ve.
+  (() => {
+    const el = document.querySelector<HTMLElement>('[data-gat]');
+    if (!el) return;
+    if (!('IntersectionObserver' in window)) { el.classList.add('is-on'); return; }
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { el.classList.add('is-on'); io.disconnect(); } }, { threshold: 0.4 });
+    io.observe(el);
+  })();
+</script>

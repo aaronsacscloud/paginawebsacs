@@ -3,11 +3,11 @@
  * «Todo lo que incluye» de las páginas de «Vende» (/producto/promociones, /apartados-y-pedidos,
  * /facturacion-electronica…): la rejilla de tarjetas de color de /producto/punto-de-venta (PosIncluye) en un solo
  * componente. Cada tarjeta lleva su pantalla real o un dibujo hecho con los textos reales (cupón, reloj, factura, liga,
- * sobre pedido, reglas, precio tachado, boleto, margen, barras, impulso con `fotos`) y enlaza a su sección. Entrada: cada tarjeta se levanta con una inclinación, escalonada (script de la
+ * sobre pedido, reglas, precio tachado, boleto, margen, barras, impulso con `fotos`, chat, canales, bandeja) y enlaza a su sección. Entrada: cada tarjeta se levanta con una inclinación, escalonada (script de la
  * página: .rv).
  * Rejilla de escritorio: 4 columnas; una tarjeta `alta` ocupa dos filas y las `ancha`, dos columnas.
  */
-export interface PiezaIncluye { id: string; t: string; d: string; img?: string; w?: number; h?: number; tono: 'negro' | 'fucsia' | 'marfil' | 'marino' | 'azul'; ancha?: boolean; alta?: boolean; cubre?: boolean; dibujo?: 'cupon' | 'reloj' | 'factura' | 'liga' | 'sobre' | 'reglas' | 'precio' | 'boleto' | 'margen' | 'barras' | 'impulso'; fotos?: string[] }
+export interface PiezaIncluye { id: string; t: string; d: string; img?: string; w?: number; h?: number; tono: 'negro' | 'fucsia' | 'marfil' | 'marino' | 'azul'; ancha?: boolean; alta?: boolean; cubre?: boolean; dibujo?: 'cupon' | 'reloj' | 'factura' | 'liga' | 'sobre' | 'reglas' | 'precio' | 'boleto' | 'margen' | 'barras' | 'impulso' | 'chat' | 'canales' | 'bandeja' | 'ias' | 'editor'; fotos?: string[] }
 interface Props { folio: [string, string]; titulo: string; intro: string; piezas: PiezaIncluye[] }
 const { folio, titulo, intro, piezas } = Astro.props;
 const PALABRA = Array.from({ length: 3 }, () => 'TODO INCLUIDO').join(' · ');
@@ -40,10 +40,20 @@ const PALABRA = Array.from({ length: 3 }, () => 'TODO INCLUIDO').join(' · ');
             <span class="vin-dib" aria-hidden="true"><span class="vin-barras"><small>Ventas por promoción</small>{['Fin de temporada', '3x2 en camisetas', 'Martes de 6 a 9'].map((n, k) => <span class="vin-br" style={`--w:${[92, 64, 41][k]}%`}><span>{n}</span><i></i></span>)}</span></span>
           ) : x.dibujo === 'impulso' ? (
             <span class="vin-dib" aria-hidden="true"><span class="vin-impulso">{(x.fotos || []).slice(0, 3).map((src) => <span><img src={src} width="240" height="240" alt="" loading="lazy" decoding="async" /><u>Agregar</u></span>)}</span></span>
+          ) : x.dibujo === 'chat' ? (
+            <span class="vin-dib" aria-hidden="true"><span class="vin-chat"><i class="vin-b vin-b--c">¿Tienen la camiseta azul en M?</i><i class="vin-b vin-b--a">Sí 🙌 quedan 2 en Polanco. ¿Te la aparto?</i><i class="vin-b vin-b--c">¡Sí, porfa!</i><i class="vin-b vin-b--a vin-b--liga">Tu apartado · Abonar ahora →</i></span></span>
+          ) : x.dibujo === 'canales' ? (
+            <span class="vin-dib" aria-hidden="true"><span class="vin-barras"><small>Pedidos por canal</small>{[['Instagram', 92], ['TikTok Shop', 71], ['WhatsApp', 64]].map(([n, w]) => <span class="vin-br" style={`--w:${w}%`}><span>{n}</span><i></i></span>)}</span></span>
+          ) : x.dibujo === 'bandeja' ? (
+            <span class="vin-dib" aria-hidden="true"><span class="vin-bandeja">{[['WA', 'Fernanda R.', '¿Me la apartas?', '#1FAF5A'], ['IG', 'majo_lopez', '¿Hay en negro?', '#D03A70'], ['FB', 'Sofía H.', '¿Hacen envíos?', '#4470D8']].map(([c, n, m, col]) => <span class="vin-bf"><em style={`background:${col}`}>{c}</em><span><b>{n}</b><small>{m}</small></span></span>)}</span></span>
           ) : x.dibujo === 'reglas' ? (
             <span class="vin-dib" aria-hidden="true"><span class="vin-reglas"><span><small>Anticipo mínimo</small><b>20 %</b></span><span><small>Para liquidar</small><b>15 días</b></span><span><small>Si vence</small><b>Libera la mercancía</b></span></span></span>
           ) : x.dibujo === 'sobre' ? (
             <span class="vin-dib" aria-hidden="true"><span class="vin-sobre"><small>📦 Sobre pedido</small><b>Blazer sastre cruzado · M</b><span class="vin-pasos"><i class="is-ok">Pedido</i><i class="is-ok">Recibido</i><i>Apartado</i></span></span></span>
+          ) : x.dibujo === 'ias' ? (
+            <span class="vin-dib" aria-hidden="true"><span class="vin-barras"><small>Ventas por asistente de IA</small>{[['ChatGPT', 100], ['Gemini', 58], ['Perplexity', 34]].map(([n, w]) => <span class="vin-br" style={`--w:${w}%`}><span>{n}</span><i></i></span>)}</span></span>
+          ) : x.dibujo === 'editor' ? (
+            <span class="vin-dib" aria-hidden="true"><span class="vin-editor"><span class="vin-ed-bloques"><i>Portada</i><i>Colección</i><i>Productos</i><i>Video</i></span><span class="vin-ed-lienzo"><b>Nueva colección</b><span class="vin-ed-fila"><i></i><i></i><i></i></span><span class="vin-ed-estilos"><em>Clásico</em><em class="is-on">Minimalista</em><em>Oscuro</em></span></span></span></span>
           ) : (
             <span class="vin-dib" aria-hidden="true"><span class="vin-liga"><small>Tu apartado</small><b>Saldo $2,784.00</b><span class="vin-barra"><i></i></span><u>Abonar ahora</u></span></span>
           )}
@@ -147,6 +157,27 @@ const PALABRA = Array.from({ length: 3 }, () => 'TODO INCLUIDO').join(' · ');
   .vin-impulso > span { display: grid; gap: 5px; }
   .vin-impulso img { display: block; width: 100%; height: auto; border-radius: 8px; }
   .vin-impulso u { display: grid; place-items: center; height: 22px; border-radius: 6px; background: #2F55C4; color: #fff; font: 700 10px/1 var(--font-display); text-decoration: none; }
+  .vin-chat { display: grid; gap: 5px; width: min(92%, 250px); margin-bottom: 14px; padding: 10px; border-radius: 16px; background: #EFE7DD; }
+  .vin-b { max-width: 86%; padding: 6px 9px; border-radius: 10px; font: 600 11px/1.3 var(--font-display); font-style: normal; color: #141414; }
+  .vin-b--c { justify-self: end; background: #D9FDD3; border-bottom-right-radius: 3px; }
+  .vin-b--a { justify-self: start; background: #fff; border-bottom-left-radius: 3px; }
+  .vin-b--liga { color: #2F55C4; }
+  .vin-bandeja { display: grid; gap: 6px; width: min(92%, 250px); margin-bottom: 14px; padding: 8px; border-radius: 14px; background: #fff; }
+  .vin-bf { display: flex; align-items: center; gap: 8px; padding: 6px; border-radius: 10px; background: #F6F7F9; }
+  .vin-bf em { display: grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 50%; color: #fff; font: 800 9.5px/1 var(--font-display); font-style: normal; }
+  .vin-bf span { display: grid; min-width: 0; }
+  .vin-bf b { font: 700 11.5px/1.2 var(--font-display); color: #141414; }
+  .vin-bf small { overflow: hidden; font: 500 10.5px/1.25 var(--font-body); color: #6B6A64; white-space: nowrap; text-overflow: ellipsis; }
+  .vin-editor { display: grid; grid-template-columns: 0.8fr 2fr; gap: 6px; width: min(94%, 300px); margin-bottom: 14px; padding: 7px; border-radius: 14px; background: #fff; }
+  .vin-ed-bloques { display: grid; gap: 4px; align-content: start; }
+  .vin-ed-bloques i { padding: 5px 6px; border-radius: 6px; background: #F2F3F6; font: 600 9.5px/1.2 var(--font-display); font-style: normal; color: #45433E; }
+  .vin-ed-lienzo { display: grid; gap: 6px; padding: 8px; border-radius: 8px; background: #F5F3EE; outline: 1.5px dashed #2F55C4; outline-offset: -1.5px; }
+  .vin-ed-lienzo b { font: 700 13px/1.1 var(--pd-clash, var(--font-display)); color: #141414; }
+  .vin-ed-fila { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+  .vin-ed-fila i { aspect-ratio: 3 / 4; border-radius: 4px; background: linear-gradient(160deg, #D9CDBB, #B8A58C); }
+  .vin-ed-estilos { display: flex; flex-wrap: wrap; gap: 3px; }
+  .vin-ed-estilos em { padding: 3px 6px; border-radius: 99px; background: #fff; font: 600 9px/1.2 var(--font-display); font-style: normal; color: #45433E; }
+  .vin-ed-estilos em.is-on { background: #141414; color: #fff; }
   .vin-reglas { display: grid; width: min(86%, 250px); margin-bottom: 16px; padding: 6px 14px; border-radius: 16px; background: #fff; color: #141414; }
   .vin-reglas > span { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid #ECEDEF; }
   .vin-reglas > span:last-child { border-bottom: 0; }

@@ -1,0 +1,118 @@
+---
+/**
+ * «Tu mejor vendedora contesta a las 11 de la noche» (/producto/social-commerce): WhatsApp. Un celular con la
+ * conversación de una clienta con el agente con IA de la tienda (existencias reales por talla y sucursal, foto de la
+ * prenda del catálogo demo, el apartado y su liga): los mensajes llegan uno por uno, con «escribiendo…», la primera vez
+ * que se ve. A un lado, la foto de la vendedora contestando desde el mostrador (gpt-image-2.5) y lo que ya sale por
+ * WhatsApp con un toque. Blanco.
+ */
+import { WHATS, I } from '../../../data/producto-social';
+---
+<section class="pda swa" id="soc-whats" aria-labelledby="swa-h">
+  <p class="pd-folio"><span>{WHATS.k}</span><span>Contesta, aparta y cobra</span></p>
+  <div class="swa-grid">
+    <div class="swa-cel" data-swa role="img" aria-label="Conversación de WhatsApp: la clienta pregunta por la camiseta estampada azul en M; el agente contesta que quedan 2 en Polanco Boutique por $1,290 con su foto, la aparta y le manda la liga de su apartado">
+      <span class="swa-top" aria-hidden="true"><i>P</i><span><b>Polanco Boutique</b><small>en línea</small></span></span>
+      <span class="swa-chat" aria-hidden="true">
+        {WHATS.chat.map((m, k) => (
+          <span class:list={['swa-m', m.de === 'c' ? 'swa-m--c' : 'swa-m--a']} style={`--k:${k}`}>
+            {m.img && <img src={m.img} width="240" height="240" alt="" loading="lazy" decoding="async" />}
+            <span>{m.t}</span>
+            {m.liga && <u>Tu apartado APA-POL-35 · Abonar ahora →</u>}
+            <small>{['22:41', '22:41', '22:43', '22:43'][k]}</small>
+          </span>
+        ))}
+        <span class="swa-escribe"><i></i><i></i><i></i></span>
+      </span>
+      <span class="swa-campo" aria-hidden="true">Escribe un mensaje</span>
+    </div>
+    <div class="swa-lado">
+      <h2 class="pda-h" id="swa-h">{WHATS.h}</h2>
+      <p class="swa-p">{WHATS.p}</p>
+      <figure class="swa-foto rv">
+        <img src={`${I}chat-900.webp`} srcset={`${I}chat-900.webp 900w, ${I}chat-1280.webp 1280w`} sizes="(min-width: 900px) 40vw, 100vw" width="1280" height="853" alt="La vendedora contesta un WhatsApp desde el mostrador mientras dobla un suéter" loading="lazy" decoding="async" />
+      </figure>
+      <ul class="swa-puntos">{WHATS.puntos.map((x, i) => <li class="rv" style={`--i:${i}`}><b>{x.t}</b><span>{x.d}</span></li>)}</ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .swa { background: #fff; color: #141414; --pd-texto: #141414; --pd-tenue: #45433E; --pd-filete: rgba(20, 20, 20, 0.16); }
+  .swa-grid { display: grid; gap: 36px; }
+  .swa-cel { position: relative; display: grid; grid-template-rows: auto 1fr auto; justify-self: center; width: min(100%, 360px); height: 640px; overflow: hidden; border: 10px solid #141416; border-radius: 42px; background: #EFE7DD; box-shadow: 0 40px 70px -36px rgba(16, 24, 40, 0.55); }
+  .swa-top { display: flex; align-items: center; gap: 10px; padding: 14px 14px 12px; background: #0B5F55; color: #fff; }
+  .swa-top i { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #fff; color: #141414; font: 700 14px/1 var(--font-display); font-style: normal; }
+  .swa-top span { display: grid; }
+  .swa-top b { font: 700 15px/1.2 var(--font-display); }
+  .swa-top small { font: 500 12px/1.2 var(--font-body); opacity: 0.85; }
+  .swa-chat { display: flex; flex-direction: column; gap: 8px; padding: 14px 12px; overflow: hidden; }
+  .swa-m { position: relative; display: grid; gap: 6px; max-width: 82%; padding: 8px 10px 18px; border-radius: 12px; font: 500 14px/1.4 var(--font-body); color: #141414; box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08); }
+  .swa-m--c { align-self: flex-end; background: #D9FDD3; border-top-right-radius: 3px; }
+  .swa-m--a { align-self: flex-start; background: #fff; border-top-left-radius: 3px; }
+  .swa-m img { display: block; width: 100%; max-width: 150px; height: auto; border-radius: 8px; background: #F2F1EE; }
+  .swa-m u { display: block; padding: 8px 10px; border-radius: 9px; background: #F0F4FE; color: #2F55C4; font: 700 13px/1.3 var(--font-display); text-decoration: none; }
+  .swa-m small { position: absolute; right: 8px; bottom: 4px; font: 500 10.5px/1 var(--font-body); color: #6B6A64; }
+  .swa-escribe { display: none; align-self: flex-start; gap: 4px; padding: 10px 12px; border-radius: 12px; background: #fff; }
+  .swa-escribe i { width: 7px; height: 7px; border-radius: 50%; background: #9A9893; animation: swaPunto 1.2s ease-in-out infinite; }
+  .swa-escribe i:nth-child(2) { animation-delay: 0.15s; }
+  .swa-escribe i:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes swaPunto { 0%, 60%, 100% { transform: none; opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
+  .swa-campo { margin: 0 10px 12px; padding: 12px 14px; border-radius: 99px; background: #fff; font: 500 14px/1 var(--font-body); color: #8A8A85; }
+  /* los mensajes llegan uno por uno (script: data-paso) */
+  :global(.js-rv) .swa-cel .swa-m { display: none; }
+  .swa-cel[data-paso="1"] .swa-m[style*="--k:0"], .swa-cel[data-paso="2"] .swa-m[style*="--k:0"], .swa-cel[data-paso="3"] .swa-m[style*="--k:0"], .swa-cel[data-paso="4"] .swa-m[style*="--k:0"],
+  .swa-cel[data-paso="2"] .swa-m[style*="--k:1"], .swa-cel[data-paso="3"] .swa-m[style*="--k:1"], .swa-cel[data-paso="4"] .swa-m[style*="--k:1"],
+  .swa-cel[data-paso="3"] .swa-m[style*="--k:2"], .swa-cel[data-paso="4"] .swa-m[style*="--k:2"],
+  .swa-cel[data-paso="4"] .swa-m[style*="--k:3"] { display: grid; animation: swaEntra 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .swa-cel.is-escribe .swa-escribe { display: inline-flex; }
+  @keyframes swaEntra { from { opacity: 0; transform: translateY(10px) scale(0.97); } to { opacity: 1; transform: none; } }
+  .swa-lado { display: grid; gap: 16px; align-content: start; }
+  .swa-p { margin: 0; max-width: 46ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .swa-foto { margin: 6px 0 0; overflow: hidden; border-radius: 18px; aspect-ratio: 16 / 9; }
+  .swa-foto img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 35%; }
+  .swa-puntos { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; border-top: 2px solid #141414; }
+  .swa-puntos li { display: grid; gap: 4px; padding: 13px 0; border-bottom: 1px solid var(--pd-filete); }
+  .swa-puntos b { font: 700 16.5px/1.25 var(--font-display); }
+  .swa-puntos span { font: 500 14.5px/1.5 var(--font-body); color: var(--pd-tenue); }
+  :global(.js-rv) .swa .rv { opacity: 0; transform: translateY(16px); transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i, 0) * 0.08s); }
+  :global(.js-rv) .swa .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .swa-grid { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 5vw; align-items: center; }
+    .swa-cel { height: 680px; }
+    .swa-puntos { grid-template-columns: 1fr 1fr; column-gap: 28px; }
+  }
+  @media (max-width: 767px) {
+    .swa-cel { height: 600px; border-width: 8px; border-radius: 36px; }
+    .swa-chat { gap: 6px; padding: 10px; }
+    .swa-m { font-size: 13px; padding: 7px 9px 17px; }
+    .swa-m img { max-width: 112px; }
+    .swa-m u { padding: 6px 8px; font-size: 12px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .swa-cel .swa-m { display: grid !important; animation: none !important; }
+    .swa-escribe { display: none !important; }
+    :global(.js-rv) .swa .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // La conversación avanza sola la primera vez que el celular se ve: «escribiendo…» y cada mensaje (data-paso 1 → 4).
+  (() => {
+    const el = document.querySelector<HTMLElement>('[data-swa]');
+    if (!el) return;
+    if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) { el.dataset.paso = '4'; return; }
+    const tiempos = [300, 1700, 3600, 5200];
+    const escribe = [false, true, false, true];
+    let timers: number[] = [];
+    const corre = () => {
+      tiempos.forEach((t, k) => {
+        if (escribe[k]) timers.push(window.setTimeout(() => el.classList.add('is-escribe'), t - 1100));
+        timers.push(window.setTimeout(() => { el.classList.remove('is-escribe'); el.dataset.paso = String(k + 1); }, t));
+      });
+    };
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); corre(); } }, { threshold: 0.4 });
+    io.observe(el);
+    document.addEventListener('visibilitychange', () => { if (document.hidden && timers.length) { timers.forEach((t) => window.clearTimeout(t)); timers = []; el.classList.remove('is-escribe'); el.dataset.paso = '4'; } });
+  })();
+</script>

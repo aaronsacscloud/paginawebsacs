@@ -1,0 +1,259 @@
+---
+/**
+ * «Una pregunta, una venta» (/producto/agentic-commerce): con el scroll (data-tramos="5"), una clienta le pregunta a un
+ * asistente de IA por un vestido y termina comprando en tu tienda. Al fondo, la foto de cada momento (gpt-image-2.5: la
+ * pregunta en su laptop, la respuesta en el sillón, la entrega); encima, una ventana de chat genérica (no imita a
+ * ningún asistente) que avanza como una conversación: la pregunta se escribe con el scroll, el asistente revisa tu
+ * catálogo renglón por renglón, recomienda dos prendas con su foto y «Talla M disponible», la clienta compra o aparta, y
+ * el pedido entra a Sacs con su origen. Es la visión del producto (decisión del dueño, ver src/data/producto-agentic.ts);
+ * las existencias son de ejemplo. Sin JS o con «reducir movimiento»: los pasos en lista y las ventanas en rejilla.
+ */
+import { PREGUNTA, I } from '../../../data/producto-agentic';
+const FOTOS = [
+  { f: 'pregunta', alt: 'Una mujer escribe una pregunta en su laptop, en un departamento luminoso' },
+  { f: 'sofa', alt: '' },
+  { f: 'entrega', alt: '' },
+];
+---
+<section class="gpr" id="gag-pregunta" data-escena data-tramos="5" data-tramo="4" data-foto="entrega" aria-labelledby="gpr-h">
+  <div class="gpr-riel" data-riel>
+    <div class="gpr-escena">
+      <div class="gpr-fotos">
+        {FOTOS.map((x, i) => (
+          <img class="gpr-foto" data-f={x.f} src={`${I}${x.f}-1280.webp`} srcset={`${I}${x.f}-900.webp 900w, ${I}${x.f}-1280.webp 1280w, ${I}${x.f}-1536.webp 1536w`} sizes="100vw" width="1536" height="1024" alt={x.alt} aria-hidden={i === 0 ? undefined : 'true'} loading="lazy" decoding="async" />
+        ))}
+      </div>
+
+      <div class="gpr-txt">
+        <p class="gpr-k">{PREGUNTA.k}</p>
+        <h2 class="gpr-h" id="gpr-h">{PREGUNTA.h}</h2>
+        <ol class="gpr-pasos">
+          {PREGUNTA.tramos.map((p, k) => (
+            <li class="gpr-paso" data-k={k}>
+              <span class="gpr-paso-n">{p.n}</span>
+              <span class="gpr-paso-t"><b>{p.t}</b><span>{p.d}</span></span>
+              <i class="gpr-barra" aria-hidden="true"><b></b></i>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div class="gpr-mesa" aria-hidden="true">
+        <!-- 1 · la pregunta (se escribe con el scroll) -->
+        <div class="gpr-v" data-k="0">
+          <span class="gpr-v-top"><i class="gpr-chispa">✦</i><b>Asistente de IA</b></span>
+          <span class="gpr-yo"><span data-escribe={PREGUNTA.pregunta}>{PREGUNTA.pregunta}</span><i class="gpr-cursor"></i></span>
+          <span class="gpr-campo">Pregunta lo que quieras…</span>
+        </div>
+        <!-- 2 · lee tu catálogo -->
+        <div class="gpr-v" data-k="1">
+          <span class="gpr-v-top"><i class="gpr-chispa">✦</i><b>Asistente de IA</b></span>
+          <span class="gpr-yo gpr-yo--chica">{PREGUNTA.pregunta}</span>
+          <span class="gpr-leyendo"><i></i><i></i><i></i>Revisando el catálogo de Polanco Boutique</span>
+          <span class="gpr-cat">
+            {PREGUNTA.catalogo.map((r, i) => (
+              <span class:list={['gpr-fila', { 'is-si': r.ok }]} style={`--i:${i}`}><b>{r.p}</b><span>{r.t}</span><span>{r.s}</span><span>{r.precio}</span><em>{r.ok ? '✓' : '·'}</em></span>
+            ))}
+            <small class="gpr-ej">Existencias de ejemplo</small>
+          </span>
+        </div>
+        <!-- 3 · recomienda -->
+        <div class="gpr-v" data-k="2">
+          <span class="gpr-v-top"><i class="gpr-chispa">✦</i><b>Asistente de IA</b></span>
+          <span class="gpr-ia">Encontré 2 opciones con tu talla disponible en <b>Polanco Boutique</b>:</span>
+          <span class="gpr-recs">
+            {PREGUNTA.recomendados.map((r) => (
+              <span class="gpr-rec"><img src={r.img} width="360" height="540" alt="" loading="lazy" decoding="async" /><b>{r.t}</b><small>{r.nota}</small><span><strong>{r.precio}</strong><u>Ver en la tienda</u></span></span>
+            ))}
+          </span>
+        </div>
+        <!-- 4 · compra o aparta -->
+        <div class="gpr-v gpr-v--tienda" data-k="3">
+          <span class="gpr-t-top"><b>Polanco Boutique</b><span>tienda en línea</span></span>
+          <span class="gpr-t-prod"><img src={PREGUNTA.recomendados[0].img} width="360" height="540" alt="" loading="lazy" decoding="async" /><span><b>{PREGUNTA.recomendados[0].t}</b><small>Talla M · {PREGUNTA.recomendados[0].precio}</small><span class="gpr-tallas">{['XS', 'S', 'M', 'L'].map((t) => <i class:list={{ 'is-on': t === 'M' }}>{t}</i>)}</span></span></span>
+          <span class="gpr-t-bots"><u class="is-pagar">Pagar $1,890.00</u><u class="is-wa">Apartar por WhatsApp</u></span>
+          <span class="gpr-t-ok">✓ Pedido confirmado</span>
+        </div>
+        <!-- 5 · entra a Sacs con su origen -->
+        <div class="gpr-v gpr-v--sacs" data-k="4">
+          <span class="gpr-s-top"><b>Pedidos</b><span>Crea, prepara y da seguimiento a los pedidos de tus clientes</span></span>
+          <span class="gpr-s-fila is-nueva"><span><b>PED-POL-58</b><small>Hoy · 11:42</small></span><span><b>Vestido slip satén rosa</b><small>Talla M</small></span><span class="gpr-s-origen">✦ ChatGPT</span><strong>$1,890.00</strong></span>
+          <span class="gpr-s-fila"><span><b>PED-POL-57</b><small>Hoy · 10:15</small></span><span><b>Blazer de lino azul</b><small>Talla M</small></span><span class="gpr-s-origen gpr-s-origen--b">Instagram</span><strong>$2,290.00</strong></span>
+          <span class="gpr-s-fila"><span><b>PED-POL-56</b><small>Ayer · 19:02</small></span><span><b>Camisa de popelina</b><small>Talla S</small></span><span class="gpr-s-origen gpr-s-origen--c">Tienda en línea</span><strong>$1,190.00</strong></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .gpr { position: relative; background: #0B0B0C; color: #fff; }
+  .gpr-escena { position: relative; overflow: hidden; }
+  .gpr-fotos { position: relative; aspect-ratio: 21 / 9; overflow: hidden; }
+  .gpr-foto { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; opacity: 0; transition: opacity 1s ease; }
+  .gpr-foto[data-f="pregunta"] { opacity: 1; }
+  .gpr-txt { padding: 36px 20px 8px; }
+  .gpr-k { margin: 0 0 14px; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: #9DB8F5; }
+  .gpr-h { margin: 0; max-width: 16ch; color: #fff; font: 700 clamp(32px, 3.5vw, 54px)/1 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; text-wrap: balance; }
+  .gpr-pasos { margin: 22px 0 0; padding: 0; list-style: none; border-top: 1px solid rgba(255, 255, 255, 0.3); }
+  .gpr-paso { position: relative; display: grid; grid-template-columns: 40px 1fr; gap: 4px; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.18); }
+  .gpr-paso-n { font: 700 19px/1.2 var(--pd-clash, var(--font-display)); color: #9DB8F5; }
+  .gpr-paso-t { display: grid; gap: 3px; }
+  .gpr-paso-t b { font: 700 16px/1.3 var(--font-display); color: #fff; }
+  .gpr-paso-t > span { font: 500 14.5px/1.45 var(--font-body); color: rgba(255, 255, 255, 0.82); }
+  .gpr-barra { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; overflow: hidden; }
+  .gpr-barra b { display: block; height: 100%; background: #9DB8F5; transform: scaleX(0); transform-origin: 0 50%; }
+
+  /* ── las ventanas (sin escena: en rejilla) ── */
+  .gpr-mesa { display: grid; gap: 16px; padding: 20px 20px 64px; font-size: 14px; }
+  .gpr-v { display: grid; gap: 0.8em; align-content: start; width: 100%; max-width: 27em; padding: 1.1em 1.2em 1.2em; border-radius: 1.2em; background: #fff; color: #141414; box-shadow: 0 30px 60px -28px rgba(0, 0, 0, 0.85); }
+  .gpr-v-top { display: flex; align-items: center; gap: 0.55em; padding-bottom: 0.7em; border-bottom: 1px solid #ECEDEF; }
+  .gpr-v-top b { font: 700 0.95em/1.2 var(--font-display); }
+  .gpr-chispa { display: grid; place-items: center; width: 1.9em; height: 1.9em; border-radius: 50%; background: linear-gradient(135deg, #5B86EA, #D03A70); color: #fff; font-style: normal; font-size: 0.85em; }
+  .gpr-yo { justify-self: end; max-width: 88%; padding: 0.7em 0.9em; border-radius: 1em 1em 0.25em 1em; background: #141414; color: #fff; font: 500 0.92em/1.45 var(--font-body); }
+  .gpr-yo--chica { font-size: 0.8em; opacity: 0.85; }
+  .gpr-cursor { display: inline-block; width: 2px; height: 1em; margin-left: 2px; vertical-align: -2px; background: #9DB8F5; animation: gprParpadeo 1s steps(1) infinite; }
+  @keyframes gprParpadeo { 50% { opacity: 0; } }
+  .gpr-campo { padding: 0.75em 0.9em; border-radius: 0.8em; background: #F4F5F7; font: 500 0.85em/1.2 var(--font-body); color: #8A8A85; }
+  .gpr-leyendo { display: flex; align-items: center; gap: 0.3em; font: 600 0.82em/1.2 var(--font-display); color: #45433E; }
+  .gpr-leyendo i { width: 0.45em; height: 0.45em; border-radius: 50%; background: #5B86EA; animation: gprPuntos 1.2s ease-in-out infinite; }
+  .gpr-leyendo i:nth-child(2) { animation-delay: 0.15s; }
+  .gpr-leyendo i:nth-child(3) { margin-right: 0.4em; animation-delay: 0.3s; }
+  @keyframes gprPuntos { 0%, 100% { opacity: 0.3; transform: none; } 50% { opacity: 1; transform: translateY(-2px); } }
+  .gpr-cat { display: grid; gap: 0.35em; padding: 0.6em; border-radius: 0.8em; background: #F6F7F9; }
+  .gpr-fila { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto 1.4em; gap: 0.6em; align-items: center; padding: 0.45em 0.6em; border-radius: 0.55em; background: #fff; font: 500 0.78em/1.25 var(--font-body); color: #55534E; transition: background 0.3s ease, box-shadow 0.3s ease; }
+  .gpr-fila b { font: 700 1em/1.25 var(--font-display); color: #141414; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .gpr-fila em { font-style: normal; font-weight: 800; text-align: center; color: #B8B6B0; }
+  .gpr-fila.is-si em { color: #17804F; }
+  .gpr-fila.is-scan { box-shadow: inset 0 0 0 2px #5B86EA; }
+  .gpr-fila.is-si.is-visto { background: #E3F4EA; }
+  .gpr-ej { justify-self: end; font: 500 0.7em/1 var(--font-body); color: #8A8A85; }
+  .gpr-ia { font: 500 0.9em/1.45 var(--font-body); color: #2A2925; }
+  .gpr-recs { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7em; }
+  .gpr-rec { display: grid; gap: 0.35em; padding: 0.5em; border-radius: 0.9em; background: #F6F7F9; }
+  .gpr-rec img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 3.4; object-fit: cover; object-position: 50% 30%; border-radius: 0.6em; background: #EFEDE8; }
+  .gpr-rec b { font: 700 0.82em/1.25 var(--font-display); }
+  .gpr-rec small { font: 600 0.72em/1.2 var(--font-display); color: #17804F; }
+  .gpr-rec > span { display: flex; align-items: center; justify-content: space-between; gap: 0.4em; }
+  .gpr-rec strong { font: 700 0.9em/1 var(--font-display); }
+  .gpr-rec u { padding: 0.45em 0.6em; border-radius: 0.5em; background: #141414; color: #fff; font: 700 0.68em/1 var(--font-display); text-decoration: none; white-space: nowrap; }
+  .gpr-t-top { display: flex; align-items: baseline; justify-content: space-between; gap: 0.6em; padding-bottom: 0.6em; border-bottom: 1px solid #ECEDEF; }
+  .gpr-t-top b { font: 700 1.05em/1.2 var(--pd-clash, var(--font-display)); letter-spacing: 0.02em; }
+  .gpr-t-top span { font: 500 0.75em/1 var(--font-body); color: #8A8A85; }
+  .gpr-t-prod { display: grid; grid-template-columns: 5.2em 1fr; gap: 0.9em; align-items: center; }
+  .gpr-t-prod img { display: block; width: 100%; height: auto; border-radius: 0.6em; background: #EFEDE8; }
+  .gpr-t-prod > span { display: grid; gap: 0.35em; }
+  .gpr-t-prod b { font: 700 0.95em/1.25 var(--font-display); }
+  .gpr-t-prod small { font: 500 0.8em/1.2 var(--font-body); color: #6B6A64; }
+  .gpr-tallas { display: flex; gap: 0.35em; }
+  .gpr-tallas i { display: grid; place-items: center; min-width: 2.2em; height: 2.2em; border-radius: 0.5em; background: #F2F3F6; font: 700 0.78em/1 var(--font-display); font-style: normal; }
+  .gpr-tallas i.is-on { background: #141414; color: #fff; }
+  .gpr-t-bots { display: grid; gap: 0.45em; }
+  .gpr-t-bots u { display: grid; place-items: center; height: 2.8em; border-radius: 0.7em; font: 700 0.85em/1 var(--font-display); text-decoration: none; }
+  .gpr-t-bots .is-pagar { background: #141414; color: #fff; }
+  .gpr-t-bots .is-wa { background: #1FAF5A; color: #fff; }
+  .gpr-t-ok { justify-self: start; padding: 0.45em 0.7em; border-radius: 0.6em; background: #E3F4EA; color: #17804F; font: 700 0.82em/1.2 var(--font-display); }
+  .gpr-v--sacs { max-width: 33em; }
+  .gpr-s-top { display: grid; gap: 0.15em; padding: 0.8em 0.95em; border-radius: 0.8em; background: linear-gradient(100deg, #3F6FE0, #5B8DF0); color: #fff; }
+  .gpr-s-top b { font: 700 1.1em/1.1 var(--font-display); }
+  .gpr-s-top span { font: 500 0.72em/1.3 var(--font-body); opacity: 0.9; }
+  .gpr-s-fila { display: grid; grid-template-columns: 7.6em minmax(0, 1fr) auto auto; gap: 0.6em; align-items: center; padding: 0.6em 0.4em; border-top: 1px solid #ECEDEF; font: 500 0.78em/1.25 var(--font-body); color: #6B6A64; }
+  .gpr-s-fila > span { display: grid; gap: 0.1em; min-width: 0; }
+  .gpr-s-fila b { overflow: hidden; font: 700 1.02em/1.25 var(--font-display); color: #141414; white-space: nowrap; text-overflow: ellipsis; }
+  .gpr-s-fila > span:first-child b { color: #2F55C4; }
+  .gpr-s-fila strong { font: 700 0.98em/1 var(--font-display); color: #17804F; }
+  .gpr-s-origen { padding: 0.35em 0.6em; border-radius: 99px; background: linear-gradient(135deg, rgba(91, 134, 234, 0.16), rgba(208, 58, 112, 0.16)); color: #2F55C4; font: 700 0.92em/1.1 var(--font-display); white-space: nowrap; }
+  .gpr-s-origen--b { background: #FBE9EF; color: #B0285A; }
+  .gpr-s-origen--c { background: #F2F3F6; color: #45433E; }
+  .gpr-s-fila.is-nueva { border-radius: 0.6em; background: #F2F6FF; }
+
+  /* ══ con el scroll ══ */
+  .gpr.is-escena .gpr-riel { height: 560vh; }
+  .gpr.is-escena .gpr-escena { position: sticky; top: var(--sub, 0px); height: calc(100vh - var(--sub, 0px)); height: calc(100svh - var(--sub, 0px)); }
+  .gpr.is-escena .gpr-fotos { position: absolute; inset: 0; aspect-ratio: auto; }
+  .gpr.is-escena .gpr-foto { opacity: 0; transform: scale(1.05); transition: opacity 1s ease, transform 6s ease-out; }
+  .gpr.is-escena[data-foto="pregunta"] .gpr-foto[data-f="pregunta"], .gpr.is-escena[data-foto="sofa"] .gpr-foto[data-f="sofa"], .gpr.is-escena[data-foto="entrega"] .gpr-foto[data-f="entrega"] { opacity: 1; transform: none; }
+  .gpr.is-escena .gpr-mesa { position: absolute; z-index: 3; display: block; padding: 0; }
+  /* la conversación sube: la ventana que se va sale por arriba; la que llega entra desde abajo */
+  .gpr.is-escena .gpr-v { position: absolute; left: 0; right: 0; margin: 0 auto; transition: opacity 0.5s ease, transform 0.75s cubic-bezier(0.22, 1, 0.36, 1); }
+  .gpr.is-escena .gpr-v[data-estado="antes"] { opacity: 0; transform: translateY(-14%); }
+  .gpr.is-escena .gpr-v[data-estado="despues"] { opacity: 0; transform: translateY(16%); }
+  .gpr.is-escena .gpr-v[data-estado="ahora"] { opacity: 1; transform: none; }
+  .gpr.is-escena .gpr-v[data-k="3"][data-estado="ahora"] .gpr-t-ok { animation: gprOk 0.5s ease both 0.9s; }
+  .gpr.is-escena .gpr-v[data-k="4"][data-estado="ahora"] .gpr-s-fila.is-nueva { animation: gprNueva 1.1s ease both 0.4s; }
+  @keyframes gprOk { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @keyframes gprNueva { from { opacity: 0; transform: translateY(-10px); background: #DCE7FF; } to { opacity: 1; transform: none; } }
+  .gpr.is-escena .gpr-paso-n { color: rgba(255, 255, 255, 0.45); }
+  .gpr.is-escena[data-tramo="0"] .gpr-paso[data-k="0"] .gpr-paso-n, .gpr.is-escena[data-tramo="1"] .gpr-paso[data-k="1"] .gpr-paso-n, .gpr.is-escena[data-tramo="2"] .gpr-paso[data-k="2"] .gpr-paso-n, .gpr.is-escena[data-tramo="3"] .gpr-paso[data-k="3"] .gpr-paso-n, .gpr.is-escena[data-tramo="4"] .gpr-paso[data-k="4"] .gpr-paso-n { color: #9DB8F5; }
+  .gpr.is-escena[data-tramo="0"] .gpr-paso[data-k="0"] .gpr-barra b, .gpr.is-escena[data-tramo="1"] .gpr-paso[data-k="1"] .gpr-barra b, .gpr.is-escena[data-tramo="2"] .gpr-paso[data-k="2"] .gpr-barra b, .gpr.is-escena[data-tramo="3"] .gpr-paso[data-k="3"] .gpr-barra b, .gpr.is-escena[data-tramo="4"] .gpr-paso[data-k="4"] .gpr-barra b { animation: gprBarra 4.5s linear both; }
+  @keyframes gprBarra { from { transform: scaleX(0); } to { transform: none; } }
+
+  @media (min-width: 900px) {
+    .gpr:not(.is-escena) .gpr-txt, .gpr:not(.is-escena) .gpr-mesa { max-width: 1160px; margin: 0 auto; }
+    .gpr:not(.is-escena) .gpr-pasos { display: grid; grid-template-columns: 1fr 1fr; column-gap: 32px; }
+    .gpr:not(.is-escena) .gpr-mesa { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+    .gpr.is-escena .gpr-escena::after { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; background: linear-gradient(90deg, rgba(8, 8, 10, 0.93) 0%, rgba(8, 8, 10, 0.72) 32%, rgba(8, 8, 10, 0.25) 60%, rgba(8, 8, 10, 0.45) 100%); }
+    .gpr.is-escena .gpr-txt { position: absolute; left: 0; top: 50%; z-index: 4; width: min(38vw, 500px); padding: 0 0 0 4.4vw; transform: translateY(-50%); text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45); }
+    .gpr.is-escena .gpr-paso-t > span { display: none; }
+    .gpr.is-escena[data-tramo="0"] .gpr-paso[data-k="0"] .gpr-paso-t > span, .gpr.is-escena[data-tramo="1"] .gpr-paso[data-k="1"] .gpr-paso-t > span, .gpr.is-escena[data-tramo="2"] .gpr-paso[data-k="2"] .gpr-paso-t > span, .gpr.is-escena[data-tramo="3"] .gpr-paso[data-k="3"] .gpr-paso-t > span, .gpr.is-escena[data-tramo="4"] .gpr-paso[data-k="4"] .gpr-paso-t > span { display: block; }
+    .gpr.is-escena .gpr-mesa { right: 5vw; top: 50%; width: min(44vw, 600px); height: 0; font-size: clamp(14px, 1.15vw, 17px); }
+    .gpr.is-escena .gpr-v { top: 0; transform-origin: 50% 0; translate: 0 -50%; }
+  }
+  @media (max-width: 899px) {
+    .gpr.is-escena .gpr-riel { height: 480vh; }
+    .gpr.is-escena .gpr-fotos { bottom: auto; height: calc((100svh - var(--sub, 0px)) * 0.58); }
+    .gpr.is-escena .gpr-fotos::after { content: ''; position: absolute; inset: 0; background: rgba(8, 8, 10, 0.5); }
+    .gpr.is-escena .gpr-mesa { left: 14px; right: 14px; top: 12px; height: calc((100svh - var(--sub, 0px)) * 0.58 - 24px); font-size: clamp(11px, 3.15vw, 13px); }
+    .gpr.is-escena .gpr-v { top: 50%; translate: 0 -50%; max-height: 100%; overflow: hidden; }
+    .gpr.is-escena .gpr-txt { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; padding: 22px 20px 18px; background: linear-gradient(180deg, rgba(11, 11, 12, 0) 0, #0B0B0C 22px); }
+    .gpr.is-escena .gpr-k { margin-bottom: 8px; }
+    .gpr.is-escena .gpr-h { font-size: clamp(23px, 6.6vw, 32px); }
+    .gpr.is-escena .gpr-pasos { margin-top: 10px; }
+    .gpr.is-escena .gpr-paso { display: none; padding: 10px 0 8px; }
+    .gpr.is-escena[data-tramo="0"] .gpr-paso[data-k="0"], .gpr.is-escena[data-tramo="1"] .gpr-paso[data-k="1"], .gpr.is-escena[data-tramo="2"] .gpr-paso[data-k="2"], .gpr.is-escena[data-tramo="3"] .gpr-paso[data-k="3"], .gpr.is-escena[data-tramo="4"] .gpr-paso[data-k="4"] { display: grid; }
+    .gpr:not(.is-escena) .gpr-fotos { aspect-ratio: 3 / 2; }
+    .gpr-s-fila { grid-template-columns: 7.2em minmax(0, 1fr) auto; }
+    .gpr-s-fila strong { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .gpr * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<script>
+  // Lo que el scroll mueve: el paso de cada ventana (antes / ahora / después), la foto del momento, la pregunta que se
+  // escribe durante el paso 1 y el renglón del catálogo que el asistente revisa durante el paso 2. Lee --p y
+  // data-tramo de iniciaEscenas; sin escena, todo queda completo.
+  (() => {
+    const sec = document.querySelector<HTMLElement>('.gpr');
+    if (!sec) return;
+    const vs = Array.from(sec.querySelectorAll<HTMLElement>('.gpr-v'));
+    const escribe = sec.querySelector<HTMLElement>('[data-escribe]');
+    const texto = escribe?.dataset.escribe || '';
+    const filas = Array.from(sec.querySelectorAll<HTMLElement>('.gpr-fila'));
+    const fotos = ['pregunta', 'pregunta', 'sofa', 'sofa', 'entrega'];
+    let ultimo = -1, ultimoN = -1, ultimaFila = -2;
+    const pinta = () => {
+      const t = Number(sec.dataset.tramo || 0);
+      if (t !== ultimo) {
+        ultimo = t;
+        vs.forEach((v) => { const k = Number(v.dataset.k); v.dataset.estado = k < t ? 'antes' : k === t ? 'ahora' : 'despues'; });
+        sec.dataset.foto = fotos[t] || 'entrega';
+      }
+      const enEscena = sec.classList.contains('is-escena');
+      const p = enEscena ? Number(sec.style.getPropertyValue('--p') || 0) : 1;
+      const f = enEscena ? Math.min(1, Math.max(0, p * 5 - t)) : 1;
+      // paso 1: la pregunta se escribe en el primer 80 % del paso
+      const n = !enEscena || t > 0 ? texto.length : Math.round(texto.length * Math.min(1, f / 0.8));
+      if (escribe && n !== ultimoN) { ultimoN = n; escribe.textContent = texto.slice(0, n); }
+      // paso 2: el renglón que se revisa
+      const fila = !enEscena || t > 1 ? filas.length : t < 1 ? -1 : Math.min(filas.length, Math.floor(f * (filas.length + 1)));
+      if (fila !== ultimaFila) {
+        ultimaFila = fila;
+        filas.forEach((el, i) => { el.classList.toggle('is-scan', i === fila); el.classList.toggle('is-visto', i < fila || fila >= filas.length); });
+      }
+    };
+    new MutationObserver(pinta).observe(sec, { attributes: true, attributeFilter: ['style', 'data-tramo', 'class'] });
+    pinta();
+  })();
+</script>

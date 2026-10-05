@@ -1,0 +1,95 @@
+---
+/**
+ * «Que vuelva a tu tienda» (/producto/tienda-en-linea): lo que ayuda a vender más en línea. La rueda de premios dibujada
+ * (gira al verse y se detiene en un premio, como la de la tienda), el correo de carrito abandonado con su cupón que sube
+ * (0, 5 y 10 %) y las tarjetas de lo demás (promociones y cupones, tarjetas de regalo, reseñas verificadas,
+ * newsletter). Textos del código de la tienda; los premios de la rueda son de ejemplo. Fucsia.
+ */
+import { VENDE } from '../../../data/producto-tienda';
+const N = VENDE.premios.length;
+---
+<section class="pda tve pd-fucsia" id="tie-vende" aria-labelledby="tve-h">
+  <p class="pd-folio"><span>{VENDE.k}</span><span>Cupones · carritos · regalos</span></p>
+  <div class="tve-grid">
+    <div class="tve-rueda-caja" data-tve>
+      <div class="tve-rueda" role="img" aria-label="La rueda de premios de la tienda: 5 %, envío gratis, 10 %, sigue intentando, 15 % y un regalo">
+        <span class="tve-disco" aria-hidden="true">
+          {VENDE.premios.map((p, i) => <span class="tve-premio" style={`--a:${(360 / N) * i + 180 / N}deg`}>{p}</span>)}
+        </span>
+        <span class="tve-centro" aria-hidden="true">¡Gira!</span>
+        <span class="tve-flecha" aria-hidden="true"></span>
+      </div>
+      <div class="tve-carrito" aria-hidden="true">
+        <small>¿Olvidaste algo en tu carrito?</small>
+        <span class="tve-escalera">{['0 %', '5 %', '10 %'].map((c, i) => <span style={`--i:${i}`}><i>{['Correo 1', 'Correo 2', 'Correo 3'][i]}</i><b>{c}</b></span>)}</span>
+      </div>
+    </div>
+    <div class="tve-lado">
+      <h2 class="pda-h" id="tve-h">{VENDE.h}</h2>
+      <p class="tve-p">{VENDE.p}</p>
+      <ul class="tve-tarjetas">
+        {VENDE.tarjetas.map((x, i) => (
+          <li class="rv" style={`--i:${i}`}>
+            {x.href ? <a href={x.href}><b>{x.t}</b><span>{x.d}</span><em aria-hidden="true">Ver →</em></a> : <span class="tve-t"><b>{x.t}</b><span>{x.d}</span></span>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .tve-grid { display: grid; gap: 36px; margin-top: 8px; }
+  .tve-rueda-caja { display: grid; gap: 18px; justify-items: center; align-content: start; }
+  .tve-rueda { position: relative; width: min(340px, 86vw); aspect-ratio: 1; }
+  .tve-disco { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(#fff 0 60deg, #FBE9EF 60deg 120deg, #fff 120deg 180deg, #FBE9EF 180deg 240deg, #fff 240deg 300deg, #FBE9EF 300deg 360deg); box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.25), 0 30px 60px -28px rgba(0, 0, 0, 0.5); }
+  .tve-premio { position: absolute; left: 50%; top: 50%; width: 42%; margin-top: -10px; transform-origin: 0 50%; transform: rotate(calc(var(--a) - 90deg)); padding-left: 20%; font: 800 clamp(11px, 1.15vw, 14px)/1.1 var(--font-display); color: #8C1F47; white-space: nowrap; }
+  .tve-centro { position: absolute; left: 50%; top: 50%; display: grid; place-items: center; width: 26%; aspect-ratio: 1; border-radius: 50%; background: #141414; color: #fff; font: 800 clamp(13px, 1.4vw, 17px)/1 var(--font-display); transform: translate(-50%, -50%); box-shadow: 0 0 0 6px #fff; }
+  .tve-flecha { position: absolute; left: 50%; top: -14px; width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent; border-top: 26px solid #141414; transform: translateX(-50%); }
+  .tve-rueda-caja.is-on .tve-disco { animation: tveGira 5.5s cubic-bezier(0.17, 0.67, 0.12, 1) infinite; }
+  @keyframes tveGira { 0% { transform: rotate(0deg); } 70%, 100% { transform: rotate(1650deg); } }
+  .tve-carrito { display: grid; gap: 10px; width: min(100%, 380px); padding: 16px; border-radius: 16px; background: #fff; color: #141414; }
+  .tve-carrito small { font: 700 14px/1.3 var(--font-display); }
+  .tve-escalera { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-items: end; }
+  .tve-escalera span { display: grid; gap: 4px; justify-items: center; padding: 10px 6px; border-radius: 12px; background: #FBE9EF; transform-origin: 50% 100%; }
+  .tve-escalera span:nth-child(2) { padding-top: 16px; }
+  .tve-escalera span:nth-child(3) { padding-top: 22px; background: #D03A70; color: #fff; }
+  .tve-escalera i { font: 600 11px/1.2 var(--font-display); font-style: normal; opacity: 0.75; }
+  .tve-escalera b { font: 800 22px/1 var(--pd-clash); }
+  .tve-rueda-caja.is-on .tve-escalera span { animation: tveSube 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both; animation-delay: calc(0.4s + var(--i) * 0.25s); }
+  @keyframes tveSube { from { opacity: 0; transform: scaleY(0.4); } to { opacity: 1; transform: none; } }
+  .tve-lado { display: grid; gap: 16px; align-content: start; }
+  .tve-p { margin: 0; max-width: 44ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .tve-tarjetas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 8px 0 0; padding: 0; list-style: none; }
+  .tve-tarjetas a, .tve-t { display: grid; gap: 5px; height: 100%; padding: 16px; border-radius: 16px; background: rgba(255, 255, 255, 0.16); color: #fff; text-decoration: none; }
+  .tve-tarjetas a:hover { background: rgba(255, 255, 255, 0.24); color: #fff; text-decoration: none; }
+  .tve-tarjetas b { font: 700 16px/1.2 var(--font-display); }
+  .tve-tarjetas span span, .tve-tarjetas a > span { font: 500 14px/1.45 var(--font-body); color: rgba(255, 255, 255, 0.92); }
+  .tve-tarjetas em { font: 700 12.5px/1 var(--font-display); font-style: normal; }
+  :global(.js-rv) .tve-tarjetas .rv { opacity: 0; transform: translateY(16px); transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.07s); }
+  :global(.js-rv) .tve-tarjetas .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .tve-grid { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 5vw; align-items: center; }
+    .tve-rueda { width: min(380px, 100%); }
+  }
+  @media (max-width: 899px) {
+    /* en el teléfono primero el título, luego la rueda */
+    .tve-lado { order: -1; }
+  }
+  @media (max-width: 380px) {
+    .tve-tarjetas { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tve-rueda-caja.is-on .tve-disco, .tve-rueda-caja.is-on .tve-escalera span { animation: none; }
+    :global(.js-rv) .tve-tarjetas .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // La rueda gira (y la escalera del carrito sube) solo mientras se ve.
+  (() => {
+    const el = document.querySelector<HTMLElement>('[data-tve]');
+    if (!el || !('IntersectionObserver' in window)) return;
+    new IntersectionObserver((es) => es.forEach((e) => el.classList.toggle('is-on', e.isIntersecting)), { threshold: 0.35 }).observe(el);
+  })();
+</script>

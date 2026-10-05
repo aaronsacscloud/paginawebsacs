@@ -1,0 +1,86 @@
+---
+/**
+ * «Un clic, y tu catálogo entra» (/producto/agentic-commerce): las pantallas REALES de Comercio en línea › Canales de
+ * IA de la cuenta demo (ChatGPT, Gemini y Claude; su nombre cambiado en pantalla a «Polanco Boutique»), en un abanico
+ * que se cierra al verse, y la activación dibujada con sus textos reales («Leyendo tu catálogo · 147 productos»,
+ * «Optimizando fotos, tallas, colores y precios», «Indexando en ChatGPT» → «Indexado y listo en ChatGPT»), que se
+ * palomea paso por paso. Marfil.
+ */
+import { CANALES, I } from '../../../data/producto-agentic';
+import StaffVentana from '../../plugins/staff/StaffVentana.astro';
+const PANTALLAS = [
+  { src: `${I}pantalla-claude.webp`, barra: 'Canales de IA · Claude', alt: 'Canal de IA de Claude en Sacs: «Tus productos, recomendados por Claude» y «Activar en Claude»' },
+  { src: `${I}pantalla-gemini.webp`, barra: 'Canales de IA · Gemini', alt: 'Canal de IA de Gemini en Sacs: «Aparece en Gemini cuando tus clientes buscan qué ponerse» y «Activar en Gemini»' },
+  { src: `${I}pantalla-chatgpt.webp`, barra: 'Canales de IA · ChatGPT', alt: 'Canal de IA de ChatGPT en Sacs: «Que te encuentren cuando se lo pidan a ChatGPT», «Activar en ChatGPT», 147 productos listos para indexar y cómo funciona' },
+];
+---
+<section class="pda gcn pd-marfil" id="gag-canales" aria-labelledby="gcn-h">
+  <p class="pd-folio"><span>{CANALES.k}</span><span>ChatGPT · Gemini · Claude · Muse</span></p>
+  <div class="gcn-grid">
+    <div class="gcn-lado">
+      <h2 class="pda-h" id="gcn-h">{CANALES.h}</h2>
+      <p class="gcn-p">{CANALES.p}</p>
+      <div class="gcn-act" data-gcn role="img" aria-label={`La activación: ${CANALES.pasos.join(', ')} y ${CANALES.listo}`}>
+        <span class="gcn-act-t" aria-hidden="true"><b>Activar en ChatGPT</b><small>Polanco Boutique</small></span>
+        <ol aria-hidden="true">{CANALES.pasos.map((p, i) => <li style={`--i:${i}`}><i></i>{p}</li>)}</ol>
+        <span class="gcn-listo" aria-hidden="true">✓ {CANALES.listo}</span>
+      </div>
+      <ul class="gcn-asis">{CANALES.asistentes.map((x) => <li>{x}</li>)}</ul>
+    </div>
+    <div class="gcn-abanico" data-gcn-ab>
+      {PANTALLAS.map((x, i) => (
+        <div class="gcn-v" style={`--i:${i}`}><StaffVentana src={x.src} w={1400} h={881} alt={x.alt} barra={x.barra} /></div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .gcn-grid { display: grid; gap: 40px; }
+  .gcn-lado { display: grid; gap: 16px; align-content: start; }
+  .gcn-p { margin: 0; max-width: 46ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .gcn-act { display: grid; gap: 12px; max-width: 420px; margin-top: 6px; padding: 18px 20px; border-radius: 18px; background: #fff; box-shadow: 0 0 0 1px rgba(20, 20, 20, 0.06), 0 24px 44px -30px rgba(20, 20, 20, 0.5); }
+  .gcn-act-t { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .gcn-act-t b { font: 700 17px/1.2 var(--font-display); }
+  .gcn-act-t small { font: 600 12px/1 var(--font-display); color: #6B6A64; }
+  .gcn-act ol { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
+  .gcn-act li { display: flex; align-items: center; gap: 10px; font: 600 14px/1.3 var(--font-display); color: #45433E; }
+  .gcn-act li i { position: relative; flex: none; width: 20px; height: 20px; border-radius: 50%; box-shadow: inset 0 0 0 2px #D7DAE1; }
+  .gcn-act li i::after { content: '✓'; position: absolute; inset: 0; display: grid; place-items: center; border-radius: 50%; background: #1F9D63; color: #fff; font: 800 11px/1 var(--font-display); opacity: 0; transform: scale(0.4); transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); transition-delay: calc(0.4s + var(--i) * 0.7s); }
+  .gcn-listo { justify-self: start; padding: 8px 12px; border-radius: 10px; background: #E3F4EA; color: #17804F; font: 700 14px/1.2 var(--font-display); opacity: 0; transform: translateY(6px); transition: opacity 0.4s ease 2.6s, transform 0.5s ease 2.6s; }
+  .gcn-act.is-on li i::after { opacity: 1; transform: none; }
+  .gcn-act.is-on .gcn-listo { opacity: 1; transform: none; }
+  :global(html:not(.js-rv)) .gcn-act li i::after, :global(html:not(.js-rv)) .gcn-listo { opacity: 1; transform: none; }
+  .gcn-asis { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 0; padding: 0; list-style: none; }
+  .gcn-asis li { padding: 8px 14px; border-radius: 99px; background: #141414; color: #fff; font: 700 13.5px/1.2 var(--font-display); }
+  /* el abanico de pantallas: se cierra al verse */
+  .gcn-abanico { position: relative; display: grid; }
+  .gcn-v { position: relative; z-index: calc(var(--i) + 1); grid-area: 1 / 1; transition: transform 1.1s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease; }
+  .gcn-v:nth-child(1) { transform: translate(-6%, -9%) scale(0.9); opacity: 0.7; }
+  .gcn-v:nth-child(2) { transform: translate(-3%, -4.5%) scale(0.95); opacity: 0.88; }
+  :global(.js-rv) .gcn-abanico:not(.is-on) .gcn-v { transform: translateY(8%) rotate(calc((var(--i) - 1) * 7deg)); opacity: 0; }
+  @media (min-width: 900px) {
+    .gcn-grid { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 5vw; align-items: center; }
+    .gcn-abanico { padding: 8% 0 0 6%; }
+  }
+  @media (max-width: 767px) {
+    .gcn-abanico { padding: 9% 0 0 7%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .gcn-v, .gcn-act li i::after, .gcn-listo { transition: none; }
+    :global(.js-rv) .gcn-abanico:not(.is-on) .gcn-v:nth-child(3) { transform: none; opacity: 1; }
+  }
+</style>
+
+<script>
+  // La activación se palomea y el abanico se cierra la primera vez que se ven.
+  (() => {
+    const act = document.querySelector<HTMLElement>('[data-gcn]');
+    const ab = document.querySelector<HTMLElement>('[data-gcn-ab]');
+    const els = [act, ab].filter(Boolean) as HTMLElement[];
+    if (!els.length) return;
+    if (!('IntersectionObserver' in window)) { els.forEach((e) => e.classList.add('is-on')); return; }
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-on'); io.unobserve(e.target); } }), { threshold: 0.35 });
+    els.forEach((e) => io.observe(e));
+  })();
+</script>

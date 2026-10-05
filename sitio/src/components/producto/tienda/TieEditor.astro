@@ -1,0 +1,160 @@
+---
+/**
+ * «Tu tienda, a tu manera» (/producto/tienda-en-linea): el editor visual. Un editor dibujado con sus partes reales
+ * (bloques a la izquierda, la página al centro, los estilos a la derecha) cuya tienda de ejemplo cambia sola de estilo
+ * (los seis del asistente: Clásico, Moderno, Minimalista, Vibrante, Oscuro, Pastel) mientras se ve; al lado, lo que se
+ * edita. Debajo, el dominio propio con la pantalla REAL de Configuración (cuenta demo, nombre cambiado en pantalla).
+ * Blanco.
+ */
+import { EDITOR, I } from '../../../data/producto-tienda';
+import StaffVentana from '../../plugins/staff/StaffVentana.astro';
+const P = '/images/probador/';
+// bloques reales del editor (fashion-forward-catalogue/src/cms/widgets)
+const BLOQUES = ['Portada', 'Productos', 'Colecciones', 'Video', 'Instagram', 'TikTok', 'Cuenta regresiva', 'Boletín'];
+---
+<section class="pda ted" id="tie-editor" aria-labelledby="ted-h">
+  <p class="pd-folio"><span>{EDITOR.k}</span><span>Editor visual</span></p>
+  <div class="ted-cab">
+    <h2 class="pda-h" id="ted-h">{EDITOR.h}</h2>
+    <p class="ted-p">{EDITOR.p}</p>
+  </div>
+
+  <div class="ted-editor" data-ted role="img" aria-label="El editor visual de la tienda: los bloques, la página y los estilos; la tienda de ejemplo cambia entre los estilos Clásico, Moderno, Minimalista, Vibrante, Oscuro y Pastel">
+    <span class="ted-barra" aria-hidden="true"><i></i><i></i><i></i><b>Editor · Inicio</b><u>Publicar página</u></span>
+    <span class="ted-cuerpo" aria-hidden="true">
+      <span class="ted-bloques"><small>Bloques</small>{BLOQUES.map((b) => <i>{b}</i>)}</span>
+      <span class="ted-lienzo" data-estilo="0">
+        <span class="ted-tienda">
+          <span class="ted-t-cab"><b>Polanco Boutique</b><span>Nuevo · Vestidos · Blazers</span></span>
+          <span class="ted-t-portada">
+            <img src={`${P}cat-vestido-rosa-720.webp`} width="720" height="1080" alt="" loading="lazy" decoding="async" />
+            <span><small>Primavera</small><b>La colección nueva ya está aquí.</b><u>Ver colección</u></span>
+          </span>
+          <span class="ted-t-grid">
+            {['cat-blazer-360', 'cat-camisa-360', 'cat-vestido-negro-360'].map((f, i) => <span><img src={`${P}${f}.webp`} width="360" height="540" alt="" loading="lazy" decoding="async" /><b>{['Blazer de lino', 'Camisa de popelina', 'Vestido slip'][i]}</b><small>{['$2,290', '$1,190', '$1,890'][i]}</small></span>)}
+          </span>
+        </span>
+      </span>
+      <span class="ted-estilos">
+        <small>Estilo</small>
+        {EDITOR.estilos.map((e, i) => <em data-i={i} class:list={{ 'is-on': i === 0 }}>{e}</em>)}
+        <small>Animación</small>
+        <span class="ted-anim">{EDITOR.animaciones.map((a, i) => <i class:list={{ 'is-on': i === 1 }}>{a}</i>)}</span>
+        <small>Modo oscuro</small>
+        <span class="ted-sw"><i></i></span>
+      </span>
+    </span>
+  </div>
+
+  <div class="ted-pie">
+    <ul class="ted-puntos">{EDITOR.puntos.map((x, i) => <li class="rv" style={`--i:${i}`}><b>{x.t}</b><span>{x.d}</span></li>)}</ul>
+    <div class="ted-dominio">
+      <div class="ted-dom-t"><b>{EDITOR.dominio.t}</b><span>{EDITOR.dominio.d}</span></div>
+      <div class="ted-dom-v rv"><StaffVentana src={`${I}pantalla-config.webp`} w={900} h={1068} alt="Configuración de la tienda en línea: conectar tu dominio, la tienda activa recibiendo pedidos las 24 horas, el subdominio de Sacs y el inventario sincronizado con la sucursal y el almacén" barra="Tienda en línea › Configuración" /></div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .ted { background: #fff; color: #141414; --pd-texto: #141414; --pd-tenue: #45433E; --pd-filete: rgba(20, 20, 20, 0.16); }
+  .ted-cab { display: grid; gap: 14px; }
+  .ted-p { margin: 0; max-width: 46ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+
+  /* el editor */
+  .ted-editor { display: grid; margin-top: 36px; overflow: hidden; border-radius: 18px; background: #F2F3F6; box-shadow: 0 40px 80px -46px rgba(16, 24, 40, 0.5), 0 0 0 1px rgba(16, 24, 40, 0.06); }
+  .ted-barra { display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 12px; background: #fff; border-bottom: 1px solid #E6E8EE; }
+  .ted-barra i { width: 9px; height: 9px; border-radius: 50%; background: #D7DAE1; }
+  .ted-barra b { margin-left: 10px; font: 700 12.5px/1 var(--font-display); color: #45433E; }
+  .ted-barra u { margin-left: auto; padding: 7px 12px; border-radius: 8px; background: #2F55C4; color: #fff; font: 700 12px/1 var(--font-display); text-decoration: none; }
+  .ted-cuerpo { display: grid; grid-template-columns: 1fr; gap: 12px; padding: 12px; }
+  .ted-bloques { display: none; }
+  .ted-bloques small, .ted-estilos small { font: 700 10.5px/1 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A85; }
+  .ted-bloques i { padding: 8px 10px; border-radius: 9px; background: #fff; font: 600 12.5px/1.2 var(--font-display); font-style: normal; color: #141414; box-shadow: 0 0 0 1px rgba(16, 24, 40, 0.06); }
+  .ted-estilos { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .ted-estilos small { flex-basis: 100%; margin-top: 4px; }
+  .ted-estilos em { padding: 7px 11px; border-radius: 99px; background: #fff; font: 600 12.5px/1 var(--font-display); font-style: normal; color: #45433E; box-shadow: 0 0 0 1px rgba(16, 24, 40, 0.08); transition: background 0.3s ease, color 0.3s ease; }
+  .ted-estilos em.is-on { background: #141414; color: #fff; }
+  .ted-anim { display: flex; flex-wrap: wrap; gap: 5px; }
+  .ted-anim i { padding: 5px 9px; border-radius: 8px; background: #fff; font: 600 11.5px/1 var(--font-display); font-style: normal; color: #6B6A64; box-shadow: 0 0 0 1px rgba(16, 24, 40, 0.06); }
+  .ted-anim i.is-on { background: #EEF2FD; color: #2F55C4; }
+  .ted-sw { position: relative; width: 38px; height: 22px; border-radius: 99px; background: #D7DAE1; transition: background 0.3s ease; }
+  .ted-sw i { position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
+
+  /* la tienda de ejemplo: cada estilo cambia sus variables */
+  .ted-lienzo { --fondo: #FBF8F2; --tinta: #1E1A16; --acento: #8C6A43; --letra: Georgia, 'Times New Roman', serif; --radio: 2px; display: block; padding: 10px; border-radius: 12px; background: #E9EBF0; outline: 2px dashed rgba(47, 85, 196, 0.5); outline-offset: -2px; }
+  .ted-lienzo[data-estilo="1"] { --fondo: #FFFFFF; --tinta: #111111; --acento: #2F55C4; --letra: var(--font-display); --radio: 10px; }
+  .ted-lienzo[data-estilo="2"] { --fondo: #FFFFFF; --tinta: #222222; --acento: #222222; --letra: var(--font-body); --radio: 0px; }
+  .ted-lienzo[data-estilo="3"] { --fondo: #FFF0F6; --tinta: #2B0B1C; --acento: #D03A70; --letra: var(--font-display); --radio: 16px; }
+  .ted-lienzo[data-estilo="4"] { --fondo: #121214; --tinta: #F4F4F5; --acento: #C9A86A; --letra: var(--font-display); --radio: 8px; }
+  .ted-lienzo[data-estilo="5"] { --fondo: #F3F0FF; --tinta: #2D2A4A; --acento: #8C7AE6; --letra: var(--font-body); --radio: 14px; }
+  .ted-tienda { display: grid; gap: 12px; padding: 14px; border-radius: 8px; background: var(--fondo); color: var(--tinta); font-family: var(--letra); transition: background 0.5s ease, color 0.5s ease; }
+  .ted-t-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid color-mix(in srgb, var(--tinta) 12%, transparent); }
+  .ted-t-cab b { font: 700 16px/1 var(--letra); }
+  .ted-t-cab span { font: 500 11px/1.2 var(--letra); opacity: 0.7; }
+  .ted-t-portada { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 12px; align-items: center; }
+  .ted-t-portada img { display: block; width: 100%; height: auto; max-height: 320px; aspect-ratio: 4 / 5; object-fit: cover; border-radius: var(--radio); transition: border-radius 0.5s ease; }
+  .ted-t-portada > span { display: grid; gap: 8px; }
+  .ted-t-portada small { font: 700 10px/1 var(--letra); letter-spacing: 0.14em; text-transform: uppercase; color: var(--acento); }
+  .ted-t-portada b { font: 700 clamp(18px, 2vw, 26px)/1.1 var(--letra); }
+  .ted-t-portada u { justify-self: start; padding: 8px 12px; border-radius: var(--radio); background: var(--acento); color: var(--fondo); font: 700 11.5px/1 var(--letra); text-decoration: none; transition: background 0.5s ease, border-radius 0.5s ease; }
+  .ted-t-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .ted-t-grid > span { display: grid; gap: 3px; }
+  .ted-t-grid img { display: block; width: 100%; height: auto; max-height: 230px; aspect-ratio: 3 / 4; object-fit: cover; border-radius: var(--radio); transition: border-radius 0.5s ease; }
+  .ted-t-grid b { font: 600 11px/1.2 var(--letra); }
+  .ted-t-grid small { font: 600 10.5px/1 var(--letra); color: var(--acento); }
+
+  .ted-pie { display: grid; gap: 28px; margin-top: 40px; }
+  .ted-puntos { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; border-top: 2px solid #141414; }
+  .ted-puntos li { display: grid; gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--pd-filete); }
+  .ted-puntos b { font: 700 17px/1.25 var(--font-display); }
+  .ted-puntos span { font: 500 14.5px/1.5 var(--font-body); color: var(--pd-tenue); }
+  .ted-dominio { display: grid; gap: 16px; padding: 20px; border-radius: 20px; background: #F5F3EE; }
+  .ted-dom-t { display: grid; gap: 6px; }
+  .ted-dom-t b { font: 700 22px/1.15 var(--pd-clash); }
+  .ted-dom-t span { font: 500 15px/1.55 var(--font-body); color: var(--pd-tenue); }
+  :global(.js-rv) .ted .rv { opacity: 0; transform: translateY(22px); transition: opacity 0.6s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i, 0) * 0.08s); }
+  :global(.js-rv) .ted .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .ted-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .ted-editor { margin-top: 52px; }
+    .ted-cuerpo { grid-template-columns: 150px minmax(0, 1fr) 210px; gap: 14px; padding: 14px; }
+    .ted-bloques { display: grid; gap: 6px; align-content: start; }
+    .ted-estilos { display: grid; grid-template-columns: 1fr 1fr; align-content: start; gap: 6px; }
+    .ted-estilos small, .ted-anim { grid-column: 1 / -1; }
+    .ted-estilos em { text-align: center; }
+    .ted-lienzo { padding: 16px; }
+    .ted-tienda { padding: 20px 22px; gap: 16px; }
+    .ted-pie { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 4.5vw; align-items: start; margin-top: 56px; }
+    .ted-dominio { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; padding: 24px; }
+  }
+  @media (max-width: 767px) {
+    .ted-estilos small:not(:first-child), .ted-anim, .ted-sw { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ted-tienda, .ted-t-portada img, .ted-t-portada u, .ted-t-grid img, .ted-estilos em { transition: none; }
+    :global(.js-rv) .ted .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // La tienda de ejemplo pasa por los seis estilos (2.4 s cada uno) mientras el editor se ve y la pestaña está activa;
+  // con el estilo Oscuro se enciende el modo oscuro. Con «reducir movimiento» se queda en el primero.
+  (() => {
+    const ed = document.querySelector<HTMLElement>('[data-ted]');
+    const lienzo = ed?.querySelector<HTMLElement>('.ted-lienzo');
+    if (!ed || !lienzo || !('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const chips = Array.from(ed.querySelectorAll<HTMLElement>('.ted-estilos em'));
+    const sw = ed.querySelector<HTMLElement>('.ted-sw');
+    let k = 0, reloj = 0, visible = false;
+    const pon = () => {
+      lienzo.dataset.estilo = String(k);
+      chips.forEach((c, i) => c.classList.toggle('is-on', i === k));
+      if (sw) { sw.style.background = k === 4 ? '#1F9D63' : ''; const b = sw.querySelector<HTMLElement>('i'); if (b) b.style.transform = k === 4 ? 'translateX(16px)' : ''; }
+    };
+    const paso = () => { k = (k + 1) % chips.length; pon(); };
+    const prende = () => { if (!reloj && visible && !document.hidden) reloj = window.setInterval(paso, 2400); };
+    const apaga = () => { if (reloj) { window.clearInterval(reloj); reloj = 0; } };
+    new IntersectionObserver((es) => es.forEach((e) => { visible = e.isIntersecting; visible ? prende() : apaga(); }), { threshold: 0.3 }).observe(ed);
+    document.addEventListener('visibilitychange', () => (document.hidden ? apaga() : prende()));
+  })();
+</script>

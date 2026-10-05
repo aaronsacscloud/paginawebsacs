@@ -1,0 +1,73 @@
+---
+/**
+ * «Tu negocio, en tu propia IA» (/producto/agentic-commerce): Sacs dentro de Claude o ChatGPT (MCP) para la dueña. Una
+ * conversación dibujada (ventana neutra, sin imitar a ningún asistente) donde pregunta qué se vendió más y pide un
+ * traspaso que la IA prepara y deja para confirmar; los números dicen «Ejemplo». Al lado, las seis calculadoras de moda
+ * del MCP público y gratuito que SÍ existe hoy (www.sacscloud.com/api/mcp), con la liga a /mcp. Entrada: los globos
+ * suben uno por uno y el botón «Confirmar traspaso» late al final. Azul.
+ */
+import { MCP } from '../../../data/producto-agentic';
+---
+<section class="pda gmc pd-azul" id="gag-mcp" aria-labelledby="gmc-h">
+  <div class="pda-fondo" aria-hidden="true"><span>SACS EN TU IA · SACS EN TU IA</span><span>SACS EN TU IA · SACS EN TU IA</span></div>
+  <p class="pd-folio"><span>{MCP.k}</span><span>Claude · ChatGPT</span></p>
+  <div class="gmc-grid">
+    <div class="gmc-lado">
+      <h2 class="pda-h" id="gmc-h">{MCP.h}</h2>
+      <p class="gmc-p">{MCP.p}</p>
+      <div class="gmc-calc">
+        <p>Y hoy mismo, gratis: seis calculadoras de moda para tu IA</p>
+        <ul>{MCP.calculadoras.map((x, i) => <li class="rv" style={`--i:${i}`}>{x}</li>)}</ul>
+        <a class="pda-sigue" href="/mcp">Conecta las calculadoras <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+    <div class="gmc-chat rv" role="img" aria-label="La dueña le pregunta a su IA qué se vendió más esta semana en Polanco; la IA contesta con datos de Sacs (de ejemplo). Luego le pide pasar 3 vestidos en M de Santa Fe a Polanco y la IA prepara el traspaso y pide confirmarlo">
+      <span class="gmc-top" aria-hidden="true"><i>✦</i><b>Tu IA</b><em>conectada a Sacs</em><small>Ejemplo</small></span>
+      <span class="gmc-msgs" aria-hidden="true">
+        {MCP.chat.map((m, i) => (
+          <span class:list={['gmc-m', `gmc-m--${m.de}`]} style={`--i:${i}`}>
+            {m.de === 'i' && <em class="gmc-fuente">Sacs · Polanco Boutique</em>}
+            <span>{m.t}</span>
+            {m.boton && <u>{m.boton}</u>}
+          </span>
+        ))}
+      </span>
+    </div>
+  </div>
+</section>
+
+<style>
+  .gmc-grid { display: grid; gap: 36px; }
+  .gmc-lado { display: grid; gap: 16px; align-content: start; }
+  .gmc-p { margin: 0; max-width: 46ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .gmc-calc { display: grid; gap: 12px; margin-top: 10px; padding: 18px 20px; border-radius: 18px; background: rgba(255, 255, 255, 0.14); }
+  .gmc-calc p { margin: 0; font: 700 15px/1.35 var(--font-display); color: #fff; }
+  .gmc-calc ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .gmc-calc li { padding: 8px 13px; border-radius: 99px; background: #fff; color: #2F55C4; font: 700 13px/1.2 var(--font-display); }
+  .gmc-calc .pda-sigue { margin-top: 4px; }
+  :global(.js-rv) .gmc-calc .rv { opacity: 0; transform: scale(0.85); transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); transition-delay: calc(var(--i) * 0.06s); }
+  :global(.js-rv) .gmc-calc .rv.is-on { opacity: 1; transform: none; }
+  .gmc-chat { display: grid; gap: 0; overflow: hidden; border-radius: 22px; background: #fff; color: #141414; box-shadow: 0 34px 60px -30px rgba(10, 22, 72, 0.7); }
+  .gmc-top { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid #ECEDEF; }
+  .gmc-top i { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #5B86EA, #D03A70); color: #fff; font-style: normal; font-size: 13px; }
+  .gmc-top b { font: 700 15px/1.2 var(--font-display); }
+  .gmc-top em { padding: 4px 9px; border-radius: 99px; background: #E3F4EA; color: #17804F; font: 700 11px/1 var(--font-display); font-style: normal; }
+  .gmc-top small { margin-left: auto; font: 600 11px/1 var(--font-display); color: #8A8A85; }
+  .gmc-msgs { display: grid; gap: 12px; padding: 18px; }
+  .gmc-m { display: grid; gap: 6px; max-width: 86%; padding: 11px 14px; border-radius: 14px; font: 500 14.5px/1.5 var(--font-body); }
+  .gmc-m--d { justify-self: end; background: #141414; color: #fff; border-bottom-right-radius: 4px; }
+  .gmc-m--i { justify-self: start; background: #F4F6FA; border-bottom-left-radius: 4px; }
+  .gmc-fuente { font: 700 11px/1 var(--font-display); font-style: normal; letter-spacing: 0.04em; color: #2F55C4; }
+  .gmc-m u { justify-self: start; padding: 9px 14px; border-radius: 10px; background: #2F55C4; color: #fff; font: 700 13.5px/1 var(--font-display); text-decoration: none; }
+  :global(.js-rv) .gmc-chat.rv .gmc-m { opacity: 0; transform: translateY(14px); transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1); transition-delay: calc(0.3s + var(--i) * 0.55s); }
+  :global(.js-rv) .gmc-chat.rv.is-on .gmc-m { opacity: 1; transform: none; }
+  .gmc-chat.is-on .gmc-m u { animation: gmcLate 1.6s ease-in-out 2.6s 2; }
+  @keyframes gmcLate { 0%, 100% { box-shadow: 0 0 0 0 rgba(47, 85, 196, 0.4); } 50% { box-shadow: 0 0 0 8px rgba(47, 85, 196, 0); } }
+  @media (min-width: 900px) {
+    .gmc-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 5vw; align-items: center; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .gmc-chat.rv .gmc-m, :global(.js-rv) .gmc-calc .rv { opacity: 1; transform: none; transition: none; }
+    .gmc-chat.is-on .gmc-m u { animation: none; }
+  }
+</style>

@@ -1,0 +1,104 @@
+---
+/**
+ * «Tu catálogo, en el idioma de las IAs» (/producto/agentic-commerce): adónde sale tu catálogo (asistentes de IA,
+ * Google, Meta, TikTok), cada destino con su luz «en vivo» que late, y una tarjeta de código que se escribe sola con el
+ * JSON-LD schema.org Product de una ficha, con la MISMA forma que arma la tienda (fashion-forward-catalogue,
+ * lib/productSeo.ts). Debajo, lo demás que lee una IA. Entrada: los destinos llegan uno por uno y la tarjeta se teclea
+ * al verse. Blanco.
+ */
+import { CATALOGO } from '../../../data/producto-agentic';
+---
+<section class="pda gca" id="gag-catalogo" aria-labelledby="gca-h">
+  <p class="pd-folio"><span>{CATALOGO.k}</span><span>Feeds y datos de producto</span></p>
+  <div class="gca-cab">
+    <h2 class="pda-h" id="gca-h">{CATALOGO.h}</h2>
+    <p class="gca-p">{CATALOGO.p}</p>
+  </div>
+  <div class="gca-grid">
+    <ul class="gca-feeds">
+      {CATALOGO.feeds.map((x, i) => (
+        <li class="rv" style={`--i:${i}`}>
+          <span class="gca-luz" aria-hidden="true"></span>
+          <span class="gca-f"><b>{x.t}</b><span>{x.d}</span></span>
+          <em>en vivo</em>
+        </li>
+      ))}
+    </ul>
+    <figure class="gca-codigo" data-gca>
+      <figcaption><i></i><i></i><i></i><span>Polanco Boutique · ficha de producto · application/ld+json</span></figcaption>
+      <pre aria-label="Los datos de producto de una ficha en formato schema.org: nombre, imagen, descripción, SKU, marca, precio en pesos, disponibilidad y su liga"><code data-codigo={CATALOGO.jsonld}>{CATALOGO.jsonld}</code><i class="gca-cursor" aria-hidden="true"></i></pre>
+    </figure>
+  </div>
+  <ul class="gca-extra">{CATALOGO.extra.map((x) => <li>{x}</li>)}</ul>
+</section>
+
+<style>
+  .gca { background: #fff; color: #141414; --pd-texto: #141414; --pd-tenue: #45433E; --pd-filete: rgba(20, 20, 20, 0.16); }
+  .gca-cab { display: grid; gap: 14px; }
+  .gca-p { margin: 0; max-width: 48ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .gca-grid { display: grid; gap: 28px; margin-top: 36px; }
+  .gca-feeds { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; align-content: start; }
+  .gca-feeds li { display: grid; grid-template-columns: 18px 1fr auto; gap: 14px; align-items: center; padding: 16px 18px; border-radius: 16px; background: #F6F7F9; }
+  .gca-luz { position: relative; width: 12px; height: 12px; border-radius: 50%; background: #1F9D63; }
+  .gca-luz::after { content: ''; position: absolute; inset: -5px; border-radius: 50%; border: 2px solid rgba(31, 157, 99, 0.5); animation: gcaLate 2.2s ease-out infinite; }
+  .gca-feeds li:nth-child(2) .gca-luz::after { animation-delay: 0.5s; }
+  .gca-feeds li:nth-child(3) .gca-luz::after { animation-delay: 1s; }
+  .gca-feeds li:nth-child(4) .gca-luz::after { animation-delay: 1.5s; }
+  @keyframes gcaLate { from { opacity: 1; transform: scale(0.6); } to { opacity: 0; transform: scale(1.6); } }
+  .gca-f { display: grid; gap: 2px; }
+  .gca-f b { font: 700 17px/1.2 var(--font-display); }
+  .gca-f span { font: 500 14px/1.4 var(--font-body); color: var(--pd-tenue); }
+  .gca-feeds em { padding: 5px 10px; border-radius: 99px; background: #E3F4EA; color: #17804F; font: 700 11.5px/1 var(--font-display); font-style: normal; }
+  .gca-codigo { margin: 0; overflow: hidden; border-radius: 18px; background: #0F1115; box-shadow: 0 30px 60px -30px rgba(16, 24, 40, 0.6); }
+  .gca-codigo figcaption { display: flex; align-items: center; gap: 7px; padding: 12px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+  .gca-codigo figcaption i { width: 10px; height: 10px; border-radius: 50%; background: #FF5F57; }
+  .gca-codigo figcaption i:nth-child(2) { background: #FEBC2E; }
+  .gca-codigo figcaption i:nth-child(3) { background: #28C840; }
+  .gca-codigo figcaption span { margin-left: 8px; overflow: hidden; font: 500 12px/1.2 'JetBrains Mono', ui-monospace, monospace; color: #8A93A6; white-space: nowrap; text-overflow: ellipsis; }
+  .gca-codigo pre { margin: 0; padding: 18px 20px 22px; min-height: 26em; overflow-x: auto; font: 500 13.5px/1.6 'JetBrains Mono', ui-monospace, monospace; color: #E6E8EE; white-space: pre; }
+  .gca-codigo code { font: inherit; }
+  .gca-cursor { display: inline-block; width: 8px; height: 1.1em; margin-left: 1px; vertical-align: -3px; background: #9DB8F5; animation: gcaParpadeo 1s steps(1) infinite; }
+  @keyframes gcaParpadeo { 50% { opacity: 0; } }
+  .gca-extra { display: flex; flex-wrap: wrap; gap: 8px; margin: 28px 0 0; padding: 0; list-style: none; }
+  .gca-extra li { padding: 9px 14px; border-radius: 99px; background: #141414; color: #fff; font: 600 13.5px/1.2 var(--font-display); }
+  :global(.js-rv) .gca-feeds .rv { opacity: 0; transform: translateX(-24px); transition: opacity 0.5s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.12s); }
+  :global(.js-rv) .gca-feeds .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .gca-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .gca-grid { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 4vw; margin-top: 52px; align-items: start; }
+    .gca-codigo pre { font-size: 14.5px; }
+  }
+  @media (max-width: 767px) {
+    .gca-codigo pre { min-height: 0; font-size: 11.5px; padding: 14px 14px 18px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .gca-luz::after, .gca-cursor { animation: none; }
+    :global(.js-rv) .gca-feeds .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // El código se teclea solo la primera vez que la tarjeta se ve (unos 3 s); sin JS o con «reducir movimiento» queda
+  // completo desde el principio.
+  (() => {
+    const fig = document.querySelector<HTMLElement>('[data-gca]');
+    const code = fig?.querySelector<HTMLElement>('[data-codigo]');
+    if (!fig || !code || !('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const texto = code.dataset.codigo || '';
+    code.textContent = '';
+    let n = 0, raf = 0, t0 = 0, corriendo = false;
+    const DUR = 3200;
+    const paso = (t: number) => {
+      if (!t0) t0 = t;
+      if (document.hidden) { raf = 0; corriendo = false; return; }
+      const k = Math.min(1, (t - t0) / DUR);
+      const m = Math.round(texto.length * k);
+      if (m !== n) { n = m; code.textContent = texto.slice(0, n); }
+      if (k < 1) raf = requestAnimationFrame(paso); else { raf = 0; corriendo = false; }
+    };
+    const arranca = () => { if (!corriendo && n < texto.length) { corriendo = true; t0 = performance.now() - (n / texto.length) * DUR; raf = requestAnimationFrame(paso); } };
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { arranca(); io.disconnect(); } }, { threshold: 0.35 });
+    io.observe(fig);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && n > 0 && n < texto.length) arranca(); });
+  })();
+</script>

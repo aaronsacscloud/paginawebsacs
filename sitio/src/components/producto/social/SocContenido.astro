@@ -1,0 +1,77 @@
+---
+/**
+ * «Del perchero a tus redes, en minutos» (/producto/social-commerce): el contenido para redes del estudio de moda de
+ * Sacs (fotos en escenario, reels, carruseles, historias, lanzamiento, looks), cada publicación con su liga rastreada a
+ * la tienda. La foto de la vendedora fotografiando un vestido (gpt-image-2.5) y, encima, un celular con la publicación
+ * (dibujo) y su sticker «Comprar», con la liga que dice de qué red llegó la venta. Entrada: el celular sube y la etiqueta
+ * de la liga se escribe. Fucsia.
+ */
+import { CONTENIDO, I } from '../../../data/producto-social';
+---
+<section class="pda sco pd-fucsia" id="soc-contenido" aria-labelledby="sco-h">
+  <p class="pd-folio"><span>{CONTENIDO.k}</span><span>Estudio de moda</span></p>
+  <div class="sco-grid">
+    <div class="sco-lado">
+      <h2 class="pda-h" id="sco-h">{CONTENIDO.h}</h2>
+      <p class="sco-p">{CONTENIDO.p}</p>
+      <ul class="sco-tipos">{CONTENIDO.tipos.map((t, i) => <li class="rv" style={`--i:${i}`}>{t}</li>)}</ul>
+    </div>
+    <div class="sco-escena" data-sco>
+      <figure class="sco-foto">
+        <img src={`${I}foto-1280.webp`} srcset={`${I}foto-900.webp 900w, ${I}foto-1280.webp 1280w`} sizes="(min-width: 900px) 50vw, 100vw" width="1280" height="853" alt="Una vendedora fotografía un vestido de lino en un maniquí con su celular, junto a la ventana de la boutique" loading="lazy" decoding="async" />
+      </figure>
+      <div class="sco-cel" role="img" aria-label="La publicación en el celular: la foto del vestido con el sticker Comprar y su liga rastreada a la tienda">
+        <span class="sco-pub" style={`background-image:url(${I}foto-900.webp)`}>
+          <span class="sco-cuenta"><i>P</i>polancoboutique</span>
+          <span class="sco-sticker">🛍 Comprar</span>
+        </span>
+        <span class="sco-liga">tienda.sacscloud.com/polanco/vestido-lino<b>?utm_source=instagram</b></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .sco-grid { display: grid; gap: 36px; }
+  .sco-lado { display: grid; gap: 16px; align-content: start; }
+  .sco-p { margin: 0; max-width: 46ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .sco-tipos { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; padding: 0; list-style: none; }
+  .sco-tipos li { padding: 9px 15px; border-radius: 99px; background: #fff; color: #D03A70; font: 700 14px/1.1 var(--font-display); }
+  :global(.js-rv) .sco-tipos .rv { opacity: 0; transform: scale(0.8); transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); transition-delay: calc(var(--i) * 0.07s); }
+  :global(.js-rv) .sco-tipos .rv.is-on { opacity: 1; transform: none; }
+  .sco-escena { position: relative; padding-bottom: 70px; }
+  .sco-foto { margin: 0; overflow: hidden; border-radius: 22px; aspect-ratio: 4 / 3; }
+  .sco-foto img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 55% 40%; }
+  .sco-cel { position: absolute; right: 14px; bottom: 0; display: grid; gap: 8px; width: min(48%, 230px); }
+  .sco-pub { position: relative; display: block; aspect-ratio: 9 / 16; overflow: hidden; border: 8px solid #141416; border-radius: 32px; background-size: cover; background-position: 62% 40%; box-shadow: 0 30px 50px -24px rgba(0, 0, 0, 0.6); }
+  .sco-cuenta { position: absolute; left: 10px; top: 12px; display: flex; align-items: center; gap: 6px; font: 700 11px/1 var(--font-display); color: #fff; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5); }
+  .sco-cuenta i { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #fff; color: #141414; font-style: normal; text-shadow: none; }
+  .sco-sticker { position: absolute; left: 50%; bottom: 18%; padding: 7px 12px; border-radius: 10px; background: #fff; color: #141414; font: 800 12px/1 var(--font-display); transform: translateX(-50%) rotate(-4deg); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3); }
+  .sco-liga { overflow: hidden; padding: 7px 10px; border-radius: 10px; background: #fff; color: #141414; font: 600 10.5px/1.35 'JetBrains Mono', ui-monospace, monospace; word-break: break-all; box-shadow: 0 10px 20px -12px rgba(0, 0, 0, 0.5); }
+  .sco-liga b { color: #D03A70; }
+  :global(.js-rv) .sco-escena .sco-cel { opacity: 0; transform: translateY(60px) rotate(5deg); }
+  .sco-escena.is-on .sco-cel { opacity: 1; transform: none; transition: opacity 0.6s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1); }
+  :global(.js-rv) .sco-escena .sco-sticker { opacity: 0; transform: translateX(-50%) scale(1.6) rotate(-4deg); }
+  .sco-escena.is-on .sco-sticker { opacity: 1; transform: translateX(-50%) rotate(-4deg); transition: opacity 0.3s ease 0.9s, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.9s; }
+  @media (min-width: 900px) {
+    .sco-grid { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 5vw; align-items: center; }
+    .sco-escena { padding-bottom: 0; }
+    .sco-foto { width: 84%; aspect-ratio: 4 / 4.2; }
+    .sco-cel { right: 0; bottom: -24px; width: min(40%, 250px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .sco-escena .sco-cel, :global(.js-rv) .sco-tipos .rv { opacity: 1; transform: none; transition: none; }
+    :global(.js-rv) .sco-escena .sco-sticker { opacity: 1; transform: translateX(-50%) rotate(-4deg); transition: none; }
+  }
+</style>
+
+<script>
+  // El celular sube la primera vez que la escena se ve.
+  (() => {
+    const el = document.querySelector<HTMLElement>('[data-sco]');
+    if (!el) return;
+    if (!('IntersectionObserver' in window)) { el.classList.add('is-on'); return; }
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { el.classList.add('is-on'); io.disconnect(); } }, { threshold: 0.4 });
+    io.observe(el);
+  })();
+</script>

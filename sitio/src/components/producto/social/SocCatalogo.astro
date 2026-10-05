@@ -1,0 +1,135 @@
+---
+/**
+ * «Tu catálogo, en cada red» (/producto/social-commerce): TikTok Shop y Facebook/Instagram. Al centro, la tarjeta de una
+ * prenda del catálogo demo; al verse, sus tres copias salen volando a su red (TikTok Shop, Instagram, Facebook), cada una
+ * con su precio y su talla. Debajo, lo de ADENTRO de TikTok Shop (pedido del dueño: «lo importante está adentro»): el
+ * panel REAL de Canales de venta › TikTok Shop, ya conectado, con datos de ejemplo (la cuenta demo no tiene tienda en
+ * TikTok: se llenó en pantalla, sin conectar ni guardar nada) y el paso de conexión de Configuración › Integraciones;
+ * y la pantalla de Meta Business. Marino.
+ */
+import { CATALOGO, I } from '../../../data/producto-social';
+import StaffVentana from '../../plugins/staff/StaffVentana.astro';
+const PRO = '/images/producto/promociones/';
+const REDES = [
+  { t: 'TikTok Shop', c: '#141414', l: '#25F4EE' },
+  { t: 'Instagram', c: '#D03A70', l: '#F7C3D6' },
+  { t: 'Facebook', c: '#2F55C4', l: '#C9D8FB' },
+];
+---
+<section class="pda sca pd-marino" id="soc-catalogo" aria-labelledby="sca-h">
+  <div class="pda-fondo" aria-hidden="true"><span>CATÁLOGO · CATÁLOGO · CATÁLOGO</span><span>CATÁLOGO · CATÁLOGO · CATÁLOGO</span></div>
+  <p class="pd-folio"><span>{CATALOGO.k}</span><span>Canales de venta</span></p>
+  <div class="sca-cab">
+    <h2 class="pda-h" id="sca-h">{CATALOGO.h}</h2>
+    <p class="sca-p">{CATALOGO.p}</p>
+  </div>
+
+  <div class="sca-vuelo" data-sca role="img" aria-label="La camiseta estampada azul de Sacs aparece en TikTok Shop, Instagram y Facebook, con su precio y sus tallas">
+    <span class="sca-origen" aria-hidden="true">
+      <img src={`${PRO}prenda-azul.webp`} width="240" height="240" alt="" loading="lazy" decoding="async" />
+      <b>Camiseta estampada azul</b>
+      <small>S · M · L · $1,290</small>
+      <em>Sacs</em>
+    </span>
+    <span class="sca-redes" aria-hidden="true">
+      {REDES.map((r, i) => (
+        <span class="sca-red" style={`--i:${i};--c:${r.c};--l:${r.l}`}>
+          <i class="sca-red-t">{r.t}</i>
+          <span class="sca-mini"><img src={`${PRO}prenda-azul.webp`} width="240" height="240" alt="" loading="lazy" decoding="async" /><b>$1,290</b><small>Tallas S, M, L</small></span>
+        </span>
+      ))}
+    </span>
+  </div>
+
+  <div class="sca-tt">
+    <div class="sca-tt-txt">
+      <h3>{CATALOGO.tiktok.t}</h3>
+      <p>{CATALOGO.tiktok.d}</p>
+      <ul>{CATALOGO.tiktok.estados.map((e, i) => <li class="rv" style={`--i:${i}`}>{e}</li>)}</ul>
+    </div>
+    <div class="sca-tt-pantallas">
+      <div class="sca-panel rv"><StaffVentana src={`${I}pantalla-tiktok-panel.webp`} w={1600} h={947} alt="El panel de TikTok Shop en Sacs, conectado a Polanco Boutique: 2 pedidos por vencerse, publicados, en revisión, por corregir y pedidos; el inventario detenido con la cobertura del catálogo, lo que falta para dejarlo redondo, los últimos 14 días y lo que se está vendiendo (datos de ejemplo)" barra="Canales de venta › TikTok Shop" /></div>
+      <div class="sca-conexion rv"><img src={`${I}pantalla-tiktok-conexion.webp`} width="760" height="982" alt="Conectar TikTok Shop: conectado a Polanco Boutique; publica tu catálogo en 5 pasos: almacén, categorías, comprobación, publicación y revisión" loading="lazy" decoding="async" /></div>
+    </div>
+  </div>
+
+  <div class="sca-meta rv">
+    <div class="sca-meta-pantalla"><StaffVentana src={`${I}pantalla-meta.webp`} w={1100} h={564} alt="Canales de venta › Meta Business: vende en Facebook e Instagram; sincronización automática, etiquetas de Instagram Shopping y anuncios; genera tu link de sincronización" barra="Canales de venta › Meta Business" /></div>
+    <div class="sca-meta-txt">
+      <h3>{CATALOGO.meta.t}</h3>
+      <p>{CATALOGO.meta.d}</p>
+      <ul>{CATALOGO.meta.estados.map((e) => <li>{e}</li>)}</ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .sca-cab { display: grid; gap: 14px; }
+  .sca-p { margin: 0; max-width: 48ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  /* la prenda y sus tres copias */
+  .sca-vuelo { position: relative; display: grid; gap: 22px; justify-items: center; margin-top: 40px; padding: 26px 0 8px; }
+  .sca-origen { position: relative; z-index: 2; display: grid; justify-items: center; gap: 4px; width: 200px; padding: 12px 12px 14px; border-radius: 18px; background: #fff; color: #141414; box-shadow: 0 24px 40px -22px rgba(0, 0, 0, 0.7); }
+  .sca-origen img { display: block; width: 100%; height: auto; border-radius: 12px; background: #F2F1EE; }
+  .sca-origen b { margin-top: 4px; font: 700 14px/1.2 var(--font-display); text-align: center; }
+  .sca-origen small { font: 600 12px/1.2 var(--font-display); color: #6B6A64; }
+  .sca-origen em { position: absolute; top: -10px; left: 50%; padding: 4px 10px; border-radius: 99px; background: #2F55C4; color: #fff; font: 800 11px/1.2 var(--font-display); font-style: normal; transform: translateX(-50%); }
+  .sca-redes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; width: 100%; max-width: 760px; }
+  .sca-red { display: grid; gap: 8px; justify-items: center; }
+  .sca-red-t { padding: 6px 12px; border-radius: 99px; background: var(--c); color: #fff; font: 800 12.5px/1.2 var(--font-display); font-style: normal; box-shadow: inset 0 -3px 0 var(--l); }
+  .sca-mini { display: grid; gap: 3px; width: min(100%, 150px); padding: 8px; border-radius: 14px; background: #fff; color: #141414; box-shadow: 0 16px 28px -18px rgba(0, 0, 0, 0.7); }
+  .sca-mini img { display: block; width: 100%; height: auto; border-radius: 9px; background: #F2F1EE; }
+  .sca-mini b { font: 700 13px/1.2 var(--font-display); }
+  .sca-mini small { font: 500 11px/1.2 var(--font-body); color: #6B6A64; }
+  /* al verse: las copias salen de la prenda hacia su red */
+  :global(.js-rv) .sca-vuelo .sca-mini { opacity: 0; transform: translate(calc((1 - var(--i)) * 100%), -150px) scale(0.6) rotate(calc((var(--i) - 1) * 8deg)); }
+  .sca-vuelo.is-on .sca-mini { opacity: 1; transform: none; transition: opacity 0.4s ease, transform 0.9s cubic-bezier(0.34, 1.3, 0.64, 1); transition-delay: calc(0.3s + var(--i) * 0.18s); }
+  :global(.js-rv) .sca-vuelo .sca-red-t { opacity: 0; transform: translateY(8px); }
+  .sca-vuelo.is-on .sca-red-t { opacity: 1; transform: none; transition: opacity 0.4s ease, transform 0.5s ease; transition-delay: calc(0.9s + var(--i) * 0.18s); }
+  /* TikTok Shop: el panel de adentro y el paso de conexión */
+  .sca-tt { display: grid; gap: 24px; margin-top: 48px; }
+  .sca-tt-txt, .sca-meta-txt { display: grid; gap: 10px; align-content: start; }
+  .sca-tt h3, .sca-meta h3 { margin: 0; font: 700 clamp(26px, 2.8vw, 38px)/1.05 var(--pd-clash); color: #fff; }
+  .sca-tt p, .sca-meta p { margin: 0; max-width: 52ch; font: 500 15.5px/1.55 var(--font-body); color: rgba(255, 255, 255, 0.86); }
+  .sca-tt ul, .sca-meta ul { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; padding: 0; list-style: none; }
+  .sca-tt li, .sca-meta li { padding: 7px 12px; border-radius: 99px; background: rgba(157, 184, 245, 0.16); color: #C9D8FB; font: 700 12.5px/1.2 var(--font-display); }
+  .sca-tt-pantallas { position: relative; }
+  .sca-conexion { display: none; }
+  .sca-conexion img { display: block; width: 100%; height: auto; border-radius: 16px; box-shadow: 0 30px 50px -24px rgba(0, 0, 0, 0.75); }
+  .sca-meta { display: grid; gap: 22px; margin-top: 44px; padding: 18px; border-radius: 22px; background: #13215C; box-shadow: inset 0 0 0 1px rgba(157, 184, 245, 0.22); }
+  :global(.js-rv) .sca-tt li.rv { opacity: 0; transform: translateY(8px); transition: opacity 0.4s ease, transform 0.5s ease; transition-delay: calc(var(--i) * 0.06s); }
+  :global(.js-rv) .sca-panel.rv { opacity: 0; transform: translateY(50px) scale(0.97); transition: opacity 0.7s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1); }
+  :global(.js-rv) .sca-conexion.rv { opacity: 0; transform: translateX(40px) rotate(3deg); transition: opacity 0.7s ease 0.35s, transform 1s cubic-bezier(0.16, 1, 0.3, 1) 0.35s; }
+  :global(.js-rv) .sca-meta.rv { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+  :global(.js-rv) .sca .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .sca-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .sca-vuelo { margin-top: 56px; }
+    .sca-redes { gap: 28px; }
+    .sca-mini { width: min(100%, 180px); }
+    .sca-tt { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 4vw; align-items: center; margin-top: 72px; }
+    .sca-tt-pantallas { padding: 0 0 10% 0; }
+    .sca-conexion { position: absolute; right: -2%; bottom: -6%; display: block; width: 30%; }
+    .sca-panel { width: 88%; }
+    .sca-meta { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 4vw; align-items: center; margin-top: 72px; padding: 26px; }
+  }
+  @media (max-width: 767px) {
+    /* las pantallas anchas se deslizan: a lo ancho del teléfono no se leerían */
+    .sca-panel, .sca-meta-pantalla { overflow-x: auto; overscroll-behavior-x: contain; border-radius: 10px; }
+    .sca-panel > :global(.sv) { width: 760px; }
+    .sca-meta-pantalla > :global(.sv) { width: 620px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .sca-vuelo .sca-mini, :global(.js-rv) .sca-vuelo .sca-red-t, :global(.js-rv) .sca .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // Las copias salen volando la primera vez que la prenda se ve.
+  (() => {
+    const el = document.querySelector<HTMLElement>('[data-sca]');
+    if (!el) return;
+    if (!('IntersectionObserver' in window)) { el.classList.add('is-on'); return; }
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { el.classList.add('is-on'); io.disconnect(); } }, { threshold: 0.45 });
+    io.observe(el);
+  })();
+</script>
