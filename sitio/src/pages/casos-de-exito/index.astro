@@ -498,12 +498,6 @@ const look = [
 
     <div class="ce-cta-marcas">
       <p class="ce-cta-cifra"><b>Más de 3,000 marcas</b> ya usan Sacs</p>
-      <span class="ce-cta-marcas-k">Algunas de ellas</span>
-      <ul>
-        {look.map((l) => (
-          <li><a href={`/casos-de-exito/${l.slug}`} style={`--c:${l.color}`}><i aria-hidden="true"></i>{l.marca}<em>{l.valor}</em></a></li>
-        ))}
-      </ul>
     </div>
   </div>
 </section>
@@ -980,7 +974,7 @@ const look = [
   .ce-cta-btn--primary { background: #fff; color: var(--color-text-primary); }
   .ce-cta-btn--secondary { background: transparent; color: #fff; border: 1.5px solid rgba(255,255,255,0.3); }
   .ce-cta-marcas { margin-top: 64px; padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.1); }
-  .ce-cta-cifra { font-family: var(--font-display); font-size: clamp(1.3rem, 2.4vw, 1.8rem); font-weight: 700; letter-spacing: -0.02em; color: rgba(255,255,255,0.75); margin: 0 0 22px; }
+  .ce-cta-cifra { font-family: var(--font-display); font-size: clamp(1.3rem, 2.4vw, 1.8rem); font-weight: 700; letter-spacing: -0.02em; color: rgba(255,255,255,0.75); margin: 0; }
   .ce-cta-cifra b { font-weight: 800; background: linear-gradient(90deg, #FF7AB6, #C084FC 55%, #FDBA74); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .ce-cta-marcas-k { display: block; font-family: var(--font-body); font-size: 12px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 18px; }
   .ce-cta-marcas ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
