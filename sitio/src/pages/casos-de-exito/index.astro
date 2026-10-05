@@ -464,17 +464,59 @@ const look = [
   </section>
 ))}
 
-<!-- CTA -->
-<section class="ce-cta">
+<!-- CTA: lo que tienen en común (dueño, 5-oct-2026) — primero la pregunta,
+     luego la respuesta en tres frentes y al final la invitación a la comunidad. -->
+<section class="ce-cta" id="ce-cta">
   <div class="ce-cta-inner">
-    <h2 class="ce-cta-title">Tu negocio puede ser el siguiente.</h2>
-    <p class="ce-cta-subtitle">Configura SACS en 15 minutos. Sin tarjeta de crédito.</p>
+    <span class="ce-cta-k">La comunidad Sacs</span>
+    <h2 class="ce-cta-title">¿Sabes qué tienen en común las marcas que trabajan con Sacs?</h2>
+    <p class="ce-cta-subtitle">Todas buscan generar un <b>impacto positivo</b> y <b>experiencias reales</b>. No solo venden: construyen algo para la gente que las rodea.</p>
+
+    <ul class="ce-cta-trio">
+      <li style="--i:0">
+        <span class="ce-cta-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></span>
+        <strong>Sus clientes</strong>
+        <span>Experiencias que se recuerdan, en la tienda, en el evento y en línea.</span>
+      </li>
+      <li style="--i:1">
+        <span class="ce-cta-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 20a6 6 0 0 1 12 0M14.5 15.5A5 5 0 0 1 21 20"/></svg></span>
+        <strong>Su equipo</strong>
+        <span>Herramientas para trabajar mejor, con orden, y crecer junto con la marca.</span>
+      </li>
+      <li style="--i:2">
+        <span class="ce-cta-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.2 3.6 5 3.6 8s-1.1 5.8-3.6 8c-2.5-2.2-3.6-5-3.6-8S9.5 6.2 12 4z"/></svg></span>
+        <strong>Su comunidad</strong>
+        <span>Moda con conciencia que deja huella en cada lugar donde opera.</span>
+      </li>
+    </ul>
+
+    <p class="ce-cta-inv">Cuando una marca crece así, todo a su alrededor crece con ella.<br /><b>Sé parte de la comunidad que genera ecosistemas.</b></p>
     <div class="ce-cta-actions">
       <a href="/prueba-gratis" class="ce-cta-btn ce-cta-btn--primary">Empieza gratis</a>
       <a href="/contacto" class="ce-cta-btn ce-cta-btn--secondary">Agenda una demo</a>
     </div>
+
+    <div class="ce-cta-marcas">
+      <p class="ce-cta-cifra"><b>Más de 3,000 marcas</b> ya usan Sacs</p>
+      <span class="ce-cta-marcas-k">Algunas de ellas</span>
+      <ul>
+        {look.map((l) => (
+          <li><a href={`/casos-de-exito/${l.slug}`} style={`--c:${l.color}`}><i aria-hidden="true"></i>{l.marca}<em>{l.valor}</em></a></li>
+        ))}
+      </ul>
+    </div>
   </div>
 </section>
+
+<script>
+  // Los tres frentes suben en escalonado al entrar; sin JS se ven completos.
+  const cta = document.getElementById('ce-cta');
+  if (cta && 'IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    cta.classList.add('js-anim');
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { requestAnimationFrame(() => requestAnimationFrame(() => cta.classList.add('on'))); io.disconnect(); } }, { threshold: 0.25 });
+    io.observe(cta);
+  }
+</script>
 
 </BaseLayout>
 
@@ -902,56 +944,57 @@ const look = [
     .ce-lujo-link { width: 100%; justify-content: center; }
   }
 
-  /* CTA */
+  /* CTA: lo que tienen en común */
   .ce-cta {
-    padding: clamp(80px, 10vw, 140px) 0;
-    background: var(--color-text-primary);
+    position: relative; overflow: hidden;
+    padding: clamp(84px, 10vw, 140px) 0;
+    background: #141218;
     text-align: center;
   }
-  .ce-cta-inner {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 0 24px;
+  .ce-cta::before {
+    content: ''; position: absolute; left: -10%; right: -10%; bottom: -30%; height: 85%;
+    background: radial-gradient(ellipse 60% 55% at 50% 70%, rgba(236,72,153,.20), rgba(168,85,247,.10) 45%, transparent 75%);
+    pointer-events: none;
   }
+  .ce-cta-inner { position: relative; max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+  .ce-cta-k { display: inline-block; font-family: var(--font-body); font-size: 12px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: #FF7AB6; margin-bottom: 16px; }
   .ce-cta-title {
-    font-family: var(--font-display);
-    font-size: clamp(2rem, 4vw, 3rem);
-    font-weight: 800;
-    color: #fff;
-    letter-spacing: -0.03em;
-    margin: 0 0 12px;
-    line-height: 1.1;
+    font-family: var(--font-display); font-size: clamp(2rem, 4.4vw, 3.4rem); font-weight: 800; color: #fff;
+    letter-spacing: -0.035em; margin: 0 auto 16px; line-height: 1.08; max-width: 980px; text-wrap: balance;
   }
-  .ce-cta-subtitle {
-    font-family: var(--font-body);
-    font-size: 1.1rem;
-    color: rgba(255,255,255,0.6);
-    margin: 0 0 32px;
-  }
-  .ce-cta-actions {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  .ce-cta-btn {
-    font-family: var(--font-body);
-    font-size: 15px;
-    font-weight: 700;
-    padding: 14px 32px;
-    border-radius: 100px;
-    text-decoration: none;
-    transition: transform 0.2s ease, opacity 0.2s ease;
-  }
+  .ce-cta-subtitle { font-family: var(--font-body); font-size: clamp(1.02rem, 1.6vw, 1.18rem); line-height: 1.6; color: rgba(255,255,255,0.66); margin: 0 auto 48px; max-width: 640px; }
+  .ce-cta-subtitle b { color: #fff; font-weight: 700; }
+  .ce-cta-trio { list-style: none; margin: 0 0 52px; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(18px, 3vw, 40px); text-align: center; }
+  .ce-cta-trio li { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .ce-cta-ico { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; margin-bottom: 6px;
+    background: linear-gradient(135deg, #EC4899, #A855F7 60%, #FB923C); box-shadow: 0 10px 30px rgba(236,72,153,.28); }
+  .ce-cta-ico svg { width: 28px; height: 28px; fill: none; stroke: #fff; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .ce-cta-trio strong { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: #fff; letter-spacing: -0.02em; }
+  .ce-cta-trio span:not(.ce-cta-ico) { font-family: var(--font-body); font-size: 15px; line-height: 1.55; color: rgba(255,255,255,0.62); max-width: 280px; }
+  .ce-cta-inv { font-family: var(--font-body); font-size: clamp(1.02rem, 1.6vw, 1.2rem); line-height: 1.6; color: rgba(255,255,255,0.7); margin: 0 auto 28px; max-width: 640px; }
+  .ce-cta-inv b { display: inline-block; margin-top: 4px; font-family: var(--font-display); font-weight: 800; font-size: clamp(1.25rem, 2.2vw, 1.6rem); letter-spacing: -0.02em;
+    background: linear-gradient(90deg, #FF7AB6, #C084FC 55%, #FDBA74); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .ce-cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .ce-cta-btn { font-family: var(--font-body); font-size: 15px; font-weight: 700; padding: 14px 32px; border-radius: 100px; text-decoration: none; transition: transform 0.2s ease, opacity 0.2s ease; }
   .ce-cta-btn:hover { transform: translateY(-2px); }
-  .ce-cta-btn--primary {
-    background: #fff;
-    color: var(--color-text-primary);
+  .ce-cta-btn--primary { background: #fff; color: var(--color-text-primary); }
+  .ce-cta-btn--secondary { background: transparent; color: #fff; border: 1.5px solid rgba(255,255,255,0.3); }
+  .ce-cta-marcas { margin-top: 64px; padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.1); }
+  .ce-cta-cifra { font-family: var(--font-display); font-size: clamp(1.3rem, 2.4vw, 1.8rem); font-weight: 700; letter-spacing: -0.02em; color: rgba(255,255,255,0.75); margin: 0 0 22px; }
+  .ce-cta-cifra b { font-weight: 800; background: linear-gradient(90deg, #FF7AB6, #C084FC 55%, #FDBA74); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .ce-cta-marcas-k { display: block; font-family: var(--font-body); font-size: 12px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 18px; }
+  .ce-cta-marcas ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .ce-cta-marcas a { display: inline-flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.12);
+    font-family: var(--font-display); font-weight: 700; font-size: 15px; color: #fff; text-decoration: none; letter-spacing: -0.01em; transition: border-color .2s, background .2s; }
+  .ce-cta-marcas a:hover { border-color: var(--c); background: rgba(255,255,255,0.04); text-decoration: none; }
+  .ce-cta-marcas i { width: 9px; height: 9px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 22%, transparent); }
+  .ce-cta-marcas em { font-family: var(--font-body); font-style: normal; font-weight: 600; font-size: 12.5px; color: rgba(255,255,255,0.5); }
+  @media (prefers-reduced-motion: no-preference) {
+    .ce-cta.js-anim:not(.on) .ce-cta-trio li { opacity: 0; transform: translateY(18px); }
+    .ce-cta.js-anim .ce-cta-trio li { transition: opacity .6s ease, transform .6s cubic-bezier(.2,.8,.3,1); transition-delay: calc(var(--i) * 140ms); }
   }
-  .ce-cta-btn--secondary {
-    background: transparent;
-    color: #fff;
-    border: 1.5px solid rgba(255,255,255,0.3);
+  @media (max-width: 760px) {
+    .ce-cta-trio { grid-template-columns: 1fr; gap: 28px; }
   }
 
   /* Mobile */
