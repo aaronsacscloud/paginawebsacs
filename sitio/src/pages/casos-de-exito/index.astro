@@ -117,21 +117,81 @@ const cases = [
     stats: [], quote: '', author: '', highlights: [], image: '',
   },
 ];
+
+// ── Portada: un look, cinco marcas ──
+// Cada prenda de la modelo es una de las marcas. Coordenadas en px del
+// «escenario» de escritorio (880 × 860); la modelo va en (270, 60) a 374 × 820
+// y `px/py` son el punto de la prenda dentro de su foto original (456 × 999).
+const LOOK_ESC = 0.8208, LOOK_X = 270, LOOK_Y = 60, LOOK_W = 456, LOOK_H = 999;
+const look = [
+  { prenda: 'Chamarra', slug: 'mits', marca: 'Mexico Is The Shit', valor: 'Conciencia y cultura', frase: 'Moda con mensaje, hecha en México', color: '#FB923C', px: 90, py: 340, cx: 0, cy: 236, thumb: true },
+  { prenda: 'Playera', slug: 'liveshow', marca: 'Live Shows Merchandising', valor: 'Pasión', frase: 'Recuerdos que toman vida', color: '#EC4899', px: 220, py: 300, cx: 632, cy: 196 },
+  { prenda: 'Bolsa', slug: 'vende-tu-closet', marca: 'Vende Tu Clóset', valor: 'Sustentabilidad', frase: 'El lujo que vuelve a circular', color: '#16A34A', px: 64, py: 660, cx: 0, cy: 560 },
+  { prenda: 'Pantalón', slug: 'sthela', marca: 'Sthela & Co.', valor: 'Cada ocasión', frase: 'Luce increíble en cada evento', color: '#A855F7', px: 280, py: 640, cx: 632, cy: 470 },
+  { prenda: 'Botas', slug: 'las-alazanas', marca: 'Las Alazanas', valor: 'Forma de vida', frase: 'La vida vaquera, hecha a mano', color: '#F59E0B', px: 380, py: 960, cx: 632, cy: 740 },
+].map((l, i) => {
+  const ax = LOOK_X + l.px * LOOK_ESC, ay = LOOK_Y + l.py * LOOK_ESC;
+  const derecha = l.cx > ax;
+  const ex = derecha ? l.cx : l.cx + 226, ey = l.cy + 40, mx = (ax + ex) / 2;
+  return { ...l, n: i + 1, ax: Math.round(ax), ay: Math.round(ay), d: `M${ax.toFixed(0)},${ay.toFixed(0)} C${mx.toFixed(0)},${ay.toFixed(0)} ${mx.toFixed(0)},${ey} ${ex},${ey}`,
+    left: (l.px / LOOK_W * 100).toFixed(1) + '%', top: (l.py / LOOK_H * 100).toFixed(1) + '%', delay: `${(i * 0.4).toFixed(1)}s` };
+});
 ---
 
 <BaseLayout
   title="Casos de éxito — Retailers que crecen con SACS"
   description="Marcas de moda reales que operan con SACS: del merch oficial de conciertos en estadios llenos a la moda femenina que se vende por mayoreo en Intermoda."
   structuredData={structuredData}
+  preloadImage="/images/casos-look-modelo.webp"
 >
 
-<!-- Hero -->
-<section class="ce-hero">
-  <div class="ce-hero-inner">
-    <span class="ce-eyebrow">Casos de éxito</span>
-    <h1 class="ce-hero-title">No venden una prenda. Venden <span class="ce-rot"><span>una forma de vestir.</span><span aria-hidden="true">una temporada.</span><span aria-hidden="true">un recuerdo.</span><span aria-hidden="true">una comunidad.</span></span></h1>
-    <p class="ce-hero-subtitle">Trabajamos con empresarios que saben lo que hacen: líderes apasionados por su marca que construyen un ecosistema completo alrededor de ella. Por cómo hacen las cosas, sus marcas siguen creciendo.</p>
-    <p class="ce-hero-proof"><span>Con ellos trabajamos:</span> <a href="#liveshow">Live Shows Merchandising</a> <a href="#sthela">Sthela &amp; Co.</a> <a href="#vende-tu-closet">Vende Tu Clóset</a> <a href="#las-alazanas">Las Alazanas</a> <a href="#mits">Mexico Is The Shit</a></p>
+<!-- Hero: un look, cinco marcas. Cada prenda de la modelo es una marca con su sentido. -->
+<section class="ce-look">
+  <div class="ce-look-inner">
+    <div class="ce-look-text">
+      <span class="ce-look-eyebrow">// Casos de éxito</span>
+      <h1 class="ce-look-title">La moda no son solo temporadas, tallas y colores. <span>Es sentido, pasión y conciencia.</span></h1>
+      <p class="ce-look-sub">Son líderes que trabajan con Sacs: empresarios que ven la moda como una pasión en todos sus campos y construyen marcas conscientes. Cada prenda de este look es una de ellas.</p>
+      <p class="ce-look-meta"><span class="ce-look-led"></span>1 look · 5 marcas · Sacs | Fashion OS</p>
+    </div>
+
+    <div class="ce-look-stage-wrap">
+      <div class="ce-look-stage">
+        <div class="ce-look-grid" aria-hidden="true"></div>
+        <div class="ce-look-arco" aria-hidden="true"></div>
+        <div class="ce-look-modelo">
+          <img src="/images/casos-look-modelo.webp" alt="Modelo con chamarra Mexico Is The Shit, playera de concierto, pantalón amplio, bolsa y botas vaqueras" width="456" height="999" loading="eager" fetchpriority="high" />
+          {look.map((l) => (
+            <a href={`#${l.slug}`} class="ce-look-dot" style={`left:${l.left};top:${l.top};--c:${l.color};--d:${l.delay}`} aria-label={`${l.prenda}: ${l.marca}`}><span>{l.n}</span></a>
+          ))}
+          <div class="ce-look-scan" aria-hidden="true"><i></i></div>
+        </div>
+        <svg class="ce-look-hilos" viewBox="0 0 880 860" aria-hidden="true">
+          <defs><filter id="ce-look-gw"><feGaussianBlur stdDeviation="2.5" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter></defs>
+          {look.map((l) => (
+            <g>
+              <path id={`ce-look-h${l.n}`} d={l.d} stroke={l.color} stroke-width="1.6" fill="none" stroke-dasharray="3 5" class="ce-look-flujo" />
+              <circle r="3.4" fill={l.color} filter="url(#ce-look-gw)"><animateMotion dur="2.2s" begin={l.delay} repeatCount="indefinite"><mpath href={`#ce-look-h${l.n}`} /></animateMotion></circle>
+            </g>
+          ))}
+        </svg>
+        {look.map((l) => (
+          <a href={`#${l.slug}`} class="ce-look-card" style={`left:${l.cx}px;top:${l.cy}px;--c:${l.color};--d:${l.delay}`}>
+            <span class="ce-look-card-k">{l.prenda} · {l.valor}<i></i></span>
+            <span class="ce-look-card-b">
+              {l.thumb && <img src="/images/casos-look-mits-espalda.webp" alt="" width="190" height="210" loading="lazy" />}
+              <span><strong>{l.marca}</strong><em>{l.frase}</em></span>
+            </span>
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <ol class="ce-look-lista">
+      {look.map((l) => (
+        <li><a href={`#${l.slug}`} style={`--c:${l.color}`}><span class="ce-look-n">{l.n}</span><span><small>{l.prenda} · {l.valor}</small><strong>{l.marca}</strong><em>{l.frase}</em></span></a></li>
+      ))}
+    </ol>
   </div>
 </section>
 
@@ -419,95 +479,84 @@ const cases = [
 </BaseLayout>
 
 <style>
-  /* ── Hero: la palabra que cambia, sobre degradado rosa · morado · un toque naranja ── */
-  .ce-hero {
-    padding: clamp(120px, 14vw, 180px) 0 clamp(60px, 8vw, 100px);
-    text-align: center;
-    background:
-      radial-gradient(ellipse 45% 55% at 6% 20%, rgba(219, 39, 119, 0.13), transparent 70%),
-      radial-gradient(ellipse 45% 55% at 96% 30%, rgba(147, 51, 234, 0.12), transparent 70%),
-      radial-gradient(ellipse 40% 35% at 55% 105%, rgba(249, 115, 22, 0.07), transparent 70%),
-      #fff;
-  }
-  .ce-hero-inner {
-    max-width: 920px;
-    margin: 0 auto;
-    padding: 0 16px;
-  }
-  .ce-eyebrow {
-    display: inline-block;
-    font-family: var(--font-display);
-    font-size: 13px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 2.4px;
-    margin-bottom: 18px;
-    background: linear-gradient(90deg, #DB2777, #9333EA 72%, #F97316);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  .ce-hero-title {
-    font-family: var(--font-display);
-    font-size: clamp(2.3rem, 6.4vw, 4.6rem);
-    font-weight: 800;
-    color: var(--color-text-primary);
-    letter-spacing: -0.045em;
-    line-height: 1.04;
-    margin: 0 auto 24px;
-    max-width: 15ch;
-    text-wrap: balance;
-  }
-  .ce-rot { display: inline-grid; vertical-align: bottom; }
-  .ce-rot > span {
-    grid-area: 1 / 1;
-    background: linear-gradient(90deg, #DB2777, #9333EA 72%, #F97316);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    opacity: 0;
-    animation: ce-rota 12s infinite;
-  }
-  .ce-rot > span:nth-child(2) { animation-delay: 3s; }
-  .ce-rot > span:nth-child(3) { animation-delay: 6s; }
-  .ce-rot > span:nth-child(4) { animation-delay: 9s; }
-  @keyframes ce-rota {
-    0% { opacity: 0; transform: translateY(0.45em); }
-    4%, 22% { opacity: 1; transform: none; }
-    26%, 100% { opacity: 0; transform: translateY(-0.45em); }
+  /* ── Hero: un look, cinco marcas (BLANCO: va antes de Live Shows, que es negro) ──
+     En escritorio, la modelo en un «escenario» fijo de 880 × 860 con etiquetas
+     tipo pantalla técnica unidas por hilos de luz; se escala por pasos para
+     que quepa. Por debajo de 1180 px el escenario se cambia por la foto con
+     puntos numerados y la lista de marcas. */
+  .ce-look { --grad: linear-gradient(90deg, #EC4899, #A855F7 70%, #FB923C); position: relative; overflow: hidden;
+    padding: clamp(96px, 10vw, 120px) 0 clamp(40px, 5vw, 64px); background:
+      radial-gradient(ellipse 30% 55% at 68% 50%, rgba(168, 85, 247, 0.16), transparent 70%),
+      radial-gradient(ellipse 40% 45% at 5% 15%, rgba(236, 72, 153, 0.12), transparent 70%),
+      radial-gradient(ellipse 40% 30% at 60% 105%, rgba(251, 146, 60, 0.09), transparent 70%),
+      #fff; }
+  .ce-look-inner { max-width: 1440px; margin: 0 auto; padding: 0 clamp(16px, 5vw, 96px); display: flex; align-items: center; gap: 24px; }
+  .ce-look-text { flex: 0 0 452px; display: flex; flex-direction: column; gap: 20px; }
+  .ce-look-eyebrow { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: #DB2777; }
+  .ce-look-title { margin: 0; font-family: var(--font-display); font-size: clamp(2.2rem, 3.2vw, 2.85rem); font-weight: 800; letter-spacing: -0.045em; line-height: 1.06; color: var(--color-text-primary); text-wrap: balance; }
+  .ce-look-title span { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .ce-look-sub { margin: 0; font-family: var(--font-body); font-size: 17px; line-height: 1.65; color: var(--color-text-secondary); }
+  .ce-look-meta { margin: 0; display: flex; align-items: center; gap: 12px; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; color: var(--color-text-tertiary); }
+  .ce-look-led { width: 8px; height: 8px; border-radius: 4px; background: #22C55E; box-shadow: 0 0 10px #22C55E; }
+
+  .ce-look-stage-wrap { flex: 0 0 880px; height: 860px; }
+  .ce-look-stage { position: relative; width: 880px; height: 860px; transform-origin: 0 0; }
+  .ce-look-grid { position: absolute; inset: 0; background: linear-gradient(rgba(91, 75, 214, 0.12) 1px, transparent 1px) 0 0 / 44px 44px, linear-gradient(90deg, rgba(91, 75, 214, 0.12) 1px, transparent 1px) 0 0 / 44px 44px;
+    -webkit-mask-image: radial-gradient(ellipse 45% 55% at 52% 50%, #000 30%, transparent 75%); mask-image: radial-gradient(ellipse 45% 55% at 52% 50%, #000 30%, transparent 75%); }
+  .ce-look-arco { position: absolute; left: 210px; top: 100px; width: 494px; height: 760px; border-radius: 247px 247px 30px 30px; background: linear-gradient(180deg, rgba(168, 85, 247, 0.12), rgba(236, 72, 153, 0.08) 60%, transparent); border: 1px solid rgba(91, 75, 214, 0.12); }
+  .ce-look-modelo { position: absolute; left: 270px; top: 60px; width: 374px; height: 820px; }
+  .ce-look-modelo img { display: block; width: 100%; height: 100%; filter: drop-shadow(0 24px 40px rgba(40, 20, 90, 0.18)); }
+  .ce-look-dot { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: var(--c); border: 2.5px solid #fff; box-shadow: 0 0 10px var(--c); text-decoration: none; }
+  .ce-look-dot::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 1.5px solid var(--c); animation: ce-look-pulso 2s ease-out var(--d) infinite; }
+  .ce-look-dot span { display: none; }
+  @keyframes ce-look-pulso { from { transform: scale(0.8); opacity: 0.9; } to { transform: scale(2.6); opacity: 0; } }
+  .ce-look-scan { position: absolute; inset: 0 -30px; overflow: hidden; pointer-events: none; }
+  .ce-look-scan i { position: absolute; left: 0; right: 0; top: 0; height: 80px; background: linear-gradient(180deg, transparent, rgba(236, 72, 153, 0.16) 75%, transparent); animation: ce-look-scan 4.2s ease-in-out infinite; }
+  .ce-look-scan i::after { content: ''; position: absolute; left: 0; right: 0; bottom: 16px; height: 2px; background: var(--grad); box-shadow: 0 0 16px #EC4899; }
+  @keyframes ce-look-scan { from { transform: translateY(-80px); } to { transform: translateY(840px); } }
+  .ce-look-hilos { position: absolute; inset: 0; width: 880px; height: 860px; pointer-events: none; }
+  .ce-look-flujo { animation: ce-look-flujo 1.4s linear infinite; }
+  @keyframes ce-look-flujo { to { stroke-dashoffset: -32; } }
+  .ce-look-card { position: absolute; width: 226px; box-sizing: border-box; padding: 11px 13px; border-radius: 12px; background: rgba(255, 255, 255, 0.94); border: 1px solid rgba(147, 51, 234, 0.28); box-shadow: 0 14px 34px rgba(80, 40, 140, 0.12); text-decoration: none; color: var(--color-text-primary); animation: ce-look-hud 0.8s ease-out calc(var(--d) + 0.3s) both; transition: transform 0.2s; }
+  .ce-look-card:hover { transform: translateY(-3px); text-decoration: none; }
+  .ce-look-card::before, .ce-look-card::after { content: ''; position: absolute; width: 12px; height: 12px; }
+  .ce-look-card::before { left: -1px; top: -1px; border-left: 2px solid var(--c); border-top: 2px solid var(--c); border-radius: 12px 0 0 0; }
+  .ce-look-card::after { right: -1px; bottom: -1px; border-right: 2px solid var(--c); border-bottom: 2px solid var(--c); border-radius: 0 0 12px 0; }
+  .ce-look-card-k { display: flex; justify-content: space-between; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--c); }
+  .ce-look-card-k i { width: 6px; height: 6px; border-radius: 3px; background: var(--c); animation: ce-look-blink 1s steps(1) infinite; }
+  .ce-look-card-b { display: flex; gap: 10px; align-items: center; margin-top: 6px; }
+  .ce-look-card-b img { width: 54px; height: 60px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+  .ce-look-card-b strong { display: block; font-family: var(--font-display); font-size: 14.5px; font-weight: 700; line-height: 1.2; }
+  .ce-look-card-b em { display: block; margin-top: 4px; font-style: normal; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 10.5px; line-height: 1.35; color: var(--color-text-tertiary); }
+  @keyframes ce-look-hud { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes ce-look-blink { 50% { opacity: 0; } }
+  .ce-look-lista { display: none; }
+
+  /* El escenario se encoge por pasos para caber junto al texto */
+  @media (max-width: 1520px) { .ce-look-stage-wrap { flex-basis: 792px; height: 774px; } .ce-look-stage { transform: scale(0.9); } }
+  @media (max-width: 1339px) { .ce-look-stage-wrap { flex-basis: 704px; height: 688px; } .ce-look-stage { transform: scale(0.8); } .ce-look-text { flex-basis: 420px; } }
+  @media (max-width: 1239px) { .ce-look-stage-wrap { flex-basis: 660px; height: 645px; } .ce-look-stage { transform: scale(0.75); } .ce-look-text { flex-basis: 400px; } }
+
+  /* Tablet y celular: foto con puntos numerados + lista */
+  @media (max-width: 1179px) {
+    .ce-look-inner { flex-direction: column; align-items: stretch; gap: 32px; }
+    .ce-look-text { flex: none; max-width: 640px; margin: 0 auto; text-align: center; align-items: center; }
+    .ce-look-stage-wrap { flex: none; height: auto; display: flex; justify-content: center; }
+    .ce-look-stage { transform: none; width: auto; height: auto; }
+    .ce-look-grid, .ce-look-arco, .ce-look-hilos, .ce-look-card { display: none; }
+    .ce-look-modelo { position: relative; left: auto; top: auto; width: min(300px, 70vw); height: auto; aspect-ratio: 456 / 999; }
+    .ce-look-dot { width: 26px; height: 26px; margin: -13px 0 0 -13px; display: grid; place-items: center; }
+    .ce-look-dot span { display: block; font-family: var(--font-display); font-size: 12px; font-weight: 800; color: #fff; line-height: 1; }
+    .ce-look-lista { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; list-style: none; margin: 0; padding: 0; }
+    .ce-look-lista a { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; background: #fff; border: 1px solid rgba(147, 51, 234, 0.2); text-decoration: none; color: var(--color-text-primary); }
+    .ce-look-n { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--c); color: #fff; font-family: var(--font-display); font-size: 12px; font-weight: 800; }
+    .ce-look-lista small { display: block; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--c); }
+    .ce-look-lista strong { display: block; margin-top: 2px; font-family: var(--font-display); font-size: 15px; font-weight: 700; }
+    .ce-look-lista em { display: block; margin-top: 2px; font-style: normal; font-size: 13px; color: var(--color-text-tertiary); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .ce-rot > span { animation: none; }
-    .ce-rot > span:first-child { opacity: 1; }
-  }
-  .ce-hero-subtitle {
-    font-family: var(--font-body);
-    font-size: clamp(1rem, 1.6vw, 1.18rem);
-    color: var(--color-text-secondary);
-    line-height: 1.65;
-    max-width: 640px;
-    margin: 0 auto;
-  }
-  .ce-hero-proof {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px 22px;
-    margin: 32px 0 0;
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--color-text-tertiary);
-  }
-  .ce-hero-proof a {
-    font-family: var(--font-display);
-    font-weight: 700;
-    color: var(--color-text-primary);
-    text-decoration: none;
-  }
-  .ce-hero-proof a:hover { color: #9333EA; }
-  @media (max-width: 560px) {
-    .ce-hero-proof > span { flex-basis: 100%; }
+    .ce-look-scan, .ce-look-dot::after { display: none; }
+    .ce-look-card, .ce-look-flujo, .ce-look-card-k i { animation: none; }
   }
 
   /* ── Case Section ── */
