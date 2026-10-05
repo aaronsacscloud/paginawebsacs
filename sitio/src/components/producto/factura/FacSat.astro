@@ -1,0 +1,81 @@
+---
+/**
+ * «Antes de que el SAT te la rebote» (/producto/facturacion-electronica): los cuidados REALES al timbrar. A la
+ * izquierda, una consola que escribe letra por letra los rechazos del SAT tal como Sacs los traduce; a la derecha, lo
+ * que se revisa antes (facturas en $0, forma contra método de pago, sin duplicados si se cae la conexión, los sellos
+ * al cargarlos con el aviso real «¡Ups! Este es tu archivo FIEL»). Marfil.
+ */
+import { SAT } from '../../../data/producto-facturacion';
+---
+<section class="pda fsa pd-marfil" id="fac-sat" aria-labelledby="fsa-h">
+  <p class="pd-folio"><span>{SAT.k}</span><span>Al timbrar</span></p>
+  <div class="fsa-cab">
+    <h2 class="pda-h" id="fsa-h">{SAT.h}</h2>
+    <p class="fsa-p">{SAT.p}</p>
+  </div>
+  <div class="fsa-grid">
+    <div class="fsa-consola" data-fsa data-mensajes={JSON.stringify(SAT.mensajes)}>
+      <span class="fsa-c-cab"><i></i><i></i><i></i><span>La factura no pudo ser timbrada</span></span>
+      <p class="fsa-c-txt"><span data-fsa-txt>{SAT.mensajes[0]}</span><i class="fsa-cursor" aria-hidden="true"></i></p>
+      <span class="fsa-c-pie">Te dice qué corregir y lo vuelves a timbrar.</span>
+    </div>
+    <ul class="fsa-cuida">
+      {SAT.cuida.map((x, i) => <li class="rv" style={`--i:${i}`}><span class="fsa-ico" aria-hidden="true">{['$0', '≠', '⇄', '🔑'][i]}</span><span><b>{x.t}</b><span>{x.d}</span></span></li>)}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .fsa-cab { display: grid; gap: 14px; }
+  .fsa-p { margin: 0; max-width: 46ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .fsa-grid { display: grid; gap: 28px; margin-top: 36px; }
+  .fsa-consola { display: grid; align-content: start; gap: 14px; min-height: 250px; padding: 0 0 22px; overflow: hidden; border-radius: 18px; background: #141414; color: #fff; box-shadow: 0 30px 50px -30px rgba(20, 20, 20, 0.6); }
+  .fsa-c-cab { display: flex; align-items: center; gap: 6px; padding: 12px 14px; background: #1F1F22; }
+  .fsa-c-cab i { width: 9px; height: 9px; border-radius: 50%; background: #3A3A3F; }
+  .fsa-c-cab i:first-child { background: #D64545; }
+  .fsa-c-cab span { margin-left: 8px; font: 700 12.5px/1.2 var(--font-display); color: #F2A3A3; }
+  .fsa-c-txt { min-height: 5.6em; margin: 0; padding: 0 20px; font: 500 clamp(17px, 1.8vw, 22px)/1.4 'JetBrains Mono', ui-monospace, monospace; }
+  .fsa-cursor { display: inline-block; width: 0.55em; height: 1.1em; margin-left: 2px; vertical-align: -0.15em; background: #6FD3A3; animation: fsaParpadea 1s steps(1) infinite; }
+  @keyframes fsaParpadea { 50% { opacity: 0; } }
+  .fsa-c-pie { padding: 0 20px; font: 600 13.5px/1.4 var(--font-display); color: #6FD3A3; }
+  .fsa-cuida { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; border-top: 2px solid #141414; }
+  .fsa-cuida li { display: grid; grid-template-columns: 48px 1fr; gap: 14px; align-items: start; padding: 16px 0; border-bottom: 1px solid var(--pd-filete); }
+  .fsa-ico { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px rgba(20, 20, 20, 0.08); font: 700 16px/1 var(--font-display); color: #2F55C4; }
+  .fsa-cuida li > span:last-child { display: grid; gap: 4px; }
+  .fsa-cuida b { font: 700 17px/1.25 var(--font-display); }
+  .fsa-cuida li > span:last-child > span { font: 500 14.5px/1.5 var(--font-body); color: var(--pd-tenue); }
+  :global(.js-rv) .fsa-cuida .rv { opacity: 0; transform: translateX(24px); transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.1s); }
+  :global(.js-rv) .fsa-cuida .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .fsa-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .fsa-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4.5vw; align-items: start; margin-top: 52px; }
+    .fsa-consola { min-height: 300px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fsa-cursor { animation: none; }
+    :global(.js-rv) .fsa-cuida .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // La consola escribe cada mensaje letra por letra, espera y lo borra, mientras se ve. Sin JS o con «reducir
+  // movimiento», el primer mensaje completo.
+  (() => {
+    const el = document.querySelector<HTMLElement>('[data-fsa]');
+    const txt = el?.querySelector<HTMLElement>('[data-fsa-txt]');
+    if (!el || !txt || !('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const mensajes: string[] = JSON.parse(el.dataset.mensajes || '[]');
+    let m = 0, n = 0, modo: 'escribe' | 'espera' | 'borra' = 'escribe', reloj = 0, espera = 0, visible = false;
+    const tic = () => {
+      const msg = mensajes[m];
+      if (modo === 'escribe') { n++; txt.textContent = msg.slice(0, n); if (n >= msg.length) { modo = 'espera'; espera = 70; } }
+      else if (modo === 'espera') { if (--espera <= 0) modo = 'borra'; }
+      else { n = Math.max(0, n - 3); txt.textContent = msg.slice(0, n); if (n === 0) { m = (m + 1) % mensajes.length; modo = 'escribe'; } }
+    };
+    const prende = () => { if (!reloj && visible && !document.hidden) { if (modo === 'escribe' && n === 0) txt.textContent = ''; reloj = window.setInterval(tic, 38); } };
+    const apaga = () => { if (reloj) { window.clearInterval(reloj); reloj = 0; } };
+    txt.textContent = '';
+    new IntersectionObserver((es) => es.forEach((e) => { visible = e.isIntersecting; visible ? prende() : apaga(); }), { threshold: 0.3 }).observe(el);
+    document.addEventListener('visibilitychange', () => (document.hidden ? apaga() : prende()));
+  })();
+</script>

@@ -1,0 +1,307 @@
+---
+/**
+ * «Un día de promociones» (/producto/promociones): un día de tienda con el scroll (data-tramos="5"). Un reloj avanza de
+ * las 10:00 a las 21:30 (las manecillas y la hora digital siguen al scroll), la foto pasa del día (la vendedora acomoda
+ * la mesa) a la caja y a la noche, y en cada momento una tarjeta gira hasta quedar de frente: la lista de promociones
+ * activas, el carrito con el precio tachado y la tira de la promoción, el aviso al cajero «Promoción por desbloquear»,
+ * la promoción con horario (VIP) y el reporte de ventas por promoción. Las tarjetas son dibujos con el diseño y los
+ * textos reales de Sacs (la cuenta demo no tiene promociones corriendo); los montos del reporte son de ejemplo.
+ * Sin JS o con «reducir movimiento»: el texto y las cinco tarjetas en rejilla.
+ */
+import { DIA, I } from '../../../data/producto-promociones';
+const FOTOS = [
+  { f: 'dia', alt: 'En la mañana, la vendedora acomoda suéteres en la mesa de la boutique' },
+  { f: 'caja', alt: '' },
+  { f: 'noche', alt: '' },
+];
+const TAG = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 2h5.6l6.4 6.4-5.6 5.6L2 7.6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="5.2" cy="5.2" r="1.2" fill="currentColor"/></svg>';
+---
+<section class="pdi" id="pro-dia" data-escena data-tramos="5" data-tramo="4" data-foto="noche" aria-labelledby="pdi-h">
+  <div class="pdi-riel" data-riel>
+    <div class="pdi-escena">
+      <div class="pdi-fotos">
+        {FOTOS.map((x, i) => (
+          <img class="pdi-foto" data-f={x.f} src={`${I}${x.f}-1280.webp`} srcset={`${I}${x.f}-900.webp 900w, ${I}${x.f}-1280.webp 1280w, ${I}${x.f}-1536.webp 1536w`} sizes="100vw" width="1536" height="1024" alt={x.alt} aria-hidden={i === 0 ? undefined : 'true'} loading="lazy" decoding="async" />
+        ))}
+        <span class="pdi-oscuro" aria-hidden="true"></span>
+      </div>
+
+      <div class="pdi-txt">
+        <p class="pdi-k">{DIA.k}</p>
+        <h2 class="pdi-h" id="pdi-h">{DIA.h}</h2>
+        <ol class="pdi-pasos">
+          {DIA.tramos.map((p, k) => (
+            <li class="pdi-paso" data-k={k}>
+              <span class="pdi-paso-n">{p.hora}</span>
+              <span class="pdi-paso-t"><b>{p.t}</b><span>{p.d}</span></span>
+              <i class="pdi-barra" aria-hidden="true"><b></b></i>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div class="pdi-mesa" data-pdi>
+        <div class="pdi-reloj" aria-hidden="true">
+          <svg viewBox="0 0 120 120">
+            <circle class="pdi-cara" cx="60" cy="60" r="56" />
+            {Array.from({ length: 12 }, (_, i) => <line class:list={['pdi-marca', { 'pdi-marca--g': i % 3 === 0 }]} x1="60" y1="9" x2="60" y2={i % 3 === 0 ? 19 : 15} transform={`rotate(${i * 30} 60 60)`} />)}
+            <line class="pdi-hora" x1="60" y1="60" x2="60" y2="31" />
+            <line class="pdi-min" x1="60" y1="60" x2="60" y2="17" />
+            <circle class="pdi-eje" cx="60" cy="60" r="4" />
+          </svg>
+          <b class="pdi-digital" data-digital>21:30</b>
+        </div>
+
+        <!-- 10:00 · la lista de promociones -->
+        <div class="pdi-carta" data-k="0" data-estado="antes">
+          <p class="pdi-q">10:00</p>
+          <div class="pdi-c pdi-lista" role="img" aria-label="La lista de promociones: Fin de temporada y 3x2 en camisetas activas; Buen Fin, programada">
+            <span class="pdi-lh"><b>Promociones</b><small>Ofertas y descuentos que impulsan tus ventas</small></span>
+            <span class="pdi-tabs"><i class="is-on">Actual y Próximo <em>3</em></i><i>Pasado</i><i>Todas</i></span>
+            <span class="pdi-fila pdi-fila--h"><span>Promoción</span><span>Vigencia</span><span>Estado</span></span>
+            <span class="pdi-fila"><span><b>Fin de temporada</b><small>Básica</small></span><span>5 oct · 10:00<small>→ 31 oct · 21:00</small></span><span><em class="pdi-pill pdi-pill--ok">Activa</em></span></span>
+            <span class="pdi-fila"><span><b>3x2 en camisetas</b><small>Avanzada</small></span><span>1 oct · 09:00<small>→ 31 oct · 21:00</small></span><span><em class="pdi-pill pdi-pill--ok">Activa</em></span></span>
+            <span class="pdi-fila"><span><b>Buen Fin</b><small>Básica</small></span><span>13 nov · 00:00<small>→ 16 nov · 23:59</small></span><span><em class="pdi-pill">Programada</em></span></span>
+          </div>
+        </div>
+
+        <!-- 12:30 · el carrito -->
+        <div class="pdi-carta" data-k="1" data-estado="antes">
+          <p class="pdi-q">12:30</p>
+          <div class="pdi-c pdi-carro" role="img" aria-label="El carrito de la caja: el vestido de $2,490 a $1,743 y el blazer de $3,290 a $2,303, cada uno con la tira de la promoción Fin de temporada; total $4,046">
+            <span class="pdi-linea"><span><b>Vestido de punto manga larga</b><small>S • Camel</small></span><span class="pdi-pp"><s>2,490.00</s><b>1,743.00 MXN</b></span><span class="pdi-tira"><Fragment set:html={TAG} />Fin de temporada</span></span>
+            <span class="pdi-linea"><span><b>Blazer sastre cruzado</b><small>M • Beige</small></span><span class="pdi-pp"><s>3,290.00</s><b>2,303.00 MXN</b></span><span class="pdi-tira"><Fragment set:html={TAG} />Fin de temporada</span></span>
+            <span class="pdi-cobrar"><span><b>COBRAR</b><small>2 artículos · 2 unidades</small></span><b>$4,046.00</b></span>
+          </div>
+        </div>
+
+        <!-- 13:15 · el aviso al cajero -->
+        <div class="pdi-carta" data-k="2" data-estado="antes">
+          <p class="pdi-q">13:15</p>
+          <div class="pdi-c pdi-aviso" role="img" aria-label="El aviso al cajero: ¡¡Promoción por desbloquear!! Lleva 3 camisetas y paga 2">
+            <span class="pdi-av-t"><Fragment set:html={TAG} />¡¡Promoción por desbloquear!!</span>
+            <b class="pdi-av-d">Lleva 3 camisetas y paga 2: agrega una más y la más barata sale gratis.</b>
+            <span class="pdi-av-n">Díselo a tu clienta, en voz moderada: puede agregar los productos que faltan para que aplique la promoción.</span>
+            <span class="pdi-av-pie"><span>Tienes (2) promociones disponibles</span><span class="pdi-av-b"><u>Anterior</u><u>Siguiente</u></span></span>
+          </div>
+        </div>
+
+        <!-- 18:00 · la promoción con horario (VIP) -->
+        <div class="pdi-carta" data-k="3" data-estado="antes">
+          <p class="pdi-q">18:00</p>
+          <div class="pdi-c pdi-hor" role="img" aria-label="La promoción Martes de 6 a 9: horario diario de 18:00 a 21:00, disponibilidad semanal los martes; disponible ahora">
+            <span class="pdi-hor-t"><b>Martes de 6 a 9</b><em>★ VIP</em></span>
+            <span class="pdi-hor-r"><small>Horario diario</small><b>18:00 — 21:00</b></span>
+            <span class="pdi-hor-r"><small>Disponibilidad</small><b>Semanal</b></span>
+            <span class="pdi-dias">{['L', 'M', 'Mi', 'J', 'V', 'S', 'D'].map((d) => <i class:list={{ 'is-on': d === 'M' }}>{d}</i>)}</span>
+            <span class="pdi-hor-on"><span class="pdi-sw"><i></i></span>Disponible ahora</span>
+          </div>
+        </div>
+
+        <!-- 21:30 · el reporte -->
+        <div class="pdi-carta" data-k="4" data-estado="ahora">
+          <p class="pdi-q">21:30</p>
+          <div class="pdi-c pdi-rep" role="img" aria-label="Ventas por promoción, con montos de ejemplo: Fin de temporada, 3x2 en camisetas y Martes de 6 a 9">
+            <span class="pdi-rep-t"><b>VENTAS POR PROMOCIÓN</b><em>Ejemplo</em></span>
+            {[['Fin de temporada', '$18,420', '23 und.', '17 trans.', 100], ['3x2 en camisetas', '$9,870', '21 und.', '7 trans.', 54], ['Martes de 6 a 9', '$4,310', '6 und.', '5 trans.', 24]].map(([n, v, u, t, w]) => (
+              <span class="pdi-rep-f"><span class="pdi-rep-n"><b>{n}</b><span>{v}</span></span><i style={`--w:${w}%`}></i><small>{u} · {t}</small></span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .pdi { position: relative; background: #0B0B0C; color: #fff; }
+  .pdi-escena { position: relative; overflow: hidden; }
+  .pdi-fotos { position: relative; aspect-ratio: 21 / 9; overflow: hidden; }
+  .pdi-foto { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; opacity: 0; transition: opacity 1.1s ease; }
+  .pdi-foto[data-f="dia"] { opacity: 1; }
+  .pdi-oscuro { position: absolute; inset: 0; background: #0A1648; opacity: 0; pointer-events: none; }
+  .pdi-txt { padding: 36px 20px 8px; }
+  .pdi-k { margin: 0 0 14px; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: #F2C46B; }
+  .pdi-h { margin: 0; max-width: 14ch; color: #fff; font: 700 clamp(34px, 3.8vw, 58px)/0.98 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; text-wrap: balance; }
+  .pdi-pasos { margin: 22px 0 0; padding: 0; list-style: none; border-top: 1px solid rgba(255, 255, 255, 0.3); }
+  .pdi-paso { position: relative; display: grid; grid-template-columns: 58px 1fr; gap: 4px; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.18); }
+  .pdi-paso-n { font: 700 15px/1.45 'JetBrains Mono', ui-monospace, monospace; color: #F2C46B; }
+  .pdi-paso-t { display: grid; gap: 3px; }
+  .pdi-paso-t b { font: 700 16px/1.3 var(--font-display); color: #fff; }
+  .pdi-paso-t > span { font: 500 14.5px/1.45 var(--font-body); color: rgba(255, 255, 255, 0.82); }
+  .pdi-barra { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; overflow: hidden; }
+  .pdi-barra b { display: block; height: 100%; background: #F2C46B; transform: scaleX(0); transform-origin: 0 50%; }
+
+  /* ── la mesa: sin escena, las cinco tarjetas en rejilla ── */
+  .pdi-mesa { display: grid; gap: 22px; padding: 18px 20px 64px; font-size: 14px; }
+  .pdi-reloj { display: none; }
+  .pdi-q { margin: 0 0 8px; font: 700 13px/1 'JetBrains Mono', ui-monospace, monospace; color: #F2C46B; }
+  .pdi-c { display: grid; gap: 0.7em; width: 100%; max-width: 30em; padding: 1.15em 1.2em; border-radius: 1.1em; background: #fff; color: #141414; box-shadow: 0 30px 60px -28px rgba(0, 0, 0, 0.85); }
+  .pdi-c :global(svg) { width: 1em; height: 1em; flex: none; }
+  /* lista */
+  .pdi-lh { display: grid; gap: 0.15em; padding: 0.85em 1em; margin: -0.3em -0.35em 0.1em; border-radius: 0.8em; background: linear-gradient(100deg, #3F6FE0, #5B8DF0); color: #fff; }
+  .pdi-lh b { font: 700 1.25em/1.1 var(--font-display); }
+  .pdi-lh small { font: 500 0.78em/1.3 var(--font-body); opacity: 0.9; }
+  .pdi-tabs { display: flex; gap: 0.4em; }
+  .pdi-tabs i { padding: 0.35em 0.7em; border-radius: 0.5em; font: 600 0.78em/1.2 var(--font-display); font-style: normal; color: #6B6A64; }
+  .pdi-tabs i.is-on { background: #2F55C4; color: #fff; }
+  .pdi-tabs em { margin-left: 0.3em; padding: 0 0.4em; border-radius: 99px; background: rgba(255, 255, 255, 0.25); font-style: normal; }
+  .pdi-fila { display: grid; grid-template-columns: 1.25fr 1.1fr 0.8fr; gap: 0.6em; align-items: center; padding: 0.55em 0.1em; border-top: 1px solid #ECEDEF; font: 600 0.82em/1.25 var(--font-display); }
+  .pdi-fila > span { display: grid; gap: 0.1em; }
+  .pdi-fila small { font: 500 0.92em/1.2 var(--font-body); color: #6B6A64; }
+  .pdi-fila--h { border-top: 0; padding-bottom: 0.2em; font: 700 0.7em/1 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: #8A8A85; }
+  .pdi-pill { justify-self: start; padding: 0.3em 0.65em; border-radius: 99px; background: #EEF2FD; color: #2F55C4; font: 700 0.92em/1.1 var(--font-display); font-style: normal; }
+  .pdi-pill--ok { background: #E3F4EA; color: #17804F; }
+  .pdi-pill--ok::before { content: '● '; font-size: 0.8em; }
+  /* carrito */
+  .pdi-linea { display: grid; grid-template-columns: 1fr auto; gap: 0.45em 0.8em; padding-bottom: 0.8em; border-bottom: 1px solid #ECEDEF; }
+  .pdi-linea > span:first-child { display: grid; gap: 0.15em; }
+  .pdi-linea b { font: 700 0.95em/1.2 var(--font-display); }
+  .pdi-linea small { font: 600 0.8em/1.2 var(--font-display); color: #2F55C4; }
+  .pdi-pp { display: grid; justify-items: end; }
+  .pdi-pp s { font: 500 0.78em/1.2 var(--font-body); color: #8A8A85; }
+  .pdi-pp b { font: 700 0.92em/1.25 var(--font-display); }
+  .pdi-tira { grid-column: 1 / -1; display: flex; align-items: center; gap: 0.5em; padding: 0.42em 0.7em; border-radius: 0.5em; background: #EAF0FE; color: #2F55C4; font: 700 0.8em/1.2 var(--font-display); }
+  .pdi-cobrar { display: flex; align-items: center; justify-content: space-between; gap: 1em; padding: 0.85em 1em; border-radius: 0.8em; background: #2F55C4; color: #fff; }
+  .pdi-cobrar span { display: grid; }
+  .pdi-cobrar small { font: 500 0.72em/1.3 var(--font-body); opacity: 0.85; }
+  .pdi-cobrar > b { font: 700 1.5em/1 var(--pd-clash, var(--font-display)); }
+  .pdi-cobrar span b { font: 700 1.05em/1.1 var(--font-display); letter-spacing: 0.04em; }
+  /* aviso */
+  .pdi-aviso { background: #FFF8E6; box-shadow: 0 30px 60px -28px rgba(0, 0, 0, 0.85), inset 0 0 0 2px #F2C46B; }
+  .pdi-av-t { display: flex; align-items: center; gap: 0.5em; font: 800 1.05em/1.2 var(--font-display); color: #8A5A00; letter-spacing: 0.01em; }
+  .pdi-av-d { font: 700 1.2em/1.3 var(--font-display); color: #141414; }
+  .pdi-av-n { font: 500 0.85em/1.45 var(--font-body); color: #55534E; }
+  .pdi-av-pie { display: flex; align-items: center; justify-content: space-between; gap: 0.8em; padding-top: 0.6em; border-top: 1px dashed #E8D19A; font: 600 0.78em/1.2 var(--font-display); color: #8A5A00; }
+  .pdi-av-b { display: flex; gap: 0.4em; }
+  .pdi-av-b u { padding: 0.4em 0.7em; border-radius: 0.45em; background: #fff; color: #141414; text-decoration: none; box-shadow: inset 0 0 0 1px #E8D19A; }
+  /* horario */
+  .pdi-hor-t { display: flex; align-items: center; justify-content: space-between; gap: 0.8em; }
+  .pdi-hor-t b { font: 700 1.35em/1.15 var(--font-display); }
+  .pdi-hor-t em { padding: 0.25em 0.6em; border-radius: 99px; background: #F2A33A; color: #fff; font: 700 0.75em/1.2 var(--font-display); font-style: normal; }
+  .pdi-hor-r { display: flex; align-items: baseline; justify-content: space-between; gap: 1em; padding: 0.55em 0; border-bottom: 1px solid #ECEDEF; }
+  .pdi-hor-r small { font: 600 0.82em/1.2 var(--font-display); color: #6B6A64; }
+  .pdi-hor-r b { font: 700 1em/1.2 'JetBrains Mono', ui-monospace, monospace; }
+  .pdi-dias { display: flex; gap: 0.35em; }
+  .pdi-dias i { display: grid; place-items: center; min-width: 2.2em; height: 2.2em; padding: 0 0.3em; border-radius: 0.6em; background: #F2F3F6; font: 700 0.8em/1 var(--font-display); font-style: normal; color: #6B6A64; }
+  .pdi-dias i.is-on { background: #2F55C4; color: #fff; }
+  .pdi-hor-on { display: flex; align-items: center; gap: 0.7em; font: 700 0.95em/1.2 var(--font-display); color: #17804F; }
+  .pdi-sw { position: relative; width: 2.6em; height: 1.5em; border-radius: 99px; background: #1F9D63; }
+  .pdi-sw i { position: absolute; top: 0.2em; left: 1.3em; width: 1.1em; height: 1.1em; border-radius: 50%; background: #fff; }
+  /* reporte */
+  .pdi-rep-t { display: flex; align-items: center; justify-content: space-between; }
+  .pdi-rep-t b { font: 800 0.82em/1 var(--font-display); letter-spacing: 0.1em; color: #45433E; }
+  .pdi-rep-t em { padding: 0.25em 0.55em; border-radius: 99px; background: #F2F3F6; color: #8A8A85; font: 600 0.72em/1.2 var(--font-display); font-style: normal; }
+  .pdi-rep-f { display: grid; gap: 0.35em; padding: 0.5em 0; border-top: 1px solid #ECEDEF; }
+  .pdi-rep-n { display: flex; justify-content: space-between; gap: 1em; font: 700 0.92em/1.2 var(--font-display); }
+  .pdi-rep-n span { font-variant-numeric: tabular-nums; }
+  .pdi-rep-f i { display: block; height: 0.55em; width: var(--w); border-radius: 99px; background: linear-gradient(90deg, #2F55C4, #5B86EA); transform-origin: 0 50%; }
+  .pdi-rep-f small { font: 500 0.78em/1.2 var(--font-body); color: #6B6A64; }
+
+  /* ══ con el scroll ══ */
+  .pdi.is-escena .pdi-riel { height: 560vh; }
+  .pdi.is-escena .pdi-escena { position: sticky; top: var(--sub, 0px); height: calc(100vh - var(--sub, 0px)); height: calc(100svh - var(--sub, 0px)); }
+  .pdi.is-escena .pdi-fotos { position: absolute; inset: 0; aspect-ratio: auto; }
+  .pdi.is-escena .pdi-foto { opacity: 0; }
+  .pdi.is-escena[data-foto="dia"] .pdi-foto[data-f="dia"], .pdi.is-escena[data-foto="caja"] .pdi-foto[data-f="caja"], .pdi.is-escena[data-foto="noche"] .pdi-foto[data-f="noche"] { opacity: 1; }
+  /* el día se oscurece hacia la noche, con el scroll */
+  .pdi.is-escena .pdi-oscuro { opacity: calc(var(--p, 1) * 0.42); }
+  .pdi.is-escena .pdi-mesa { position: absolute; z-index: 3; display: block; padding: 0; perspective: 1400px; }
+  .pdi.is-escena .pdi-reloj { position: absolute; z-index: 4; display: grid; justify-items: center; gap: 6px; }
+  .pdi-reloj svg { width: 100%; height: auto; }
+  .pdi-cara { fill: rgba(12, 12, 14, 0.82); stroke: rgba(255, 255, 255, 0.85); stroke-width: 2.5; }
+  .pdi-marca { stroke: rgba(255, 255, 255, 0.5); stroke-width: 2; stroke-linecap: round; }
+  .pdi-marca--g { stroke: #fff; stroke-width: 3; }
+  .pdi-hora, .pdi-min { stroke-linecap: round; transform-origin: 60px 60px; }
+  .pdi-hora { stroke: #fff; stroke-width: 5; transform: rotate(var(--rh, 285deg)); }
+  .pdi-min { stroke: #F2C46B; stroke-width: 3; transform: rotate(var(--rm, 180deg)); }
+  .pdi-eje { fill: #F2C46B; }
+  .pdi-digital { padding: 4px 10px; border-radius: 99px; background: rgba(12, 12, 14, 0.82); color: #fff; font: 700 15px/1.2 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .pdi.is-escena .pdi-q { display: none; }
+  .pdi.is-escena .pdi-carta { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; transform-style: preserve-3d; transition: opacity 0.5s ease, transform 0.9s cubic-bezier(0.22, 1, 0.36, 1); }
+  .pdi.is-escena .pdi-carta[data-estado="antes"] { opacity: 0; transform: rotateY(62deg) translateX(-8%); }
+  .pdi.is-escena .pdi-carta[data-estado="despues"] { opacity: 0; transform: rotateY(-62deg) translateX(8%); }
+  .pdi.is-escena .pdi-carta[data-estado="ahora"] { opacity: 1; transform: none; }
+  .pdi.is-escena .pdi-carta[data-estado="ahora"] .pdi-rep-f i { animation: pdiCrece 1.1s cubic-bezier(0.22, 1, 0.36, 1) both 0.3s; }
+  @keyframes pdiCrece { from { transform: scaleX(0); } to { transform: none; } }
+  .pdi.is-escena .pdi-carta[data-estado="ahora"] .pdi-sw { animation: pdiSw 0.5s ease both 0.6s; }
+  .pdi.is-escena .pdi-carta[data-estado="ahora"] .pdi-sw i { animation: pdiSwI 0.5s cubic-bezier(0.22, 1, 0.36, 1) both 0.6s; }
+  @keyframes pdiSw { from { background: #D7DAE1; } to { background: #1F9D63; } }
+  @keyframes pdiSwI { from { left: 0.2em; } to { left: 1.3em; } }
+  .pdi.is-escena .pdi-carta[data-estado="ahora"] .pdi-aviso { animation: pdiLatido 1.6s ease-in-out 0.8s 2; }
+  @keyframes pdiLatido { 0%, 100% { box-shadow: 0 30px 60px -28px rgba(0, 0, 0, 0.85), inset 0 0 0 2px #F2C46B; } 50% { box-shadow: 0 30px 60px -28px rgba(0, 0, 0, 0.85), inset 0 0 0 2px #F2C46B, 0 0 0 8px rgba(242, 196, 107, 0.35); } }
+  .pdi.is-escena .pdi-paso-n { color: rgba(255, 255, 255, 0.45); }
+  .pdi.is-escena[data-tramo="0"] .pdi-paso[data-k="0"] .pdi-paso-n, .pdi.is-escena[data-tramo="1"] .pdi-paso[data-k="1"] .pdi-paso-n, .pdi.is-escena[data-tramo="2"] .pdi-paso[data-k="2"] .pdi-paso-n, .pdi.is-escena[data-tramo="3"] .pdi-paso[data-k="3"] .pdi-paso-n, .pdi.is-escena[data-tramo="4"] .pdi-paso[data-k="4"] .pdi-paso-n { color: #F2C46B; }
+  .pdi.is-escena[data-tramo="0"] .pdi-paso[data-k="0"] .pdi-barra b, .pdi.is-escena[data-tramo="1"] .pdi-paso[data-k="1"] .pdi-barra b, .pdi.is-escena[data-tramo="2"] .pdi-paso[data-k="2"] .pdi-barra b, .pdi.is-escena[data-tramo="3"] .pdi-paso[data-k="3"] .pdi-barra b, .pdi.is-escena[data-tramo="4"] .pdi-paso[data-k="4"] .pdi-barra b { animation: pdiBarra 4.5s linear both; }
+  @keyframes pdiBarra { from { transform: scaleX(0); } to { transform: none; } }
+
+  @media (min-width: 900px) {
+    .pdi:not(.is-escena) .pdi-txt, .pdi:not(.is-escena) .pdi-mesa { max-width: 1160px; margin: 0 auto; }
+    .pdi:not(.is-escena) .pdi-pasos { display: grid; grid-template-columns: 1fr 1fr; column-gap: 32px; }
+    .pdi:not(.is-escena) .pdi-mesa { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); align-items: start; }
+    .pdi.is-escena .pdi-escena::after { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; background: linear-gradient(90deg, rgba(8, 8, 10, 0.92) 0%, rgba(8, 8, 10, 0.7) 30%, rgba(8, 8, 10, 0.2) 60%, rgba(8, 8, 10, 0.35) 100%); }
+    .pdi.is-escena .pdi-txt { position: absolute; left: 0; top: 50%; z-index: 4; width: min(36vw, 480px); padding: 0 0 0 4.4vw; transform: translateY(-50%); text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45); }
+    .pdi.is-escena .pdi-paso-t > span { display: none; }
+    .pdi.is-escena[data-tramo="0"] .pdi-paso[data-k="0"] .pdi-paso-t > span, .pdi.is-escena[data-tramo="1"] .pdi-paso[data-k="1"] .pdi-paso-t > span, .pdi.is-escena[data-tramo="2"] .pdi-paso[data-k="2"] .pdi-paso-t > span, .pdi.is-escena[data-tramo="3"] .pdi-paso[data-k="3"] .pdi-paso-t > span, .pdi.is-escena[data-tramo="4"] .pdi-paso[data-k="4"] .pdi-paso-t > span { display: block; }
+    /* la mesa a la derecha; el reloj arriba, a la derecha de la tarjeta */
+    .pdi.is-escena .pdi-mesa { right: 5vw; top: 14%; bottom: 10%; width: min(46vw, 640px); font-size: clamp(14px, 1.15vw, 17px); }
+    .pdi.is-escena .pdi-carta { right: 96px; }
+    .pdi.is-escena .pdi-reloj { right: -6px; top: -40px; width: 132px; }
+  }
+  @media (max-width: 899px) {
+    .pdi.is-escena .pdi-riel { height: 480vh; }
+    .pdi.is-escena .pdi-fotos { bottom: auto; height: calc((100svh - var(--sub, 0px)) * 0.58); }
+    .pdi.is-escena .pdi-fotos::after { content: ''; position: absolute; inset: 0; background: rgba(8, 8, 10, 0.5); }
+    .pdi.is-escena .pdi-mesa { left: 16px; right: 16px; top: 52px; height: calc((100svh - var(--sub, 0px)) * 0.58 - 64px); font-size: clamp(11.5px, 3.3vw, 13.5px); }
+    .pdi.is-escena .pdi-reloj { left: 50%; top: -42px; grid-auto-flow: column; align-items: center; gap: 8px; width: auto; padding: 4px 12px 4px 5px; border-radius: 99px; background: rgba(12, 12, 14, 0.82); transform: translateX(-50%); }
+    .pdi.is-escena .pdi-reloj svg { width: 28px; }
+    .pdi.is-escena .pdi-digital { padding: 0; background: none; font-size: 14px; }
+    .pdi.is-escena .pdi-txt { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; padding: 22px 20px 18px; background: linear-gradient(180deg, rgba(11, 11, 12, 0) 0, #0B0B0C 22px); }
+    .pdi.is-escena .pdi-k { margin-bottom: 8px; }
+    .pdi.is-escena .pdi-h { font-size: clamp(25px, 7.2vw, 34px); }
+    .pdi.is-escena .pdi-pasos { margin-top: 10px; }
+    .pdi.is-escena .pdi-paso { display: none; padding: 10px 0 8px; }
+    .pdi.is-escena[data-tramo="0"] .pdi-paso[data-k="0"], .pdi.is-escena[data-tramo="1"] .pdi-paso[data-k="1"], .pdi.is-escena[data-tramo="2"] .pdi-paso[data-k="2"], .pdi.is-escena[data-tramo="3"] .pdi-paso[data-k="3"], .pdi.is-escena[data-tramo="4"] .pdi-paso[data-k="4"] { display: grid; }
+    .pdi:not(.is-escena) .pdi-fotos { aspect-ratio: 3 / 2; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pdi * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<script>
+  // Lo que el scroll mueve y el CSS no alcanza: el estado de cada tarjeta, la foto del momento y el reloj (manecillas y
+  // hora digital). Cada tramo va de su hora a la del siguiente (la última, hasta las 22:00). Lee --p y data-tramo de
+  // iniciaEscenas; sin escena, todo se queda en las 21:30.
+  (() => {
+    const sec = document.querySelector<HTMLElement>('.pdi');
+    if (!sec) return;
+    const cartas = Array.from(sec.querySelectorAll<HTMLElement>('.pdi-carta'));
+    const reloj = sec.querySelector<HTMLElement>('.pdi-reloj');
+    const digital = sec.querySelector<HTMLElement>('[data-digital]');
+    const fotos = ['dia', 'caja', 'caja', 'noche', 'noche'];
+    const horas = [600, 750, 795, 1080, 1290, 1320]; // minutos: 10:00, 12:30, 13:15, 18:00, 21:30, 22:00
+    let ultimo = -1, ultimaHora = '';
+    const pinta = () => {
+      const t = Number(sec.dataset.tramo || 0);
+      if (t !== ultimo) {
+        ultimo = t;
+        cartas.forEach((c, k) => { c.dataset.estado = k < t ? 'antes' : k === t ? 'ahora' : 'despues'; });
+        sec.dataset.foto = fotos[t] || 'noche';
+      }
+      const enEscena = sec.classList.contains('is-escena');
+      const p = enEscena ? Number(sec.style.getPropertyValue('--p') || 0) : 1;
+      const f = enEscena ? Math.min(1, Math.max(0, p * 5 - t)) : 0;
+      const min = enEscena ? horas[t] + (horas[t + 1] - horas[t]) * f : 1290;
+      if (reloj) {
+        reloj.style.setProperty('--rh', ((min / 60) % 12) * 30 + 'deg');
+        reloj.style.setProperty('--rm', (min % 60) * 6 + 'deg');
+      }
+      const hh = Math.floor(min / 60), mm = Math.floor(min % 60 / 5) * 5;
+      const txt = String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+      if (digital && txt !== ultimaHora) { ultimaHora = txt; digital.textContent = txt; }
+    };
+    new MutationObserver(pinta).observe(sec, { attributes: true, attributeFilter: ['style', 'data-tramo', 'class'] });
+    pinta();
+  })();
+</script>

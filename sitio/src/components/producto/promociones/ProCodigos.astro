@@ -1,0 +1,111 @@
+---
+/**
+ * «Para todas, o solo para algunas» (/producto/promociones): los objetivos de una promoción (pantalla REAL de «Nueva
+ * Promoción»: disponible para todos o exclusivo para algunos) y los códigos. A la derecha, la pestaña «Cupón» de la caja
+ * dibujada con sus textos reales: el código se escribe solo, letra por letra, y aparece «Cupón aplicado» (en loop
+ * mientras se ve). Debajo, los cupones únicos del marketing por correo. Azul.
+ */
+import { CODIGOS, I } from '../../../data/producto-promociones';
+import StaffVentana from '../../plugins/staff/StaffVentana.astro';
+---
+<section class="pda pco2 pd-azul" id="pro-codigos" aria-labelledby="pco2-h">
+  <div class="pda-fondo" aria-hidden="true"><span>CUPONES · CÓDIGOS · VIP</span><span>CUPONES · CÓDIGOS · VIP</span></div>
+  <p class="pd-folio"><span>{CODIGOS.k}</span><span>Quién puede recibirla</span></p>
+  <div class="pco2-cab">
+    <h2 class="pda-h" id="pco2-h">{CODIGOS.h}</h2>
+    <p class="pco2-p">{CODIGOS.p}</p>
+  </div>
+  <div class="pco2-grid">
+    <div class="pco2-izq">
+      <div class="pco2-pantalla rv"><StaffVentana src={`${I}pantalla-objetivos.webp`} w={1100} h={346} alt="Objetivos de la promoción: disponible para todos (todos los clientes pueden recibirla) o exclusivo para algunos (solo grupos específicos o con código de promoción)" barra="Nueva Promoción › Objetivos" /></div>
+      <ol class="pco2-op">
+        {CODIGOS.opciones.map((x, i) => <li class="rv" style={`--i:${i}`}><b>{x.t}</b><span>{x.d}</span></li>)}
+      </ol>
+    </div>
+    <div class="pco2-cupon" data-pco2 role="img" aria-label={`La pestaña Cupón de la caja: se escribe el código ${CODIGOS.codigo}, se presiona Aplicar y aparece «Cupón aplicado»`}>
+      <span class="pco2-tabs" aria-hidden="true"><i>Descuento</i><i>Nota</i><i class="is-on">Cupón</i><i>Apartar</i></span>
+      <span class="pco2-modal" aria-hidden="true">
+        <b class="pco2-mt">Código de promoción</b>
+        <small>Asegúrate de tener en el carrito todos los productos de la promoción antes de aplicar el código.</small>
+        <span class="pco2-campo"><span class="pco2-escrito" data-codigo={CODIGOS.codigo}></span><i class="pco2-cursor"></i></span>
+        <span class="pco2-bot"><u>Cerrar</u><u class="pco2-aplicar">Aplicar</u></span>
+        <span class="pco2-ok">✓ Cupón aplicado</span>
+      </span>
+    </div>
+  </div>
+  <p class="pco2-correo">{CODIGOS.correo}</p>
+</section>
+
+<style>
+  .pco2-cab { display: grid; gap: 14px; }
+  .pco2-p { margin: 0; max-width: 46ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .pco2-grid { display: grid; gap: 28px; margin-top: 36px; }
+  .pco2-izq { display: grid; gap: 22px; align-content: start; }
+  .pco2-op { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; border-top: 2px solid #fff; }
+  .pco2-op li { display: grid; gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--pd-linea); }
+  .pco2-op b { font: 700 17px/1.25 var(--font-display); color: #fff; }
+  .pco2-op span { font: 500 14.5px/1.5 var(--font-body); color: rgba(255, 255, 255, 0.9); }
+  /* la pestaña «Cupón» */
+  .pco2-cupon { position: relative; display: grid; gap: 14px; align-content: start; padding: 20px; border-radius: 22px; background: #F4F6FA; color: #141414; box-shadow: 0 30px 60px -30px rgba(10, 22, 72, 0.7); }
+  .pco2-tabs { display: flex; gap: 4px; padding-bottom: 12px; border-bottom: 1px solid #E2E5EC; }
+  .pco2-tabs i { flex: 1; padding: 8px 4px; border-radius: 8px; font: 600 13px/1.2 var(--font-display); font-style: normal; text-align: center; color: #6B6A64; }
+  .pco2-tabs i.is-on { background: #2F55C4; color: #fff; }
+  .pco2-modal { display: grid; gap: 10px; padding: 18px; border-radius: 16px; background: #fff; box-shadow: 0 12px 30px -18px rgba(16, 24, 40, 0.5); }
+  .pco2-mt { font: 700 18px/1.2 var(--font-display); }
+  .pco2-modal small { font: 500 12.5px/1.45 var(--font-body); color: #6B6A64; }
+  .pco2-campo { display: flex; align-items: center; height: 48px; padding: 0 14px; border-radius: 12px; box-shadow: inset 0 0 0 2px #2F55C4; font: 700 20px/1 'JetBrains Mono', ui-monospace, monospace; letter-spacing: 0.06em; }
+  .pco2-cursor { width: 2px; height: 22px; margin-left: 2px; background: #2F55C4; animation: pco2Parpadeo 1s steps(1) infinite; }
+  @keyframes pco2Parpadeo { 50% { opacity: 0; } }
+  .pco2-bot { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; }
+  .pco2-bot u { display: grid; place-items: center; height: 42px; border-radius: 11px; background: #F2F3F6; font: 700 14px/1 var(--font-display); text-decoration: none; transition: transform 0.15s ease, background 0.2s ease; }
+  .pco2-bot .pco2-aplicar { background: #2F55C4; color: #fff; }
+  .pco2-cupon.is-aplica .pco2-aplicar { transform: scale(0.95); background: #24449E; }
+  .pco2-ok { justify-self: start; padding: 8px 12px; border-radius: 10px; background: #E3F4EA; color: #17804F; font: 700 14px/1.2 var(--font-display); opacity: 0; transform: translateY(6px); transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+  .pco2-cupon.is-ok .pco2-ok { opacity: 1; transform: none; }
+  :global(html:not(.js-rv)) .pco2-ok { opacity: 1; transform: none; }
+  .pco2-correo { max-width: 62ch; margin: 32px 0 0; padding: 16px 18px; border-radius: 16px; background: rgba(255, 255, 255, 0.14); font: 600 15.5px/1.5 var(--font-display); color: #fff; }
+  :global(.js-rv) .pco2 .pco2-pantalla.rv { opacity: 0; transform: translateY(26px); transition: opacity 0.6s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+  :global(.js-rv) .pco2 .pco2-op .rv { opacity: 0; transform: translateX(-18px); transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.1s + 0.2s); }
+  :global(.js-rv) .pco2 .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .pco2-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .pco2-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 4.5vw; margin-top: 52px; align-items: start; }
+    .pco2-cupon { padding: 26px; }
+  }
+  @media (max-width: 767px) {
+    /* la pantalla de objetivos se desliza: a lo ancho del teléfono no se leería */
+    .pco2-pantalla { overflow-x: auto; overscroll-behavior-x: contain; border-radius: 10px; }
+    .pco2-pantalla > :global(.sv) { width: 620px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pco2-cursor { animation: none; }
+    :global(.js-rv) .pco2 .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // El código se escribe solo: letra por letra, «Aplicar» se hunde, aparece «Cupón aplicado», y vuelve a empezar.
+  // Solo mientras se ve y la pestaña está activa; con «reducir movimiento», el código escrito y el aviso fijos.
+  (() => {
+    const el = document.querySelector<HTMLElement>('[data-pco2]');
+    const escrito = el?.querySelector<HTMLElement>('.pco2-escrito');
+    if (!el || !escrito) return;
+    const codigo = escrito.dataset.codigo || '';
+    if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) { escrito.textContent = codigo; el.classList.add('is-ok'); return; }
+    let timers: number[] = [], visible = false, corriendo = false;
+    const limpia = () => { timers.forEach((t) => window.clearTimeout(t)); timers = []; corriendo = false; };
+    const en = (ms: number, f: () => void) => { timers.push(window.setTimeout(f, ms)); };
+    const ciclo = () => {
+      if (!visible || document.hidden) { corriendo = false; return; }
+      corriendo = true;
+      escrito.textContent = ''; el.classList.remove('is-ok', 'is-aplica');
+      [...codigo].forEach((c, i) => en(500 + i * 170, () => { escrito.textContent += c; }));
+      const fin = 500 + codigo.length * 170;
+      en(fin + 450, () => el.classList.add('is-aplica'));
+      en(fin + 650, () => { el.classList.remove('is-aplica'); el.classList.add('is-ok'); });
+      en(fin + 3800, ciclo);
+    };
+    new IntersectionObserver((es) => es.forEach((e) => { visible = e.isIntersecting; if (visible && !corriendo) ciclo(); if (!visible) limpia(); }), { threshold: 0.35 }).observe(el);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) limpia(); else if (visible && !corriendo) ciclo(); });
+  })();
+</script>

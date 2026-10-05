@@ -1,0 +1,153 @@
+---
+/**
+ * «Todos tus canales, una sola lista» (/producto/apartados-y-pedidos): los pedidos. Los canales REALES de «¿Por dónde
+ * llegó el cliente?» caen uno a uno; un tablero con los estados de un pedido por el que viaja PED-AND-12 de la cuenta
+ * demo (sin preparar → preparado y pagado → cerrado y entregado) mientras se ve; la lista y el detalle reales, uno
+ * encima del otro; las formas de crear un pedido (botones reales de «Nuevo Pedido») y, con la foto del empaque
+ * (gpt-image-2.5), el envío, la cotización y la liga. Marino.
+ */
+import { PEDIDOS, I } from '../../../data/producto-apartados';
+import StaffVentana from '../../plugins/staff/StaffVentana.astro';
+const T = PEDIDOS.tarjeta;
+---
+<section class="pda ape pd-marino" id="ped-lista" aria-labelledby="ape-h">
+  <div class="pda-fondo" aria-hidden="true"><span>PEDIDOS · PEDIDOS · PEDIDOS</span><span>PEDIDOS · PEDIDOS · PEDIDOS</span></div>
+  <p class="pd-folio"><span>{PEDIDOS.k}</span><span>Crea, prepara y entrega</span></p>
+  <div class="ape-cab">
+    <h2 class="pda-h" id="ape-h">{PEDIDOS.h}</h2>
+    <p class="ape-p">{PEDIDOS.p}</p>
+  </div>
+
+  <div class="ape-canales">
+    <p class="ape-pregunta">¿Por dónde llegó el cliente?</p>
+    <ul>{PEDIDOS.canales.map((c, i) => <li class="rv" style={`--i:${i}`}>{c}</li>)}</ul>
+  </div>
+
+  <div class="ape-tablero" data-ape role="img" aria-label={`El pedido ${T.folio} pasa de sin preparar a preparado y pagado, y luego a cerrado y entregado`}>
+    {PEDIDOS.columnas.map((c) => <div class="ape-col"><b>{c.t}</b><span class="ape-hueco"></span></div>)}
+    <div class="ape-tarjeta" aria-hidden="true">
+      <span class="ape-t-cab"><b>{T.folio}</b><em>{T.canal}</em></span>
+      <span class="ape-t-cli">{T.cliente}</span>
+      <span class="ape-t-pie"><span>{T.entrega}</span><strong>{T.total}</strong></span>
+      <span class="ape-chips">{PEDIDOS.columnas.map((c, k) => <i data-k={k}>{c.chip}</i>)}</span>
+    </div>
+  </div>
+
+  <div class="ape-ventanas">
+    <div class="ape-v1 rv"><StaffVentana src={`${I}pantalla-pedidos.webp`} w={1400} h={863} alt="La lista de pedidos: cada uno con su clienta y su canal (TikTok Shop, tienda en línea), la sucursal, el vendedor, lo pagado, la entrega (envío por paquetería o recoge en sucursal con fecha y hora) y su estado" barra="Pedidos" /></div>
+    <div class="ape-v2 rv"><StaffVentana src={`${I}pantalla-pedido.webp`} w={1400} h={863} alt="El detalle del pedido PED-AND-12: cerrado, preparado y pagado; la clienta, su canal (tienda en línea), el producto con su descuento, lo abonado y la facturación" barra="Pedido PED-AND-12" /></div>
+  </div>
+
+  <div class="ape-nuevo">
+    <p>Nuevo pedido</p>
+    <ul>{PEDIDOS.nuevo.map((x) => <li>{x}</li>)}</ul>
+  </div>
+
+  <div class="ape-pie">
+    <figure class="ape-foto">
+      <img src={`${I}envio-900.webp`} srcset={`${I}envio-900.webp 900w, ${I}envio-1280.webp 1280w`} sizes="(min-width: 900px) 40vw, 100vw" width="1280" height="853" alt="La vendedora empaca un pedido en papel de china dentro de su caja" loading="lazy" decoding="async" />
+    </figure>
+    <ul class="ape-puntos">
+      {PEDIDOS.puntos.map((x, i) => <li class="rv" style={`--i:${i}`}><b>{x.t}</b><span>{x.d}</span></li>)}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .ape-cab { display: grid; gap: 14px; }
+  .ape-p { margin: 0; max-width: 48ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+
+  /* los canales caen uno a uno */
+  .ape-canales { margin-top: 36px; }
+  .ape-pregunta { margin: 0 0 12px; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--pd-acento); }
+  .ape-canales ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .ape-canales li { padding: 10px 16px; border-radius: 99px; background: #fff; color: #0A1648; font: 700 14.5px/1.1 var(--font-display); }
+  :global(.js-rv) .ape-canales .rv { opacity: 0; transform: translateY(-36px) rotate(-6deg); transition: opacity 0.4s ease, transform 0.75s cubic-bezier(0.34, 1.56, 0.64, 1); transition-delay: calc(var(--i) * 0.09s); }
+  :global(.js-rv) .ape-canales .rv.is-on { opacity: 1; transform: none; }
+
+  /* el tablero: tres columnas y una tarjeta que viaja */
+  .ape-tablero { --gap: 12px; position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); margin-top: 28px; padding: 14px; border-radius: 22px; background: rgba(255, 255, 255, 0.06); box-shadow: inset 0 0 0 1px rgba(157, 184, 245, 0.2); }
+  .ape-col { display: grid; gap: 10px; align-content: start; }
+  .ape-col b { font: 700 12.5px/1.2 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255, 255, 255, 0.72); padding: 4px 4px 0; }
+  .ape-hueco { height: 132px; border-radius: 14px; border: 1.5px dashed rgba(157, 184, 245, 0.35); }
+  .ape-tarjeta { position: absolute; left: 14px; top: calc(14px + 26px); width: calc((100% - 28px - 2 * var(--gap)) / 3); height: 132px; display: grid; align-content: start; gap: 6px; padding: 12px 14px; border-radius: 14px; background: #fff; color: #141414; box-shadow: 0 18px 30px -18px rgba(0, 0, 0, 0.7); }
+  .ape-t-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .ape-t-cab b { font: 700 15px/1.1 var(--font-display); color: #2F55C4; }
+  .ape-t-cab em { font: 600 11px/1.2 var(--font-display); font-style: normal; color: #6B6A64; white-space: nowrap; }
+  .ape-t-cli { font: 600 13.5px/1.2 var(--font-display); }
+  .ape-t-pie { display: flex; justify-content: space-between; gap: 8px; font: 500 12px/1.3 var(--font-body); color: #6B6A64; }
+  .ape-t-pie strong { font: 700 13px/1.3 var(--font-display); color: #17804F; }
+  .ape-chips { position: relative; height: 22px; }
+  .ape-chips i { position: absolute; left: 0; top: 0; padding: 4px 9px; border-radius: 99px; font: 700 10.5px/1.2 var(--font-display); font-style: normal; letter-spacing: 0.04em; white-space: nowrap; opacity: 0; }
+  .ape-chips i[data-k="0"] { background: #EEF2FD; color: #2F55C4; opacity: 1; }
+  .ape-chips i[data-k="1"] { background: #FFF4E5; color: #8A5A00; }
+  .ape-chips i[data-k="2"] { background: #E3F4EA; color: #17804F; }
+  .ape-tablero.is-on .ape-tarjeta { animation: apeViaja 9s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
+  .ape-tablero.is-on .ape-chips i[data-k="0"] { animation: apeChip0 9s linear infinite; }
+  .ape-tablero.is-on .ape-chips i[data-k="1"] { animation: apeChip1 9s linear infinite; }
+  .ape-tablero.is-on .ape-chips i[data-k="2"] { animation: apeChip2 9s linear infinite; }
+  @keyframes apeViaja { 0%, 24% { transform: translateX(0); } 34%, 58% { transform: translateX(calc(100% + var(--gap))); } 68%, 92% { transform: translateX(calc(200% + 2 * var(--gap))); } 100% { transform: translateX(0); } }
+  @keyframes apeChip0 { 0%, 26% { opacity: 1; } 30%, 96% { opacity: 0; } 100% { opacity: 1; } }
+  @keyframes apeChip1 { 0%, 30% { opacity: 0; } 34%, 60% { opacity: 1; } 64%, 100% { opacity: 0; } }
+  @keyframes apeChip2 { 0%, 64% { opacity: 0; } 68%, 94% { opacity: 1; } 98%, 100% { opacity: 0; } }
+
+  /* la lista y el detalle, uno encima del otro */
+  .ape-ventanas { position: relative; margin-top: 44px; }
+  .ape-v2 { margin-top: 16px; }
+  :global(.js-rv) .ape-ventanas .rv { opacity: 0; transform: translateY(50px); transition: opacity 0.7s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1); }
+  :global(.js-rv) .ape-ventanas .ape-v2.rv { transition-delay: 0.25s; }
+  :global(.js-rv) .ape-ventanas .rv.is-on { opacity: 1; transform: none; }
+
+  .ape-nuevo { display: grid; gap: 10px; margin-top: 32px; }
+  .ape-nuevo p { margin: 0; font: 700 15px/1.3 var(--font-display); color: #fff; }
+  .ape-nuevo ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .ape-nuevo li { padding: 8px 13px; border-radius: 10px; background: rgba(157, 184, 245, 0.16); box-shadow: inset 0 0 0 1px rgba(157, 184, 245, 0.3); font: 600 13px/1.2 var(--font-display); color: #fff; }
+
+  .ape-pie { display: grid; gap: 24px; margin-top: 48px; }
+  .ape-foto { margin: 0; overflow: hidden; border-radius: 20px; aspect-ratio: 3 / 2; }
+  .ape-foto img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 70% 50%; }
+  .ape-puntos { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; border-top: 2px solid #fff; align-content: start; }
+  .ape-puntos li { display: grid; gap: 4px; padding: 16px 0; border-bottom: 1px solid var(--pd-linea); }
+  .ape-puntos b { font: 700 17px/1.25 var(--font-display); color: #fff; }
+  .ape-puntos span { font: 500 14.5px/1.5 var(--font-body); color: var(--pd-tenue); }
+  :global(.js-rv) .ape-puntos .rv { opacity: 0; transform: translateX(-16px); transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i, 0) * 0.08s); }
+  :global(.js-rv) .ape-puntos .rv.is-on { opacity: 1; transform: none; }
+
+  @media (min-width: 900px) {
+    .ape-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .ape-canales { margin-top: 52px; }
+    .ape-tablero { --gap: 16px; padding: 18px; margin-top: 32px; }
+    .ape-tarjeta { left: 18px; top: calc(18px + 26px); width: calc((100% - 36px - 2 * var(--gap)) / 3); height: 140px; padding: 14px 18px; }
+    .ape-hueco { height: 140px; }
+    .ape-ventanas { margin-top: 64px; padding-bottom: 12%; }
+    .ape-v1 { width: 78%; }
+    .ape-v2 { position: absolute; right: 0; bottom: 0; width: 56%; margin: 0; }
+    .ape-pie { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4.5vw; align-items: center; margin-top: 72px; }
+  }
+  @media (max-width: 767px) {
+    /* en el teléfono el tablero va de arriba abajo */
+    .ape-tablero { grid-template-columns: 1fr; padding: 12px; }
+    .ape-col { grid-template-columns: 96px 1fr; align-items: center; }
+    .ape-col b { padding: 0; font-size: 11px; }
+    .ape-hueco { height: 108px; }
+    .ape-tarjeta { left: calc(12px + 96px + 10px); top: 12px; width: calc(100% - 24px - 106px); height: 108px; padding: 10px 12px; gap: 4px; }
+    .ape-tablero.is-on .ape-tarjeta { animation-name: apeBaja; }
+    @keyframes apeBaja { 0%, 24% { transform: translateY(0); } 34%, 58% { transform: translateY(calc(100% + var(--gap))); } 68%, 92% { transform: translateY(calc(200% + 2 * var(--gap))); } 100% { transform: translateY(0); } }
+    .ape-t-pie { font-size: 11px; }
+    .ape-ventanas .rv { overflow-x: auto; overscroll-behavior-x: contain; border-radius: 10px; }
+    .ape-ventanas .rv > :global(.sv) { width: 720px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ape-tablero.is-on .ape-tarjeta, .ape-tablero.is-on .ape-chips i { animation: none !important; }
+    :global(.js-rv) .ape .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // La tarjeta viaja por el tablero solo mientras se ve.
+  (() => {
+    const el = document.querySelector<HTMLElement>('[data-ape]');
+    if (!el || !('IntersectionObserver' in window)) return;
+    new IntersectionObserver((es) => es.forEach((e) => el.classList.toggle('is-on', e.isIntersecting)), { threshold: 0.4 }).observe(el);
+  })();
+</script>

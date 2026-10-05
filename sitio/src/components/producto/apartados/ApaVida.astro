@@ -1,0 +1,214 @@
+---
+/**
+ * «La vida de un apartado» (/producto/apartados-y-pedidos): el apartado APA-POL-1 de la cuenta demo, de principio a fin,
+ * con el scroll (data-tramos="5"). Al fondo, la foto de cada momento (gpt-image-2.5: el mostrador, la clienta con su
+ * celular, la entrega) se funde con la siguiente; encima, la pantalla REAL de cada paso llega como una carta que se
+ * reparte (la anterior se va hacia atrás) y un anillo se llena con lo abonado: $696 de anticipo (20 %) hasta los $3,480
+ * del total, mientras pasa el paso 4. En el paso 5 no hay pantalla: va la tarjeta de «¡Apartado liquidado!» con sus
+ * textos reales. En el teléfono: el escenario arriba y el paso abajo. Sin JS o con «reducir movimiento»: la lista de
+ * pasos, cada uno con su pantalla.
+ */
+import { VIDA, I } from '../../../data/producto-apartados';
+const FOTOS = [
+  { f: 'mostrador', alt: 'En el mostrador de la boutique, la vendedora aparta un blazer en su funda para su clienta' },
+  { f: 'telefono', alt: 'La clienta revisa su apartado en el celular, en un café' },
+  { f: 'entrega', alt: 'La vendedora le entrega a la clienta su prenda ya liquidada' },
+];
+const C = 2 * Math.PI * 52;
+const dinero = (n: number) => '$' + n.toLocaleString('en-US');
+---
+<section class="avi" id="apa-vida" data-escena data-tramos="5" data-tramo="4" data-foto="entrega" data-total={VIDA.total} aria-labelledby="avi-h">
+  <div class="avi-riel" data-riel>
+    <div class="avi-escena">
+      <div class="avi-fotos">
+        {FOTOS.map((x, i) => (
+          <img class="avi-foto" data-f={x.f} src={`${I}${x.f}-1280.webp`} srcset={`${I}${x.f}-900.webp 900w, ${I}${x.f}-1280.webp 1280w, ${I}${x.f}-1536.webp 1536w`} sizes="100vw" width="1536" height="1024" alt={i === 0 ? x.alt : ''} aria-hidden={i === 0 ? undefined : 'true'} loading="lazy" decoding="async" />
+        ))}
+      </div>
+
+      <div class="avi-mesa" aria-hidden="true">
+        <div class="avi-anillo" data-anillo style={`--c:${C.toFixed(2)}`}>
+          <svg viewBox="0 0 120 120"><circle class="avi-pista" cx="60" cy="60" r="52" /><circle class="avi-arco" cx="60" cy="60" r="52" /></svg>
+          <span class="avi-monto"><small>Abonado</small><b data-monto>{dinero(VIDA.tramos[0].pagado)}</b><small>de {dinero(VIDA.total)}</small></span>
+        </div>
+        {VIDA.tramos.map((t, k) => (
+          <div class:list={['avi-carta', { 'avi-carta--cel': t.cel }]} data-k={k} data-estado={k === 4 ? 'ahora' : 'antes'}>
+            {t.img ? (t.cel ? (
+              <span class="avi-cel"><img src={t.img} width={t.w} height={t.h} alt="" loading="lazy" decoding="async" /></span>
+            ) : (
+              <img class="avi-shot" src={t.img} width={t.w} height={t.h} alt="" loading="lazy" decoding="async" />
+            )) : (
+              <span class="avi-listo">
+                <span class="avi-listo-ico">✓</span>
+                <b>¡Apartado liquidado! 🎉</b>
+                <span class="avi-listo-f">APA-POL-1 · Polanco Boutique</span>
+                <span class="avi-listo-barra"><i></i></span>
+                <span class="avi-listo-n"><span>Pagado 100 %</span><span>{dinero(VIDA.total)}</span></span>
+                <u class="avi-listo-wa">Avisar que ya puede recoger</u>
+                <u class="avi-listo-ok">Entregar al cliente</u>
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div class="avi-txt">
+        <p class="avi-k">{VIDA.k}</p>
+        <h2 class="avi-h" id="avi-h">{VIDA.h}</h2>
+        <ol class="avi-pasos">
+          {VIDA.tramos.map((p, k) => (
+            <li class="avi-paso" data-k={k}>
+              <span class="avi-paso-n">{p.n}</span>
+              <span class="avi-paso-t"><b>{p.t}</b><span>{p.d}</span></span>
+              <i class="avi-barra" aria-hidden="true"><b></b></i>
+              {p.img && <figure class:list={['avi-quieta', { 'avi-quieta--cel': p.cel }]}><img src={p.img} width={p.w} height={p.h} alt={p.alt} loading="lazy" decoding="async" /></figure>}
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .avi { position: relative; background: #0B0B0C; color: #fff; }
+  .avi-escena { position: relative; overflow: hidden; }
+
+  /* ── sin escena: una foto arriba y los pasos en lista con su pantalla ── */
+  .avi-fotos { position: relative; aspect-ratio: 3 / 2; overflow: hidden; }
+  .avi-foto { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; opacity: 0; transition: opacity 1s ease; }
+  .avi-foto[data-f="mostrador"] { opacity: 1; }
+  .avi-mesa { display: none; }
+  .avi-txt { padding: 36px 20px 56px; }
+  .avi-k { margin: 0 0 14px; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: #F07FA6; }
+  .avi-h { margin: 0; max-width: 14ch; color: #fff; font: 700 clamp(34px, 3.8vw, 58px)/0.98 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; text-wrap: balance; }
+  .avi-pasos { margin: 22px 0 0; padding: 0; list-style: none; border-top: 1px solid rgba(255, 255, 255, 0.3); }
+  .avi-paso { position: relative; display: grid; grid-template-columns: 40px 1fr; gap: 4px; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.18); }
+  .avi-paso-n { font: 700 19px/1.2 var(--pd-clash, var(--font-display)); color: #F07FA6; }
+  .avi-paso-t { display: grid; gap: 3px; }
+  .avi-paso-t b { font: 700 16px/1.3 var(--font-display); color: #fff; }
+  .avi-paso-t > span { font: 500 14.5px/1.45 var(--font-body); color: rgba(255, 255, 255, 0.82); }
+  .avi-barra { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; overflow: hidden; }
+  .avi-barra b { display: block; height: 100%; background: #F07FA6; transform: scaleX(0); transform-origin: 0 50%; }
+  .avi-quieta { grid-column: 1 / -1; margin: 12px 0 0; overflow: hidden; border-radius: 12px; background: #fff; box-shadow: 0 20px 40px -24px rgba(0, 0, 0, 0.8); }
+  .avi-quieta img { display: block; width: 100%; height: auto; }
+  .avi-quieta--cel { justify-self: center; width: min(300px, 80%); border-radius: 26px; border: 8px solid #1C1C1F; }
+  .avi-quieta--cel img { aspect-ratio: 1170 / 1560; object-fit: cover; object-position: 50% 0; }
+
+  /* ── las cartas y el anillo ── */
+  .avi-carta { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; transition: opacity 0.55s ease, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
+  .avi-carta[data-estado="antes"] { opacity: 0; transform: translateY(-5%) scale(0.9); }
+  .avi-carta[data-estado="despues"] { opacity: 0; transform: translateY(16%) rotate(4deg); }
+  .avi-carta[data-estado="ahora"] { opacity: 1; transform: none; }
+  .avi-shot { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; border-radius: 14px; background: #fff; box-shadow: 0 30px 60px -28px rgba(0, 0, 0, 0.9); }
+  .avi-cel { position: relative; display: block; height: 100%; aspect-ratio: 9 / 18.6; overflow: hidden; border: 9px solid #141416; border-radius: 34px; background: #fff; box-shadow: 0 30px 60px -28px rgba(0, 0, 0, 0.9); }
+  .avi-cel img { display: block; width: 100%; height: auto; }
+  .avi-listo { display: grid; gap: 10px; width: min(100%, 360px); padding: 26px 24px 22px; border-radius: 20px; background: #fff; color: #141414; box-shadow: 0 30px 60px -28px rgba(0, 0, 0, 0.9); }
+  .avi-listo-ico { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: #E3F4EA; color: #17804F; font: 700 20px/1 var(--font-display); }
+  .avi-listo b { font: 700 24px/1.1 var(--font-display); }
+  .avi-listo-f { font: 500 13px/1.3 var(--font-body); color: #6B6A64; }
+  .avi-listo-barra { height: 8px; margin-top: 4px; border-radius: 99px; background: #1F9D63; }
+  .avi-listo-n { display: flex; justify-content: space-between; font: 700 13px/1.2 var(--font-display); color: #17804F; }
+  .avi-listo u { display: grid; place-items: center; height: 42px; border-radius: 11px; font: 700 14px/1 var(--font-display); text-decoration: none; }
+  .avi-listo-wa { margin-top: 6px; background: #1FAF5A; color: #fff; }
+  .avi-listo-ok { background: #2F55C4; color: #fff; }
+  .avi-anillo { position: absolute; z-index: 3; width: 148px; height: 148px; border-radius: 50%; background: rgba(12, 12, 14, 0.82); box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.9); }
+  .avi-anillo svg { position: absolute; inset: 10px; width: calc(100% - 20px); height: calc(100% - 20px); transform: rotate(-90deg); }
+  .avi-anillo circle { fill: none; stroke-width: 9; }
+  .avi-pista { stroke: rgba(255, 255, 255, 0.14); }
+  .avi-arco { stroke: #F07FA6; stroke-linecap: round; stroke-dasharray: var(--c); stroke-dashoffset: calc(var(--c) * (1 - var(--f, 0.2))); transition: stroke 0.4s ease; }
+  .avi-anillo.is-lleno .avi-arco { stroke: #3DD68C; }
+  .avi-monto { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 1px; text-align: center; }
+  .avi-monto small { font: 600 10.5px/1.2 var(--font-display); letter-spacing: 0.04em; color: rgba(255, 255, 255, 0.7); }
+  .avi-monto b { font: 700 22px/1.1 var(--pd-clash, var(--font-display)); color: #fff; font-variant-numeric: tabular-nums; }
+
+  /* ══ con el scroll ══ */
+  .avi.is-escena .avi-riel { height: 560vh; }
+  .avi.is-escena .avi-escena { position: sticky; top: var(--sub, 0px); height: calc(100vh - var(--sub, 0px)); height: calc(100svh - var(--sub, 0px)); }
+  .avi.is-escena .avi-fotos { position: absolute; inset: 0; aspect-ratio: auto; }
+  .avi.is-escena .avi-foto { opacity: 0; transform: scale(1.06); transition: opacity 1s ease, transform 6s ease-out; }
+  .avi.is-escena[data-foto="mostrador"] .avi-foto[data-f="mostrador"], .avi.is-escena[data-foto="telefono"] .avi-foto[data-f="telefono"], .avi.is-escena[data-foto="entrega"] .avi-foto[data-f="entrega"] { opacity: 1; transform: none; }
+  .avi.is-escena .avi-mesa { position: absolute; z-index: 3; display: block; }
+  .avi.is-escena .avi-quieta { display: none; }
+  .avi.is-escena .avi-paso-n { color: rgba(255, 255, 255, 0.45); }
+  .avi.is-escena[data-tramo="0"] .avi-paso[data-k="0"] .avi-paso-n, .avi.is-escena[data-tramo="1"] .avi-paso[data-k="1"] .avi-paso-n, .avi.is-escena[data-tramo="2"] .avi-paso[data-k="2"] .avi-paso-n, .avi.is-escena[data-tramo="3"] .avi-paso[data-k="3"] .avi-paso-n, .avi.is-escena[data-tramo="4"] .avi-paso[data-k="4"] .avi-paso-n { color: #F07FA6; }
+  .avi.is-escena[data-tramo="0"] .avi-paso[data-k="0"] .avi-barra b, .avi.is-escena[data-tramo="1"] .avi-paso[data-k="1"] .avi-barra b, .avi.is-escena[data-tramo="2"] .avi-paso[data-k="2"] .avi-barra b, .avi.is-escena[data-tramo="3"] .avi-paso[data-k="3"] .avi-barra b, .avi.is-escena[data-tramo="4"] .avi-paso[data-k="4"] .avi-barra b { animation: aviBarra 4.5s linear both; }
+  @keyframes aviBarra { from { transform: scaleX(0); } to { transform: none; } }
+
+  @media (min-width: 900px) {
+    .avi.is-escena .avi-escena::after { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; background: linear-gradient(90deg, rgba(8, 8, 10, 0.94) 0%, rgba(8, 8, 10, 0.72) 30%, rgba(8, 8, 10, 0.3) 58%, rgba(8, 8, 10, 0.45) 100%); }
+    .avi.is-escena .avi-txt { position: absolute; left: 0; top: 50%; z-index: 4; width: min(36vw, 480px); padding: 0 0 0 4.4vw; transform: translateY(-50%); text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45); }
+    .avi.is-escena .avi-paso-t > span { display: none; }
+    .avi.is-escena[data-tramo="0"] .avi-paso[data-k="0"] .avi-paso-t > span, .avi.is-escena[data-tramo="1"] .avi-paso[data-k="1"] .avi-paso-t > span, .avi.is-escena[data-tramo="2"] .avi-paso[data-k="2"] .avi-paso-t > span, .avi.is-escena[data-tramo="3"] .avi-paso[data-k="3"] .avi-paso-t > span, .avi.is-escena[data-tramo="4"] .avi-paso[data-k="4"] .avi-paso-t > span { display: block; }
+    /* la mesa: a la derecha; las cartas dejan libre su orilla izquierda para el anillo, que flota abajo, entre el texto
+       y la carta */
+    .avi.is-escena .avi-mesa { right: 5vw; top: 11%; bottom: 9%; width: min(48vw, 700px); }
+    .avi.is-escena .avi-carta { left: 84px; }
+    .avi.is-escena .avi-anillo { left: -70px; bottom: 4%; }
+    .avi:not(.is-escena) .avi-pasos { display: grid; grid-template-columns: 1fr 1fr; column-gap: 32px; }
+    .avi:not(.is-escena) .avi-txt { max-width: 1160px; margin: 0 auto; }
+    .avi:not(.is-escena) .avi-fotos { aspect-ratio: 21 / 9; }
+  }
+  @media (max-width: 899px) {
+    .avi.is-escena .avi-riel { height: 480vh; }
+    /* el escenario arriba (la foto oscurecida y la carta de frente), el paso abajo */
+    .avi.is-escena .avi-fotos { bottom: auto; height: calc((100svh - var(--sub, 0px)) * 0.58); }
+    .avi.is-escena .avi-fotos::after { content: ''; position: absolute; inset: 0; background: rgba(8, 8, 10, 0.55); }
+    .avi.is-escena .avi-mesa { left: 16px; right: 16px; top: 14px; height: calc((100svh - var(--sub, 0px)) * 0.58 - 28px); }
+    /* en el teléfono el anillo se vuelve una pastilla con su barra, arriba de la carta */
+    .avi.is-escena .avi-anillo { left: 50%; top: -2px; width: max-content; height: auto; padding: 7px 16px 11px; border-radius: 99px; transform: translateX(-50%); }
+    .avi.is-escena .avi-anillo svg { display: none; }
+    .avi.is-escena .avi-anillo::after { content: ''; position: absolute; left: 16px; right: 16px; bottom: 5px; height: 3px; border-radius: 3px; background: linear-gradient(90deg, #F07FA6 calc(var(--f, 0.2) * 100%), rgba(255, 255, 255, 0.18) 0); }
+    .avi.is-escena .avi-anillo.is-lleno::after { background: #3DD68C; }
+    .avi.is-escena .avi-monto { position: static; display: flex; align-items: baseline; gap: 6px; }
+    .avi.is-escena .avi-monto small { font-size: 11px; }
+    .avi.is-escena .avi-monto b { font-size: 15px; }
+    .avi.is-escena .avi-carta { top: 44px; }
+    .avi.is-escena .avi-listo { padding: 16px 16px 14px; gap: 7px; width: min(100%, 290px); }
+    .avi.is-escena .avi-listo b { font-size: 19px; }
+    .avi.is-escena .avi-listo u { height: 34px; font-size: 12.5px; }
+    .avi.is-escena .avi-listo-ico { width: 34px; height: 34px; font-size: 16px; }
+    .avi.is-escena .avi-cel { border-width: 6px; border-radius: 24px; }
+    .avi.is-escena .avi-txt { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; padding: 22px 20px 18px; background: linear-gradient(180deg, rgba(11, 11, 12, 0) 0, #0B0B0C 22px); }
+    .avi.is-escena .avi-k { margin-bottom: 8px; }
+    .avi.is-escena .avi-h { font-size: clamp(25px, 7.2vw, 34px); }
+    .avi.is-escena .avi-pasos { margin-top: 10px; }
+    .avi.is-escena .avi-paso { display: none; padding: 10px 0 8px; }
+    .avi.is-escena[data-tramo="0"] .avi-paso[data-k="0"], .avi.is-escena[data-tramo="1"] .avi-paso[data-k="1"], .avi.is-escena[data-tramo="2"] .avi-paso[data-k="2"], .avi.is-escena[data-tramo="3"] .avi-paso[data-k="3"], .avi.is-escena[data-tramo="4"] .avi-paso[data-k="4"] { display: grid; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .avi * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<script>
+  // Lo que el scroll mueve y el CSS no alcanza: el paso de cada carta (antes / ahora / después), la foto del momento y
+  // el anillo con lo abonado (20 % hasta el paso 4; ahí sube a 100 % con el scroll). Lee --p y data-tramo, que pone
+  // iniciaEscenas (scripts/experiencia/escenas.ts); sin escena todo se queda en su estado final.
+  (() => {
+    const sec = document.querySelector<HTMLElement>('.avi');
+    if (!sec) return;
+    const cartas = Array.from(sec.querySelectorAll<HTMLElement>('.avi-carta'));
+    const anillo = sec.querySelector<HTMLElement>('[data-anillo]');
+    const monto = sec.querySelector<HTMLElement>('[data-monto]');
+    const total = Number(sec.dataset.total || 0);
+    const fotos = ['mostrador', 'mostrador', 'telefono', 'telefono', 'entrega'];
+    let ultimo = -1, ultimoMonto = -1;
+    const pinta = () => {
+      const t = Number(sec.dataset.tramo || 0);
+      if (t !== ultimo) {
+        ultimo = t;
+        cartas.forEach((c, k) => { c.dataset.estado = k < t ? 'antes' : k === t ? 'ahora' : 'despues'; });
+        sec.dataset.foto = fotos[t] || 'entrega';
+      }
+      const p = sec.classList.contains('is-escena') ? Number(sec.style.getPropertyValue('--p') || 0) : 1;
+      // paso 4 = p de 0.6 a 0.8: el anillo va de 0.2 (el anticipo) a 1 (liquidado)
+      const f = Math.min(1, Math.max(0.2, 0.2 + (p - 0.6) * 4));
+      if (anillo) { anillo.style.setProperty('--f', f.toFixed(4)); anillo.classList.toggle('is-lleno', f >= 0.999); }
+      const n = Math.round((total * f) / 2) * 2;
+      if (monto && n !== ultimoMonto) { ultimoMonto = n; monto.textContent = '$' + n.toLocaleString('en-US'); }
+    };
+    new MutationObserver(pinta).observe(sec, { attributes: true, attributeFilter: ['style', 'data-tramo', 'class'] });
+    pinta();
+  })();
+</script>

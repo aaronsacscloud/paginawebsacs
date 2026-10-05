@@ -1,0 +1,79 @@
+---
+/**
+ * «Cuida tu margen. Mide cada promo.» (/producto/promociones): la validación de margen (VIP) que aparece al guardar una
+ * promoción que deja prendas por debajo del margen mínimo, dibujada con sus textos y columnas reales (Producto, Origen,
+ * Margen, Umbral, Riesgo; «Guardar Igual», que pide permiso), con valores de ejemplo; y los reportes de promociones.
+ * Entrada: la ventana llega con un pequeño sacudón de aviso y los renglones entran escalonados. Blanco.
+ */
+import { MARGEN } from '../../../data/producto-promociones';
+---
+<section class="pda pma" id="pro-margen" aria-labelledby="pma-h">
+  <p class="pd-folio"><span>{MARGEN.k}</span><span>Antes y después de la promo</span></p>
+  <div class="pma-grid">
+    <div class="pma-lado">
+      <h2 class="pda-h" id="pma-h">{MARGEN.h}</h2>
+      <p class="pma-p">{MARGEN.p}</p>
+      <ul class="pma-rep">{MARGEN.reportes.map((x, i) => <li class="rv" style={`--i:${i}`}><b>{x.t}</b><span>{x.d}</span></li>)}</ul>
+    </div>
+    <div class="pma-modal rv" role="img" aria-label="Validación de margen: tres productos quedan por debajo del umbral configurado, con su margen, su umbral y su riesgo (crítico, alto, medio); botones Cancelar y Guardar igual. Valores de ejemplo">
+      <span class="pma-t" aria-hidden="true"><b>Validación de Margen</b><em>★ VIP</em></span>
+      <span class="pma-aviso" aria-hidden="true">⚠️ {MARGEN.aviso}</span>
+      <span class="pma-tabla" aria-hidden="true">
+        <span class="pma-f pma-f--h"><span>Producto</span><span>Origen</span><span>Margen</span><span>Umbral</span><span>Riesgo</span></span>
+        {MARGEN.filas.map((f, i) => (
+          <span class="pma-f" style={`--i:${i}`}><span>{f.p}</span><span>{f.o}</span><span>{f.m}</span><span>{f.u}</span><span><em class={`pma-r pma-r--${f.r === 'Crítico' ? 'c' : f.r === 'Alto' ? 'a' : 'm'}`}>{f.r}</em></span></span>
+        ))}
+      </span>
+      <span class="pma-bot" aria-hidden="true"><u>Cancelar</u><u class="pma-igual">Guardar igual</u></span>
+      <small class="pma-nota" aria-hidden="true">Guardar igual solo se puede con el permiso «Omitir la validación del margen de ganancia». · Valores de ejemplo</small>
+    </div>
+  </div>
+</section>
+
+<style>
+  .pma { background: #fff; color: #141414; --pd-texto: #141414; --pd-tenue: #45433E; --pd-filete: rgba(20, 20, 20, 0.16); }
+  .pma-grid { display: grid; gap: 36px; }
+  .pma-lado { display: grid; gap: 16px; align-content: start; }
+  .pma-p { margin: 0; max-width: 48ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .pma-rep { display: grid; gap: 0; margin: 8px 0 0; padding: 0; list-style: none; border-top: 2px solid #141414; }
+  .pma-rep li { display: grid; gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--pd-filete); }
+  .pma-rep b { font: 700 17px/1.25 var(--font-display); }
+  .pma-rep span { font: 500 14.5px/1.5 var(--font-body); color: var(--pd-tenue); }
+  .pma-modal { display: grid; gap: 14px; align-content: start; padding: 22px; border-radius: 20px; background: #fff; box-shadow: 0 34px 70px -34px rgba(16, 24, 40, 0.45), 0 0 0 1px rgba(16, 24, 40, 0.07); }
+  .pma-t { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .pma-t b { font: 700 21px/1.2 var(--font-display); }
+  .pma-t em { padding: 4px 9px; border-radius: 99px; background: #F2A33A; color: #fff; font: 700 11px/1.2 var(--font-display); font-style: normal; }
+  .pma-aviso { font: 700 14px/1.45 var(--font-display); color: #8A5A00; }
+  .pma-tabla { display: grid; border: 1px solid #E2E5EC; border-radius: 12px; overflow: hidden; }
+  .pma-f { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.1fr) minmax(0, 0.9fr) minmax(0, 0.9fr) minmax(0, 1fr); gap: 8px; align-items: center; padding: 11px 12px; border-top: 1px solid #ECEDEF; font: 600 13px/1.3 var(--font-display); }
+  .pma-f > span:nth-child(n + 3) { text-align: center; }
+  .pma-f--h { border-top: 0; background: #F6F7F9; font: 700 11px/1.2 var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; color: #6B6A64; }
+  .pma-r { padding: 3px 8px; border-radius: 99px; font: 700 11px/1.2 var(--font-display); font-style: normal; letter-spacing: 0.04em; text-transform: uppercase; }
+  .pma-r--c { background: #FDE8E8; color: #C62828; }
+  .pma-r--a { background: #FFF0E0; color: #C25E00; }
+  .pma-r--m { background: #FFF8D6; color: #8A6A00; }
+  .pma-bot { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .pma-bot u { display: grid; place-items: center; height: 42px; border-radius: 11px; background: #F2F3F6; font: 700 14px/1 var(--font-display); text-decoration: none; }
+  .pma-bot .pma-igual { background: #2F55C4; color: #fff; }
+  .pma-nota { font: 500 12px/1.45 var(--font-body); color: #8A8A85; }
+  :global(.js-rv) .pma-modal.rv { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+  :global(.js-rv) .pma-modal.rv.is-on { opacity: 1; transform: none; animation: pmaSacude 0.5s ease 0.9s; }
+  @keyframes pmaSacude { 0%, 100% { translate: 0; } 20% { translate: -6px; } 40% { translate: 5px; } 60% { translate: -3px; } 80% { translate: 2px; } }
+  :global(.js-rv) .pma-modal.rv .pma-f:not(.pma-f--h) { opacity: 0; transform: translateX(16px); transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(0.35s + var(--i) * 0.12s); }
+  :global(.js-rv) .pma-modal.rv.is-on .pma-f { opacity: 1; transform: none; }
+  :global(.js-rv) .pma-rep .rv { opacity: 0; transform: translateY(14px); transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.08s); }
+  :global(.js-rv) .pma-rep .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .pma-grid { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 5vw; align-items: center; }
+    .pma-modal { padding: 26px; }
+  }
+  @media (max-width: 767px) {
+    .pma-f { grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.8fr) minmax(0, 0.8fr) minmax(0, 1fr); gap: 6px; font-size: 12px; padding: 10px; }
+    .pma-f--h { font-size: 9.5px; letter-spacing: 0.02em; }
+    .pma-r { padding: 3px 6px; font-size: 10px; letter-spacing: 0; }
+    .pma-f > span:nth-child(2) { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .pma-modal.rv, :global(.js-rv) .pma-modal.rv .pma-f, :global(.js-rv) .pma-rep .rv { opacity: 1; transform: none; transition: none; animation: none; }
+  }
+</style>

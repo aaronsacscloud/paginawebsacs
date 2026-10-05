@@ -1,0 +1,101 @@
+---
+/**
+ * «Al cobrar, una sugerencia» (/producto/promociones): las ventas de impulso. La ventana que aparece al presionar
+ * «Cobrar», dibujada con sus textos reales («Agregar», «Ignorar y seguir con la venta», «Añadir estos productos a la
+ * venta», «N disponibles») y fotos REALES del catálogo de la cuenta demo. Entrada: la ventana aparece desde el botón
+ * «Cobrar» (escala y sube) y las prendas llegan una por una; «Agregar» se enciende en la primera. Fucsia.
+ */
+import { IMPULSO } from '../../../data/producto-promociones';
+const C = IMPULSO.campana;
+---
+<section class="pda pim pd-fucsia" id="pro-impulso" aria-labelledby="pim-h">
+  <div class="pda-fondo" aria-hidden="true"><span>IMPULSO · IMPULSO · IMPULSO</span><span>IMPULSO · IMPULSO · IMPULSO</span></div>
+  <p class="pd-folio"><span>{IMPULSO.k}</span><span>Sugerencias que suben el ticket</span></p>
+  <div class="pim-grid">
+    <div class="pim-lado">
+      <h2 class="pda-h" id="pim-h">{IMPULSO.h}</h2>
+      <p class="pim-p">{IMPULSO.p}</p>
+      <ul class="pim-puntos">{IMPULSO.puntos.map((x, i) => <li class="rv" style={`--i:${i}`}><b>{x.t}</b><span>{x.d}</span></li>)}</ul>
+    </div>
+    <div class="pim-escena" data-pim role="img" aria-label={`Al presionar Cobrar aparece la campaña «${C.t}» con cuatro prendas sugeridas, cada una con sus piezas disponibles y el botón Agregar`}>
+      <span class="pim-cobrar" aria-hidden="true"><b>COBRAR</b><span>$5,780.00</span></span>
+      <span class="pim-modal" aria-hidden="true">
+        <span class="pim-cab"><b>{C.t}</b><small>{C.d}</small></span>
+        <span class="pim-prendas">
+          {IMPULSO.prendas.map((x, i) => (
+            <span class="pim-prenda" style={`--i:${i}`}>
+              <img src={x.img} width="240" height="240" alt="" loading="lazy" decoding="async" />
+              <b>{x.t}</b>
+              <small>{x.n} disponibles</small>
+              <u class:list={{ 'is-sel': i === 0 }}>{i === 0 ? '✓ Agregado' : 'Agregar'}</u>
+            </span>
+          ))}
+        </span>
+        <span class="pim-pie"><u>Ignorar y seguir con la venta</u><u class="pim-anadir">Añadir estos productos a la venta</u></span>
+      </span>
+    </div>
+  </div>
+</section>
+
+<style>
+  .pim-grid { display: grid; gap: 36px; }
+  .pim-lado { display: grid; gap: 16px; align-content: start; }
+  .pim-p { margin: 0; max-width: 46ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .pim-puntos { display: grid; gap: 0; margin: 8px 0 0; padding: 0; list-style: none; border-top: 2px solid #fff; }
+  .pim-puntos li { display: grid; gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--pd-linea); }
+  .pim-puntos b { font: 700 17px/1.25 var(--font-display); color: #fff; }
+  .pim-puntos span { font: 500 14.5px/1.5 var(--font-body); color: rgba(255, 255, 255, 0.92); }
+  :global(.js-rv) .pim-puntos .rv { opacity: 0; transform: translateY(14px); transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.08s); }
+  :global(.js-rv) .pim-puntos .rv.is-on { opacity: 1; transform: none; }
+
+  .pim-escena { position: relative; display: grid; justify-items: end; padding-bottom: 46px; }
+  .pim-cobrar { position: absolute; right: 0; bottom: 0; display: flex; align-items: center; justify-content: space-between; gap: 20px; width: min(78%, 330px); padding: 12px 18px; border-radius: 14px; background: #2F55C4; color: #fff; box-shadow: 0 18px 30px -18px rgba(0, 0, 0, 0.6); }
+  .pim-cobrar b { font: 700 16px/1 var(--font-display); letter-spacing: 0.06em; }
+  .pim-cobrar span { font: 700 20px/1 var(--pd-clash); }
+  .pim-modal { position: relative; z-index: 2; display: grid; gap: 14px; width: 100%; max-width: 560px; padding: 20px; border-radius: 20px; background: #fff; color: #141414; box-shadow: 0 34px 60px -28px rgba(0, 0, 0, 0.6); transform-origin: 85% 100%; }
+  .pim-cab { display: grid; gap: 3px; }
+  .pim-cab b { font: 700 22px/1.15 var(--font-display); }
+  .pim-cab small { font: 500 14px/1.4 var(--font-body); color: #6B6A64; }
+  .pim-prendas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .pim-prenda { display: grid; gap: 5px; align-content: start; }
+  .pim-prenda img { display: block; width: 100%; height: auto; border-radius: 10px; background: #F2F1EE; }
+  .pim-prenda b { font: 700 12px/1.25 var(--font-display); }
+  .pim-prenda small { font: 500 11px/1.2 var(--font-body); color: #17804F; }
+  .pim-prenda u { display: grid; place-items: center; height: 30px; border-radius: 8px; background: #F2F3F6; color: #141414; font: 700 12px/1 var(--font-display); text-decoration: none; }
+  .pim-prenda u.is-sel { background: #E3F4EA; color: #17804F; }
+  .pim-pie { display: grid; grid-template-columns: 1fr 1.25fr; gap: 8px; padding-top: 4px; }
+  .pim-pie u { display: grid; place-items: center; min-height: 42px; padding: 6px 10px; border-radius: 11px; background: #F2F3F6; font: 700 12.5px/1.2 var(--font-display); text-align: center; text-decoration: none; }
+  .pim-pie .pim-anadir { background: #2F55C4; color: #fff; }
+  /* entrada: la ventana sale del botón «Cobrar»; las prendas llegan una por una */
+  :global(.js-rv) .pim-escena .pim-modal { opacity: 0; transform: translateY(40px) scale(0.6); }
+  :global(.js-rv) .pim-escena .pim-prenda { opacity: 0; transform: translateY(16px); }
+  .pim-escena.is-on .pim-modal { opacity: 1; transform: none; transition: opacity 0.4s ease, transform 0.7s cubic-bezier(0.34, 1.3, 0.64, 1); }
+  .pim-escena.is-on .pim-prenda { opacity: 1; transform: none; transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); transition-delay: calc(0.45s + var(--i) * 0.12s); }
+  .pim-escena.is-on .pim-prenda u.is-sel { animation: pimSel 0.6s ease both 1.3s; }
+  @keyframes pimSel { 0% { background: #F2F3F6; color: #141414; transform: scale(1); } 40% { transform: scale(0.92); } 100% { background: #E3F4EA; color: #17804F; transform: none; } }
+  @media (min-width: 900px) {
+    .pim-grid { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); gap: 5vw; align-items: center; }
+    .pim-modal { padding: 24px; }
+  }
+  @media (max-width: 767px) {
+    .pim-prendas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .pim-pie { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .pim-escena .pim-modal, :global(.js-rv) .pim-escena .pim-prenda { opacity: 1; transform: none; }
+    .pim-escena.is-on .pim-modal, .pim-escena.is-on .pim-prenda { transition: none; }
+    .pim-escena.is-on .pim-prenda u.is-sel { animation: none; }
+    :global(.js-rv) .pim-puntos .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // La ventana aparece la primera vez que la escena se ve.
+  (() => {
+    const el = document.querySelector<HTMLElement>('[data-pim]');
+    if (!el) return;
+    if (!('IntersectionObserver' in window)) { el.classList.add('is-on'); return; }
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { el.classList.add('is-on'); io.disconnect(); } }, { threshold: 0.4 });
+    io.observe(el);
+  })();
+</script>

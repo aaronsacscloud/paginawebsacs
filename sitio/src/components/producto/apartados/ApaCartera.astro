@@ -1,0 +1,89 @@
+---
+/**
+ * «Sabes cuánto te deben» (/producto/apartados-y-pedidos): la lista REAL de apartados de la cuenta demo (nombres de
+ * ejemplo), con los números de su encabezado (por cobrar, por cobrar en apartados, liquidados) que cuentan al verse, y
+ * lo que hay detrás de «Más acciones»: el resumen de la cartera y la ruta de cobranza. Entrada: la ventana se desliza
+ * desde la derecha con una leve inclinación que se endereza. Marfil.
+ */
+import { CARTERA, I } from '../../../data/producto-apartados';
+import StaffVentana from '../../plugins/staff/StaffVentana.astro';
+---
+<section class="pda aca pd-marfil" id="apa-cartera" aria-labelledby="aca-h">
+  <p class="pd-folio"><span>{CARTERA.k}</span><span>Apartados › Lista y resumen</span></p>
+  <div class="aca-cab">
+    <h2 class="pda-h" id="aca-h">{CARTERA.h}</h2>
+    <p class="aca-p">{CARTERA.p}</p>
+  </div>
+  <div class="aca-grid">
+    <dl class="aca-kpis" data-aca>
+      {CARTERA.kpis.map((k) => <div><dt>{k.t}</dt><dd data-cuenta={k.v}>{k.v}</dd></div>)}
+    </dl>
+    <div class="aca-ventana rv">
+      <StaffVentana src={`${I}pantalla-lista.webp`} w={1400} h={863} alt="La lista de apartados: cada uno con su clienta, su sucursal, sus prendas, la fecha límite, lo abonado del total con su saldo y su estado (anticipo, vence en 13 días, vencido hace 5 días…)" barra="Apartados" />
+    </div>
+  </div>
+  <ul class="aca-puntos">
+    {CARTERA.puntos.map((x, i) => <li class="rv" style={`--i:${i}`}><b>{x.t}</b><span>{x.d}</span></li>)}
+  </ul>
+</section>
+
+<style>
+  .aca-cab { display: grid; gap: 14px; }
+  .aca-grid { display: grid; gap: 24px; margin-top: 36px; }
+  .aca-p { margin: 0; max-width: 46ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .aca-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; align-content: start; }
+  .aca-kpis > div { display: grid; gap: 4px; padding: 14px 14px 12px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px rgba(20, 20, 20, 0.06); }
+  .aca-kpis dt { order: 2; font: 600 12px/1.3 var(--font-display); color: var(--pd-apagado); }
+  .aca-kpis dd { order: 1; margin: 0; font: 700 clamp(22px, 2.4vw, 32px)/1 var(--pd-clash); color: #141414; font-variant-numeric: tabular-nums; }
+  .aca-kpis > div:first-child dd { color: #2F55C4; }
+  .aca-puntos { display: grid; gap: 0; margin: 40px 0 0; padding: 0; list-style: none; border-top: 2px solid #141414; }
+  .aca-puntos li { display: grid; gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--pd-filete); }
+  .aca-puntos b { font: 700 17px/1.25 var(--font-display); }
+  .aca-puntos span { font: 500 14.5px/1.5 var(--font-body); color: var(--pd-tenue); }
+  :global(.js-rv) .aca-ventana.rv { opacity: 0; transform: translateX(80px) perspective(1600px) rotateY(-10deg); transform-origin: 100% 50%; transition: opacity 0.8s ease, transform 1.2s cubic-bezier(0.16, 1, 0.3, 1); }
+  :global(.js-rv) .aca-ventana.rv.is-on { opacity: 1; transform: none; }
+  :global(.js-rv) .aca-puntos .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i, 0) * 0.08s); }
+  :global(.js-rv) .aca-puntos .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .aca-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .aca-grid { grid-template-columns: 220px minmax(0, 1fr); gap: 4vw; align-items: start; margin-top: 52px; }
+    .aca-kpis { grid-template-columns: 1fr; gap: 14px; }
+    .aca-kpis > div { padding: 18px 18px 16px; }
+    .aca-puntos { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; border-top: 0; margin-top: 56px; }
+    .aca-puntos li { border-top: 2px solid #141414; border-bottom: 0; padding-top: 16px; }
+  }
+  @media (max-width: 767px) {
+    /* la lista se desliza: a lo ancho del teléfono no se leería */
+    .aca-ventana { overflow-x: auto; overscroll-behavior-x: contain; border-radius: 10px; }
+    .aca-ventana > :global(.sv) { width: 720px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .aca .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // Los números del encabezado cuentan desde cero la primera vez que se ven (conservan su formato: $ y comas).
+  (() => {
+    const kpis = document.querySelector<HTMLElement>('[data-aca]');
+    if (!kpis || !('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const dds = Array.from(kpis.querySelectorAll<HTMLElement>('[data-cuenta]'));
+    const io = new IntersectionObserver((es) => {
+      if (!es.some((e) => e.isIntersecting)) return;
+      io.disconnect();
+      const t0 = performance.now(), dur = 1400;
+      const paso = (t: number) => {
+        const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+        dds.forEach((dd) => {
+          const final = dd.dataset.cuenta || '';
+          const n = Number(final.replace(/[^\d.]/g, ''));
+          const v = Math.round(n * e);
+          dd.textContent = (final.startsWith('$') ? '$' : '') + v.toLocaleString('en-US');
+        });
+        if (k < 1) requestAnimationFrame(paso);
+      };
+      requestAnimationFrame(paso);
+    }, { threshold: 0.5 });
+    io.observe(kpis);
+  })();
+</script>

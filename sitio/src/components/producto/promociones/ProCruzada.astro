@@ -1,0 +1,99 @@
+---
+/**
+ * «El ticket que la trae de vuelta» (/producto/promociones): la venta cruzada. Un ticket térmico se imprime al verse (de
+ * arriba abajo, a saltos, como impresora) con la compra y, al final, el bloque REAL de venta cruzada: «OFERTA ESPECIAL
+ * PARA TI», el código, el porcentaje y «Válido hasta». Al lado, lo que se configura y lo que se mide (textos reales del
+ * módulo). Marfil.
+ */
+import { CRUZADA } from '../../../data/producto-promociones';
+const T = CRUZADA.ticket;
+---
+<section class="pda pcr pd-marfil" id="pro-cruzada" aria-labelledby="pcr-h">
+  <p class="pd-folio"><span>{CRUZADA.k}</span><span>Para su siguiente visita</span></p>
+  <div class="pcr-grid">
+    <div class="pcr-lado">
+      <h2 class="pda-h" id="pcr-h">{CRUZADA.h}</h2>
+      <p class="pcr-p">{CRUZADA.p}</p>
+      <p class="pcr-sub">Tú decides</p>
+      <ul class="pcr-chips">{CRUZADA.ajustes.map((x, i) => <li class="rv" style={`--i:${i}`}>{x}</li>)}</ul>
+      <p class="pcr-sub">Y mides</p>
+      <ul class="pcr-met">{CRUZADA.metricas.map((x) => <li>{x}</li>)}</ul>
+    </div>
+    <div class="pcr-impresora" data-pcr role="img" aria-label={`Un ticket de Polanco Boutique que trae, al final, OFERTA ESPECIAL PARA TI: código ${T.codigo}, ${T.pct}% de descuento, válido hasta el ${T.vence}`}>
+      <span class="pcr-boca" aria-hidden="true"></span>
+      <span class="pcr-papel" aria-hidden="true">
+        <span class="pcr-ticket">
+          <b class="pcr-tienda">POLANCO BOUTIQUE</b>
+          <small>Av. Presidente Masaryk 360 · CDMX</small>
+          <span class="pcr-raya"></span>
+          <span class="pcr-r"><span>1 Blazer sastre cruzado M</span><span>$3,290.00</span></span>
+          <span class="pcr-r"><span>1 Pantalón sastre beige 28</span><span>$1,890.00</span></span>
+          <span class="pcr-raya"></span>
+          <span class="pcr-r pcr-r--t"><span>TOTAL</span><span>$5,180.00</span></span>
+          <span class="pcr-raya"></span>
+          <span class="pcr-oferta">
+            <small>OFERTA ESPECIAL PARA TI</small>
+            <b>{T.codigo}</b>
+            <span>{T.pct}% DE DESCUENTO</span>
+            <i>Válido hasta: {T.vence}</i>
+          </span>
+          <span class="pcr-gracias">¡Gracias por tu compra!</span>
+        </span>
+      </span>
+    </div>
+  </div>
+</section>
+
+<style>
+  .pcr-grid { display: grid; gap: 40px; }
+  .pcr-lado { display: grid; gap: 14px; align-content: start; }
+  .pcr-p { margin: 0; max-width: 46ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .pcr-sub { margin: 14px 0 0; font: 700 12px/1.2 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--pd-apagado); }
+  .pcr-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .pcr-chips li { padding: 9px 14px; border-radius: 99px; background: #fff; box-shadow: 0 0 0 1px rgba(20, 20, 20, 0.08); font: 600 14px/1.2 var(--font-display); }
+  .pcr-met { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin: 0; padding: 0; list-style: none; border-top: 2px solid #141414; }
+  .pcr-met li { padding: 12px 0; border-bottom: 1px solid var(--pd-filete); font: 700 15px/1.25 var(--font-display); }
+  :global(.js-rv) .pcr-chips .rv { opacity: 0; transform: scale(0.85); transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); transition-delay: calc(var(--i) * 0.06s); }
+  :global(.js-rv) .pcr-chips .rv.is-on { opacity: 1; transform: none; }
+
+  /* la impresora: la boca arriba y el papel que sale */
+  .pcr-impresora { position: relative; justify-self: center; width: min(100%, 340px); padding-top: 22px; }
+  .pcr-boca { position: absolute; left: -14px; right: -14px; top: 0; z-index: 2; height: 30px; border-radius: 14px; background: #1C1C1F; box-shadow: inset 0 -6px 0 #0B0B0C, 0 14px 24px -14px rgba(0, 0, 0, 0.6); }
+  .pcr-papel { display: block; overflow: hidden; padding: 0 10px 30px; }
+  .pcr-ticket { display: grid; gap: 7px; padding: 26px 20px 30px; background: #FDFDFB; color: #1E1E1E; font: 500 12.5px/1.45 'JetBrains Mono', ui-monospace, monospace; box-shadow: 0 24px 40px -26px rgba(0, 0, 0, 0.55); -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 16px 100%; mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 16px 100%; }
+  .pcr-tienda { text-align: center; font-size: 15px; letter-spacing: 0.08em; }
+  .pcr-ticket > small { text-align: center; font-size: 10.5px; color: #55534E; }
+  .pcr-raya { height: 0; border-top: 1.5px dashed #9A9893; margin: 4px 0; }
+  .pcr-r { display: flex; justify-content: space-between; gap: 10px; }
+  .pcr-r--t { font-weight: 700; font-size: 14px; }
+  .pcr-oferta { display: grid; justify-items: center; gap: 6px; margin-top: 4px; padding: 14px 10px; border: 2px dashed #1E1E1E; text-align: center; }
+  .pcr-oferta small { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; }
+  .pcr-oferta b { padding: 4px 10px; background: #1E1E1E; color: #fff; font-size: 19px; letter-spacing: 0.1em; }
+  .pcr-oferta span { font-size: 14px; font-weight: 700; }
+  .pcr-oferta i { font-size: 11px; font-style: normal; color: #55534E; }
+  .pcr-gracias { margin-top: 6px; text-align: center; font-size: 11px; color: #55534E; }
+  /* al verse, el ticket se imprime de arriba abajo, a saltos (como impresora térmica) */
+  :global(.js-rv) .pcr-ticket { clip-path: inset(0 0 100% 0); }
+  .pcr-impresora.is-on .pcr-ticket { animation: pcrImprime 2.8s steps(28, end) forwards; }
+  @keyframes pcrImprime { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+  @media (min-width: 900px) {
+    .pcr-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 5vw; align-items: center; }
+    .pcr-impresora { width: min(100%, 380px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .pcr-ticket { clip-path: none; }
+    .pcr-impresora.is-on .pcr-ticket { animation: none; }
+    :global(.js-rv) .pcr-chips .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // El ticket se imprime la primera vez que la impresora se ve.
+  (() => {
+    const el = document.querySelector<HTMLElement>('[data-pcr]');
+    if (!el) return;
+    if (!('IntersectionObserver' in window)) { el.classList.add('is-on'); return; }
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { el.classList.add('is-on'); io.disconnect(); } }, { threshold: 0.45 });
+    io.observe(el);
+  })();
+</script>

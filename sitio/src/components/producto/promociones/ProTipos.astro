@@ -1,0 +1,63 @@
+---
+/**
+ * «Las promos que ya haces. Sin calculadora.» (/producto/promociones): los tres tipos REALES de «Nueva Promoción»
+ * (Básico, Avanzado, Progresivo), cada uno con sus recetas y su pantalla real del formulario de la cuenta demo, llena
+ * pero sin guardar (un 30 % a todo el catálogo; un 3x2 con la más barata gratis; 10 %, 20 % y 30 % a la 2.ª, 3.ª y 4.ª
+ * pieza). Entrada: las tarjetas suben escalonadas y las recetas caen como sellos. Blanco.
+ */
+import { TIPOS } from '../../../data/producto-promociones';
+import StaffVentana from '../../plugins/staff/StaffVentana.astro';
+---
+<section class="pda pti" id="pro-tipos" aria-labelledby="pti-h">
+  <p class="pd-folio"><span>{TIPOS.k}</span><span>Tres mecánicas</span></p>
+  <div class="pti-cab">
+    <h2 class="pda-h" id="pti-h">{TIPOS.h}</h2>
+    <p class="pti-p">{TIPOS.p}</p>
+  </div>
+  <ol class="pti-tipos">
+    {TIPOS.tipos.map((x, i) => (
+      <li class="pti-t rv" style={`--i:${i}`}>
+        <span class="pti-n">{String(i + 1).padStart(2, '0')}</span>
+        <h3>{x.t}</h3>
+        <p>{x.d}</p>
+        <ul class="pti-recetas" aria-label={`Recetas con ${x.t}`}>
+          {x.recetas.map((r, k) => <li style={`--k:${k}`}>{r}</li>)}
+        </ul>
+        <div class="pti-pantalla"><StaffVentana src={x.img} w={x.w} h={x.h} alt={x.alt} barra="Nueva Promoción" /></div>
+      </li>
+    ))}
+  </ol>
+  <ul class="pti-extra">{TIPOS.extra.map((x) => <li>{x}</li>)}</ul>
+</section>
+
+<style>
+  .pti { background: #fff; color: #141414; --pd-texto: #141414; --pd-tenue: #45433E; --pd-filete: rgba(20, 20, 20, 0.16); }
+  .pti-cab { display: grid; gap: 14px; }
+  .pti-p { margin: 0; max-width: 46ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .pti-tipos { display: grid; gap: 18px; margin: 40px 0 0; padding: 0; list-style: none; }
+  .pti-t { display: flex; flex-direction: column; gap: 10px; padding: 22px 20px 0; border-radius: 22px; background: #F5F3EE; overflow: hidden; }
+  .pti-t:nth-child(2) { background: #FBE9EF; }
+  .pti-t:nth-child(3) { background: #EAF0FE; }
+  .pti-n { font: 700 14px/1 var(--pd-clash); color: #8A8A85; }
+  .pti-t h3 { margin: 0; font: 700 clamp(30px, 3vw, 42px)/1 var(--pd-clash); letter-spacing: -0.02em; }
+  .pti-t > p { margin: 0; font: 500 15px/1.5 var(--font-body); color: var(--pd-tenue); }
+  .pti-recetas { display: flex; flex-wrap: wrap; gap: 7px; margin: 4px 0 6px; padding: 0; list-style: none; }
+  .pti-recetas li { padding: 7px 12px; border-radius: 10px; background: #141414; color: #fff; font: 700 13px/1.25 var(--font-display); }
+  .pti-pantalla { margin: auto -6px 0; padding-top: 8px; }
+  .pti-pantalla :global(.sv) { border-radius: 12px 12px 0 0; }
+  /* entrada: las tarjetas suben; las recetas caen como sellos, una tras otra */
+  :global(.js-rv) .pti-t.rv { opacity: 0; transform: translateY(46px); transition: opacity 0.6s ease, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.12s); }
+  :global(.js-rv) .pti-t.rv.is-on { opacity: 1; transform: none; }
+  :global(.js-rv) .pti-t.rv .pti-recetas li { opacity: 0; transform: scale(1.45) rotate(-5deg); transition: opacity 0.25s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); transition-delay: calc(var(--i) * 0.12s + 0.55s + var(--k) * 0.14s); }
+  :global(.js-rv) .pti-t.rv.is-on .pti-recetas li { opacity: 1; transform: none; }
+  .pti-extra { display: flex; flex-wrap: wrap; gap: 8px; margin: 28px 0 0; padding: 0; list-style: none; }
+  .pti-extra li { padding: 8px 13px; border-radius: 99px; background: #F2F3F6; font: 600 13px/1.2 var(--font-display); color: #141414; }
+  @media (min-width: 900px) {
+    .pti-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .pti-tipos { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 56px; }
+    .pti-t { padding: 26px 24px 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .pti-t.rv, :global(.js-rv) .pti-t.rv .pti-recetas li { opacity: 1; transform: none; transition: none; }
+  }
+</style>

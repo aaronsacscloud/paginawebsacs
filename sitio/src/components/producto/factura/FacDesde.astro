@@ -1,0 +1,236 @@
+---
+/**
+ * «Factura desde donde estés» (/producto/facturacion-electronica): pestañas (caja, pedidos y apartados, desde cero,
+ * celular, tienda en línea) que avanzan solas mientras se ven y se detienen si pasas el mouse, enfocas o eliges una.
+ * Cada una con su dibujo hecho con los textos REALES de Sacs (el aviso «Generando factura» con sus pasos, el modal
+ * «Facturar pedido», la lista de SACSMobile, «Mis facturas» de la tienda) o la pantalla real (el emisor de «Nueva
+ * Factura», cuenta enmascarada). Entrada: el panel se voltea de lado al cambiar. En el teléfono no avanzan solas. Blanco.
+ */
+import { DESDE, I } from '../../../data/producto-facturacion';
+---
+<section class="pda fde" id="fac-desde" aria-labelledby="fde-h">
+  <p class="pd-folio"><span>{DESDE.k}</span><span>Caja, pedidos, cero, celular y tienda</span></p>
+  <h2 class="pda-h" id="fde-h">{DESDE.h}</h2>
+  <div class="fde-caja" data-fde>
+    <div class="fde-tabs" role="tablist" aria-label="Desde dónde se factura">
+      {DESDE.tabs.map((t, i) => (
+        <button type="button" role="tab" id={`fde-tab-${t.id}`} aria-controls={`fde-pan-${t.id}`} aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1} data-i={i}>
+          <span>{t.t}</span><i aria-hidden="true"><b></b></i>
+        </button>
+      ))}
+    </div>
+    <div class="fde-paneles">
+      {DESDE.tabs.map((t, i) => (
+        <div class="fde-pan" role="tabpanel" id={`fde-pan-${t.id}`} aria-labelledby={`fde-tab-${t.id}`} hidden={i !== 0} data-i={i}>
+          <div class="fde-txt"><h3>{t.h}</h3><p>{t.d}</p></div>
+          <div class="fde-vis" aria-hidden="true">
+            {t.id === 'caja' && (
+              <span class="fde-gen">
+                <span class="fde-gen-chk"><i>✓</i><b>Facturar</b><small>Lucía Ríos · LOMA850312AB1</small></span>
+                <span class="fde-gen-mod">
+                  <b>Generando factura</b>
+                  <small>Preparando los datos de tu comprobante fiscal</small>
+                  {['Consultando datos del emisor', 'Generando encabezado CFDI', 'Insertando conceptos e impuestos', 'Finalizando factura'].map((x, k) => <span class="fde-gen-paso" style={`--k:${k}`}><i>✓</i>{x}</span>)}
+                  <span class="fde-gen-fin"><b>Proceso completado</b><span><u>Cerrar</u><u class="is-azul">Ver factura</u></span></span>
+                </span>
+              </span>
+            )}
+            {t.id === 'pedidos' && (
+              <span class="fde-mod">
+                <span class="fde-mod-cab"><b>Facturar pedido</b><i>✕</i></span>
+                <u class="fde-mod-vista">👁️ Vista previa de la factura</u>
+                <span class="fde-op"><b>📄 Factura completa <em>Recomendada</em></b><small>Un solo CFDI por el total (PUE). Para documentos pagados en una sola exhibición.</small></span>
+                <span class="fde-op"><b>📆 Facturar a plazos</b><small>Un CFDI (PPD) + un comprobante de pago por cada abono hasta liquidar.</small></span>
+              </span>
+            )}
+            {t.id === 'nueva' && (
+              <span class="fde-nueva">
+                <span class="fde-nueva-cab"><b>Nueva Factura</b><span><u>Guardar borrador</u><u>Vista previa</u><u class="is-azul">Timbrar CFDI</u></span></span>
+                <img src={`${I}pantalla-emisor.webp`} width="640" height="307" alt="" loading="lazy" decoding="async" />
+                <span class="fde-nueva-campos">{['RFC', 'Código postal', 'Régimen fiscal', 'Uso de CFDI'].map((x) => <i>{x}</i>)}</span>
+              </span>
+            )}
+            {t.id === 'celular' && (
+              <span class="fde-tel">
+                <b class="fde-tel-h">Facturas</b>
+                <span class="fde-tel-tabs"><i class="is-on">Todas</i><i>Timbradas</i><i>No timbradas</i><i>Canceladas</i></span>
+                <span class="fde-tel-bus">Buscar folio, receptor o RFC</span>
+                {[['FAC-POL-128', 'Lucía Ríos', '$3,480.00'], ['FAC-POL-127', 'Público en general', '$12,940.00'], ['FAC-POL-126', 'Sofía Méndez', '$1,290.00']].map(([f, c, m]) => <span class="fde-tel-fila"><span><b>{f}</b><small>{c}</small></span><span><b>{m}</b><em>Timbrada</em></span></span>)}
+                <span class="fde-tel-hoja"><b>¿Timbrar factura?</b><small>Se enviará al PAC para timbrado oficial. Esta acción no se puede deshacer.</small><u>Sí, timbrar</u></span>
+              </span>
+            )}
+            {t.id === 'tienda' && (
+              <span class="fde-tienda">
+                <b>Mis facturas</b>
+                <small>Descarga las que ya tienes o factura una compra</small>
+                <span class="fde-ti-fila"><span><b>Compra del 3 oct</b><small>Blazer sastre cruzado · $3,290.00</small></span><u>Facturar</u></span>
+                <span class="fde-ti-fila is-lista"><span><b>Compra del 21 sep</b><small>Factura generada · Ya puedes descargarla.</small></span><span class="fde-ti-arch"><i>PDF</i><i>XML</i></span></span>
+              </span>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .fde { background: #fff; color: #141414; --pd-texto: #141414; --pd-tenue: #45433E; --pd-filete: rgba(20, 20, 20, 0.16); }
+  .fde-caja { margin-top: 36px; }
+  .fde-tabs { display: flex; gap: 6px; margin: 0 -20px; padding: 0 20px 4px; overflow-x: auto; scrollbar-width: none; }
+  .fde-tabs::-webkit-scrollbar { display: none; }
+  .fde-tabs button { position: relative; flex: none; display: grid; gap: 8px; padding: 12px 16px 10px; border: 0; border-radius: 12px; background: #F3F3F1; color: #45433E; font: 700 14.5px/1.2 var(--font-display); cursor: pointer; text-align: left; transition: background 0.25s ease, color 0.25s ease; }
+  .fde-tabs button:hover { background: #E9E9E6; }
+  .fde-tabs button[aria-selected="true"] { background: #141414; color: #fff; }
+  .fde-tabs button:focus-visible { outline: 3px solid #2F55C4; outline-offset: 2px; }
+  .fde-tabs i { display: block; height: 3px; overflow: hidden; border-radius: 3px; background: rgba(255, 255, 255, 0.2); opacity: 0; }
+  .fde-tabs button[aria-selected="true"] i { opacity: 1; }
+  .fde-tabs i b { display: block; height: 100%; background: #6FD3A3; transform-origin: 0 50%; transform: scaleX(0); }
+  .fde-caja.is-auto .fde-tabs button[aria-selected="true"] i b { animation: fdeCorre var(--dur, 6s) linear both; }
+  .fde-caja.is-pausa .fde-tabs button[aria-selected="true"] i b { animation-play-state: paused; }
+  @keyframes fdeCorre { from { transform: scaleX(0); } to { transform: none; } }
+  .fde-paneles { margin-top: 18px; perspective: 1600px; }
+  .fde-pan { display: grid; gap: 24px; padding: 24px 20px; border-radius: 24px; background: #F5F3EE; }
+  .fde-pan[hidden] { display: none; }
+  .fde-pan.is-entra { animation: fdeVoltea 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; transform-origin: 0 50%; }
+  @keyframes fdeVoltea { from { opacity: 0; transform: rotateY(-14deg) translateX(-20px); } to { opacity: 1; transform: none; } }
+  .fde-txt { display: grid; gap: 10px; align-content: center; }
+  .fde-txt h3 { margin: 0; font: 700 clamp(26px, 3vw, 40px)/1.05 var(--pd-clash); letter-spacing: -0.015em; }
+  .fde-txt p { margin: 0; max-width: 46ch; font: 500 16.5px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .fde-vis { display: flex; align-items: center; justify-content: center; min-height: 300px; }
+  .fde-vis u { text-decoration: none; }
+  /* caja: el aviso «Generando factura» con sus pasos */
+  .fde-gen { display: grid; gap: 12px; width: min(100%, 380px); }
+  .fde-gen-chk { display: grid; grid-template-columns: 24px 1fr; column-gap: 10px; align-items: center; padding: 12px 14px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px rgba(20, 20, 20, 0.08); }
+  .fde-gen-chk i { grid-row: span 2; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 7px; background: #2F55C4; color: #fff; font: 700 14px/1 var(--font-display); font-style: normal; }
+  .fde-gen-chk b { font: 700 15px/1.2 var(--font-display); }
+  .fde-gen-chk small { font: 500 12.5px/1.3 var(--font-body); color: #6B6A64; }
+  .fde-gen-mod { display: grid; gap: 8px; padding: 18px; border-radius: 18px; background: #fff; box-shadow: 0 20px 40px -24px rgba(20, 20, 20, 0.45); }
+  .fde-gen-mod > b { font: 700 18px/1.2 var(--font-display); }
+  .fde-gen-mod > small { margin-bottom: 4px; font: 500 13px/1.3 var(--font-body); color: #6B6A64; }
+  .fde-gen-paso { display: flex; align-items: center; gap: 10px; font: 600 13.5px/1.25 var(--font-display); color: #141414; }
+  .fde-gen-paso i { display: grid; place-items: center; flex: none; width: 20px; height: 20px; border-radius: 50%; background: #E3F4EA; color: #17804F; font: 700 11px/1 var(--font-display); font-style: normal; }
+  .fde-gen-fin { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; padding-top: 10px; border-top: 1px solid #ECEDEF; }
+  .fde-gen-fin b { font: 700 13.5px/1.2 var(--font-display); color: #17804F; }
+  .fde-gen-fin span { display: flex; gap: 6px; }
+  .fde-gen-fin u, .fde-nueva-cab u { padding: 7px 11px; border-radius: 9px; background: #F1F2F5; color: #141414; font: 700 12px/1 var(--font-display); }
+  .fde-vis u.is-azul { background: #2F55C4; color: #fff; }
+  .fde-pan:not([hidden]) .fde-gen-paso { animation: fdePaso 0.4s ease both; animation-delay: calc(0.3s + var(--k) * 0.45s); }
+  .fde-pan:not([hidden]) .fde-gen-fin { animation: fdePaso 0.4s ease both; animation-delay: 2.2s; }
+  @keyframes fdePaso { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+  /* pedidos y apartados: el modal «Facturar pedido» */
+  .fde-mod { display: grid; gap: 10px; width: min(100%, 400px); padding: 18px; border-radius: 18px; background: #fff; box-shadow: 0 20px 40px -24px rgba(20, 20, 20, 0.45); }
+  .fde-mod-cab { display: flex; justify-content: space-between; align-items: center; }
+  .fde-mod-cab b { font: 700 18px/1.2 var(--font-display); }
+  .fde-mod-cab i { font-style: normal; color: #6B6A64; }
+  .fde-mod-vista { display: grid; place-items: center; height: 40px; border-radius: 10px; box-shadow: inset 0 0 0 1px #DADCE2; font: 700 13.5px/1 var(--font-display); color: #141414; }
+  .fde-op { display: grid; gap: 4px; padding: 13px 14px; border-radius: 12px; box-shadow: inset 0 0 0 1.5px #DADCE2; }
+  .fde-op:nth-child(3) { box-shadow: inset 0 0 0 2px #2F55C4; background: #F4F7FE; }
+  .fde-op b { display: flex; align-items: center; gap: 8px; font: 700 14.5px/1.2 var(--font-display); }
+  .fde-op em { padding: 3px 8px; border-radius: 99px; background: #2F55C4; color: #fff; font: 700 10px/1.2 var(--font-display); font-style: normal; }
+  .fde-op small { font: 500 12.5px/1.4 var(--font-body); color: #45433E; }
+  /* desde cero: «Nueva Factura» con el emisor real */
+  .fde-nueva { display: grid; gap: 10px; width: min(100%, 420px); padding: 14px; border-radius: 18px; background: #fff; box-shadow: 0 20px 40px -24px rgba(20, 20, 20, 0.45); }
+  .fde-nueva-cab { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+  .fde-nueva-cab b { font: 700 16px/1.2 var(--font-display); }
+  .fde-nueva-cab span { display: flex; gap: 5px; }
+  .fde-nueva-cab u { padding: 6px 9px; font-size: 11px; }
+  .fde-nueva img { display: block; width: 100%; height: auto; border-radius: 10px; box-shadow: 0 0 0 1px #ECEDEF; }
+  .fde-nueva-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .fde-nueva-campos i { padding: 9px 10px; border-radius: 8px; background: #F6F7F9; font: 600 11.5px/1.2 var(--font-display); font-style: normal; color: #6B6A64; }
+  /* celular: SACSMobile */
+  .fde-tel { position: relative; display: grid; align-content: start; gap: 8px; width: 250px; height: 420px; padding: 18px 14px; overflow: hidden; border: 9px solid #141416; border-radius: 34px; background: #F6F7F9; box-shadow: 0 24px 40px -22px rgba(20, 20, 20, 0.55); }
+  .fde-tel-h { font: 700 19px/1.2 var(--font-display); }
+  .fde-tel-tabs { display: flex; gap: 4px; overflow: hidden; }
+  .fde-tel-tabs i { flex: none; padding: 5px 8px; border-radius: 99px; background: #fff; font: 600 10px/1 var(--font-display); font-style: normal; color: #6B6A64; }
+  .fde-tel-tabs i.is-on { background: #2F55C4; color: #fff; }
+  .fde-tel-bus { padding: 8px 10px; border-radius: 9px; background: #fff; font: 500 11px/1.2 var(--font-body); color: #8C8A84; }
+  .fde-tel-fila { display: flex; justify-content: space-between; gap: 8px; padding: 9px 10px; border-radius: 11px; background: #fff; }
+  .fde-tel-fila > span { display: grid; gap: 2px; }
+  .fde-tel-fila > span + span { justify-items: end; }
+  .fde-tel-fila b { font: 700 11.5px/1.2 var(--font-display); }
+  .fde-tel-fila small { font: 500 10px/1.2 var(--font-body); color: #6B6A64; }
+  .fde-tel-fila em { padding: 2px 6px; border-radius: 99px; background: #E3F4EA; color: #17804F; font: 700 9px/1.2 var(--font-display); font-style: normal; }
+  .fde-tel-hoja { position: absolute; left: 0; right: 0; bottom: 0; display: grid; gap: 6px; padding: 16px 14px 18px; border-radius: 18px 18px 0 0; background: #fff; box-shadow: 0 -12px 24px -12px rgba(20, 20, 20, 0.3); }
+  .fde-tel-hoja b { font: 700 14px/1.2 var(--font-display); }
+  .fde-tel-hoja small { font: 500 10.5px/1.35 var(--font-body); color: #6B6A64; }
+  .fde-tel-hoja u { display: grid; place-items: center; height: 32px; margin-top: 4px; border-radius: 9px; background: #2F55C4; color: #fff; font: 700 12px/1 var(--font-display); }
+  .fde-pan:not([hidden]) .fde-tel-hoja { animation: fdeHoja 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.9s both; }
+  @keyframes fdeHoja { from { transform: translateY(100%); } to { transform: none; } }
+  /* tienda en línea: «Mis facturas» */
+  .fde-tienda { display: grid; gap: 10px; width: min(100%, 400px); padding: 20px; border-radius: 18px; background: #fff; box-shadow: 0 20px 40px -24px rgba(20, 20, 20, 0.45); }
+  .fde-tienda > b { font: 700 20px/1.2 var(--font-display); }
+  .fde-tienda > small { margin-bottom: 4px; font: 500 13px/1.35 var(--font-body); color: #6B6A64; }
+  .fde-ti-fila { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px; border-radius: 12px; box-shadow: inset 0 0 0 1px #E6E7EB; }
+  .fde-ti-fila > span:first-child { display: grid; gap: 3px; min-width: 0; }
+  .fde-ti-fila b { font: 700 13.5px/1.2 var(--font-display); }
+  .fde-ti-fila small { font: 500 12px/1.3 var(--font-body); color: #6B6A64; }
+  .fde-ti-fila u { flex: none; padding: 8px 12px; border-radius: 9px; background: #141414; color: #fff; font: 700 12px/1 var(--font-display); }
+  .fde-ti-fila.is-lista small { color: #17804F; }
+  .fde-ti-arch { display: flex; gap: 5px; }
+  .fde-ti-arch i { padding: 6px 7px; border-radius: 6px; background: #D64545; color: #fff; font: 700 10px/1 var(--font-display); font-style: normal; }
+  .fde-ti-arch i + i { background: #2F55C4; }
+  @media (min-width: 900px) {
+    .fde-caja { margin-top: 52px; }
+    .fde-tabs { margin: 0; padding: 0; flex-wrap: wrap; }
+    .fde-tabs button { padding: 14px 20px 12px; font-size: 15px; }
+    .fde-pan { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 4vw; padding: 44px 48px; min-height: 540px; }
+    .fde-vis { min-height: 400px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fde * { animation: none !important; }
+  }
+</style>
+
+<script>
+  // Pestañas: en escritorio avanzan solas cada 6 s mientras la sección se ve (la barrita de la pestaña marca el tiempo);
+  // se pausan con el mouse encima o el foco adentro, y se detienen para siempre si eliges una. Flechas izquierda/derecha
+  // entre pestañas. Sin JS se ve la primera; con «reducir movimiento» o en el teléfono no avanzan solas.
+  (() => {
+    const caja = document.querySelector<HTMLElement>('[data-fde]');
+    if (!caja) return;
+    const tabs = Array.from(caja.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    const pans = Array.from(caja.querySelectorAll<HTMLElement>('[role="tabpanel"]'));
+    const DUR = 6000;
+    let actual = 0, reloj = 0, visible = false, manual = false, pausa = false;
+    const reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // en el teléfono no avanzan solas (cada panel tiene su alto y la página brincaría): se tocan
+    const ancho = window.matchMedia('(min-width: 900px)');
+    const barra = tabs[0]?.parentElement;
+    const elige = (i: number, foco = false) => {
+      actual = (i + tabs.length) % tabs.length;
+      tabs.forEach((t, k) => { const si = k === actual; t.setAttribute('aria-selected', String(si)); t.tabIndex = si ? 0 : -1; });
+      pans.forEach((p, k) => {
+        const si = k === actual; p.hidden = !si;
+        if (si) { p.classList.remove('is-entra'); requestAnimationFrame(() => requestAnimationFrame(() => p.classList.add('is-entra'))); }
+      });
+      if (foco) tabs[actual].focus();
+      // la pestaña elegida, a la vista dentro de su barra (sin mover la página)
+      if (barra && barra.scrollWidth > barra.clientWidth) barra.scrollTo({ left: barra.scrollLeft + tabs[actual].getBoundingClientRect().left - barra.getBoundingClientRect().left - 20, behavior: reducido ? 'auto' : 'smooth' });
+      reinicia();
+    };
+    // la barrita de la pestaña vuelve a empezar junto con el reloj
+    const reinicia = () => {
+      caja.classList.remove('is-auto');
+      if (!manual && !reducido && visible && ancho.matches) requestAnimationFrame(() => requestAnimationFrame(() => caja.classList.add('is-auto')));
+    };
+    const siguiente = () => { if (!pausa) elige(actual + 1); };
+    const prende = () => { if (!reloj && visible && !manual && !pausa && !reducido && ancho.matches && !document.hidden) { reloj = window.setInterval(siguiente, DUR); reinicia(); } };
+    const apaga = () => { if (reloj) { window.clearInterval(reloj); reloj = 0; } };
+    caja.style.setProperty('--dur', DUR / 1000 + 's');
+    tabs.forEach((t, k) => {
+      t.addEventListener('click', () => { manual = true; apaga(); caja.classList.remove('is-auto'); elige(k); });
+      t.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); manual = true; apaga(); caja.classList.remove('is-auto'); elige(actual + (e.key === 'ArrowRight' ? 1 : -1), true); }
+      });
+    });
+    const pausar = (si: boolean) => { pausa = si; caja.classList.toggle('is-pausa', si); apaga(); if (!si) prende(); };
+    caja.addEventListener('mouseenter', () => pausar(true));
+    caja.addEventListener('mouseleave', () => pausar(false));
+    caja.addEventListener('focusin', () => pausar(true));
+    caja.addEventListener('focusout', () => pausar(false));
+    if (!('IntersectionObserver' in window)) return;
+    new IntersectionObserver((es) => es.forEach((e) => { visible = e.isIntersecting; visible ? prende() : apaga(); }), { threshold: 0.35 }).observe(caja);
+    document.addEventListener('visibilitychange', () => (document.hidden ? apaga() : prende()));
+  })();
+</script>

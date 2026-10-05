@@ -1,0 +1,79 @@
+---
+/**
+ * /producto/apartados-y-pedidos — rediseño con la línea de los plugins (5-oct-2026), como /producto/punto-de-venta:
+ * «solo dejamos la parte del video inicial» y lo demás nuevo, cambiando entre secciones la entrada y las animaciones.
+ *
+ * Recorrido: el video de siempre (ProductoHeroVideo) → todo lo que incluye → la vida de un apartado con el scroll (el
+ * anillo de lo abonado y las pantallas reales) → su liga en el celular → las reglas → la cartera → los pedidos de todos
+ * los canales → sobre pedido → lo que deja de pasar → preguntas → cierre.
+ * Qué existe y qué no, y de dónde salen las pantallas: src/data/producto-apartados.ts.
+ * Esta página estática le gana a src/pages/producto/[slug].astro para «apartados-y-pedidos».
+ */
+import ProductLayout from '../../layouts/ProductLayout.astro';
+import ProductoHeroVideo from '../../components/producto/ProductoHeroVideo.astro';
+import VendeIncluye from '../../components/producto/comun/VendeIncluye.astro';
+import ExpLista from '../../components/experiencia/ExpLista.astro';
+import ApaVida from '../../components/producto/apartados/ApaVida.astro';
+import ApaLiga from '../../components/producto/apartados/ApaLiga.astro';
+import ApaReglas from '../../components/producto/apartados/ApaReglas.astro';
+import ApaCartera from '../../components/producto/apartados/ApaCartera.astro';
+import ApaPedidos from '../../components/producto/apartados/ApaPedidos.astro';
+import ApaSobre from '../../components/producto/apartados/ApaSobre.astro';
+import GiroFAQ from '../../components/giros/GiroFAQ.astro';
+import FinalCTA from '../../components/FinalCTA.astro';
+import StructuredData from '../../components/StructuredData.astro';
+import { getFeatureBySlug, getPillarForFeature } from '../../data/product';
+import { pageContent } from '../../data/product-pages';
+import { INCLUYE, RESUELVE, PREGUNTAS } from '../../data/producto-apartados';
+import '../../styles/planeacion.css';
+
+const slug = 'apartados-y-pedidos';
+const feature = getFeatureBySlug(slug)!;
+const pillar = getPillarForFeature(slug)!;
+const hero = pageContent[slug].hero;
+const faqSchema = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: PREGUNTAS.map((p) => ({ '@type': 'Question', name: p.question, acceptedAnswer: { '@type': 'Answer', text: p.answer } })) };
+---
+<ProductLayout title={feature.title} description={feature.description} currentSlug={slug} currentPillar={pillar.id} preloadImage={hero.videoPoster || hero.image}>
+  <StructuredData data={faqSchema} />
+  <ProductoHeroVideo titulo={hero.title} video={hero.video} poster={hero.videoPoster} imagen={hero.image} alt={hero.imageAlt} />
+
+  <div class="pd exp">
+    <div id="apa-incluye"><VendeIncluye folio={INCLUYE.folio} titulo={INCLUYE.titulo} intro={INCLUYE.intro} piezas={INCLUYE.piezas} /></div>
+    <ApaVida />
+    <ApaLiga />
+    <ApaReglas />
+    <ApaCartera />
+    <ApaPedidos />
+    <ApaSobre />
+    <ExpLista id="apa-resuelve" tema="pd-marfil" palabra="LO QUE RESUELVE" folio={RESUELVE.folio} titulo={RESUELVE.titulo} puntos={RESUELVE.puntos} />
+  </div>
+
+  <GiroFAQ title="Preguntas frecuentes sobre apartados y pedidos" faqs={PREGUNTAS} />
+  <FinalCTA />
+</ProductLayout>
+
+<script>
+  import { iniciaEscenas } from '../../scripts/experiencia/escenas';
+  iniciaEscenas();
+
+  // Las escenas pegadas van debajo de la barra de «Vende» (sticky en /producto/*): su altura va en --sub.
+  (() => {
+    const sub = document.getElementById('product-subnav');
+    if (!sub) return;
+    const pon = () => document.documentElement.style.setProperty('--sub', Math.round(sub.getBoundingClientRect().height) + 'px');
+    pon();
+    new ResizeObserver(pon).observe(sub);
+  })();
+
+  // Lo que entra al verse (sin JS se ve completo).
+  (() => {
+    const rv = Array.from(document.querySelectorAll<HTMLElement>('.exp .rv'));
+    if (!rv.length || !('IntersectionObserver' in window)) return;
+    document.documentElement.classList.add('js-rv');
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-on'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -10% 0px' });
+    rv.forEach((el) => io.observe(el));
+  })();
+
+  const ph = (evento: string, props?: Record<string, unknown>) => { try { (window as any).sacsPH?.(evento, props); } catch { /* sin medición */ } };
+  document.querySelector('.final-cta-btn')?.addEventListener('click', () => ph('producto_cta_prueba', { producto: 'apartados-y-pedidos' }));
+</script>

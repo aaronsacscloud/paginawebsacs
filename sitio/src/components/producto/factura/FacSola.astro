@@ -1,0 +1,288 @@
+---
+/**
+ * «Tu clienta se factura sola» (/producto/facturacion-electronica): la autofacturación con el scroll (data-tramos="4").
+ * Al fondo, la foto de cada momento (gpt-image-2.5: el cobro en el mostrador, la clienta en su laptop) se funde con la
+ * siguiente; arriba, cuatro barras tipo historia que se llenan con el scroll. Encima, la carta de cada paso: (1) el
+ * ticket, dibujado con los textos REALES del bloque de facturación del ticket de Sacs, que se imprime con el scroll;
+ * (2) el kiosko REAL de la cuenta demo en un celular, con el RFC de ejemplo, el código y el PIN del ticket escritos (no
+ * se envió nada) y un recuadro que recorre los campos; (3) el correo con su asunto y su texto reales y los adjuntos;
+ * (4) la lista REAL de facturas timbradas (cuenta con facturación real, nombres, RFC y sucursales cambiados en
+ * pantalla) con el chip «Kiosko» marcado. En el teléfono, el escenario arriba y el paso abajo. Sin JS o con «reducir
+ * movimiento», los cuatro pasos en lista con su carta.
+ */
+import { SOLA, I } from '../../../data/producto-facturacion';
+const T = SOLA.ticket, C = SOLA.correo;
+const FOTOS = [
+  { f: 'caja', alt: 'En el mostrador de la boutique, un cliente paga y la vendedora le entrega su ticket' },
+  { f: 'cliente', alt: 'La clienta, en su casa, factura su compra desde la laptop' },
+];
+// un QR de adorno (no se puede leer): 21×21 módulos con sus tres cuadros de esquina, determinista
+const N = 21;
+let semilla = 7;
+const azar = () => { semilla = (semilla * 1103515245 + 12345) % 2147483648; return semilla / 2147483648; };
+const esquina = (x: number, y: number) => [[0, 0], [N - 7, 0], [0, N - 7]].some(([a, b]) => x >= a && x < a + 7 && y >= b && y < b + 7);
+const marco = (x: number, y: number) => { for (const [a, b] of [[0, 0], [N - 7, 0], [0, N - 7]]) { const dx = x - a, dy = y - b; if (dx >= 0 && dx < 7 && dy >= 0 && dy < 7) return dx === 0 || dx === 6 || dy === 0 || dy === 6 || (dx >= 2 && dx <= 4 && dy >= 2 && dy <= 4); } return false; };
+const MODULOS: string[] = [];
+for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const on = esquina(x, y) ? marco(x, y) : azar() > 0.52; if (on) MODULOS.push(`M${x} ${y}h1v1h-1z`); }
+const QR = MODULOS.join('');
+---
+<section class="fso" id="fac-sola" data-escena data-tramos="4" data-tramo="3" data-foto="cliente" aria-labelledby="fso-h">
+  <div class="fso-riel" data-riel>
+    <div class="fso-escena">
+      <div class="fso-fotos">
+        {FOTOS.map((x, i) => (
+          <img class="fso-foto" data-f={x.f} src={`${I}${x.f}-1280.webp`} srcset={`${I}${x.f}-900.webp 900w, ${I}${x.f}-1280.webp 1280w, ${I}${x.f}-1536.webp 1536w`} sizes="100vw" width="1536" height="1024" alt={i === 0 ? x.alt : ''} aria-hidden={i === 0 ? undefined : 'true'} loading="lazy" decoding="async" />
+        ))}
+      </div>
+
+      <div class="fso-mesa" aria-hidden="true">
+        <div class="fso-historias">{SOLA.tramos.map((_, k) => <i style={`--k:${k}`}><b></b></i>)}</div>
+
+        <div class="fso-carta" data-k="0" data-estado="antes">
+          <div class="fso-impresora"><span></span></div>
+          <div class="fso-ticket">
+            <b class="fso-t-tienda">{T.tienda}</b>
+            <span class="fso-t-gris">{T.dir}</span>
+            <span class="fso-t-gris">{T.fecha}</span>
+            <span class="fso-t-raya"></span>
+            {T.lineas.map(([a, b]) => <span class="fso-t-linea"><span>1 {a}</span><span>{b}</span></span>)}
+            <span class="fso-t-linea fso-t-total"><span>TOTAL</span><span>{T.total}</span></span>
+            <span class="fso-t-raya"></span>
+            <svg class="fso-qr" viewBox={`-1 -1 ${N + 2} ${N + 2}`}><path d={QR} /></svg>
+            <span class="fso-t-qr">Escanea para facturar — sólo ingresa tu RFC</span>
+            <span class="fso-t-caja">
+              <b>FACTURACION ELECTRONICA</b>
+              <span><b>1.</b> Visita: <b>{T.url}</b></span>
+              <span><b>2.</b> Ingresa tu RFC</span>
+              <span><b>3.</b> Codigo: <b>{T.folio}</b></span>
+              <span><b>4.</b> PIN: <b>{T.pin}</b></span>
+              <em>Tienes hasta fin de mes para facturar</em>
+            </span>
+          </div>
+        </div>
+
+        <div class="fso-carta" data-k="1" data-estado="antes">
+          <span class="fso-cel"><img src={`${I}pantalla-kiosko.webp`} width="780" height="1620" alt="" loading="lazy" decoding="async" /><i class="fso-campo"></i></span>
+        </div>
+
+        <div class="fso-carta" data-k="2" data-estado="antes">
+          <span class="fso-correo">
+            <span class="fso-c-de"><i>P</i><span><b>Polanco Boutique</b><small>para lucia.rios@correo.mx</small></span></span>
+            <b class="fso-c-asunto">{C.asunto}</b>
+            <span class="fso-c-txt">{C.hola}</span>
+            <span class="fso-c-txt fso-c-total">{C.total}</span>
+            <span class="fso-c-txt">{C.adjunto}</span>
+            <span class="fso-c-adj">{C.archivos.map((a, i) => <span style={`--i:${i}`}><i>{a.endsWith('pdf') ? 'PDF' : 'XML'}</i>{a}</span>)}</span>
+          </span>
+        </div>
+
+        <div class="fso-carta" data-k="3" data-estado="ahora">
+          <span class="fso-lista-caja">
+            <span class="fso-nota">Facturada a las 4:07 a. m. desde el kiosko</span>
+            <span class="fso-lista">
+              <img src={`${I}pantalla-lista-kiosko.webp`} width="1000" height="698" alt="" loading="lazy" decoding="async" />
+              <i class="fso-marca"></i>
+            </span>
+          </span>
+        </div>
+      </div>
+
+      <div class="fso-txt">
+        <p class="fso-k">{SOLA.k}</p>
+        <h2 class="fso-h" id="fso-h">{SOLA.h}</h2>
+        <ol class="fso-pasos">
+          {SOLA.tramos.map((p, k) => (
+            <li class="fso-paso" data-k={k}>
+              <span class="fso-paso-n">{p.n}</span>
+              <span class="fso-paso-t"><b>{p.t}</b><span>{p.d}</span></span>
+            </li>
+          ))}
+        </ol>
+        <ul class="fso-extra">{SOLA.extra.map((x) => <li>{x}</li>)}</ul>
+      </div>
+    </div>
+  </div>
+  <p class="fso-sr">El ticket trae el código {T.folio}, el PIN {T.pin} y un QR para facturar. En el kiosko de la tienda, la clienta escribe su RFC, el código y el PIN. Le llega el correo «{C.asunto}» con el PDF y el XML, y la factura aparece en la lista con el chip Kiosko.</p>
+</section>
+
+<style>
+  .fso { position: relative; background: #0B0B0C; color: #fff; }
+  .fso-escena { position: relative; overflow: hidden; }
+  .fso-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* ── sin escena: una foto arriba y los pasos en lista, cada uno con su carta ── */
+  .fso-fotos { position: relative; aspect-ratio: 3 / 2; overflow: hidden; }
+  .fso-foto { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; opacity: 0; transition: opacity 1s ease, transform 6s ease-out; }
+  .fso-foto[data-f="cliente"] { opacity: 1; }
+  .fso-mesa { position: relative; display: grid; gap: 28px; padding: 32px 20px 0; }
+  .fso-historias { display: none; }
+  .fso-carta { position: relative; display: flex; align-items: center; justify-content: center; }
+  .fso-txt { padding: 36px 20px 56px; }
+  .fso-k { margin: 0 0 14px; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: #6FD3A3; }
+  .fso-h { margin: 0; max-width: 13ch; color: #fff; font: 700 clamp(34px, 3.8vw, 58px)/0.98 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; text-wrap: balance; }
+  .fso-pasos { margin: 22px 0 0; padding: 0; list-style: none; border-top: 1px solid rgba(255, 255, 255, 0.3); }
+  .fso-paso { display: grid; grid-template-columns: 40px 1fr; gap: 4px; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.18); }
+  .fso-paso-n { font: 700 19px/1.2 var(--pd-clash, var(--font-display)); color: #6FD3A3; }
+  .fso-paso-t { display: grid; gap: 3px; }
+  .fso-paso-t b { font: 700 16px/1.3 var(--font-display); color: #fff; }
+  .fso-paso-t > span { font: 500 14.5px/1.45 var(--font-body); color: rgba(255, 255, 255, 0.82); }
+  .fso-extra { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
+  .fso-extra li { padding: 7px 12px; border-radius: 99px; background: rgba(255, 255, 255, 0.1); font: 600 12.5px/1.2 var(--font-display); color: rgba(255, 255, 255, 0.86); }
+
+  /* sin escena: la foto, luego el título y los pasos, y al final las cuatro cartas */
+  .fso:not(.is-escena) .fso-escena { display: flex; flex-direction: column; }
+  .fso:not(.is-escena) .fso-txt { order: 1; padding-bottom: 8px; }
+  .fso:not(.is-escena) .fso-mesa { order: 2; padding-bottom: 56px; }
+
+  /* ── el ticket ── */
+  .fso-impresora { display: none; }
+  .fso-ticket { position: relative; display: grid; justify-items: center; gap: 4px; width: min(100%, 300px); padding: 18px 18px 26px; background: #FBFAF7; color: #141414; font: 500 11.5px/1.35 'JetBrains Mono', ui-monospace, monospace; text-align: center; box-shadow: 0 30px 50px -26px rgba(0, 0, 0, 0.9); -webkit-mask: linear-gradient(#000, #000) top / 100% calc(100% - 9px) no-repeat, conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 14px 9px repeat-x; mask: linear-gradient(#000, #000) top / 100% calc(100% - 9px) no-repeat, conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 14px 9px repeat-x; }
+  .fso-t-tienda { font: 700 15px/1.2 'JetBrains Mono', ui-monospace, monospace; letter-spacing: 0.04em; }
+  .fso-t-gris { color: #5E5C57; font-size: 10.5px; }
+  .fso-t-raya { width: 100%; margin: 6px 0; border-top: 1px dashed #8C8A84; }
+  .fso-t-linea { display: flex; justify-content: space-between; gap: 10px; width: 100%; text-align: left; font-size: 10.5px; }
+  .fso-t-total { margin-top: 4px; font-weight: 700; font-size: 12.5px; }
+  .fso-qr { width: 92px; height: 92px; margin-top: 4px; }
+  .fso-qr path { fill: #141414; }
+  .fso-t-qr { font-weight: 700; font-size: 10px; }
+  .fso-t-caja { display: grid; gap: 2px; width: 100%; margin-top: 8px; padding: 8px 8px 6px; border: 1px solid #141414; text-align: left; font-size: 10.5px; }
+  .fso-t-caja > b { margin-bottom: 4px; text-align: center; font-size: 11.5px; }
+  .fso-t-caja span { overflow-wrap: anywhere; }
+  .fso-t-caja em { margin-top: 5px; padding-top: 5px; border-top: 1px dashed #141414; text-align: center; font-style: italic; }
+
+  /* ── el kiosko en el celular ── */
+  .fso-cel { position: relative; display: block; width: min(250px, 70vw); aspect-ratio: 9 / 18.6; overflow: hidden; border: 9px solid #141416; border-radius: 34px; background: #fff; box-shadow: 0 30px 60px -28px rgba(0, 0, 0, 0.9); }
+  .fso-cel img { display: block; width: 100%; height: auto; }
+  /* el recuadro recorre RFC → código → PIN → «Siguiente» (posiciones en % de la captura) */
+  .fso-campo { position: absolute; left: 10%; width: 80%; height: 6.4%; top: 47.6%; border: 2.5px solid #2F7CF6; border-radius: 9px; box-shadow: 0 0 0 5px rgba(47, 124, 246, 0.18); opacity: 0; }
+  .fso-carta[data-estado="ahora"] .fso-campo { animation: fsoCampo 5.6s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
+  @keyframes fsoCampo { 0% { top: 47.6%; opacity: 0; } 6%, 22% { top: 47.6%; opacity: 1; left: 10%; width: 80%; } 30%, 46% { top: 58.6%; opacity: 1; left: 10%; width: 80%; } 54%, 70% { top: 69.6%; opacity: 1; left: 10%; width: 80%; } 78%, 94% { top: 87.6%; left: 33%; width: 34%; opacity: 1; } 100% { top: 87.6%; left: 33%; width: 34%; opacity: 0; } }
+
+  /* ── el correo ── */
+  .fso-correo { display: grid; gap: 9px; width: min(100%, 420px); padding: 20px 22px 22px; border-radius: 18px; background: #fff; color: #141414; box-shadow: 0 30px 60px -28px rgba(0, 0, 0, 0.9); }
+  .fso-c-de { display: flex; align-items: center; gap: 10px; }
+  .fso-c-de i { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 50%; background: #141414; color: #fff; font: 700 14px/1 var(--font-display); font-style: normal; }
+  .fso-c-de span { display: grid; min-width: 0; }
+  .fso-c-de b { font: 700 14px/1.2 var(--font-display); }
+  .fso-c-de small { font: 500 12px/1.3 var(--font-body); color: #6B6A64; }
+  .fso-c-asunto { font: 700 18px/1.2 var(--font-display); }
+  .fso-c-txt { font: 500 13.5px/1.45 var(--font-body); color: #3C3B37; }
+  .fso-c-adj { display: grid; gap: 8px; margin-top: 4px; }
+  .fso-c-adj > span { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 9px 12px; border-radius: 12px; background: #F3F4F7; font: 600 12.5px/1.2 var(--font-display); overflow-wrap: anywhere; }
+  .fso-c-adj i { display: grid; place-items: center; flex: none; width: 34px; height: 26px; border-radius: 6px; background: #D64545; color: #fff; font: 700 10px/1 var(--font-display); font-style: normal; }
+  .fso-c-adj > span:nth-child(2) i { background: #2F55C4; }
+  .fso-carta[data-estado="ahora"] .fso-c-adj > span { animation: fsoAdj 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both; animation-delay: calc(0.35s + var(--i) * 0.18s); }
+  @keyframes fsoAdj { from { opacity: 0; transform: translateY(12px) scale(0.92); } to { opacity: 1; transform: none; } }
+
+  /* ── la lista ── */
+  .fso-lista-caja { position: relative; display: grid; justify-items: start; gap: 12px; width: min(100%, 640px); }
+  .fso-lista { position: relative; display: block; width: 100%; overflow: hidden; border-radius: 14px; background: #fff; box-shadow: 0 30px 60px -28px rgba(0, 0, 0, 0.9); }
+  .fso-lista img { display: block; width: 100%; height: auto; }
+  .fso-marca { position: absolute; left: 6.2%; top: 13.5%; width: 8.8%; height: 5.9%; border: 2.5px solid #1F9D63; border-radius: 99px; box-shadow: 0 0 0 0 rgba(31, 157, 99, 0.5); }
+  .fso-carta[data-estado="ahora"] .fso-marca { animation: fsoLatido 1.8s ease-out infinite; }
+  @keyframes fsoLatido { 0% { box-shadow: 0 0 0 0 rgba(31, 157, 99, 0.55); } 70%, 100% { box-shadow: 0 0 0 14px rgba(31, 157, 99, 0); } }
+  /* la etiqueta va arriba de la lista, con su flecha hacia el chip «Kiosko» del primer renglón */
+  .fso-nota { position: relative; margin-left: 3%; padding: 8px 13px; border-radius: 10px; background: #1F9D63; color: #fff; font: 700 13px/1.2 var(--font-display); }
+  .fso-nota::after { content: ''; position: absolute; left: 22px; bottom: -6px; border: 6px solid transparent; border-top-color: #1F9D63; border-bottom: 0; }
+
+  /* ══ con el scroll ══ */
+  .fso.is-escena .fso-riel { height: 460vh; }
+  .fso.is-escena .fso-escena { position: sticky; top: var(--sub, 0px); height: calc(100vh - var(--sub, 0px)); height: calc(100svh - var(--sub, 0px)); }
+  .fso.is-escena .fso-fotos { position: absolute; inset: 0; aspect-ratio: auto; }
+  .fso.is-escena .fso-foto { opacity: 0; transform: scale(1.05); }
+  .fso.is-escena[data-foto="caja"] .fso-foto[data-f="caja"], .fso.is-escena[data-foto="cliente"] .fso-foto[data-f="cliente"] { opacity: 1; transform: none; }
+  .fso.is-escena .fso-mesa { position: absolute; z-index: 3; display: block; padding: 0; }
+  .fso.is-escena .fso-historias { position: absolute; left: 0; right: 0; top: 0; z-index: 4; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .fso-historias i { height: 3px; overflow: hidden; border-radius: 3px; background: rgba(255, 255, 255, 0.24); }
+  .fso-historias b { display: block; height: 100%; background: #fff; transform-origin: 0 50%; transform: scaleX(clamp(0, calc(var(--p, 1) * 4 - var(--k)), 1)); }
+  .fso.is-escena .fso-carta { position: absolute; inset: 22px 0 0; transition: opacity 0.55s ease, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
+  .fso.is-escena .fso-carta[data-estado="antes"] { opacity: 0; transform: translateX(-8%) scale(0.94); pointer-events: none; }
+  .fso.is-escena .fso-carta[data-estado="despues"] { opacity: 0; transform: translateX(10%) rotate(3deg); pointer-events: none; }
+  .fso.is-escena .fso-carta[data-estado="ahora"] { opacity: 1; transform: none; }
+  /* el ticket sale de la impresora con el scroll del paso 1 (--q0: 0 → 1) */
+  .fso.is-escena .fso-carta[data-k="0"] { flex-direction: column; justify-content: flex-start; padding-top: 4%; }
+  .fso.is-escena .fso-impresora { position: relative; z-index: 2; flex: none; display: block; width: min(100%, 336px); height: 22px; border-radius: 12px; background: linear-gradient(#2A2A2E, #141416); }
+  .fso-impresora span { position: absolute; left: 18px; right: 18px; top: 9px; height: 4px; border-radius: 3px; background: #050506; }
+  .fso.is-escena .fso-ticket { flex: none; margin-top: -10px; padding-top: 26px; --q0: clamp(0.12, calc(var(--p, 1) * 4.4), 1); clip-path: inset(0 0 calc((1 - var(--q0)) * 100%) 0); transform: translateY(calc((1 - var(--q0)) * -6px)); }
+  .fso.is-escena .fso-paso-n { color: rgba(255, 255, 255, 0.45); }
+  .fso.is-escena[data-tramo="0"] .fso-paso[data-k="0"] .fso-paso-n, .fso.is-escena[data-tramo="1"] .fso-paso[data-k="1"] .fso-paso-n, .fso.is-escena[data-tramo="2"] .fso-paso[data-k="2"] .fso-paso-n, .fso.is-escena[data-tramo="3"] .fso-paso[data-k="3"] .fso-paso-n { color: #6FD3A3; }
+
+  @media (min-width: 900px) {
+    .fso.is-escena .fso-escena::after { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; background: linear-gradient(90deg, rgba(8, 8, 10, 0.94) 0%, rgba(8, 8, 10, 0.72) 30%, rgba(8, 8, 10, 0.28) 58%, rgba(8, 8, 10, 0.5) 100%); }
+    .fso.is-escena .fso-txt { position: absolute; left: 0; top: 50%; z-index: 4; width: min(36vw, 480px); padding: 0 0 0 4.4vw; transform: translateY(-50%); text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45); }
+    .fso.is-escena .fso-paso-t > span { display: none; }
+    .fso.is-escena[data-tramo="0"] .fso-paso[data-k="0"] .fso-paso-t > span, .fso.is-escena[data-tramo="1"] .fso-paso[data-k="1"] .fso-paso-t > span, .fso.is-escena[data-tramo="2"] .fso-paso[data-k="2"] .fso-paso-t > span, .fso.is-escena[data-tramo="3"] .fso-paso[data-k="3"] .fso-paso-t > span { display: block; }
+    .fso.is-escena .fso-mesa { right: 5vw; top: 9%; bottom: 7%; width: min(46vw, 660px); }
+    .fso.is-escena .fso-cel { width: auto; height: 100%; }
+    .fso.is-escena .fso-ticket { width: 344px; padding: 30px 22px 30px; gap: 5px; font-size: 12.5px; }
+    .fso.is-escena .fso-impresora { width: 384px; }
+    .fso.is-escena .fso-t-tienda { font-size: 17px; }
+    .fso.is-escena .fso-t-linea, .fso.is-escena .fso-t-gris, .fso.is-escena .fso-t-caja { font-size: 11.5px; }
+    .fso.is-escena .fso-qr { width: 104px; height: 104px; }
+    .fso:not(.is-escena) .fso-mesa { grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: start; max-width: 1240px; margin: 0 auto; }
+    .fso:not(.is-escena) .fso-txt { max-width: 1160px; margin: 0 auto; }
+    .fso:not(.is-escena) .fso-pasos { display: grid; grid-template-columns: 1fr 1fr; column-gap: 32px; }
+    .fso:not(.is-escena) .fso-fotos { aspect-ratio: 21 / 9; }
+  }
+  @media (max-width: 899px) {
+    .fso.is-escena .fso-riel { height: 400vh; }
+    .fso.is-escena .fso-fotos { bottom: auto; height: calc((100svh - var(--sub, 0px)) * 0.58); }
+    .fso.is-escena .fso-fotos::after { content: ''; position: absolute; inset: 0; background: rgba(8, 8, 10, 0.55); }
+    .fso.is-escena .fso-mesa { left: 16px; right: 16px; top: 12px; height: calc((100svh - var(--sub, 0px)) * 0.58 - 24px); }
+    .fso.is-escena .fso-carta { inset: 16px 0 0; }
+    .fso.is-escena .fso-cel { width: auto; height: 100%; border-width: 6px; border-radius: 24px; }
+    .fso.is-escena .fso-ticket { width: 236px; padding: 18px 12px 20px; gap: 2px; font-size: 9.5px; }
+    .fso.is-escena .fso-impresora { width: 262px; height: 18px; }
+    .fso.is-escena .fso-carta[data-k="0"] { padding-top: 0; }
+    .fso.is-escena .fso-t-tienda { font-size: 12px; }
+    .fso.is-escena .fso-t-linea, .fso.is-escena .fso-t-gris, .fso.is-escena .fso-t-caja { font-size: 8.8px; }
+    .fso.is-escena .fso-qr { width: 58px; height: 58px; margin-top: 2px; }
+    .fso.is-escena .fso-correo { padding: 14px 14px 16px; gap: 6px; }
+    .fso.is-escena .fso-c-asunto { font-size: 14.5px; }
+    .fso.is-escena .fso-c-txt { font-size: 11.5px; }
+    .fso.is-escena .fso-c-total { display: none; }
+    .fso.is-escena .fso-c-adj > span { padding: 7px 10px; font-size: 11px; }
+    .fso.is-escena .fso-nota { font-size: 11px; padding: 6px 10px; }
+    .fso.is-escena .fso-txt { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; padding: 22px 20px 18px; background: linear-gradient(180deg, rgba(11, 11, 12, 0) 0, #0B0B0C 22px); }
+    .fso.is-escena .fso-k { margin-bottom: 8px; }
+    .fso.is-escena .fso-h { font-size: clamp(25px, 7.2vw, 34px); }
+    .fso.is-escena .fso-pasos { margin-top: 10px; }
+    .fso.is-escena .fso-paso { display: none; padding: 10px 0 8px; }
+    .fso.is-escena[data-tramo="0"] .fso-paso[data-k="0"], .fso.is-escena[data-tramo="1"] .fso-paso[data-k="1"], .fso.is-escena[data-tramo="2"] .fso-paso[data-k="2"], .fso.is-escena[data-tramo="3"] .fso-paso[data-k="3"] { display: grid; }
+    .fso.is-escena .fso-extra { display: none; }
+    .fso:not(.is-escena) .fso-mesa { justify-items: center; }
+  }
+  @media (max-width: 899px) and (max-height: 760px) {
+    /* teléfonos chicos: el ticket completo cabe arriba del texto */
+    .fso.is-escena .fso-carta[data-k="0"] { zoom: 0.8; }
+  }
+  @media (max-width: 899px) and (max-height: 700px) {
+    .fso.is-escena .fso-carta[data-k="0"] { zoom: 0.7; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fso * { animation: none !important; transition: none !important; }
+    .fso-campo { display: none; }
+  }
+</style>
+
+<script>
+  // Lo que el scroll mueve y el CSS no alcanza: el paso de cada carta (antes / ahora / después) y la foto del momento.
+  // Lee data-tramo, que pone iniciaEscenas (scripts/experiencia/escenas.ts); sin escena, todo queda en su estado final.
+  (() => {
+    const sec = document.querySelector<HTMLElement>('.fso');
+    if (!sec) return;
+    const cartas = Array.from(sec.querySelectorAll<HTMLElement>('.fso-carta'));
+    let ultimo = -1;
+    const pinta = () => {
+      const escena = sec.classList.contains('is-escena');
+      const t = Number(sec.dataset.tramo || 0);
+      const clave = escena ? t : -2;
+      if (clave === ultimo) return;
+      ultimo = clave;
+      cartas.forEach((c) => { const k = Number(c.dataset.k); c.dataset.estado = !escena || k === t ? 'ahora' : k < t ? 'antes' : 'despues'; });
+      sec.dataset.foto = t === 0 ? 'caja' : 'cliente';
+    };
+    new MutationObserver(pinta).observe(sec, { attributes: true, attributeFilter: ['data-tramo', 'class'] });
+    pinta();
+  })();
+</script>
