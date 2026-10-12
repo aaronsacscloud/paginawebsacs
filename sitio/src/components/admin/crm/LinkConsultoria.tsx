@@ -8,9 +8,14 @@
 // Los horarios son SOLO de este tipo de reunión (event_types.schedule_id): las
 // demos siguen con el horario general. La primera vez se parte de una copia
 // del general, para no arrancar con la semana en blanco.
+//
+// Dueño (12-oct-2026): «cualquiera de las reuniones que quiera agendar, que me
+// dé el link para compartirlo». La ventana sirve para CUALQUIER tipo activo: se
+// abre con el tipo de la tarjeta que se tocó (o consultoría desde el botón) y
+// arriba se cambia de tipo. Cada tipo guarda sus propios horarios.
 import { useEffect, useState } from 'react';
 
-const SLUG = 'consultoria';
+const SLUG_DEF = 'consultoria';
 const DIAS: [string, string][] = [['1', 'Lun'], ['2', 'Mar'], ['3', 'Mié'], ['4', 'Jue'], ['5', 'Vie'], ['6', 'Sáb'], ['0', 'Dom']];
 const GRAD = 'linear-gradient(100deg,#7C6BF0,#D9538E)';
 
@@ -33,7 +38,8 @@ function Switch({ on, onClick }: { on: boolean; onClick: () => void }) {
   );
 }
 
-export default function LinkConsultoria({ onCerrar, avisar }: { onCerrar: () => void; avisar: (m: string) => void }) {
+export default function LinkConsultoria({ onCerrar, avisar, tipoId }: { onCerrar: () => void; avisar: (m: string) => void; tipoId?: string }) {
+  const [tipos, setTipos] = useState<any[]>([]);
   const [et, setEt] = useState<any>(null);
   const [semana, setSemana] = useState<Record<string, Dia> | null>(null);
   const [propio, setPropio] = useState(false);          // ¿ya tiene horario propio?
@@ -54,10 +60,25 @@ export default function LinkConsultoria({ onCerrar, avisar }: { onCerrar: () => 
   useEffect(() => {
     (async () => {
       try {
-        const tipos = await fetch('/api/scheduling/event-types?activo=true').then(r => r.json());
-        const t = (tipos || []).find((x: any) => x.slug === SLUG);
-        if (!t) { setError('No existe el tipo «Reunión de consultoría». Créalo en Configuración → Reuniones.'); return; }
-        setEt(t); setDur(t.duracion_minutos || 60); setAviso(t.aviso_minimo_horas ?? 2); setAdelanto(t.max_dias_adelanto || 60);
+        const lista = await fetch('/api/scheduling/event-types?activo=true').then(r => r.json());
+        const ts = (Array.isArray(lista) ? lista : []).filter((x: any) => x.slug);
+        setTipos(ts);
+        const t = (tipoId && ts.find((x: any) => x.id === tipoId)) || ts.find((x: any) => x.slug === SLUG_DEF) || ts[0];
+        if (tipoId && t?.id !== tipoId) setError('Ese tipo de reunión no está activo, así que no tiene link. Actívalo en Configuración → Reuniones.');
+        if (!t) { setError('No hay tipos de reunión activos. Créalos en Configuración → Reuniones.'); return; }
+        setEt(t);
+      } catch { setError('No se pudieron cargar los tipos de reunión.'); }
+    })();
+  }, [tipoId]);
+
+  // Al cambiar de tipo se leen SUS horarios y su Google.
+  useEffect(() => {
+    if (!et?.id) return;
+    const t = et;
+    setSemana(null); setCambio(false); setQuien(null);
+    (async () => {
+      try {
+        setDur(t.duracion_minutos || 60); setAviso(t.aviso_minimo_horas ?? 2); setAdelanto(t.max_dias_adelanto || 60);
         const [hs, g] = await Promise.all([
           fetch('/api/scheduling/availability?team_member_id=' + t.owner_id).then(r => r.json()).catch(() => null),
           fetch('/api/scheduling/google/status?team_member_id=' + t.owner_id).then(r => r.json()).catch(() => null),
@@ -73,12 +94,15 @@ export default function LinkConsultoria({ onCerrar, avisar }: { onCerrar: () => 
           w[k] = { enabled: !!d?.enabled, ranges: d?.ranges?.length ? d.ranges.map((r: any) => ({ ...r })) : [{ start: '10:00', end: '14:00' }] };
         }
         setSemana(w);
-      } catch { setError('No se pudo cargar la consultoría.'); }
+      } catch { setError('No se pudieron cargar los horarios.'); }
     })();
-  }, []);
+  }, [et?.id]);
 
   const origen = typeof window !== 'undefined' ? window.location.origin : 'https://www.sacscloud.com';
-  const liga = `${origen}/agendar/${SLUG}`;
+  const slug = et?.slug || SLUG_DEF;
+  const nombreTipo = String(et?.nombre || 'Reunión de consultoría');
+  const corto = nombreTipo.replace(/^reuni[oó]n de\s+/i, '');
+  const liga = `${origen}/agendar/${slug}`;
   const ligaDe = (c: any) => {
     const p = new URLSearchParams();
     if (c?.email) p.set('email', c.email);
@@ -86,7 +110,7 @@ export default function LinkConsultoria({ onCerrar, avisar }: { onCerrar: () => 
     if (n) p.set('nombre', n);
     return p.toString() ? `${liga}?${p}` : liga;
   };
-  const textoWa = (c?: any) => `Hola${c?.nombre ? ' ' + String(c.nombre).split(' ')[0] : ''}, aquí puedes elegir el día y la hora para tu sesión de consultoría con Sacs: ${ligaDe(c)}`;
+  const textoWa = (c?: any) => `Hola${c?.nombre ? ' ' + String(c.nombre).split(' ')[0] : ''}, aquí puedes elegir el día y la hora para tu ${nombreTipo.toLowerCase()} con Sacs: ${ligaDe(c)}`;
   const waDe = (c?: any) => {
     const d = String(c?.whatsapp || '').replace(/\D/g, '');
     const n = d.length === 10 ? '52' + d : d;
@@ -114,7 +138,7 @@ export default function LinkConsultoria({ onCerrar, avisar }: { onCerrar: () => 
       }
       let scheduleId = et.schedule_id;
       if (propio && scheduleId) {
-        const r = await fetch('/api/scheduling/availability', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: scheduleId, weekly_hours: semana, nombre: 'Consultoría' }) });
+        const r = await fetch('/api/scheduling/availability', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: scheduleId, weekly_hours: semana, nombre: corto.charAt(0).toUpperCase() + corto.slice(1) }) });
         if (!r.ok) throw new Error((await r.json().catch(() => ({})))?.error || 'No se guardaron los horarios.');
       } else {
         const r = await fetch('/api/scheduling/availability', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ team_member_id: et.owner_id, weekly_hours: semana, es_default: false }) });
@@ -122,13 +146,13 @@ export default function LinkConsultoria({ onCerrar, avisar }: { onCerrar: () => 
         if (!r.ok || !j?.id) throw new Error(j?.error || 'No se guardaron los horarios.');
         scheduleId = j.id;
         // El nombre no entra en el POST; se pone aparte para reconocerlo en Configuración.
-        await fetch('/api/scheduling/availability', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: scheduleId, nombre: 'Consultoría' }) }).catch(() => {});
+        await fetch('/api/scheduling/availability', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: scheduleId, nombre: corto.charAt(0).toUpperCase() + corto.slice(1) }) }).catch(() => {});
       }
       const r2 = await fetch('/api/scheduling/event-types', { method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: et.id, schedule_id: scheduleId, duracion_minutos: dur, aviso_minimo_horas: aviso, max_dias_adelanto: adelanto }) });
-      if (!r2.ok) throw new Error((await r2.json().catch(() => ({})))?.error || 'No se guardó la consultoría.');
+      if (!r2.ok) throw new Error((await r2.json().catch(() => ({})))?.error || 'No se guardó el tipo de reunión.');
       setEt((p: any) => ({ ...p, schedule_id: scheduleId })); setPropio(true); setCambio(false);
-      avisar('Horarios de consultoría guardados');
+      avisar(`Horarios de ${corto.toLowerCase()} guardados`);
     } catch (e: any) { setError(e?.message || 'No se pudo guardar.'); }
     finally { setGuardando(false); }
   }
@@ -143,7 +167,7 @@ export default function LinkConsultoria({ onCerrar, avisar }: { onCerrar: () => 
   async function enviarCorreo() {
     if (!quien) return;
     setEnviando(true);
-    const r = await fetch('/api/scheduling/link-enviar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: quien.id, slug: SLUG }) })
+    const r = await fetch('/api/scheduling/link-enviar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: quien.id, slug }) })
       .then(x => x.json()).catch(() => null);
     setEnviando(false);
     if (!r || r.error) { setError(r?.error || 'No se pudo enviar.'); return; }
@@ -154,14 +178,33 @@ export default function LinkConsultoria({ onCerrar, avisar }: { onCerrar: () => 
 
   return (
     <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(20,18,32,.45)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div onClick={e => e.stopPropagation()} role="dialog" aria-label="Link de consultoría" style={{ background: '#fff', borderRadius: 14, width: 'min(620px, 100%)', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 22px 54px rgba(20,15,50,.28)', overflow: 'hidden' }}>
+      <div onClick={e => e.stopPropagation()} role="dialog" aria-label={`Link de ${corto.toLowerCase()}`} style={{ background: '#fff', borderRadius: 14, width: 'min(620px, 100%)', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 22px 54px rgba(20,15,50,.28)', overflow: 'hidden' }}>
         <div style={{ height: 4, background: 'linear-gradient(90deg,#9B8CFA,#7DA6F5 55%,#F4A8CD)', flex: 'none' }} />
         <div style={{ padding: '14px 18px 11px', borderBottom: '1px solid #f1eff7', flex: 'none' }}>
-          <div style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-.015em' }}>Link de consultoría</div>
+          <div style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-.015em' }}>Link para agendar · {corto.toLowerCase()}</div>
           <div style={{ fontSize: '0.76rem', color: '#8a8590', marginTop: 2 }}>El cliente elige su hora y cae en tu calendario de Google.</div>
         </div>
 
         <div style={{ overflowY: 'auto', flex: 1 }}>
+          {/* ── Qué reunión ── */}
+          {tipos.length > 1 && (
+            <div style={S.sec}>
+              <div style={S.lb}>Qué reunión</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {tipos.map(t => {
+                  const on = t.id === et?.id;
+                  return (
+                    <button key={t.id} onClick={() => { if (!on) { setError(''); setEt(t); } }}
+                      style={{ border: `1.5px solid ${on ? (t.color || '#9B8CFA') : '#e6e3ef'}`, background: on ? '#F6F4FF' : '#fff', color: on ? '#3d3752' : '#6b6878', borderRadius: 20, padding: '5px 11px', fontSize: '0.74rem', fontWeight: on ? 800 : 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: t.color || '#9B8CFA' }} />
+                      {String(t.nombre).replace(/^reuni[oó]n de\s+/i, '')}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* ── El link ── */}
           <div style={S.sec}>
             <div style={S.lb}>El link</div>
@@ -202,7 +245,7 @@ export default function LinkConsultoria({ onCerrar, avisar }: { onCerrar: () => 
 
           {/* ── Horarios de atención ── */}
           <div style={S.sec}>
-            <div style={{ ...S.lb, display: 'flex' }}>Horarios de atención · solo consultoría
+            <div style={{ ...S.lb, display: 'flex' }}>Horarios de atención · solo {corto.toLowerCase()}
               {!propio && semana && <span style={{ marginLeft: 'auto', textTransform: 'none', letterSpacing: 0, fontWeight: 600, color: '#9a6a10' }}>hoy usa tu horario general</span>}
             </div>
             {!semana && !error && <div style={{ fontSize: '0.8rem', color: '#a5a2af' }}>Cargando…</div>}

@@ -178,7 +178,8 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
   // hay que andar borrando. Elegido el cliente, se abre su ficha en Reuniones,
   // que es donde el alta ya existe y funciona.
   const [eligiendoCliente, setEligiendoCliente] = useState(false);
-  const [linkConsultoria, setLinkConsultoria] = useState(false);
+  // false = cerrada; true = desde el botón (consultoría); un id = el tipo de esa tarjeta.
+  const [linkConsultoria, setLinkConsultoria] = useState<boolean | string>(false);
   const [buscaCliente, setBuscaCliente] = useState('');
   const [resCliente, setResCliente] = useState<any[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -514,7 +515,7 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
               de la consultoría (pedido del 21-sep-2026). */}
           <button onClick={() => setLinkConsultoria(true)}
             style={{ border: '1px solid #dcd8ea', background: '#fff', color: '#3d3752', borderRadius: 10, padding: '9px 16px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-            Link de consultoría
+            Links para agendar
           </button>
           <button onClick={() => setEligiendoCliente(true)}
             style={{ border: 'none', background: '#5B4BD6', color: '#fff', borderRadius: 10, padding: '9px 18px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -542,6 +543,10 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
                 {t.falto > 0 && <> · <b style={{ color: '#C0554E' }}>{t.falto}</b> {t.falto === 1 ? 'falta' : 'faltas'}</>}
                 {t.asistio === 0 && t.falto === 0 && 'sin resolver'}
                 {t.pend > 0 && <> · <b style={{ color: '#9a6a10' }}>{t.pend} sin marcar</b></>}
+                {/* El link para que el cliente agende este tipo (dueño, 12-oct-2026). */}
+                {' · '}<span role="button" title="Link para que un cliente agende esta reunión"
+                  onClick={e => { e.stopPropagation(); setLinkConsultoria(t.id); }}
+                  style={{ color: '#5B4BD6', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>🔗 link</span>
               </>}
               barra={[
                 { pct: pct(t.asistio), color: '#4FBF95' },
@@ -786,7 +791,7 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
       {drawerCompanyId && <ClienteDrawer360 companyId={drawerCompanyId} onClose={() => setDrawerCompanyId(null)} onChanged={load} />}
       {reagendar && <ReagendarModal booking={reagendar} onClose={() => setReagendar(null)} onDone={() => { setReagendar(null); avisar('Reunión reagendada ✓'); load(); }} onError={(m) => avisar('Error: ' + m)} />}
 
-      {linkConsultoria && <LinkConsultoria onCerrar={() => setLinkConsultoria(false)} avisar={avisar} />}
+      {linkConsultoria && <LinkConsultoria tipoId={typeof linkConsultoria === 'string' ? linkConsultoria : undefined} onCerrar={() => setLinkConsultoria(false)} avisar={avisar} />}
       {toast && (
         <div className="crm-toast-bottom" style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#fff', padding: '10px 20px', borderRadius: 10, fontSize: '0.8125rem', zIndex: 3000, boxShadow: '0 8px 24px rgba(0,0,0,0.25)', maxWidth: '90vw', textAlign: 'center' }}>{toast}</div>
       )}
