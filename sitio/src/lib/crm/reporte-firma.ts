@@ -17,8 +17,8 @@ export const LEYENDA_FIRMA: Record<string, { titulo: string; frase: string }> = 
   // La minuta de reunión (dueño, 1-oct-2026): pasa al formato de los reportes y
   // el cliente acepta lo acordado, punto por punto y con su firma.
   minuta: {
-    titulo: 'Conformidad de la minuta',
-    frase: 'Estoy de acuerdo con lo que se revisó y acordó en esta sesión.',
+    titulo: 'Autorización del cliente',
+    frase: 'Estoy de acuerdo con lo que se revisó en esta reunión y autorizo lo acordado.',
   },
   // El ejecutivo (dueño, 27-sep-2026): «que está consciente del trabajo que se ha realizado».
   trabajo: {

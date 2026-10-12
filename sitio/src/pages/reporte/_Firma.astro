@@ -30,7 +30,7 @@ const trazo = typeof f?.trazo === 'string' && f.trazo.startsWith('data:image/png
 
     {conRev && (
       <p class="p frev">
-        {f ? 'Revisó' : 'Llevas revisados'} <b id="nrev">{nRev}</b> de {`${total} ${total === 1 ? 'punto' : 'puntos'}`}.
+        {f ? 'Revisó ' : 'Llevas revisados '}<b id="nrev">{nRev}</b> de {`${total} ${total === 1 ? 'punto' : 'puntos'}`}.
         {!f && ' Márcalos arriba conforme los revises; al firmar quedan como estén.'}
       </p>
     )}

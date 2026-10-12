@@ -17,7 +17,7 @@ import TabSoporte from './soporte/TabSoporte';
 import TabWhatsApp360 from './whatsapp/TabWhatsApp360';
 import Conversaciones from './whatsapp/Conversaciones';
 import { useIsMobile, useDrawerHistory, BP } from '../../../lib/ui/mobile';
-import { ESTADOS, MINUTA_CAMPOS, minutaLlena, minutaTexto, minutaVacia, normalizaEstado } from '../../../lib/crm/reuniones';
+import { ESTADOS, MINUTA_CAMPOS, minutaLlena, minutaTexto, minutaVacia, normalizaEstado, esConsultoria } from '../../../lib/crm/reuniones';
 import { repartoDe } from '../../../lib/crm/reparto';
 import Cargando, { Corazones } from './ui/Cargando';
 import { confirmar } from '../../../lib/ui/confirmar';
@@ -3828,7 +3828,10 @@ const CATS_MEJORA: Record<string, string> = {
   ajuste: 'ajuste', capacitacion: 'capacitación',
 };
 function MinutaReunion({ reunion, companyId, soloLectura, onCerrar, onListo }: any) {
-  const [m, setM] = useState<Record<string, string>>(() => ({ ...minutaVacia(), ...(reunion.minuta || {}) }));
+  const [m, setM] = useState<Record<string, any>>(() => ({ ...minutaVacia(), ...(reunion.minuta || {}) }));
+  /* Reunión de CONSULTORÍA (12-oct-2026): flujos, autorizaciones ligadas a su
+     cotización, compromisos del cliente con peso, y la minuta se firma. */
+  const consultoria = esConsultoria(reunion.event_types?.categoria);
   const [url, setUrl] = useState(reunion.grabacion_url || '');
   const [crudo, setCrudo] = useState<string>(reunion.minuta?.raw || '');
   const [pegando, setPegando] = useState(!soloLectura && !minutaLlena(reunion.minuta));
@@ -4016,8 +4019,8 @@ function MinutaReunion({ reunion, companyId, soloLectura, onCerrar, onListo }: a
             : <input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://drive.google.com/…" style={{ ...D.inputM, marginBottom: 12 }} />}
 
           <div style={{ background: '#fbfaff', border: '1px solid #ede6fb', borderRadius: 9, padding: '11px 12px' }}>
-            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#5B4BD6', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 7 }}>Minuta</div>
-            {MINUTA_CAMPOS.map(c => (
+            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#5B4BD6', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 7 }}>{consultoria ? 'Minuta · reunión de consultoría' : 'Minuta'}</div>
+            {MINUTA_CAMPOS.filter(c => !(consultoria && c.k === 'cliente' && !String(m.cliente || '').trim())).map(c => (
               <div key={c.k} style={{ marginTop: 9 }}>
                 <div style={{ fontSize: '0.73rem', fontWeight: 700, color: '#3f3b4d' }}>{c.label}</div>
                 {soloLectura
@@ -4027,6 +4030,9 @@ function MinutaReunion({ reunion, companyId, soloLectura, onCerrar, onListo }: a
                       style={{ ...D.inputM, marginTop: 3, resize: 'vertical', fontFamily: 'inherit', background: '#fff' }} />}
               </div>
             ))}
+            {consultoria && !soloLectura && (
+              <CamposConsultoria m={m} setM={setM} companyId={companyId} />
+            )}
           </div>
 
           {/* ══ EL REPARTO ══
@@ -4909,3 +4915,93 @@ function ExpansionSucursales({ co, f, subs = [], flash, onCerrar, onListo }: any
     </div>
   );
 }
+
+/* ─────────── Minuta de CONSULTORÍA: lo que se construye, lo que se autoriza ───────────
+ * (dueño, 12-oct-2026) Tres listas que viven DENTRO de la minuta (jsonb):
+ *  · flujos       — qué se va a construir o configurar, quién y para cuándo;
+ *  · autorizados  — lo que el cliente aprobó, con monto opcional y LIGADO a su
+ *                   cotización (el documento dice si ya está pagada);
+ *  · compromisos  — los del cliente, cada uno con su peso (alta/media/baja).
+ * Y el interruptor de firma: la minuta de consultoría se firma salvo que se
+ * apague aquí. */
+function CamposConsultoria({ m, setM, companyId }: any) {
+  const [cots, setCots] = useState<any[]>([]);
+  useEffect(() => {
+    if (!companyId) return;
+    let vivo = true;
+    fetch('/api/crm/cotizaciones-cuenta?company_id=' + companyId).then(r => r.json())
+      .then(j => { if (vivo) setCots(j.cotizaciones || []); }).catch(() => {});
+    return () => { vivo = false; };
+  }, [companyId]);
+  const lista = (k: string) => (Array.isArray(m[k]) ? m[k] : []) as any[];
+  const pon = (k: string, i: number, campo: string, v: any) => setM((x: any) => ({ ...x, [k]: lista(k).map((r, j) => j === i ? { ...r, [campo]: v } : r) }));
+  const agrega = (k: string, nuevo: any) => setM((x: any) => ({ ...x, [k]: [...lista(k), nuevo] }));
+  const quita = (k: string, i: number) => setM((x: any) => ({ ...x, [k]: lista(k).filter((_, j) => j !== i) }));
+  const money = (n: any) => '$' + Number(n || 0).toLocaleString('es-MX', { maximumFractionDigits: 0 });
+  const estadoCot = (q: any) => q.estado === 'paid' || (q.total > 0 && q.abonado >= q.total - 0.01) ? 'pagada'
+    : q.abonado > 0 ? `anticipo ${money(q.abonado)}` : q.estado === 'accepted' ? 'aceptada' : 'por pagar';
+  const I = { border: '1.5px solid #e4dffb', borderRadius: 9, padding: '7px 9px', fontSize: '0.76rem', fontFamily: 'inherit', background: '#fff', width: '100%', boxSizing: 'border-box' as const };
+  const L = { fontSize: '0.73rem', fontWeight: 700, color: '#3f3b4d', marginTop: 12, display: 'flex', alignItems: 'baseline', gap: 6 } as const;
+  const H = { fontSize: '0.64rem', color: '#a5a2af', fontWeight: 500 };
+  const X = { border: 'none', background: 'none', color: '#c0bcc6', cursor: 'pointer', fontSize: '0.85rem', padding: 0 };
+  const MAS = { border: 'none', background: 'none', color: '#5B4BD6', fontWeight: 700, fontSize: '0.72rem', cursor: 'pointer', padding: '6px 0 0', fontFamily: 'inherit' };
+  const PESOS: [string, string, string, string][] = [['alta', 'Alta', '#FEF0EF', '#C0554E'], ['media', 'Media', '#FFF4E5', '#9a6a10'], ['baja', 'Baja', '#EAF8F2', '#1E8A63']];
+  const firmar = m.firma !== false;
+
+  return (
+    <>
+      <div style={L}>Flujos de trabajo a realizar <span style={H}>qué se construye o configura, quién y para cuándo</span></div>
+      {lista('flujos').map((f, i) => (
+        <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 96px 120px 16px', gap: 6, marginTop: 6, alignItems: 'center' }}>
+          <input value={f.titulo || ''} onChange={e => pon('flujos', i, 'titulo', e.target.value)} placeholder="Recepción de prenda con consignataria" style={I} />
+          <select value={f.quien || 'sacs'} onChange={e => pon('flujos', i, 'quien', e.target.value)} style={I}><option value="sacs">SACS</option><option value="cliente">Cliente</option></select>
+          <input type="date" value={f.fecha || ''} onChange={e => pon('flujos', i, 'fecha', e.target.value)} style={I} />
+          <button onClick={() => quita('flujos', i)} style={X} aria-label="Quitar flujo">✕</button>
+        </div>
+      ))}
+      <button onClick={() => agrega('flujos', { titulo: '', quien: 'sacs', fecha: '' })} style={MAS}>+ Agregar flujo</button>
+
+      <div style={L}>Lo autorizado en la reunión <span style={H}>lo que el cliente aprobó; ligado a su cotización si la hay</span></div>
+      {lista('autorizados').map((a, i) => (
+        <div key={i} style={{ marginTop: 6, background: '#fff', border: '1px solid #ede6fb', borderRadius: 10, padding: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px 16px', gap: 6, alignItems: 'center' }}>
+            <input value={a.titulo || ''} onChange={e => pon('autorizados', i, 'titulo', e.target.value)} placeholder="Configuración del flujo de consignación" style={I} />
+            <input type="number" value={a.sin_costo ? '' : (a.monto ?? '')} disabled={!!a.sin_costo} onChange={e => pon('autorizados', i, 'monto', e.target.value === '' ? null : Number(e.target.value))} placeholder={a.sin_costo ? 'sin costo' : 'monto'} style={I} />
+            <button onClick={() => quita('autorizados', i)} style={X} aria-label="Quitar autorización">✕</button>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6, flexWrap: 'wrap' }}>
+            <select value={a.quote_id || ''} onChange={e => { const q = cots.find(c => c.id === e.target.value); setM((x: any) => ({ ...x, autorizados: lista('autorizados').map((r, j) => j === i ? { ...r, quote_id: q?.id || null, quote_numero: q?.numero || null, monto: r.monto ?? (q ? Number(q.total) : null) } : r) })); }} style={{ ...I, width: 'auto', flex: 1, minWidth: 200 }}>
+              <option value="">— no depende de una cotización —</option>
+              {cots.map(q => <option key={q.id} value={q.id}>{q.numero} · {money(q.total)} · {estadoCot(q)}</option>)}
+            </select>
+            <label style={{ fontSize: '0.7rem', color: '#666', display: 'flex', gap: 5, alignItems: 'center', cursor: 'pointer' }}>
+              <input type="checkbox" checked={!!a.sin_costo} onChange={e => pon('autorizados', i, 'sin_costo', e.target.checked)} /> sin costo
+            </label>
+          </div>
+        </div>
+      ))}
+      <button onClick={() => agrega('autorizados', { titulo: '', monto: null, sin_costo: false, quote_id: null })} style={MAS}>+ Agregar autorización</button>
+
+      <div style={L}>Compromisos del cliente <span style={H}>cada uno con su peso y su fecha</span></div>
+      {lista('compromisos').map((c, i) => (
+        <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto 120px 16px', gap: 6, marginTop: 6, alignItems: 'center' }}>
+          <input value={c.texto || ''} onChange={e => pon('compromisos', i, 'texto', e.target.value)} placeholder="Enviar contratos vigentes" style={I} />
+          <span style={{ display: 'inline-flex', gap: 3 }}>
+            {PESOS.map(([k, l, bg, fg]) => (
+              <button key={k} onClick={() => pon('compromisos', i, 'peso', k)} style={{ border: '1px solid ' + ((c.peso || 'media') === k ? fg : '#e9e3ee'), background: (c.peso || 'media') === k ? bg : '#fff', color: (c.peso || 'media') === k ? fg : '#8b8698', borderRadius: 20, padding: '4px 9px', fontSize: '0.64rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>{l}</button>
+            ))}
+          </span>
+          <input type="date" value={c.fecha || ''} onChange={e => pon('compromisos', i, 'fecha', e.target.value)} style={I} />
+          <button onClick={() => quita('compromisos', i)} style={X} aria-label="Quitar compromiso">✕</button>
+        </div>
+      ))}
+      <button onClick={() => agrega('compromisos', { texto: '', peso: 'media', fecha: '' })} style={MAS}>+ Agregar compromiso</button>
+
+      <label style={{ marginTop: 14, background: '#f7f4ff', border: '1.5px solid #e4dffb', borderRadius: 10, padding: '10px 12px', fontSize: '0.74rem', color: '#5b4a91', display: 'flex', gap: 9, alignItems: 'flex-start', lineHeight: 1.5, cursor: 'pointer' }}>
+        <input type="checkbox" checked={firmar} onChange={e => setM((x: any) => ({ ...x, firma: e.target.checked }))} style={{ marginTop: 3 }} />
+        <span><b>Pedir firma y autorización del cliente</b><br />La minuta de consultoría sale con «Autorización del cliente» al final. Las demás reuniones salen sin firma.</span>
+      </label>
+    </>
+  );
+}
+

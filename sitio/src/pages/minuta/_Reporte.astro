@@ -15,15 +15,20 @@ import JS from '../reporte/_guion';
 import Firma from '../reporte/_Firma.astro';
 import { llaveAcuerdo } from '../../lib/crm/reporte-firma';
 import { vinetas } from '../../lib/crm/marca';
+import { esConsultoria, PESO_L } from '../../lib/crm/reuniones';
+import { leerRevisionMinuta } from '../../lib/crm/minuta-revision';
+import { supabase } from '../../lib/supabase';
 
 const { b, m, cliente, tipo, sesionTxt, folio, fecha, duracion, marca, titulo, sigTitulo, sigResto, cuentaTxt } = Astro.props;
 
-/* La firma y los «de acuerdo» viven en columnas de `bookings` que el código
-   puede estrenar antes que el SQL. Sin ellas la minuta se lee igual y solo no
-   ofrece marcar ni firmar (mismo criterio que los reportes). */
-const conFirma = 'minuta_revisados' in b;
+/* FIRMA solo en reuniones de CONSULTORÍA (dueño, 12-oct-2026); las demás
+   salen sin firma. Se puede apagar por minuta (m.firma === false). La
+   revisión vive en la bitácora de `activities` (ver minuta-revision.ts). */
+const consultoria = esConsultoria((b.event_types as any)?.categoria);
+const conFirma = consultoria && m.firma !== false;
+const rv = conFirma ? await leerRevisionMinuta(b.id) : null;
 const rep: any = conFirma
-  ? { id: b.id, tipo: 'minuta', revisados: b.minuta_revisados || {}, firma: b.minuta_firma || null }
+  ? { id: b.id, tipo: 'minuta', revisados: rv!.revisados, firma: rv!.firma }
   : { id: b.id, tipo: 'minuta', firma: null };
 const revisados: Record<string, string> = rep.revisados || {};
 /* ?crm=1: la vista previa dentro del CRM. Se ve igual que la del cliente pero
@@ -32,11 +37,36 @@ const revisados: Record<string, string> = rep.revisados || {};
 const vistaCrm = Astro.url.searchParams.has('crm');
 const firmado = !!rep.firma;
 
+const money = (n: any) => '$' + Number(n || 0).toLocaleString('es-MX', { maximumFractionDigits: 0 });
 const reviso = String(m.reviso || '').split(/\r?\n+/).map(x => x.trim()).filter(Boolean);
 const acuerdos = vinetas(m.acuerdos);
 const doCliente = vinetas(m.cliente);
 const doNos = vinetas(m.sacs);
-const hayMinuta = reviso.length || acuerdos.length || doCliente.length || doNos.length || String(m.siguiente || '').trim();
+/* Lo estructurado de consultoría: flujos, autorizaciones (ligadas a su
+   cotización) y compromisos del cliente con su PESO. */
+const flujos: any[] = (Array.isArray(m.flujos) ? m.flujos : []).filter((f: any) => String(f?.titulo || '').trim());
+const autorizados: any[] = (Array.isArray(m.autorizados) ? m.autorizados : []).filter((a: any) => String(a?.titulo || '').trim());
+const ORDEN_PESO: Record<string, number> = { alta: 0, media: 1, baja: 2 };
+const compromisos: any[] = (Array.isArray(m.compromisos) ? m.compromisos : []).filter((c: any) => String(c?.texto || '').trim())
+  .sort((x: any, y: any) => (ORDEN_PESO[x.peso] ?? 1) - (ORDEN_PESO[y.peso] ?? 1));
+// Estado de pago de las cotizaciones ligadas, leído al abrir: dice HOY si ya está pagada.
+const cotIds = [...new Set(autorizados.map((a: any) => a.quote_id).filter(Boolean))] as string[];
+const cots: Record<string, any> = {};
+if (cotIds.length) {
+  const [{ data: qs }, { data: ps }] = await Promise.all([
+    supabase.from('quotes').select('id, numero, total, estado').in('id', cotIds),
+    supabase.from('payments').select('quote_id, monto, estado').in('quote_id', cotIds),
+  ]);
+  for (const q of qs || []) cots[q.id] = { ...q, abonado: 0 };
+  for (const p of ps || []) if (cots[p.quote_id] && !['anulado', 'cancelado', 'duplicado', 'reembolsado'].includes(String(p.estado || '').toLowerCase())) cots[p.quote_id].abonado += Number(p.monto || 0);
+}
+const estadoCot = (q: any) => !q ? null
+  : (q.estado === 'paid' || (q.total > 0 && q.abonado >= q.total - 0.01)) ? { l: 'Pagada', c: 'pag' }
+  : q.abonado > 0 ? { l: `Anticipo pagado · ${money(q.abonado)} de ${money(q.total)}`, c: 'par' }
+  : q.estado === 'accepted' ? { l: 'Aceptada · por pagar', c: 'pen' } : { l: 'Por pagar', c: 'pen' };
+const totalAutorizado = autorizados.reduce((a: number, x: any) => a + (x.sin_costo ? 0 : Number(x.monto || 0)), 0);
+const fCorta = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }).replace('.', '') : '';
+const hayMinuta = reviso.length || acuerdos.length || doCliente.length || doNos.length || flujos.length || autorizados.length || compromisos.length || String(m.siguiente || '').trim();
 
 /* Una etiqueta por acuerdo solo cuando el texto la dice sin lugar a duda. Si
    no, el renglón va sin etiqueta: una etiqueta inventada en un documento que
@@ -75,6 +105,31 @@ const sinCosto = acuerdos.filter(a => /sin costo/i.test(a)).length;
     .lado .vacio{font-size:.8rem;color:var(--ink-3);padding:6px 0}
     .avisoM{background:var(--ambar-a);color:var(--ambar-t);font-size:.84rem;padding:14px 34px;line-height:1.6}
     .graba{margin-top:14px}
+    .flujos{margin-top:4px}
+    .fl{display:grid;grid-template-columns:34px 1fr auto auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid #f1eff6}
+    .fl:first-child{border-top:none}
+    .fl-n{width:30px;height:30px;border-radius:50%;background:var(--agua);color:var(--tinta);font-weight:800;display:grid;place-items:center;font-size:.85rem}
+    .fl-t{font-weight:700;color:var(--ink);font-size:.95rem;min-width:0}
+    .quien{font-size:.68rem;font-weight:800;border-radius:20px;padding:3px 10px;white-space:nowrap}
+    .q-sacs{background:var(--agua);color:var(--tinta)} .q-cli{background:#FBE7F0;color:#8A1B50}
+    .fecha{font-size:.8rem;color:var(--ink-2);font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+    .aut{border:1.5px solid #cdeedd;background:var(--verde-a);border-radius:14px;padding:6px 16px;margin-top:6px}
+    .au{display:flex;gap:12px;align-items:center;padding:11px 0;border-top:1px solid #d8f0e4}
+    .au:first-child{border-top:none}
+    .au .ok{width:24px;height:24px;border-radius:50%;background:var(--verde);display:grid;place-items:center;flex:none}
+    .au .ok svg{width:14px;height:14px;fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+    .au-t{flex:1;min-width:0;font-weight:700;color:var(--ink);font-size:.93rem}
+    .au-q{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:4px;font-weight:500;font-size:.78rem;color:var(--ink-2)}
+    .cot{font-size:.66rem;font-weight:800;border-radius:20px;padding:2px 8px}
+    .cot-pag{background:#fff;color:var(--verde-t)} .cot-par{background:#fff;color:var(--ambar-t)} .cot-pen{background:#fff;color:#C0554E}
+    .au-m{font-weight:800;color:var(--verde-t);white-space:nowrap}
+    .au-m.sc{font-size:.72rem;background:#fff;border-radius:20px;padding:3px 10px}
+    .aut-tot{display:flex;justify-content:space-between;padding:11px 0 8px;border-top:1.5px dashed #bfe6d4;font-size:.82rem;color:var(--verde-t);font-weight:700}
+    .cp{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid #f4f3f8;font-size:.86rem;color:var(--ink-2);line-height:1.4}
+    .lado .cp:first-of-type{border-top:none}
+    .peso{font-size:.62rem;font-weight:800;border-radius:20px;padding:3px 9px;white-space:nowrap}
+    .p-alta{background:#FEF0EF;color:#C0554E} .p-media{background:#FFF4E5;color:#9a6a10} .p-baja{background:#EAF8F2;color:#1E8A63}
+    @media (max-width:640px){.fl{grid-template-columns:30px 1fr;}.fl .quien,.fl .fecha{grid-column:2}}
     @media (max-width:640px){.dos{grid-template-columns:1fr}.avisoM{padding:14px 18px}}
     @media print{.lado{break-inside:avoid}}
   </style>
@@ -95,10 +150,10 @@ const sinCosto = acuerdos.filter(a => /sin costo/i.test(a)).length;
         ))}
       </div>
       <div class="top">
-        <div><div class="wm">Sacscloud</div><div class="wsub">Minuta de reunión</div></div>
+        <div><div class="wm">Sacscloud</div><div class="wsub">{consultoria ? 'Minuta de consultoría' : 'Minuta de reunión'}</div></div>
         <div class="folio"><div class="t">Folio</div><div class="f">{folio}</div></div>
       </div>
-      <h1>Lo que revisamos y acordamos</h1>
+      <h1>{(flujos.length || autorizados.length) ? 'Lo que revisamos, autorizamos y vamos a construir' : 'Lo que revisamos y acordamos'}</h1>
       <p class="sub">{cliente} · {tipo} · {fecha}{duracion}</p>
       <div class="sello">
         <svg width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6c.62 6.6 3.18 9.16 9.78 9.78-6.6.62-9.16 3.18-9.78 9.78-.62-6.6-3.18-9.16-9.78-9.78C8.82 10.76 11.38 8.2 12 1.6z" fill="#D9538E" /></svg>
@@ -113,9 +168,13 @@ const sinCosto = acuerdos.filter(a => /sin costo/i.test(a)).length;
     </div>
 
     <div class="ancla">
-      <div><div class="n" data-n={acuerdos.length}>0</div><div class="l">{acuerdos.length === 1 ? 'acuerdo' : 'acuerdos'}</div></div>
-      <div><div class="n v" data-n={sinCosto}>0</div><div class="l">sin costo adicional</div></div>
-      <div><div class="n" data-n={doCliente.length}>0</div><div class="l">te tocan a ti</div></div>
+      {flujos.length > 0
+        ? <div><div class="n" data-n={flujos.length}>0</div><div class="l">{flujos.length === 1 ? 'flujo de trabajo' : 'flujos de trabajo'}</div></div>
+        : <div><div class="n" data-n={acuerdos.length}>0</div><div class="l">{acuerdos.length === 1 ? 'acuerdo' : 'acuerdos'}</div></div>}
+      {autorizados.length > 0
+        ? <div><div class="n v" data-n={autorizados.length}>0</div><div class="l">{autorizados.length === 1 ? 'autorización' : 'autorizaciones'}</div></div>
+        : <div><div class="n v" data-n={sinCosto}>0</div><div class="l">sin costo adicional</div></div>}
+      <div><div class="n" data-n={compromisos.length || doCliente.length}>0</div><div class="l">te tocan a ti</div></div>
       <div><div class="n" data-n={doNos.length}>0</div><div class="l">nos tocan a nosotros</div></div>
     </div>
 
@@ -125,7 +184,7 @@ const sinCosto = acuerdos.filter(a => /sin costo/i.test(a)).length;
       <div class="st"><span class="x">Cómo leer este documento</span><span class="ln"></span></div>
       <p class="p">
         {conFirma
-          ? <>Primero, lo que se revisó en la sesión. Después, cada <b>acuerdo</b> en su renglón: márcalo como <b>de acuerdo</b> cuando lo leas. Al final, lo que le toca a cada quien y el siguiente paso. Firma abajo para dejar la minuta aceptada.</>
+          ? <>Primero, lo que se revisó y los <b>flujos de trabajo</b> que vamos a construir. Después, cada <b>acuerdo</b>: márcalo como <b>de acuerdo</b> cuando lo leas, y lo que <b>autorizaste</b> en la reunión. Al final, lo que le toca a cada quien. Firma abajo para dejar la minuta autorizada.</>
           : <>Primero, lo que se revisó en la sesión. Después, cada <b>acuerdo</b> en su renglón. Al final, lo que le toca a cada quien y el siguiente paso.</>}
       </p>
 
@@ -140,6 +199,17 @@ const sinCosto = acuerdos.filter(a => /sin costo/i.test(a)).length;
       {reviso.length > 0 && <>
         <div class="st" style="margin-top:26px"><span class="x">Qué se revisó</span><span class="ln"></span></div>
         {reviso.map(p => <p class="p">{p}</p>)}
+      </>}
+
+      {flujos.length > 0 && <>
+        <div class="st" style="margin-top:26px"><span class="x">Flujos de trabajo a realizar</span><span class="ln"></span></div>
+        <div class="flujos">
+          {flujos.map((f: any, i: number) => (
+            <div class="fl"><span class="fl-n">{i + 1}</span><span class="fl-t">{f.titulo}</span>
+              <span class={`quien q-${f.quien === 'cliente' ? 'cli' : 'sacs'}`}>{f.quien === 'cliente' ? 'Tú' : 'SACS'}</span>
+              {f.fecha && <span class="fecha">{fCorta(f.fecha)}</span>}</div>
+          ))}
+        </div>
       </>}
 
       {acuerdos.length > 0 && <>
@@ -165,11 +235,34 @@ const sinCosto = acuerdos.filter(a => /sin costo/i.test(a)).length;
         </div>
       </>}
 
-      {(doCliente.length > 0 || doNos.length > 0) && <>
+      {autorizados.length > 0 && <>
+        <div class="st" style="margin-top:26px"><span class="x">Autorizado en esta reunión</span><span class="ln"></span></div>
+        <div class="aut">
+          {autorizados.map((a: any) => {
+            const q = a.quote_id ? cots[a.quote_id] : null;
+            const st = estadoCot(q);
+            return (
+              <div class="au">
+                <span class="ok" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg></span>
+                <span class="au-t">{a.titulo}
+                  {q && <span class="au-q">Depende de la cotización <b>{q.numero}</b>{st && <span class={`cot cot-${st.c}`}>{st.l}</span>}</span>}
+                </span>
+                {a.sin_costo ? <span class="au-m sc">sin costo</span> : (Number(a.monto) > 0 ? <span class="au-m">{money(a.monto)}</span> : null)}
+              </div>
+            );
+          })}
+          {totalAutorizado > 0 && <div class="aut-tot"><span>Total autorizado</span><span>{money(totalAutorizado)}</span></div>}
+        </div>
+      </>}
+
+      {(doCliente.length > 0 || doNos.length > 0 || compromisos.length > 0) && <>
         <div class="st" style="margin-top:26px"><span class="x">Compromisos</span><span class="ln"></span></div>
         <div class="dos">
-          <div class="lado tu"><h4>Lo que te toca</h4>
-            {doCliente.length ? doCliente.map(t => <div class="tarea"><i></i><span>{t}</span></div>)
+          <div class="lado tu"><h4>{compromisos.length ? 'Lo que te toca · por importancia' : 'Lo que te toca'}</h4>
+            {compromisos.length ? compromisos.map((c: any) => (
+                <div class="cp"><span class={`peso p-${c.peso || 'media'}`}>{PESO_L[c.peso as 'alta'] || 'Media'}</span><span>{c.texto}</span>{c.fecha ? <span class="fecha">{fCorta(c.fecha)}</span> : <span></span>}</div>
+              ))
+              : doCliente.length ? doCliente.map(t => <div class="tarea"><i></i><span>{t}</span></div>)
               : <div class="vacio">Nada de tu lado en esta sesión.</div>}
           </div>
           <div class="lado"><h4>Lo que nos toca</h4>

@@ -74,8 +74,10 @@ export const minutaVacia = () => Object.fromEntries(MINUTA_CAMPOS.map(c => [c.k,
 export const minutaLeadVacia = () => ({ ...Object.fromEntries(MINUTA_LEAD_CAMPOS.map(c => [c.k, ''])), tipo: 'lead' }) as Record<string, string>;
 // Se comprueba contra los DOS juegos: si no, una minuta de lead se veía vacía
 // en cualquier pantalla que solo conociera los campos de cliente.
-export const minutaLlena = (m: any) => !!m &&
-  [...MINUTA_CAMPOS, ...MINUTA_LEAD_CAMPOS].some(c => String(m?.[c.k] || '').trim());
+export const minutaLlena = (m: any) => !!m && (
+  [...MINUTA_CAMPOS, ...MINUTA_LEAD_CAMPOS].some(c => String(m?.[c.k] || '').trim())
+  // Consultoría: una minuta con solo flujos/autorizaciones/compromisos también está llena.
+  || ['flujos', 'autorizados', 'compromisos'].some(k => Array.isArray(m?.[k]) && m[k].some((x: any) => String(x?.titulo || x?.texto || '').trim())));
 
 /** La minuta en texto plano, para copiarla a un correo o a WhatsApp. */
 export function minutaTexto(b: any): string {
@@ -89,7 +91,13 @@ export function minutaTexto(b: any): string {
   const cuerpo = camposDe(m)
     .filter(c => String(m[c.k] || '').trim())
     .map(c => `\n${c.label.toUpperCase()}\n${String(m[c.k]).trim()}`).join('\n');
-  return cab + '\n' + cuerpo + (b?.grabacion_url ? `\n\nGRABACIÓN\n${b.grabacion_url}` : '');
+  const din = (n: any) => '$' + Number(n || 0).toLocaleString('es-MX', { maximumFractionDigits: 0 });
+  const listas = [
+    ['FLUJOS DE TRABAJO A REALIZAR', (m.flujos || []).filter((f: any) => f?.titulo).map((f: any) => `- ${f.titulo} · ${f.quien === 'cliente' ? 'Cliente' : 'SACS'}${f.fecha ? ' · ' + f.fecha : ''}`)],
+    ['AUTORIZADO EN LA REUNIÓN', (m.autorizados || []).filter((a: any) => a?.titulo).map((a: any) => `- ${a.titulo}${a.sin_costo ? ' · sin costo' : a.monto ? ' · ' + din(a.monto) : ''}${a.quote_numero ? ' · ' + a.quote_numero : ''}`)],
+    ['COMPROMISOS DEL CLIENTE (POR PESO)', (m.compromisos || []).filter((c: any) => c?.texto).map((c: any) => `- [${PESO_L[c.peso as PesoCompromiso] || 'Media'}] ${c.texto}${c.fecha ? ' · ' + c.fecha : ''}`)],
+  ].filter(([, l]) => (l as string[]).length).map(([t, l]) => `\n${t}\n${(l as string[]).join('\n')}`).join('\n');
+  return cab + '\n' + cuerpo + (listas ? '\n' + listas : '') + (b?.grabacion_url ? `\n\nGRABACIÓN\n${b.grabacion_url}` : '');
 }
 
 // ── Alerta por inasistencias ────────────────────────────────────────────────
@@ -139,3 +147,14 @@ export function textoAlerta(a: AlertaInasistencia): string {
   const seguidas = a.seguidas >= a.umbral ? ` (${a.seguidas} seguidas)` : '';
   return `${a.faltas} inasistencias en ${a.tipo_nombre.toLowerCase()}${seguidas}.`;
 }
+
+// ── Minuta de CONSULTORÍA (dueño, 12-oct-2026) ──────────────────────────────
+// Las reuniones de consultoría documentan además QUÉ se va a construir, QUÉ
+// autorizó el cliente (ligado a su cotización) y el PESO de cada compromiso
+// suyo; y su minuta se FIRMA. Las demás reuniones salen sin firma.
+export const esConsultoria = (categoria?: string | null) => String(categoria || '') === 'consultoria';
+export type FlujoMinuta = { titulo: string; quien: 'sacs' | 'cliente'; fecha?: string | null };
+export type AutorizadoMinuta = { titulo: string; monto?: number | null; sin_costo?: boolean; quote_id?: string | null; quote_numero?: string | null };
+export type PesoCompromiso = 'alta' | 'media' | 'baja';
+export type CompromisoMinuta = { texto: string; peso: PesoCompromiso; fecha?: string | null };
+export const PESO_L: Record<PesoCompromiso, string> = { alta: 'Alta', media: 'Media', baja: 'Baja' };
