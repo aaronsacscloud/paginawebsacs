@@ -3827,12 +3827,78 @@ const CATS_MEJORA: Record<string, string> = {
   personalizacion: 'personalización', plugin: 'plugin', modulo: 'módulo',
   ajuste: 'ajuste', capacitacion: 'capacitación',
 };
+/* ══ ENVIAR LA MINUTA PARA FIRMA (dueño, 12-oct-2026) ══════════════════════
+   La liga pública de la minuta, lista para mandarse al cliente por WhatsApp o
+   correo con el mensaje ya escrito. El número y el correo salen de la reunión
+   y se pueden corregir aquí (muchas reuniones llegan sin WhatsApp). Cada envío
+   queda en la Actividad de la cuenta y el panel dice si ya la firmaron. */
+function EnviarMinuta({ reunion, firmable }: { reunion: any; firmable: boolean }) {
+  const liga = `${typeof window !== 'undefined' ? window.location.origin : 'https://www.sacscloud.com'}/minuta/${reunion.id}`;
+  const nombre = String(reunion.invitee_nombre || '').trim().split(/\s+/)[0] || '';
+  const [tel, setTel] = useState(String(reunion.invitee_whatsapp || ''));
+  const [mail, setMail] = useState(String(reunion.invitee_email || ''));
+  const [msg, setMsg] = useState(firmable
+    ? `Hola${nombre ? ' ' + nombre : ''}, te comparto la minuta de nuestra sesión del ${fmtDate(reunion.fecha)}. Revisa los acuerdos, márcalos y fírmala desde aquí: ${liga}`
+    : `Hola${nombre ? ' ' + nombre : ''}, te comparto la minuta de nuestra sesión del ${fmtDate(reunion.fecha)}: ${liga}`);
+  const [est, setEst] = useState<any>(null);
+  const [copiado, setCopiado] = useState(false);
+  const cargar = () => fetch('/api/crm/minuta-envio?id=' + reunion.id).then(r => r.json()).then(j => { if (!j.error) setEst(j); }).catch(() => {});
+  useEffect(() => { cargar(); }, [reunion.id]);
+  const registrar = (canal: string, para?: string) => fetch('/api/crm/minuta-envio', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: reunion.id, canal, para: para || null }),
+  }).then(cargar).catch(() => {});
+  const soloDig = tel.replace(/\D/g, '');
+  const telOk = soloDig.length >= 10;
+  const mailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail.trim());
+  const ult = est?.envios?.[0];
+  const fF = (d: string) => new Date(d).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' });
+  const paso = (on: boolean, txt: string) => (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 800,
+      background: on ? '#EEECFE' : '#fff', border: `1px solid ${on ? '#C9C0FF' : '#ECEAF4'}`, color: on ? '#5B4BD6' : '#9c99a6' }}>{txt}</span>
+  );
+  const btnC: any = { border: 'none', borderRadius: 10, padding: '9px 14px', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' };
+  return (
+    <div style={{ margin: '10px 17px 4px', border: '1.5px solid #D9D2FF', borderRadius: 14, padding: '13px 15px', background: 'linear-gradient(135deg,#F7F5FF,#FFF6FA)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <b style={{ fontSize: '0.88rem', flex: 1 }}>{firmable ? 'Enviar para firma' : 'Enviar la minuta'}</b>
+        {paso(!!ult, ult ? `✓ Enviada ${fF(ult.at)}` : 'Sin enviar')}
+        {firmable && <span style={{ width: 12, height: 2, background: '#DDD9EA' }} />}
+        {firmable && paso(!!est?.firma, est?.firma ? `✍ Firmada por ${est.firma.nombre} · ${fF(est.firma.at)}` : `✍ Sin firmar${est ? ` · ${est.revisados} acuerdo(s) marcados` : ''}`)}
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+        <input readOnly value={liga} onFocus={e => e.currentTarget.select()} style={{ ...D.inputM, flex: 1, fontFamily: 'monospace', color: '#5B4BD6' }} />
+        <button onClick={() => { navigator.clipboard?.writeText(liga); setCopiado(true); setTimeout(() => setCopiado(false), 1800); registrar('liga'); }}
+          style={{ ...btnC, background: '#fff', border: '1.5px solid #E1DEEC', color: '#231d40' }}>{copiado ? '✓ Copiada' : 'Copiar liga'}</button>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <input value={tel} onChange={e => setTel(e.target.value)} placeholder="WhatsApp del cliente (10 dígitos)" style={{ ...D.inputM, flex: 1 }} />
+          <button disabled={!telOk} onClick={() => {
+            const n = soloDig.length === 10 ? '52' + soloDig : soloDig;
+            window.open(`https://wa.me/${n}?text=${encodeURIComponent(msg)}`, '_blank'); registrar('whatsapp', tel);
+          }} style={{ ...btnC, background: telOk ? '#25D366' : '#e7e5ee', color: telOk ? '#fff' : '#9c99a6' }}>WhatsApp</button>
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <input value={mail} onChange={e => setMail(e.target.value)} placeholder="Correo del cliente" style={{ ...D.inputM, flex: 1 }} />
+          <button disabled={!mailOk} onClick={() => {
+            const asunto = `Minuta de nuestra sesión del ${fmtDate(reunion.fecha)}`;
+            window.open(`mailto:${mail.trim()}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(msg)}`, '_blank'); registrar('correo', mail.trim());
+          }} style={{ ...btnC, background: mailOk ? 'linear-gradient(100deg,#7C6BF0,#D9538E)' : '#e7e5ee', color: mailOk ? '#fff' : '#9c99a6' }}>Correo</button>
+        </div>
+      </div>
+      <textarea value={msg} onChange={e => setMsg(e.target.value)} rows={2}
+        style={{ ...D.inputM, width: '100%', marginTop: 8, resize: 'vertical', fontSize: '0.78rem', lineHeight: 1.45 }} />
+    </div>
+  );
+}
+
 function MinutaReunion({ reunion, companyId, soloLectura, onCerrar, onListo }: any) {
   const [m, setM] = useState<Record<string, any>>(() => ({ ...minutaVacia(), ...(reunion.minuta || {}) }));
   /* Reunión de CONSULTORÍA (12-oct-2026): flujos, autorizaciones ligadas a su
      cotización, compromisos del cliente con peso, y la minuta se firma. */
   const consultoria = esConsultoria(reunion.event_types?.categoria);
   const [url, setUrl] = useState(reunion.grabacion_url || '');
+  const [enviar, setEnviar] = useState(false);
   const [crudo, setCrudo] = useState<string>(reunion.minuta?.raw || '');
   const [pegando, setPegando] = useState(!soloLectura && !minutaLlena(reunion.minuta));
   const [acomodando, setAcomodando] = useState(false);
@@ -4146,6 +4212,7 @@ function MinutaReunion({ reunion, companyId, soloLectura, onCerrar, onListo }: a
           )}
         </div>}
 
+        {enviar && minutaLlena(reunion.minuta) && <EnviarMinuta reunion={reunion} firmable={consultoria} />}
         <div style={{ padding: '12px 17px 15px', borderTop: '1px solid #f1eff7', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           {!soloLectura && (
             <button onClick={guardar} disabled={guardando} style={{ ...D.btn, opacity: guardando ? .6 : 1 }}>
@@ -4161,12 +4228,10 @@ function MinutaReunion({ reunion, companyId, soloLectura, onCerrar, onListo }: a
               style={{ border: '1.5px solid rgba(244,168,205,.75)', background: 'rgba(244,168,205,.22)', color: '#9c3d70', borderRadius: 9, padding: '7px 13px', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer' }}>
               Descargar minuta
             </button>
-            <button onClick={() => {
-              const liga = `${window.location.origin}/minuta/${reunion.id}`;
-              const tel = String(reunion.invitee_whatsapp || '').replace(/\D/g, '');
-              const txt = encodeURIComponent(`Minuta de nuestra sesión del ${fmtDate(reunion.fecha)}: ${liga}`);
-              window.open(tel ? `https://wa.me/${tel}?text=${txt}` : `https://wa.me/?text=${txt}`, '_blank');
-            }} style={D.btnG}>Enviar por WhatsApp</button>
+            <button onClick={() => setEnviar(v => !v)}
+              style={{ border: 'none', background: 'linear-gradient(100deg,#7C6BF0,#8E7DEF 35%,#D9538E)', color: '#fff', borderRadius: 9, padding: '8px 14px', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer' }}>
+              {consultoria ? '✍ Enviar para firma' : 'Enviar liga'}
+            </button>
           </>)}
           <button onClick={() => { navigator.clipboard?.writeText(minutaTexto({ ...reunion, minuta: m, grabacion_url: url })); }} style={D.btnG}>Copiar como texto</button>
           <button onClick={onCerrar} style={{ ...D.btnG, marginLeft: 'auto' }}>{soloLectura ? 'Cerrar' : 'Después'}</button>

@@ -75,7 +75,45 @@ const etiqueta = (t: string) => /sin costo/i.test(t) ? { l: 'sin costo', c: 'sc'
   : /personalizaci[oó]n/i.test(t) ? { l: 'personalización', c: 'per' }
   : /(por verificar|se verificar|verificar[aá]|se revisar[aá]|qued[oó] por|por definir|pendiente de)/i.test(t) ? { l: 'por revisar', c: 'rev' }
   : null;
-const sinCosto = acuerdos.filter(a => /sin costo/i.test(a)).length;
+
+/* ══ PROPUESTA B (dueño, 12-oct-2026): ruta arriba, casos en tarjetas,
+   compromisos en dos columnas. La NUMERACIÓN la pone el documento: si el texto
+   ya trae «Caso 3.» o «5.», se quita, porque con un renglón borrado la lista
+   del cliente decía 1, 2, 3, 5… y el número del círculo repetía el del texto. */
+const sinNum = (t: any) => String(t || '').replace(/^\s*(?:caso\s*)?\d{1,2}\s*[.)\-:–]\s*/i, '').trim();
+/* «Título: descripción» se parte en dos: el título va en negritas y el resto
+   como texto normal (antes el párrafo entero iba en negritas y desbordaba). */
+const partir = (t: string) => {
+  const x = sinNum(t);
+  const mm = x.match(/^([^:]{3,90}):\s*([\s\S]+)$/);
+  return mm ? { t: mm[1].trim(), d: mm[2].trim() } : { t: x, d: '' };
+};
+const flujosV = flujos.map((f: any) => ({ ...f, ...partir(f.titulo) }));
+const compromisosV = compromisos.map((c: any) => ({ ...c, texto: sinNum(c.texto) }));
+const doClienteV = doCliente.map(sinNum), doNosV = doNos.map(sinNum);
+const acuerdosV = acuerdos.map(sinNum);
+
+/* Días que faltan, contra la fecha de hoy en CDMX. */
+const hoyMx = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Mexico_City' }));
+hoyMx.setHours(12, 0, 0, 0);
+const faltan = (d?: string | null) => {
+  if (!d) return null;
+  const n = Math.round((new Date(String(d).slice(0, 10) + 'T12:00:00').getTime() - hoyMx.getTime()) / 86400000);
+  return n === 0 ? { l: 'hoy', c: 'hoy' } : n > 0 ? { l: `en ${n} ${n === 1 ? 'día' : 'días'}`, c: 'pronto' } : { l: `venció hace ${-n} ${n === -1 ? 'día' : 'días'}`, c: 'tarde' };
+};
+const fechasCli = compromisosV.map((c: any) => c.fecha).filter(Boolean).sort();
+const nTuyos = compromisosV.length || doClienteV.length;
+const fechasFl = flujosV.map((f: any) => f.fecha).filter(Boolean).sort();
+const sigTxt = String(m.siguiente || '').trim();
+const sigCorto = !sigTxt ? '' : /pendiente|por agendar|por confirmar|por definir/i.test(sigTxt.split(/\n/)[0]) ? 'por agendar' : (sigTitulo || sigTxt.split(/\n/)[0]).slice(0, 48);
+/* La RUTA: solo los hitos que la minuta sí tiene. El primero que falta es el
+   que se marca como «ahora». */
+const ruta: { t: string; s: string; hecho?: boolean }[] = [{ t: 'Reunión', s: fCorta(b.fecha), hecho: true }];
+if (nTuyos) ruta.push({ t: 'Te toca a ti', s: `${fechasCli[0] ? fCorta(fechasCli[0]) + ' · ' : ''}${nTuyos} ${nTuyos === 1 ? 'pendiente' : 'pendientes'}` });
+if (flujosV.length) ruta.push({ t: `Construimos ${flujosV.length === 1 ? 'el flujo' : `los ${flujosV.length} flujos`}`, s: fechasFl.length ? fCorta(fechasFl[fechasFl.length - 1]) : 'fecha por definir' });
+else if (doNosV.length) ruta.push({ t: 'Nos toca a nosotros', s: `${doNosV.length} ${doNosV.length === 1 ? 'pendiente' : 'pendientes'}` });
+if (sigTxt) ruta.push({ t: 'Siguiente reunión', s: sigCorto });
+const ICONOS = ['📦', '✂️', '⚖️', '🖨️', '🧩', '🔁', '🏷️', '📊', '🧾', '⚙️'];
 ---
 <html lang="es">
 <head>
@@ -88,50 +126,92 @@ const sinCosto = acuerdos.filter(a => /sin costo/i.test(a)).length;
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700;9..40,800&display=swap" />
   <style set:html={CSS}></style>
   <style>
-    /* Lo propio de la minuta, sobre el sistema de los reportes. */
-    .ac .chip{font-size:.6rem;font-weight:800;border-radius:20px;padding:2px 9px;white-space:nowrap;flex:none}
-    .ac .c-rev{background:var(--ambar-a);color:var(--ambar-t)}
-    .ac .c-per{background:var(--agua);color:var(--tinta)}
-    .ac .c-sc{background:var(--verde-a);color:var(--verde-t)}
-    .ac .tx{font-size:.88rem;color:var(--ink);line-height:1.55;font-weight:500;flex:1;min-width:0}
-    .dos{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:6px}
-    .lado{border:1px solid var(--borde);border-radius:14px;padding:14px 16px;background:#fff;min-width:0}
-    .lado h4{margin:0 0 6px;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--tinta)}
-    .lado.tu h4{color:var(--rosa-t)}
-    .tarea{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid #f4f3f8;font-size:.84rem;color:var(--ink-2);line-height:1.5}
-    .tarea:first-of-type{border-top:none}
-    .tarea i{flex:none;width:7px;height:7px;border-radius:50%;background:var(--violeta);margin-top:8px}
-    .lado.tu .tarea i{background:var(--rosa-s)}
-    .lado .vacio{font-size:.8rem;color:var(--ink-3);padding:6px 0}
-    .avisoM{background:var(--ambar-a);color:var(--ambar-t);font-size:.84rem;padding:14px 34px;line-height:1.6}
-    .graba{margin-top:14px}
-    .flujos{margin-top:4px}
-    .fl{display:grid;grid-template-columns:34px 1fr auto auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid #f1eff6}
-    .fl:first-child{border-top:none}
-    .fl-n{width:30px;height:30px;border-radius:50%;background:var(--agua);color:var(--tinta);font-weight:800;display:grid;place-items:center;font-size:.85rem}
-    .fl-t{font-weight:700;color:var(--ink);font-size:.95rem;min-width:0}
-    .quien{font-size:.68rem;font-weight:800;border-radius:20px;padding:3px 10px;white-space:nowrap}
-    .q-sacs{background:var(--agua);color:var(--tinta)} .q-cli{background:#FBE7F0;color:#8A1B50}
-    .fecha{font-size:.8rem;color:var(--ink-2);font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
-    .aut{border:1.5px solid #cdeedd;background:var(--verde-a);border-radius:14px;padding:6px 16px;margin-top:6px}
-    .au{display:flex;gap:12px;align-items:center;padding:11px 0;border-top:1px solid #d8f0e4}
-    .au:first-child{border-top:none}
+    /* Lo propio de la minuta (propuesta B), sobre el sistema de los reportes. */
+    .shell{max-width:920px}
+    .mhero{padding:30px 34px 6px;background:radial-gradient(50% 120% at 100% 0%,#FCE4EF,transparent 60%),radial-gradient(50% 120% at 0% 0%,#ECE8FF,transparent 60%)}
+    .mtop{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+    .mwm{font-weight:800;font-size:1.25rem;background:linear-gradient(100deg,#7C6BF0,#8E7DEF 35%,#D9538E);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .mws{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
+    .mest{padding:6px 13px;border-radius:99px;font-weight:800;font-size:.72rem;white-space:nowrap}
+    .mest.pend{background:var(--ambar-a);color:var(--ambar-t)} .mest.ok{background:var(--verde-a);color:var(--verde-t)}
+    .mhero h1{font-size:2.1rem;letter-spacing:-.02em;line-height:1.1;margin:18px 0 6px;color:var(--ink)}
+    .msub{color:var(--ink-2);font-size:.92rem}
+    .mquien{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+    .mquien div{background:rgba(255,255,255,.75);border:1px solid var(--borde);border-radius:12px;padding:7px 12px;font-size:.8rem;font-weight:700;color:var(--ink)}
+    .mquien b{display:block;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-weight:800;margin-bottom:1px}
+    .ruta{position:relative;display:grid;margin:24px 0 0;padding:0 0 24px}
+    .ruta .lin{position:absolute;top:15px;height:3px;background:#E4E1F0;border-radius:3px}
+    .ruta .lin i{display:block;height:100%;background:var(--violeta);border-radius:3px;transition:width 1s ease}
+    .hito{position:relative;text-align:center;font-size:.8rem;padding:0 6px;opacity:0;transform:translateY(6px);animation:hito .5s ease forwards}
+    @keyframes hito{to{opacity:1;transform:none}}
+    .hito .pt{width:32px;height:32px;margin:0 auto 8px;border-radius:50%;display:grid;place-items:center;background:#fff;border:3px solid #E4E1F0;font-weight:800;font-size:.75rem;color:var(--ink-3)}
+    .hito.ok .pt{background:#7C6BF0;border-color:#7C6BF0;color:#fff}
+    .hito.ya .pt{border-color:var(--rosa);color:var(--rosa);box-shadow:0 0 0 6px rgba(217,83,142,.15);animation:late 2s infinite}
+    @keyframes late{50%{box-shadow:0 0 0 10px rgba(217,83,142,.06)}}
+    .hito b{display:block;color:var(--ink)} .hito span{color:var(--ink-3);font-size:.74rem}
+    .mcu{padding:6px 34px 30px}
+    .mst{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--tinta);font-weight:800;margin:30px 0 12px}
+    .mst em{font-style:normal;color:var(--ink-3)}
+    .mp{color:var(--ink-2);line-height:1.68;font-size:.93rem;margin:0 0 10px}
+    .sig{border-radius:16px;padding:14px 18px;background:linear-gradient(135deg,#F1EEFF,#FDEFF6);margin-top:18px}
+    .sig .t{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--tinta);font-weight:800}
+    .sig .c{font-weight:800;font-size:1.02rem;color:var(--ink);margin-top:4px}
+    .sig .d{font-size:.84rem;color:var(--ink-2);line-height:1.6;margin-top:4px;white-space:pre-line}
+    .fls{display:flex;flex-direction:column;gap:10px}
+    .flc{display:grid;grid-template-columns:46px minmax(0,1fr) auto;gap:16px;align-items:start;padding:16px 18px;border-radius:18px;border:1px solid var(--borde);background:#fff;transition:border-color .2s,box-shadow .2s,transform .2s}
+    .flc:hover{border-color:#C9C0FF;box-shadow:0 10px 30px rgba(124,107,240,.12);transform:translateY(-1px)}
+    .flc .ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:1.35rem;background:linear-gradient(135deg,#EFEBFF,#FCE8F2)}
+    .flc h3{margin:0;font-size:1rem;color:var(--ink);line-height:1.35}
+    .flc h3 small{font-size:.64rem;color:var(--ink-3);letter-spacing:.12em;margin-right:7px;font-weight:800}
+    .flc p{margin:5px 0 0;font-size:.86rem;color:var(--ink-2);line-height:1.58}
+    .flc .der{text-align:right;white-space:nowrap;padding-right:2px}
+    .pill{display:inline-block;font-size:.7rem;font-weight:800;padding:4px 10px;border-radius:99px;background:var(--agua);color:var(--tinta)}
+    .pill.cli{background:#FBE7F0;color:#8A1B50}
+    .flc .der .fd{font-size:.82rem;font-weight:700;color:var(--ink);margin-top:8px}
+    .cuando{display:block;font-size:.7rem;font-weight:700}
+    .cuando.pronto{color:var(--ambar-t)} .cuando.hoy{color:var(--rosa-t)} .cuando.tarde{color:#C0554E}
+    .acs{display:flex;flex-direction:column}
+    .acs .it{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:14px;align-items:center;padding:13px 0;border-top:1px solid #F1EFF6;transition:background .2s}
+    .acs .it:first-child{border-top:0}
+    .acs .it.revisada .num{background:var(--verde-a);color:var(--verde-t)}
+    .acs .num{width:28px;height:28px;border-radius:9px;background:#F4F2FB;display:grid;place-items:center;font-size:.75rem;font-weight:800;color:var(--ink-3)}
+    .acs .tx{font-size:.93rem;line-height:1.55;color:var(--ink)}
+    .acs .tx .chip{margin-left:8px;font-size:.6rem;font-weight:800;border-radius:20px;padding:2px 9px;white-space:nowrap;vertical-align:2px}
+    .c-rev{background:var(--ambar-a);color:var(--ambar-t)} .c-per{background:var(--agua);color:var(--tinta)} .c-sc{background:var(--verde-a);color:var(--verde-t)}
+    .aut{border:1.5px solid #cdeedd;background:var(--verde-a);border-radius:16px;padding:6px 16px}
+    .au{display:flex;gap:12px;align-items:center;padding:11px 0;border-top:1px solid #d8f0e4}.au:first-child{border-top:none}
     .au .ok{width:24px;height:24px;border-radius:50%;background:var(--verde);display:grid;place-items:center;flex:none}
     .au .ok svg{width:14px;height:14px;fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
     .au-t{flex:1;min-width:0;font-weight:700;color:var(--ink);font-size:.93rem}
     .au-q{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:4px;font-weight:500;font-size:.78rem;color:var(--ink-2)}
     .cot{font-size:.66rem;font-weight:800;border-radius:20px;padding:2px 8px}
     .cot-pag{background:#fff;color:var(--verde-t)} .cot-par{background:#fff;color:var(--ambar-t)} .cot-pen{background:#fff;color:#C0554E}
-    .au-m{font-weight:800;color:var(--verde-t);white-space:nowrap}
-    .au-m.sc{font-size:.72rem;background:#fff;border-radius:20px;padding:3px 10px}
+    .au-m{font-weight:800;color:var(--verde-t);white-space:nowrap} .au-m.sc{font-size:.72rem;background:#fff;border-radius:20px;padding:3px 10px}
     .aut-tot{display:flex;justify-content:space-between;padding:11px 0 8px;border-top:1.5px dashed #bfe6d4;font-size:.82rem;color:var(--verde-t);font-weight:700}
-    .cp{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid #f4f3f8;font-size:.86rem;color:var(--ink-2);line-height:1.4}
-    .lado .cp:first-of-type{border-top:none}
-    .peso{font-size:.62rem;font-weight:800;border-radius:20px;padding:3px 9px;white-space:nowrap}
+    .kan{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .col{border-radius:18px;padding:14px;background:#FAF9FD;border:1px solid var(--borde);min-width:0}
+    .col.tu{background:#FFF7FB;border-color:#F8D9E8}
+    .col h4{margin:2px 4px 10px;font-size:.8rem;color:var(--ink);display:flex;justify-content:space-between;gap:8px}
+    .col h4 span{color:var(--ink-3);font-weight:600}
+    .card{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:10px;align-items:start;background:#fff;border-radius:12px;padding:10px 12px;margin-bottom:8px;font-size:.84rem;line-height:1.45;color:var(--ink-2);box-shadow:0 2px 6px rgba(60,40,140,.06)}
+    .card .n{font-size:.7rem;font-weight:800;color:var(--ink-3);padding-top:1px}
+    .card .r{text-align:right;white-space:nowrap}
+    .peso{font-size:.6rem;font-weight:800;border-radius:20px;padding:2px 8px}
     .p-alta{background:#FEF0EF;color:#C0554E} .p-media{background:#FFF4E5;color:#9a6a10} .p-baja{background:#EAF8F2;color:#1E8A63}
-    @media (max-width:640px){.fl{grid-template-columns:30px 1fr;}.fl .quien,.fl .fecha{grid-column:2}}
-    @media (max-width:640px){.dos{grid-template-columns:1fr}.avisoM{padding:14px 18px}}
-    @media print{.lado{break-inside:avoid}}
+    .card .f{display:block;font-size:.72rem;font-weight:700;color:var(--ink);margin-top:4px}
+    .col .vacio{font-size:.8rem;color:var(--ink-3);padding:6px 4px}
+    .avisoM{background:var(--ambar-a);color:var(--ambar-t);font-size:.84rem;padding:14px 34px;line-height:1.6}
+    .graba{margin-top:18px}
+    .mfirma{margin-top:12px}
+    @media (max-width:700px){
+      .mhero,.mcu{padding-left:18px;padding-right:18px}.mhero h1{font-size:1.6rem}
+      .ruta{grid-template-columns:1fr 1fr!important;row-gap:16px}.ruta .lin{display:none}
+      .flc{grid-template-columns:40px minmax(0,1fr)}.flc .der{grid-column:2;text-align:left;display:flex;gap:10px;align-items:center}.flc .der .fd{margin-top:0}
+      .kan{grid-template-columns:1fr}.acs .it{grid-template-columns:24px minmax(0,1fr)}.acs .it .pieit{grid-column:2}
+      .avisoM{padding:14px 18px}
+    }
+    @media print{.flc,.col,.card{break-inside:avoid;box-shadow:none}.hito,.hito.ya .pt{animation:none;opacity:1;transform:none}.flc:hover{transform:none}}
+    @media (prefers-reduced-motion:reduce){.hito{animation:none;opacity:1;transform:none}.hito.ya .pt{animation:none}}
   </style>
 </head>
 <body>
@@ -143,92 +223,76 @@ const sinCosto = acuerdos.filter(a => /sin costo/i.test(a)).length;
 
   <div class="doc">
     <div class="cinta"></div>
-    <div class="hero">
-      <div class="chispas" aria-hidden="true">
-        {[[18,6,16,.34],[13,17,62,.24],[21,34,10,.28],[11,47,72,.2],[16,63,22,.3],[10,74,66,.18],[14,86,40,.26]].map(([s,l,t,o], i) => (
-          <svg width={s} height={s} viewBox="0 0 24 24" style={`left:${l}%;top:${t}%;opacity:${o};animation-delay:${(i * 0.45).toFixed(2)}s`}><path d="M12 1.6c.62 6.6 3.18 9.16 9.78 9.78-6.6.62-9.16 3.18-9.78 9.78-.62-6.6-3.18-9.16-9.78-9.78C8.82 10.76 11.38 8.2 12 1.6z" fill="#D9538E" /></svg>
-        ))}
+    <div class="mhero">
+      <div class="mtop">
+        <div><div class="mwm">Sacscloud</div><div class="mws">{consultoria ? 'Minuta de consultoría' : 'Minuta de reunión'} · {folio}</div></div>
+        {conFirma && <span class={`mest ${firmado ? 'ok' : 'pend'}`}>{firmado ? '✓ Firmada' : '● Pendiente de firma'}</span>}
       </div>
-      <div class="top">
-        <div><div class="wm">Sacscloud</div><div class="wsub">{consultoria ? 'Minuta de consultoría' : 'Minuta de reunión'}</div></div>
-        <div class="folio"><div class="t">Folio</div><div class="f">{folio}</div></div>
+      <h1>{(flujosV.length || autorizados.length) ? 'Lo que revisamos y vamos a construir' : 'Lo que revisamos y acordamos'}</h1>
+      <p class="msub">{cliente} · {tipo} · {fecha}{duracion}</p>
+      <div class="mquien">
+        <div><b>Cliente</b>{cliente}</div>
+        {cuentaTxt && <div><b>Cuenta</b>{cuentaTxt}</div>}
+        <div><b>Sesión</b>{sesionTxt}</div>
+        <div><b>Participantes</b>{[b.invitee_nombre || cliente, marca.firma || marca.nombre].filter(Boolean).join(' · ')}</div>
       </div>
-      <h1>{(flujos.length || autorizados.length) ? 'Lo que revisamos, autorizamos y vamos a construir' : 'Lo que revisamos y acordamos'}</h1>
-      <p class="sub">{cliente} · {tipo} · {fecha}{duracion}</p>
-      <div class="sello">
-        <svg width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6c.62 6.6 3.18 9.16 9.78 9.78-6.6.62-9.16 3.18-9.78 9.78-.62-6.6-3.18-9.16-9.78-9.78C8.82 10.76 11.38 8.2 12 1.6z" fill="#D9538E" /></svg>
-        Sembramos relaciones, cosechamos constelaciones
-      </div>
-      <div class="quien">
-        <div><div class="k">Cliente</div><div class="v">{cliente}</div></div>
-        {cuentaTxt && <div><div class="k">Cuenta</div><div class="v">{cuentaTxt}</div></div>}
-        <div><div class="k">Sesión</div><div class="v">{sesionTxt}</div></div>
-        <div><div class="k">Participantes</div><div class="v">{[b.invitee_nombre || cliente, marca.firma || marca.nombre].filter(Boolean).join(' · ')}</div></div>
-      </div>
-    </div>
-
-    <div class="ancla">
-      {flujos.length > 0
-        ? <div><div class="n" data-n={flujos.length}>0</div><div class="l">{flujos.length === 1 ? 'flujo de trabajo' : 'flujos de trabajo'}</div></div>
-        : <div><div class="n" data-n={acuerdos.length}>0</div><div class="l">{acuerdos.length === 1 ? 'acuerdo' : 'acuerdos'}</div></div>}
-      {autorizados.length > 0
-        ? <div><div class="n v" data-n={autorizados.length}>0</div><div class="l">{autorizados.length === 1 ? 'autorización' : 'autorizaciones'}</div></div>
-        : <div><div class="n v" data-n={sinCosto}>0</div><div class="l">sin costo adicional</div></div>}
-      <div><div class="n" data-n={compromisos.length || doCliente.length}>0</div><div class="l">te tocan a ti</div></div>
-      <div><div class="n" data-n={doNos.length}>0</div><div class="l">nos tocan a nosotros</div></div>
+      {ruta.length > 1 && (
+        <div class="ruta" style={`grid-template-columns:repeat(${ruta.length},1fr)`}>
+          <span class="lin" style={`left:${50 / ruta.length}%;right:${50 / ruta.length}%`}><i style={`width:${100 / (ruta.length - 1)}%`}></i></span>
+          {ruta.map((h, i) => (
+            <div class={`hito${h.hecho ? ' ok' : i === 1 ? ' ya' : ''}`} style={`animation-delay:${(i * 0.12).toFixed(2)}s`}>
+              <div class="pt">{h.hecho ? '✓' : i + 1}</div><b>{h.t}</b><span>{h.s}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
 
     {!hayMinuta && <div class="avisoM">Esta reunión todavía no tiene minuta capturada. En cuanto se documente, esta misma liga la mostrará.</div>}
 
-    <div class="cuerpo">
-      <div class="st"><span class="x">Cómo leer este documento</span><span class="ln"></span></div>
-      <p class="p">
-        {conFirma
-          ? <>Primero, lo que se revisó y los <b>flujos de trabajo</b> que vamos a construir. Después, cada <b>acuerdo</b>: márcalo como <b>de acuerdo</b> cuando lo leas, y lo que <b>autorizaste</b> en la reunión. Al final, lo que le toca a cada quien. Firma abajo para dejar la minuta autorizada.</>
-          : <>Primero, lo que se revisó en la sesión. Después, cada <b>acuerdo</b> en su renglón. Al final, lo que le toca a cada quien y el siguiente paso.</>}
-      </p>
-
-      {(sigTitulo || sigResto) && (
-        <div class="lila" style="margin-top:16px">
-          <div class="t">Siguiente paso</div>
-          {sigTitulo ? <div class="c">{sigTitulo}</div> : null}
-          {sigResto && <div class="d" style="white-space:pre-wrap">{sigResto}</div>}
-        </div>
-      )}
-
+    <div class="mcu">
       {reviso.length > 0 && <>
-        <div class="st" style="margin-top:26px"><span class="x">Qué se revisó</span><span class="ln"></span></div>
-        {reviso.map(p => <p class="p">{p}</p>)}
+        <div class="mst">Qué se revisó</div>
+        {reviso.map(p => <p class="mp">{p}</p>)}
       </>}
 
-      {flujos.length > 0 && <>
-        <div class="st" style="margin-top:26px"><span class="x">Flujos de trabajo a realizar</span><span class="ln"></span></div>
-        <div class="flujos">
-          {flujos.map((f: any, i: number) => (
-            <div class="fl"><span class="fl-n">{i + 1}</span><span class="fl-t">{f.titulo}</span>
-              <span class={`quien q-${f.quien === 'cliente' ? 'cli' : 'sacs'}`}>{f.quien === 'cliente' ? 'Tú' : 'SACS'}</span>
-              {f.fecha && <span class="fecha">{fCorta(f.fecha)}</span>}</div>
-          ))}
+      {flujosV.length > 0 && <>
+        <div class="mst">Flujos de trabajo a construir <em>· {flujosV.length}</em></div>
+        <div class="fls">
+          {flujosV.map((f: any, i: number) => {
+            const q = faltan(f.fecha);
+            return (
+              <div class="flc">
+                <div class="ic" aria-hidden="true">{ICONOS[i % ICONOS.length]}</div>
+                <div><h3><small>CASO {i + 1}</small>{f.t}</h3>{f.d && <p>{f.d}</p>}</div>
+                <div class="der">
+                  <span class={`pill${f.quien === 'cliente' ? ' cli' : ''}`}>{f.quien === 'cliente' ? 'Tú' : 'SACS'}</span>
+                  {f.fecha && <div class="fd">{fCorta(f.fecha)}{q && <span class={`cuando ${q.c}`}>{q.l}</span>}</div>}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </>}
 
-      {acuerdos.length > 0 && <>
-        <div class="st" style="margin-top:26px"><span class="x">{acuerdos.length === 1 ? 'El acuerdo' : `Los ${acuerdos.length} acuerdos`}</span><span class="ln"></span></div>
-        <div class="ent ac">
-          {acuerdos.map((a, i) => {
+      {acuerdosV.length > 0 && <>
+        <div class="mst">{acuerdosV.length === 1 ? 'El acuerdo' : `Los ${acuerdosV.length} acuerdos`}{conFirma && <em> · márcalos conforme los leas</em>}</div>
+        <div class="acs">
+          {acuerdosV.map((a, i) => {
             const k = llaveAcuerdo(i);
             const hecho = !!revisados[k];
             const e = etiqueta(a);
             return (
               <div class={`it${hecho ? ' revisada' : ''}`}>
-                <div class="enc"><span class="tx">{a}</span>{e && <span class={`chip c-${e.c}`}>{e.l}</span>}</div>
-                {conFirma && (
-                  <div class="pieit">
+                <span class="num">{i + 1}</span>
+                <span class="tx">{a}{e && <span class={`chip c-${e.c}`}>{e.l}</span>}</span>
+                {conFirma ? (
+                  <div class="pieit" style="margin-top:0">
                     <button type="button" class={`rev${hecho ? ' on' : ''}`} data-k={k} data-acuerdo="1" aria-pressed={hecho ? 'true' : 'false'} disabled={firmado || vistaCrm}>
                       <span class="rk" aria-hidden="true"></span><span class="rt">{hecho ? 'De acuerdo' : 'Estoy de acuerdo'}</span>
                     </button>
                   </div>
-                )}
+                ) : <span></span>}
               </div>
             );
           })}
@@ -236,7 +300,7 @@ const sinCosto = acuerdos.filter(a => /sin costo/i.test(a)).length;
       </>}
 
       {autorizados.length > 0 && <>
-        <div class="st" style="margin-top:26px"><span class="x">Autorizado en esta reunión</span><span class="ln"></span></div>
+        <div class="mst">Autorizado en esta reunión</div>
         <div class="aut">
           {autorizados.map((a: any) => {
             const q = a.quote_id ? cots[a.quote_id] : null;
@@ -244,7 +308,7 @@ const sinCosto = acuerdos.filter(a => /sin costo/i.test(a)).length;
             return (
               <div class="au">
                 <span class="ok" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg></span>
-                <span class="au-t">{a.titulo}
+                <span class="au-t">{sinNum(a.titulo)}
                   {q && <span class="au-q">Depende de la cotización <b>{q.numero}</b>{st && <span class={`cot cot-${st.c}`}>{st.l}</span>}</span>}
                 </span>
                 {a.sin_costo ? <span class="au-m sc">sin costo</span> : (Number(a.monto) > 0 ? <span class="au-m">{money(a.monto)}</span> : null)}
@@ -255,28 +319,39 @@ const sinCosto = acuerdos.filter(a => /sin costo/i.test(a)).length;
         </div>
       </>}
 
-      {(doCliente.length > 0 || doNos.length > 0 || compromisos.length > 0) && <>
-        <div class="st" style="margin-top:26px"><span class="x">Compromisos</span><span class="ln"></span></div>
-        <div class="dos">
-          <div class="lado tu"><h4>{compromisos.length ? 'Lo que te toca · por importancia' : 'Lo que te toca'}</h4>
-            {compromisos.length ? compromisos.map((c: any) => (
-                <div class="cp"><span class={`peso p-${c.peso || 'media'}`}>{PESO_L[c.peso as 'alta'] || 'Media'}</span><span>{c.texto}</span>{c.fecha ? <span class="fecha">{fCorta(c.fecha)}</span> : <span></span>}</div>
+      {(doClienteV.length > 0 || doNosV.length > 0 || compromisosV.length > 0) && <>
+        <div class="mst">Compromisos</div>
+        <div class="kan">
+          <div class="col tu">
+            <h4>Te toca a ti <span>{nTuyos}{fechasCli[0] ? ` · antes del ${fCorta(fechasCli[0])}` : ''}</span></h4>
+            {compromisosV.length ? compromisosV.map((c: any, i: number) => (
+                <div class="card"><span class="n">{i + 1}</span><span>{c.texto}</span>
+                  <span class="r"><span class={`peso p-${c.peso || 'media'}`}>{PESO_L[c.peso as 'alta'] || 'Media'}</span>{c.fecha && <span class="f">{fCorta(c.fecha)}</span>}</span></div>
               ))
-              : doCliente.length ? doCliente.map(t => <div class="tarea"><i></i><span>{t}</span></div>)
+              : doClienteV.length ? doClienteV.map((t, i) => <div class="card"><span class="n">{i + 1}</span><span>{t}</span><span></span></div>)
               : <div class="vacio">Nada de tu lado en esta sesión.</div>}
           </div>
-          <div class="lado"><h4>Lo que nos toca</h4>
-            {doNos.length ? doNos.map(t => <div class="tarea"><i></i><span>{t}</span></div>)
+          <div class="col">
+            <h4>Nos toca a nosotros <span>{doNosV.length}</span></h4>
+            {doNosV.length ? doNosV.map((t, i) => <div class="card"><span class="n">{i + 1}</span><span>{t}</span><span></span></div>)
               : <div class="vacio">Nada de nuestro lado en esta sesión.</div>}
           </div>
         </div>
       </>}
 
+      {(sigTitulo || sigResto) && (
+        <div class="sig">
+          <div class="t">Siguiente paso</div>
+          {sigTitulo ? <div class="c">{sigTitulo}</div> : null}
+          {sigResto && <div class="d">{sigResto}</div>}
+        </div>
+      )}
+
       {b.grabacion_url && /^https?:\/\//i.test(String(b.grabacion_url)) && (
         <div class="graba"><a class="vid" href={b.grabacion_url} target="_blank" rel="noopener noreferrer"><span class="pl">▶</span> Ver la grabación de la sesión</a></div>
       )}
 
-      <div inert={vistaCrm ? true : undefined}><Firma rep={rep} total={acuerdos.length} /></div>
+      <div class="mfirma" inert={vistaCrm ? true : undefined}><Firma rep={rep} total={acuerdosV.length} /></div>
     </div>
 
     <div class="pieE">
