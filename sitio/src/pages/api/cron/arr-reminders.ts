@@ -145,5 +145,11 @@ export const GET: APIRoute = async ({ url, request }) => {
     }
   }
 
+  // Red de seguridad: suscripción y cotización deben decir el mismo ciclo y precio.
+  try {
+    const { auditarSubsContraCotizacion } = await import('../../../lib/crm/auditar-sub-cotizacion');
+    (out as any).descuadres_cotizacion = (await auditarSubsContraCotizacion({ avisar: true })).length;
+  } catch (e: any) { out.errores.push('auditoría sub/cotización: ' + (e?.message || String(e))); }
+
   return new Response(JSON.stringify(out, null, 2), { status: 200, headers: { 'Content-Type': 'application/json' } });
 };
