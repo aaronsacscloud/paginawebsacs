@@ -271,33 +271,10 @@ async function ensureCompanyForQuote(quote: any, contactId: string | null): Prom
   return null;
 }
 
-export async function createDealFromQuote(quote: any, targetStage: DealStage, ctx: { trigger?: string; motivo_perdida?: string; closed_at?: string } = {}) {
-  const contactId = await ensureContactForQuote(quote);
-  if (!contactId) {
-    console.warn('[sync-quote-deal] cannot create deal without contact');
-    return null;
-  }
-
-  // Pull plan info from items
+/** Líneas y montos de la oportunidad según la cotización. Lo usan el alta del
+    trato y el cierre de uno que ya existía (ver syncQuoteToDeal). */
+async function montosDeCotizacion(quote: any, billingPeriod: string | null, valorMensual: number): Promise<any> {
   const items = Array.isArray(quote.items) ? quote.items : [];
-  const planItem = items.find((i: any) => i.tipo === 'plan');
-  const plan = planItem?.nombre || null;
-  const sucursales = parseInt(planItem?.sucursales) || 1;
-  const billingPeriod = planItem?.periodo || null;
-
-  // Calculate valor mensual from monthly items only
-  const monthlyItems = items.filter((i: any) => i.tipo === 'plan' && i.periodo === 'mensual');
-  const recurMonthly = items.filter((i: any) => i.tipo === 'extra' && i.recurrente && i.periodo_extra !== 'anual');
-  const valorMensual = monthlyItems.reduce((s: number, i: any) => s + (i.subtotal || 0), 0) +
-    recurMonthly.reduce((s: number, i: any) => s + (i.monto || 0), 0);
-
-  // Try to find contact owner + atribución de partner
-  const { data: contact } = await supabase
-    .from('contacts')
-    .select('owner_id, company_id, referrer_partner_id')
-    .eq('id', contactId)
-    .single();
-
   // ── Las LÍNEAS de la cotización se vuelven líneas de la oportunidad ──
   // Sin esto la oportunidad nace con un monto suelto y el pipeline no puede
   // decir cuánto de eso es recurrente y cuánto se cobra una vez — que es toda
@@ -346,6 +323,37 @@ export async function createDealFromQuote(quote: any, targetStage: DealStage, ct
       valor_mensual: t.mrr > 0 ? Math.round(t.mrr) : Math.round(valorMensual),
     };
   } catch { /* si algo falla, quedan los montos sueltos de siempre */ }
+  return montos;
+}
+
+export async function createDealFromQuote(quote: any, targetStage: DealStage, ctx: { trigger?: string; motivo_perdida?: string; closed_at?: string } = {}) {
+  const contactId = await ensureContactForQuote(quote);
+  if (!contactId) {
+    console.warn('[sync-quote-deal] cannot create deal without contact');
+    return null;
+  }
+
+  // Pull plan info from items
+  const items = Array.isArray(quote.items) ? quote.items : [];
+  const planItem = items.find((i: any) => i.tipo === 'plan');
+  const plan = planItem?.nombre || null;
+  const sucursales = parseInt(planItem?.sucursales) || 1;
+  const billingPeriod = planItem?.periodo || null;
+
+  // Calculate valor mensual from monthly items only
+  const monthlyItems = items.filter((i: any) => i.tipo === 'plan' && i.periodo === 'mensual');
+  const recurMonthly = items.filter((i: any) => i.tipo === 'extra' && i.recurrente && i.periodo_extra !== 'anual');
+  const valorMensual = monthlyItems.reduce((s: number, i: any) => s + (i.subtotal || 0), 0) +
+    recurMonthly.reduce((s: number, i: any) => s + (i.monto || 0), 0);
+
+  // Try to find contact owner + atribución de partner
+  const { data: contact } = await supabase
+    .from('contacts')
+    .select('owner_id, company_id, referrer_partner_id')
+    .eq('id', contactId)
+    .single();
+
+  const montos = await montosDeCotizacion(quote, billingPeriod, valorMensual);
 
   // Cliente nuevo o ampliación: el mismo criterio que usa el alta manual.
   let categoria = 'nuevo';
@@ -477,6 +485,27 @@ export async function syncQuoteToDeal(
   if (!quote) return { dealId: null, created: false, advanced: false, skipped: true };
 
   if (quote.deal_id) {
+    // ── Al GANAR, el trato se pone al día con la cotización ──
+    // Las líneas del trato se copian al crearlo; si después se edita la
+    // cotización (p. ej. de anual $5,850 a mensual $1,215, COT-80122) el trato
+    // seguía con las líneas viejas y la suscripción nacía con el ciclo y el
+    // precio equivocados. Lo que se cobró es lo que manda.
+    if (options.targetStage === 'cerrada_ganada') {
+      try {
+        const items = Array.isArray(quote.items) ? quote.items : [];
+        const planItem = items.find((i: any) => i.tipo === 'plan');
+        const billingPeriod = planItem?.periodo || null;
+        const valorMensual = items.filter((i: any) => i.tipo === 'plan' && i.periodo === 'mensual').reduce((s: number, i: any) => s + (i.subtotal || 0), 0)
+          + items.filter((i: any) => i.tipo === 'extra' && i.recurrente && i.periodo_extra !== 'anual').reduce((s: number, i: any) => s + (i.monto || 0), 0);
+        const montos = await montosDeCotizacion(quote, billingPeriod, valorMensual);
+        if (montos.items) {
+          await supabase.from('deals').update({
+            ...montos,
+            ...(planItem?.nombre ? { plan: planItem.nombre, sucursales: parseInt(planItem.sucursales) || 1 } : {}),
+          }).eq('id', quote.deal_id);
+        }
+      } catch { /* sin poner al día, el cierre sigue como antes */ }
+    }
     const updated = await advanceDealStage(quote.deal_id, options.targetStage, options);
     const advanced = !!updated && updated.stage === options.targetStage;
     return { dealId: quote.deal_id, created: false, advanced, skipped: !advanced };
