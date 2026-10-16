@@ -56,15 +56,61 @@ const ICONO: Record<string, string> = {
   'Tazas': 'M5 8h11v7a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4zM16 10h2a2 2 0 0 1 0 4h-2M8 3v2M11 3v2',
   'Cilindros': 'M7 4h10l-1 16H8zM7 8h10',
 };
+// Ilustraciones a dos tonos, 64×64 con la base en y=58 para que todas «pisen» la
+// misma línea. Azul = cerrados; verde = aire libre; rosa = el detalle de show.
+const AZ = '#3A62C4', AZC = '#EAF0FD', AZM = '#9DB7EF', RO = '#D9538E', VE = '#1E7A55', VEC = '#EAF7F1', VEM = '#9ED3BA';
 const RECINTOS = [
-  { n: 'Foros', t: 46, d: 'M3 20h18M5 20v-8h14v8M5 12l7-5 7 5M10 20v-4h4v4' },
-  { n: 'Teatros', t: 60, d: 'M3 20h18M4 9l8-5 8 5zM6 9v11M10 9v11M14 9v11M18 9v11' },
-  { n: 'Arenas', t: 76, d: 'M3 20h18M4 20v-6a8 6 0 0 1 16 0v6M8 14v6M12 12v8M16 14v6' },
-  { n: 'Estadios', t: 88, d: 'M2 19h20M3 13c0-2 4-4 9-4s9 2 9 4v6H3zM3 13c0 2 4 3 9 3s9-1 9-3M7 9V6M17 9V6' },
+  { n: 'Foros', t: 56, svg: `
+    <rect x="12" y="28" width="40" height="30" rx="2" fill="${AZC}" stroke="${AZ}" stroke-width="2"/>
+    <rect x="9" y="24" width="46" height="6" rx="2" fill="${AZ}"/>
+    <rect x="17" y="33" width="30" height="8" rx="1.5" fill="${AZ}"/>
+    <g fill="${RO}"><circle cx="21" cy="37" r="1.4"/><circle cx="26" cy="37" r="1.4"/><circle cx="31" cy="37" r="1.4"/><circle cx="36" cy="37" r="1.4"/><circle cx="41" cy="37" r="1.4"/></g>
+    <rect x="27" y="46" width="10" height="12" rx="1" fill="#fff" stroke="${AZ}" stroke-width="2"/>
+    <path d="M6 58h52" stroke="${AZ}" stroke-width="2.4" stroke-linecap="round"/>` },
+  { n: 'Teatros', t: 70, svg: `
+    <path d="M7 58V20a4 4 0 0 1 4-4h42a4 4 0 0 1 4 4v38" fill="${AZC}" stroke="${AZ}" stroke-width="2"/>
+    <path d="M7 22h50" stroke="${AZ}" stroke-width="2"/>
+    <path d="M11 22c0 12 3 22 10 30V58h-10z" fill="${RO}"/>
+    <path d="M53 22c0 12-3 22-10 30V58h10z" fill="${RO}"/>
+    <path d="M11 22c4 4 10 6 21 6s17-2 21-6" fill="none" stroke="${RO}" stroke-width="3" stroke-linecap="round"/>
+    <rect x="21" y="50" width="22" height="8" fill="${AZ}"/>
+    <circle cx="32" cy="12" r="2.6" fill="${AZM}"/>
+    <path d="M4 58h56" stroke="${AZ}" stroke-width="2.4" stroke-linecap="round"/>` },
+  { n: 'Arenas', t: 84, svg: `
+    <path d="M6 58V44C6 28 18 18 32 18s26 10 26 26v14z" fill="${AZC}" stroke="${AZ}" stroke-width="2"/>
+    <path d="M32 18v40M19 22c-3 8-4 20-4 36M45 22c3 8 4 20 4 36" fill="none" stroke="${AZM}" stroke-width="1.6"/>
+    <path d="M6 44h52" stroke="${AZ}" stroke-width="2"/>
+    <g fill="${AZ}"><path d="M11 58v-6a3 3 0 0 1 6 0v6z"/><path d="M29 58v-7a3 3 0 0 1 6 0v7z"/><path d="M47 58v-6a3 3 0 0 1 6 0v6z"/></g>
+    <circle cx="32" cy="15" r="2.4" fill="${RO}"/>
+    <path d="M3 58h58" stroke="${AZ}" stroke-width="2.4" stroke-linecap="round"/>` },
+  { n: 'Estadios', t: 104, svg: `
+    <path d="M9 14v18M55 14v18" stroke="${AZ}" stroke-width="2"/>
+    <rect x="5" y="9" width="8" height="5" rx="1.5" fill="${AZ}"/><rect x="51" y="9" width="8" height="5" rx="1.5" fill="${AZ}"/>
+    <g fill="${RO}"><circle cx="7.5" cy="11.5" r="1"/><circle cx="10.5" cy="11.5" r="1"/><circle cx="53.5" cy="11.5" r="1"/><circle cx="56.5" cy="11.5" r="1"/></g>
+    <path d="M3 40c0-8 13-14 29-14s29 6 29 14v12c0 4-13 6-29 6S3 56 3 52z" fill="${AZC}" stroke="${AZ}" stroke-width="2"/>
+    <ellipse cx="32" cy="40" rx="19" ry="7" fill="${VEM}" stroke="${AZ}" stroke-width="1.6"/>
+    <path d="M32 33v14" stroke="#fff" stroke-width="1.2"/><ellipse cx="32" cy="40" rx="3.6" ry="1.6" fill="none" stroke="#fff" stroke-width="1.2"/>
+    <path d="M6 47c6 4 15 6 26 6s20-2 26-6" fill="none" stroke="${AZM}" stroke-width="1.6"/>
+    <path d="M2 58h60" stroke="${AZ}" stroke-width="2.4" stroke-linecap="round"/>` },
 ];
 const AIRE_LIBRE = [
-  { n: 'Parques de diversiones', t: 58, d: 'M12 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM12 4v14M5 11h14M7 6l10 10M17 6L7 16M9 21l3-10 3 10' },
-  { n: 'Explanadas públicas', t: 58, d: 'M3 20h18M4 20l4-9 4 9M12 20l4-9 4 9M8 11V6l3 1.5L8 9' },
+  { n: 'Parques de diversiones', t: 80, svg: `
+    <circle cx="32" cy="26" r="18" fill="${VEC}" stroke="${VE}" stroke-width="2"/>
+    <g stroke="${VEM}" stroke-width="1.4"><path d="M32 8v36M14 26h36M19.3 13.3l25.4 25.4M44.7 13.3L19.3 38.7"/></g>
+    <circle cx="32" cy="26" r="3" fill="${VE}"/>
+    <g fill="${RO}"><circle cx="32" cy="8" r="3"/><circle cx="50" cy="26" r="3"/><circle cx="14" cy="26" r="3"/></g>
+    <g fill="${VE}"><circle cx="44.7" cy="13.3" r="3"/><circle cx="19.3" cy="13.3" r="3"/><circle cx="44.7" cy="38.7" r="3"/><circle cx="19.3" cy="38.7" r="3"/></g>
+    <path d="M32 29l-10 29M32 29l10 29" stroke="${VE}" stroke-width="2.2" stroke-linecap="round"/>
+    <rect x="18" y="54" width="28" height="4" rx="1" fill="${VE}"/>
+    <path d="M4 58h56" stroke="${VE}" stroke-width="2.4" stroke-linecap="round"/>` },
+  { n: 'Explanadas públicas', t: 80, svg: `
+    <path d="M14 26L32 14l18 12z" fill="${VE}"/>
+    <path d="M16 26v14M48 26v14" stroke="${VE}" stroke-width="2"/>
+    <rect x="12" y="36" width="40" height="5" rx="1" fill="${VEM}"/>
+    <path d="M20 26c4 3 8 4 12 4s8-1 12-4" fill="none" stroke="${RO}" stroke-width="2" stroke-dasharray="0.5 3.5" stroke-linecap="round"/>
+    <g fill="${VE}"><circle cx="10" cy="48" r="2.6"/><circle cx="18" cy="47" r="2.6"/><circle cx="26" cy="48" r="2.6"/><circle cx="34" cy="47" r="2.6"/><circle cx="42" cy="48" r="2.6"/><circle cx="50" cy="47" r="2.6"/><circle cx="56" cy="49" r="2.4"/></g>
+    <g fill="${VEC}" stroke="${VE}" stroke-width="1.2"><path d="M6 58c0-4 2-6 4-6s4 2 4 6z"/><path d="M14 58c0-5 2-7 4-7s4 2 4 7z"/><path d="M22 58c0-4 2-6 4-6s4 2 4 6z"/><path d="M30 58c0-5 2-7 4-7s4 2 4 7z"/><path d="M38 58c0-4 2-6 4-6s4 2 4 6z"/><path d="M46 58c0-5 2-7 4-7s4 2 4 7z"/></g>
+    <path d="M3 58h58" stroke="${VE}" stroke-width="2.4" stroke-linecap="round"/>` },
 ];
 ---
 
@@ -177,14 +223,14 @@ const AIRE_LIBRE = [
         <div class="ls-rec-l">
           {RECINTOS.map((r, i) => (
             <figure class="ls-rec-i" style={`--i:${i}`}>
-              <svg viewBox="0 0 24 24" style={`width:${r.t}px;height:${r.t}px`} aria-hidden="true"><path d={r.d} /></svg>
+              <svg viewBox="0 0 64 64" style={`width:${r.t}px;height:${r.t}px`} aria-hidden="true" set:html={r.svg} />
               <figcaption>{r.n}</figcaption>
             </figure>
           ))}
           <span class="ls-rec-sep" aria-hidden="true"></span>
           {AIRE_LIBRE.map((r, i) => (
             <figure class="ls-rec-i ls-rec-i--aire" style={`--i:${i + RECINTOS.length}`}>
-              <svg viewBox="0 0 24 24" style={`width:${r.t}px;height:${r.t}px`} aria-hidden="true"><path d={r.d} /></svg>
+              <svg viewBox="0 0 64 64" style={`width:${r.t}px;height:${r.t}px`} aria-hidden="true" set:html={r.svg} />
               <figcaption>{r.n}</figcaption>
             </figure>
           ))}
@@ -524,8 +570,7 @@ const AIRE_LIBRE = [
   .ls-pais-c b { color: #8A1B50; }
   .ls-rec-l { display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap; border-bottom: 2px solid #e1e5ef; padding-bottom: 10px; }
   .ls-rec-i { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-  .ls-rec-i svg { fill: none; stroke: var(--color-primary-texto); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; max-width: 100%; }
-  .ls-rec-i--aire svg { stroke: #1E7A55; }
+  .ls-rec-i svg { display: block; max-width: 100%; overflow: visible; }
   .ls-rec-i figcaption { font-family: var(--font-body); font-size: 11.5px; font-weight: 600; color: var(--color-text-secondary); text-align: center; max-width: 70px; line-height: 1.2; }
   .ls-rec-sep { width: 1px; align-self: stretch; background: #e1e5ef; margin: 0 4px; }
   .ls-rec-esc { display: flex; justify-content: space-between; font-family: var(--font-body); font-size: 11px; color: var(--color-text-tertiary); margin-top: 8px; gap: 10px; }

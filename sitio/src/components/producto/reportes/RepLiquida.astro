@@ -1,0 +1,83 @@
+---
+/**
+ * «Sabes qué rematar, y a cuánto» (/producto/reportes-y-analitica): los «Candidatos a liquidación» del tablero de
+ * Inventario. La foto de la dueña planeando en su mesa (la de /producto/tienda-en-linea) y, encima, la tarjeta REAL del
+ * tablero de la cuenta demo (las prendas que no rotan, su capital atrapado y su precio sugerido); un sello «−30 %» cae
+ * sobre ella. Al lado, la salud del stock (Sano / Riesgo / Obsoleto) y las dos salidas: una promoción o la nivelación.
+ * Entrada: la tarjeta se desliza desde la derecha y el sello cae con rebote. Marfil.
+ */
+import { LIQUIDA, I } from '../../../data/producto-reportes';
+---
+<section class="pda rpli pd-marfil" id="rep-liquida" aria-labelledby="rpli-h">
+  <p class="pd-folio"><span>{LIQUIDA.k}</span><span>Dashboard › Inventario</span></p>
+  <div class="rpli-grid">
+    <div class="rpli-lado">
+      <h2 class="pda-h" id="rpli-h">{LIQUIDA.h}</h2>
+      <p class="rpli-p">{LIQUIDA.p}</p>
+      <p class="rpli-salud" aria-label="La salud del stock: sano, en riesgo u obsoleto">
+        <span class="rpli-salud-k">Salud del stock</span>
+        {LIQUIDA.salud.map((s, i) => <span class="rpli-chip rv" style={`--c:${s.c};--i:${i}`}>{s.t}</span>)}
+      </p>
+      <ul class="rpli-ligas">{LIQUIDA.ligas.map((l) => <li><a class="pda-sigue" href={l.href}>{l.t} <span aria-hidden="true">→</span></a></li>)}</ul>
+    </div>
+    <div class="rpli-escena" data-rpli>
+      <figure class="rpli-foto">
+        <img src={LIQUIDA.foto.src} srcset={LIQUIDA.foto.srcset} sizes="(min-width: 900px) 46vw, 100vw" width={LIQUIDA.foto.w} height={LIQUIDA.foto.h} alt={LIQUIDA.foto.alt} loading="lazy" decoding="async" />
+      </figure>
+      <div class="rpli-tarjeta">
+        <img src={`${I}pantalla-liquidacion.webp`} width="900" height="760" alt="Candidatos a liquidación en el tablero de Inventario: las prendas que ya no rotan, con su capital atrapado y un precio sugerido 30 % abajo" loading="lazy" decoding="async" />
+      </div>
+      <span class="rpli-sello" aria-hidden="true">−30 %</span>
+    </div>
+  </div>
+</section>
+
+<style>
+  .rpli-grid { display: grid; gap: 34px; }
+  .rpli-lado { display: grid; gap: 16px; align-content: start; }
+  .rpli-p { margin: 0; max-width: 46ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .rpli-salud { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0 0; }
+  .rpli-salud-k { margin-right: 4px; font: 700 12px/1 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--pd-apagado); }
+  .rpli-chip { display: inline-flex; align-items: center; gap: 7px; padding: 8px 13px; border-radius: 99px; background: #fff; color: #141414; font: 700 13.5px/1 var(--font-display); box-shadow: 0 0 0 1px rgba(20, 20, 20, 0.08); }
+  .rpli-chip::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+  .rpli-ligas { display: flex; flex-wrap: wrap; gap: 4px 28px; margin: 0; padding: 0; list-style: none; }
+  .rpli-ligas .pda-sigue { margin-top: 18px; }
+  .rpli-escena { position: relative; padding-bottom: 96px; }
+  .rpli-foto { margin: 0; overflow: hidden; border-radius: 22px; aspect-ratio: 4 / 3; }
+  .rpli-foto img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 40% 45%; }
+  .rpli-tarjeta { position: absolute; right: 10px; bottom: 0; width: min(64%, 360px); overflow: hidden; border-radius: 16px; background: #fff; box-shadow: 0 34px 60px -26px rgba(20, 20, 20, 0.55), 0 0 0 1px rgba(20, 20, 20, 0.06); }
+  .rpli-tarjeta img { display: block; width: 100%; height: auto; }
+  .rpli-sello { position: absolute; right: min(56%, 320px); bottom: 62px; display: grid; place-items: center; width: 84px; height: 84px; border-radius: 50%; background: #D03A70; color: #fff; font: 700 22px/1 var(--pd-clash); transform: rotate(-12deg); box-shadow: 0 0 0 5px #fff, 0 16px 30px -12px rgba(120, 10, 50, 0.6); }
+  :global(.js-rv) .rpli-escena:not(.is-on) .rpli-tarjeta { opacity: 0; transform: translateX(80px) rotate(3deg); }
+  .rpli-escena.is-on .rpli-tarjeta { opacity: 1; transform: none; transition: opacity 0.6s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1); }
+  :global(.js-rv) .rpli-escena:not(.is-on) .rpli-sello { opacity: 0; transform: scale(2.2) rotate(-40deg); }
+  .rpli-escena.is-on .rpli-sello { opacity: 1; transform: rotate(-12deg); transition: opacity 0.25s ease 0.95s, transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 0.95s; }
+  :global(.js-rv) .rpli-salud .rv { opacity: 0; transform: scale(0.7); transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); transition-delay: calc(var(--i) * 0.1s); }
+  :global(.js-rv) .rpli-salud .rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .rpli-grid { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 5vw; align-items: center; }
+    .rpli-escena { padding: 0 0 70px; }
+    .rpli-foto { width: 86%; aspect-ratio: 4 / 3.4; }
+    .rpli-tarjeta { right: 0; bottom: 0; width: min(52%, 400px); }
+    .rpli-sello { right: min(47%, 370px); bottom: 40px; width: 96px; height: 96px; font-size: 25px; }
+  }
+  @media (max-width: 899px) {
+    .rpli-sello { width: 70px; height: 70px; font-size: 18px; bottom: 36px; right: auto; left: 12px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .rpli-escena:not(.is-on) .rpli-tarjeta, .rpli-escena.is-on .rpli-tarjeta { opacity: 1; transform: none; transition: none; }
+    :global(.js-rv) .rpli-escena:not(.is-on) .rpli-sello, .rpli-escena.is-on .rpli-sello { opacity: 1; transform: rotate(-12deg); transition: none; }
+    :global(.js-rv) .rpli-salud .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // La tarjeta entra y el sello cae la primera vez que la escena se ve.
+  (() => {
+    const el = document.querySelector<HTMLElement>('[data-rpli]');
+    if (!el) return;
+    if (!('IntersectionObserver' in window)) { el.classList.add('is-on'); return; }
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { el.classList.add('is-on'); io.disconnect(); } }, { threshold: 0.4 });
+    io.observe(el);
+  })();
+</script>

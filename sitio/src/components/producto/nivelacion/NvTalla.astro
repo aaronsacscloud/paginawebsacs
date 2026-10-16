@@ -1,0 +1,145 @@
+---
+/**
+ * «Talla por talla, tienda por tienda» (/producto/nivelacion-de-inventario): la pantalla REAL de «Talla × tienda» de la
+ * Mesa (Botín de piel con tacón · Negro, boutique de prueba) con siete marcas numeradas encima. Al verse, la ventana
+ * entra barriendo de arriba abajo y las marcas brotan una por una; luego un foco recorre las marcas solo (una cada
+ * 3.4 s, mientras la sección se ve) y la leyenda de al lado se enciende con él. Tocar una marca o un renglón de la
+ * leyenda lo fija y para el recorrido. En el teléfono la pantalla se desliza a lo ancho. Azul.
+ */
+import { TALLA, I } from '../../../data/producto-nivelacion';
+---
+<section class="pda nvt pd-azul" id="nv-talla" aria-labelledby="nvt-h">
+  <div class="pda-fondo" aria-hidden="true"><span>TALLA × TIENDA · TALLA × TIENDA</span><span>TALLA × TIENDA · TALLA × TIENDA</span></div>
+  <p class="pd-folio"><span>{TALLA.k}</span><span>Talla × tienda</span></p>
+  <div class="nvt-cab">
+    <h2 class="pda-h" id="nvt-h">{TALLA.h}</h2>
+    <p class="nvt-p">{TALLA.p}</p>
+  </div>
+
+  <div class="nvt-grid" data-nvt>
+    <div class="nvt-desliza">
+      <figure class="nvt-v rv">
+        <div class="nvt-barra" aria-hidden="true"><i></i><i></i><i></i><span>Mesa › Talla × tienda</span></div>
+        <div class="nvt-lienzo" style="--fx:60%;--fy:55.5%">
+          <img src={`${I}pantalla-talla.webp`} width="1440" height="1110" alt="Talla × tienda del Botín de piel con tacón en negro: cada talla en cada tienda, agrupadas en vende chico, vende grande y curva media; lo que hay hoy, lo que llega del CEDIS, lo que vende por semana; la 24 en cero en León Altacia en rojo, lo que sobra en ámbar, el porqué en palabras y los documentos que se crean" loading="lazy" decoding="async" />
+          <i class="nvt-foco" aria-hidden="true"></i>
+          {TALLA.marcas.map((m, i) => (
+            <button type="button" class="nvt-marca" style={`--x:${m.x}%;--y:${m.y}%;--i:${i}`} data-k={i} aria-label={`${i + 1}. ${m.t}`}>{i + 1}</button>
+          ))}
+        </div>
+      </figure>
+    </div>
+    <ol class="nvt-leyenda">
+      {TALLA.marcas.map((m, i) => (
+        <li><button type="button" data-k={i}><span class="nvt-n">{i + 1}</span><span class="nvt-lt"><b>{m.t}</b><span>{m.d}</span></span></button></li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  @property --fx { syntax: '<percentage>'; inherits: true; initial-value: 60%; }
+  @property --fy { syntax: '<percentage>'; inherits: true; initial-value: 55.5%; }
+  .nvt-cab { display: grid; gap: 14px; }
+  .nvt-p { margin: 0; max-width: 48ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .nvt-grid { display: grid; gap: 24px; margin-top: 40px; }
+  .nvt-v { margin: 0; overflow: hidden; border-radius: 14px; background: #fff; box-shadow: 0 40px 70px -40px rgba(10, 22, 72, 0.75); }
+  .nvt-barra { display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; background: #F2F3F6; border-bottom: 1px solid #E6E8EE; }
+  .nvt-barra i { width: 9px; height: 9px; border-radius: 50%; background: #D7DAE1; }
+  .nvt-barra span { margin-left: 10px; font: 600 11.5px/1 var(--font-display); color: #7A8090; letter-spacing: 0.02em; }
+  .nvt-lienzo { position: relative; transition: --fx 0.7s cubic-bezier(0.65, 0, 0.35, 1), --fy 0.7s cubic-bezier(0.65, 0, 0.35, 1); }
+  .nvt-lienzo img { display: block; width: 100%; height: auto; }
+  /* el foco: oscurece todo menos el círculo de la marca de ahora */
+  .nvt-foco { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at var(--fx) var(--fy), transparent 0 64px, rgba(10, 22, 72, 0.34) 96px); opacity: 0; transition: opacity 0.5s ease; }
+  .nvt-grid.is-recorre .nvt-foco { opacity: 1; }
+  .nvt-marca { position: absolute; left: var(--x); top: var(--y); display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 2px solid #fff; border-radius: 50%; background: #141414; color: #fff; font: 800 12px/1 var(--font-display); cursor: pointer; transform: translate(-50%, -50%); box-shadow: 0 6px 14px -4px rgba(0, 0, 0, 0.5); transition: background 0.25s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .nvt-marca::after { content: ''; position: absolute; inset: -7px; border-radius: 50%; border: 2px solid #D03A70; opacity: 0; }
+  .nvt-marca.is-ahora { background: #D03A70; transform: translate(-50%, -50%) scale(1.18); }
+  .nvt-marca.is-ahora::after { animation: nvtLatido 1.6s ease-out infinite; }
+  @keyframes nvtLatido { from { opacity: 0.9; transform: scale(0.8); } to { opacity: 0; transform: scale(1.6); } }
+  .nvt-marca:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  .nvt-leyenda { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; counter-reset: none; }
+  .nvt-leyenda button { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; width: 100%; padding: 10px 12px; border: 0; border-radius: 14px; background: rgba(255, 255, 255, 0.1); color: #fff; text-align: left; cursor: pointer; transition: background 0.3s ease, color 0.3s ease; }
+  .nvt-leyenda button:hover { background: rgba(255, 255, 255, 0.18); }
+  .nvt-leyenda button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+  .nvt-n { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #141414; font: 800 12px/1 var(--font-display); color: #fff; }
+  .nvt-lt { display: grid; gap: 2px; }
+  .nvt-lt b { font: 700 15.5px/1.25 var(--font-display); }
+  .nvt-lt > span { font: 500 13.5px/1.4 var(--font-body); color: rgba(255, 255, 255, 0.88); }
+  .nvt-leyenda button.is-ahora { background: #fff; color: #141414; }
+  .nvt-leyenda button.is-ahora .nvt-n { background: #D03A70; }
+  .nvt-leyenda button.is-ahora .nvt-lt > span { color: #45433E; }
+  /* entrada: la ventana barre de arriba abajo; las marcas brotan una por una */
+  :global(.js-rv) .nvt-v.rv { clip-path: inset(0 0 100% 0 round 14px); transition: clip-path 1.2s cubic-bezier(0.65, 0, 0.35, 1); }
+  :global(.js-rv) .nvt-v.rv.is-on { clip-path: inset(0 0 0 0 round 14px); }
+  :global(.js-rv) .nvt-v.rv .nvt-marca { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+  :global(.js-rv) .nvt-v.rv.is-on .nvt-marca { opacity: 1; transform: translate(-50%, -50%); transition: opacity 0.2s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.25s ease; transition-delay: calc(1s + var(--i) * 0.12s); }
+  :global(.js-rv) .nvt-v.rv.is-on .nvt-marca.is-ahora { transform: translate(-50%, -50%) scale(1.18); }
+  @media (min-width: 900px) {
+    .nvt-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .nvt-grid { grid-template-columns: minmax(0, 1.75fr) minmax(0, 0.75fr); gap: 3vw; align-items: center; margin-top: 56px; }
+  }
+  @media (max-width: 899px) {
+    /* la pantalla se desliza a lo ancho: a lo ancho del teléfono no se leería */
+    .nvt-desliza { overflow-x: auto; overscroll-behavior-x: contain; margin: 0 -20px; padding: 0 20px 6px; scrollbar-width: none; }
+    .nvt-desliza::-webkit-scrollbar { display: none; }
+    .nvt-v { width: 780px; }
+    .nvt-barra { height: 22px; padding: 0 9px; gap: 5px; }
+    .nvt-barra i { width: 7px; height: 7px; }
+    .nvt-barra span { display: none; }
+    .nvt-leyenda button { padding: 9px 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .nvt-v.rv { clip-path: none; transition: none; }
+    :global(.js-rv) .nvt-v.rv .nvt-marca { opacity: 1; transform: translate(-50%, -50%); transition: none; }
+    .nvt-lienzo, .nvt-foco, .nvt-marca { transition: none; }
+    .nvt-marca.is-ahora::after { animation: none; }
+  }
+</style>
+
+<script>
+  // El foco recorre las marcas solo mientras la sección se ve (y la pestaña está a la vista); tocar una marca o un
+  // renglón de la leyenda lo fija ahí y para el recorrido. En el teléfono, al tocar, la pantalla se desliza hasta la
+  // marca.
+  (() => {
+    const grid = document.querySelector<HTMLElement>('[data-nvt]');
+    if (!grid) return;
+    const lienzo = grid.querySelector<HTMLElement>('.nvt-lienzo');
+    const desliza = grid.querySelector<HTMLElement>('.nvt-desliza');
+    const marcas = Array.from(grid.querySelectorAll<HTMLElement>('.nvt-marca'));
+    const filas = Array.from(grid.querySelectorAll<HTMLElement>('.nvt-leyenda button'));
+    if (!lienzo || !marcas.length) return;
+    const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let k = 3, reloj = 0, visible = false, fijo = false;
+    const pon = (n: number, toca = false) => {
+      k = n;
+      const m = marcas[n];
+      lienzo.style.setProperty('--fx', m.style.getPropertyValue('--x'));
+      lienzo.style.setProperty('--fy', m.style.getPropertyValue('--y'));
+      marcas.forEach((x, i) => x.classList.toggle('is-ahora', i === n));
+      filas.forEach((x, i) => { x.classList.toggle('is-ahora', i === n); x.setAttribute('aria-pressed', String(i === n)); });
+      grid.classList.add('is-recorre');
+      if (toca && desliza && desliza.scrollWidth > desliza.clientWidth) {
+        const x = (parseFloat(m.style.getPropertyValue('--x')) / 100) * lienzo.clientWidth;
+        desliza.scrollTo({ left: Math.max(0, x - desliza.clientWidth / 2), behavior: quieto ? 'auto' : 'smooth' });
+      }
+    };
+    const para = () => { if (reloj) { clearInterval(reloj); reloj = 0; } };
+    const sigue = () => {
+      para();
+      if (fijo || quieto || !visible || document.hidden) return;
+      reloj = window.setInterval(() => pon((k + 1) % marcas.length), 3400);
+    };
+    const elige = (n: number) => { fijo = true; para(); pon(n, true); };
+    marcas.forEach((m, i) => m.addEventListener('click', () => elige(i)));
+    filas.forEach((f, i) => f.addEventListener('click', () => elige(i)));
+    document.addEventListener('visibilitychange', sigue);
+    if (!('IntersectionObserver' in window)) { pon(k); return; }
+    const io = new IntersectionObserver((es) => {
+      visible = es.some((e) => e.isIntersecting);
+      if (visible && !grid.classList.contains('is-recorre')) window.setTimeout(() => { if (!fijo) pon(k); }, quieto ? 0 : 1900);
+      sigue();
+    }, { threshold: 0.35 });
+    io.observe(grid);
+  })();
+</script>

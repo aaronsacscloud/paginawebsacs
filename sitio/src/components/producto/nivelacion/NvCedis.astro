@@ -1,0 +1,135 @@
+---
+/**
+ * «El CEDIS reparte según cada tienda» (/producto/nivelacion-de-inventario): dibujo de ejemplo del reparto con peso
+ * por nivel de tienda. El CEDIS tiene 40 piezas; al verse, 24 salen por rondas —en cada ronda la A se lleva 3, cada B
+ * 2 y la C 1— y caen en su tienda, mientras en el CEDIS quedan 16, la reserva del 40 % para resurtir donde sí se venda.
+ * Al lado, cuatro reglas reales del gestor (Presentación primero, Reserva en el CEDIS, La primera ola no sale sola) y
+ * la del flete. Marino.
+ */
+import { CEDIS } from '../../../data/producto-nivelacion';
+// El orden de salida: por rondas, como el reparto con peso (A=3, B=2, C=1).
+const PESO: Record<string, number> = { A: 3, B: 2, C: 1 };
+const orden: { tienda: number; k: number }[] = [];
+const llevan = CEDIS.tiendas.map(() => 0);
+for (let ronda = 0; ronda < 50 && orden.length < CEDIS.total - CEDIS.reserva; ronda++) {
+  CEDIS.tiendas.forEach((t, i) => {
+    for (let r = 0; r < PESO[t.n] && llevan[i] < t.p; r++) orden.push({ tienda: i, k: llevan[i]++ });
+  });
+}
+const salida = CEDIS.tiendas.map((_, i) => orden.map((o, j) => (o.tienda === i ? j : -1)).filter((j) => j >= 0));
+const sale = CEDIS.total - CEDIS.reserva;
+---
+<section class="pda nvd pd-marino" id="nv-cedis" aria-labelledby="nvd-h">
+  <div class="pda-fondo" aria-hidden="true"><span>CEDIS · CEDIS · CEDIS · CEDIS</span><span>CEDIS · CEDIS · CEDIS · CEDIS</span></div>
+  <p class="pd-folio"><span>{CEDIS.k}</span><span>Del CEDIS a cada tienda</span></p>
+  <div class="nvd-cab">
+    <h2 class="pda-h" id="nvd-h">{CEDIS.h}</h2>
+    <p class="nvd-p">{CEDIS.p}</p>
+  </div>
+
+  <div class="nvd-grid">
+    <div class="nvd-reparto" data-nvd role="img" aria-label={`Ejemplo: de ${CEDIS.total} piezas en el CEDIS salen ${sale}: ${CEDIS.tiendas.map((t) => `${t.p} a ${t.t} (nivel ${t.n})`).join(', ')}; se quedan ${CEDIS.reserva} de reserva.`}>
+      <span class="nvd-ej" aria-hidden="true">Ejemplo</span>
+      <span class="nvd-cedis" aria-hidden="true">
+        <span class="nvd-cedis-cab"><b>CEDIS</b><small><em data-quedan>{CEDIS.reserva}</em> de {CEDIS.total} · reserva 40 %</small></span>
+        <span class="nvd-piezas">
+          {Array.from({ length: CEDIS.total }, (_, i) => {
+            const j = CEDIS.total - 1 - i;
+            return <i class:list={{ 'is-sale': j < sale }} style={j < sale ? `--o:${j}` : undefined}></i>;
+          })}
+        </span>
+      </span>
+      <span class="nvd-tiendas" aria-hidden="true">
+        {CEDIS.tiendas.map((t, i) => (
+          <span class="nvd-t">
+            <span class="nvd-piezas nvd-piezas--t">{salida[i].map((o) => <i style={`--o:${o}`}></i>)}</span>
+            <b>{t.t}</b>
+            <small><em>{t.n}</em>+{t.p}</small>
+          </span>
+        ))}
+      </span>
+    </div>
+
+    <ul class="nvd-reglas">
+      {CEDIS.reglas.map((r, i) => (
+        <li class="rv" style={`--i:${i}`}><b>{r.t}{r.v && <em>{r.v}</em>}</b><span>{r.d}</span></li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .nvd-cab { display: grid; gap: 14px; }
+  .nvd-p { margin: 0; max-width: 52ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .nvd-grid { display: grid; gap: 28px; margin-top: 40px; }
+  .nvd-reparto { position: relative; display: grid; gap: 22px; padding: 20px 16px 18px; border-radius: 24px; background: rgba(157, 184, 245, 0.08); box-shadow: inset 0 0 0 1px rgba(157, 184, 245, 0.22); }
+  .nvd-ej { position: absolute; right: 14px; top: 14px; padding: 4px 9px; border-radius: 99px; background: rgba(255, 255, 255, 0.12); color: rgba(255, 255, 255, 0.75); font: 600 11px/1.2 var(--font-display); }
+  .nvd-cedis { display: grid; gap: 10px; justify-self: center; width: min(100%, 360px); padding: 14px; border-radius: 16px; background: #fff; color: #141414; }
+  .nvd-cedis-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .nvd-cedis-cab b { font: 700 16px/1 var(--font-display); }
+  .nvd-cedis-cab small { font: 600 11.5px/1.2 var(--font-display); color: #6B6A64; }
+  .nvd-cedis-cab em { font-style: normal; color: #2F55C4; font-variant-numeric: tabular-nums; }
+  .nvd-piezas { display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; }
+  .nvd-piezas i { aspect-ratio: 1; border-radius: 4px; background: #2F55C4; }
+  .nvd-piezas i.is-sale { background: transparent; box-shadow: inset 0 0 0 1.5px #C9D8FB; }
+  .nvd-tiendas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .nvd-t { display: grid; gap: 6px; align-content: end; min-width: 0; padding: 10px 8px; border-radius: 14px; background: rgba(255, 255, 255, 0.08); }
+  .nvd-piezas--t { grid-template-columns: repeat(3, 1fr); gap: 4px; align-content: end; min-height: 52px; }
+  .nvd-piezas--t i { background: #F07FA6; }
+  .nvd-t b { overflow: hidden; font: 700 12px/1.2 var(--font-display); color: #fff; white-space: nowrap; text-overflow: ellipsis; }
+  .nvd-t small { display: flex; align-items: center; gap: 6px; font: 700 13px/1 var(--font-display); color: #F7C3D6; }
+  .nvd-t small em { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 6px; background: #fff; color: #0A1648; font: 800 11px/1 var(--font-display); font-style: normal; }
+  .nvd-reglas { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .nvd-reglas li { display: grid; gap: 4px; padding: 14px 16px; border-radius: 16px; background: #13215C; box-shadow: inset 0 0 0 1px rgba(157, 184, 245, 0.22); }
+  .nvd-reglas b { display: flex; align-items: center; justify-content: space-between; gap: 10px; font: 700 16px/1.25 var(--font-display); color: #fff; }
+  .nvd-reglas b em { padding: 3px 9px; border-radius: 99px; background: #fff; color: #0A1648; font: 800 12px/1.2 var(--font-display); font-style: normal; }
+  .nvd-reglas span { font: 500 14px/1.45 var(--font-body); color: rgba(255, 255, 255, 0.8); }
+
+  /* ── al verse: por rondas, cada pieza deja su hueco en el CEDIS y cae en su tienda ── */
+  :global(.js-rv) .nvd-reparto .nvd-cedis .nvd-piezas i.is-sale { background: #2F55C4; box-shadow: none; }
+  .nvd-reparto.is-on .nvd-cedis .nvd-piezas i.is-sale { background: transparent; box-shadow: inset 0 0 0 1.5px #C9D8FB; transition: background 0.25s ease, box-shadow 0.25s ease; transition-delay: calc(0.4s + var(--o) * 0.09s); }
+  :global(.js-rv) .nvd-reparto .nvd-piezas--t i { opacity: 0; transform: translateY(-46px) scale(0.6); }
+  .nvd-reparto.is-on .nvd-piezas--t i { opacity: 1; transform: none; transition: opacity 0.25s ease, transform 0.55s cubic-bezier(0.34, 1.4, 0.64, 1); transition-delay: calc(0.5s + var(--o) * 0.09s); }
+  :global(.js-rv) .nvd-reglas .rv { opacity: 0; transform: translateX(40px); transition: opacity 0.5s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(0.15s + var(--i) * 0.1s); }
+  :global(.js-rv) .nvd-reglas .rv.is-on { opacity: 1; transform: none; }
+
+  @media (min-width: 900px) {
+    .nvd-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .nvd-grid { grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr); gap: 4vw; align-items: center; margin-top: 56px; }
+    .nvd-reparto { gap: 30px; padding: 32px 28px 26px; }
+    .nvd-piezas { gap: 6px; }
+    .nvd-tiendas { gap: 14px; }
+    .nvd-t { padding: 14px 12px; }
+    .nvd-piezas--t { gap: 5px; min-height: 78px; }
+    .nvd-t b { font-size: 14px; }
+    .nvd-t small { font-size: 15px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .nvd-reparto .nvd-cedis .nvd-piezas i.is-sale { background: transparent; box-shadow: inset 0 0 0 1.5px #C9D8FB; }
+    :global(.js-rv) .nvd-reparto .nvd-piezas--t i, :global(.js-rv) .nvd-reglas .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // El reparto arranca la primera vez que se ve; el contador del CEDIS baja de 40 a lo que se queda.
+  (() => {
+    const el = document.querySelector<HTMLElement>('[data-nvd]');
+    if (!el) return;
+    const n = el.querySelector<HTMLElement>('[data-quedan]');
+    const quedan = Number(n?.textContent || 0);
+    const total = el.querySelectorAll('.nvd-cedis .nvd-piezas i').length;
+    const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!('IntersectionObserver' in window) || quieto) { el.classList.add('is-on'); return; }
+    if (n) n.textContent = String(total);
+    const io = new IntersectionObserver((es) => {
+      if (!es.some((e) => e.isIntersecting)) return;
+      io.disconnect();
+      el.classList.add('is-on');
+      if (!n) return;
+      // cada pieza sale 0.09 s después de la anterior (las mismas demoras del CSS)
+      const sale = total - quedan;
+      for (let j = 0; j < sale; j++) window.setTimeout(() => { n.textContent = String(total - j - 1); }, 400 + j * 90);
+    }, { threshold: 0.45 });
+    io.observe(el);
+  })();
+</script>

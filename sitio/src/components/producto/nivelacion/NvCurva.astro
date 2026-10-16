@@ -1,0 +1,149 @@
+---
+/**
+ * «Curva completa o nada» (/producto/nivelacion-de-inventario): las curvas de venta de los tres grupos de tiendas
+ * (vende chico, curva media, vende grande) y, debajo de cada una, lo que tiene hoy una de sus tiendas. Dibujo de
+ * ejemplo: al verse, las barras crecen, la talla núcleo en 0 tiembla en rojo, le cae «+4» del CEDIS y se vuelve verde,
+ * y el contador de curvas rotas baja de 14 a 0 (la cifra de la Mesa de la boutique de prueba). Abajo, el recorte REAL
+ * de la Mesa (Cárdigan largo de punto: la curva de la red, la de cada grupo y «Curvas rotas 2 → 0»). Fucsia.
+ */
+import { CURVA, I } from '../../../data/producto-nivelacion';
+---
+<section class="pda nvc pd-fucsia" id="nv-curva" aria-labelledby="nvc-h">
+  <p class="pd-folio"><span>{CURVA.k}</span><span>Tallas y curvas</span></p>
+  <div class="nvc-cab">
+    <h2 class="pda-h" id="nvc-h">{CURVA.h}</h2>
+    <p class="nvc-p">{CURVA.p}</p>
+  </div>
+
+  <div class="nvc-lienzo" data-nvc role="img" aria-label={`Ejemplo: las curvas de venta de los grupos vende chico, curva media y vende grande. A SMA Centro le falta la M y a León Altacia la L; a cada una le llegan ${CURVA.llega} del CEDIS y las curvas rotas bajan de ${CURVA.rotas.de} a ${CURVA.rotas.a}.`}>
+    <span class="nvc-ej" aria-hidden="true">Ejemplo</span>
+    <span class="nvc-grupos" aria-hidden="true">
+      {CURVA.grupos.map((g, i) => (
+        <span class="nvc-g" style={`--i:${i}`}>
+          <b class="nvc-gt">{g.t}</b>
+          <span class="nvc-barras">{g.curva.map((v, j) => <i class:list={{ 'is-nucleo': j === g.falta }} style={`--v:${v};--j:${j}`}></i>)}</span>
+          <span class="nvc-tallas">{CURVA.tallas.map((t) => <i>{t}</i>)}</span>
+          <span class="nvc-tienda">{g.tienda}</span>
+          <span class="nvc-hay">
+            {g.hay.map((h, j) => (j === g.falta ? (
+              <i class="nvc-hueco"><s>{h}</s><b>{CURVA.llega}</b><em>+{CURVA.llega}</em></i>
+            ) : <i>{h}</i>))}
+          </span>
+        </span>
+      ))}
+    </span>
+    <span class="nvc-contador" aria-hidden="true"><small>Curvas rotas</small><b><span data-rotas data-de={CURVA.rotas.de}>{CURVA.rotas.a}</span></b><small class="nvc-de">de {CURVA.rotas.de} a {CURVA.rotas.a}</small></span>
+  </div>
+
+  <figure class="nvc-mesa rv">
+    <div class="nvc-mesa-desliza"><img src={`${I}recorte-curvas.webp`} width="1100" height="160" alt="Un modelo en la Mesa: Cárdigan largo de punto, gris jaspe +125 y crema +91; la curva de la red, la curva por grupo (chico 79, media 99, grande 38) y curvas rotas 2 → 0" loading="lazy" decoding="async" /></div>
+    <figcaption>Así lo ve la Mesa: la curva de la red, la de cada grupo de tiendas y las curvas rotas que quedan en 0.</figcaption>
+  </figure>
+</section>
+
+<style>
+  .nvc-cab { display: grid; gap: 14px; }
+  .nvc-p { margin: 0; max-width: 52ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .nvc-lienzo { position: relative; display: grid; gap: 18px; margin-top: 40px; padding: 22px 14px 18px; border-radius: 24px; background: #fff; color: #141414; box-shadow: 0 40px 70px -40px rgba(90, 10, 40, 0.6); }
+  .nvc-ej { position: absolute; right: 14px; top: 14px; padding: 4px 9px; border-radius: 99px; background: #F2F3F6; color: #8A8A85; font: 600 11px/1.2 var(--font-display); }
+  .nvc-grupos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .nvc-g { display: grid; gap: 7px; align-content: start; min-width: 0; }
+  .nvc-gt { font: 700 13px/1.2 var(--font-display); }
+  .nvc-barras { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; align-items: end; height: 96px; padding-bottom: 1px; border-bottom: 1.5px solid #E7E8EC; }
+  .nvc-barras i { display: block; height: calc(var(--v) * 1%); border-radius: 4px 4px 0 0; background: linear-gradient(180deg, #F07FA6, #D03A70); transform-origin: 50% 100%; }
+  .nvc-barras i.is-nucleo { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px #C62828; }
+  .nvc-tallas, .nvc-hay { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; text-align: center; }
+  .nvc-tallas i { font: 700 10px/1.2 var(--font-display); font-style: normal; color: #8A8A85; }
+  .nvc-tienda { margin-top: 4px; overflow: hidden; font: 600 11px/1.2 var(--font-display); color: #45433E; white-space: nowrap; text-overflow: ellipsis; }
+  .nvc-hay i { position: relative; display: grid; place-items: center; height: 26px; border-radius: 7px; background: #F2F3F6; font: 700 12px/1 var(--font-display); font-style: normal; font-variant-numeric: tabular-nums; }
+  .nvc-hueco { background: #E3F4EA !important; color: #17804F; box-shadow: inset 0 0 0 1.5px #1F9D63; }
+  .nvc-hueco s, .nvc-hueco b { grid-area: 1 / 1; text-decoration: none; }
+  .nvc-hueco s { opacity: 0; }
+  .nvc-hueco em { position: absolute; left: 50%; bottom: calc(100% + 4px); padding: 2px 5px; border-radius: 6px; background: #D03A70; color: #fff; font: 800 10px/1.2 var(--font-display); font-style: normal; white-space: nowrap; opacity: 0; transform: translateX(-50%); }
+  .nvc-contador { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 12px; padding-top: 14px; border-top: 1px solid #ECEDEF; }
+  .nvc-contador small { font: 700 12px/1.2 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: #6B6A64; }
+  .nvc-contador b { font: 700 40px/1 var(--pd-clash); color: #17804F; font-variant-numeric: tabular-nums; transition: color 0.3s ease; }
+  .nvc-contador b.is-rota { color: #C62828; }
+  .nvc-contador .nvc-de { letter-spacing: 0; text-transform: none; font-weight: 600; }
+  .nvc-mesa { margin: 28px 0 0; }
+  .nvc-mesa-desliza { overflow: hidden; border-radius: 14px; background: #fff; box-shadow: 0 24px 40px -28px rgba(90, 10, 40, 0.7); }
+  .nvc-mesa img { display: block; width: 100%; height: auto; }
+  .nvc-mesa figcaption { margin-top: 12px; font: 600 14px/1.45 var(--font-display); color: #fff; }
+
+  /* ── al verse: crecen las barras, tiembla el hueco, cae lo del CEDIS y baja el contador ── */
+  :global(.js-rv) .nvc-lienzo .nvc-barras i { transform: scaleY(0); }
+  .nvc-lienzo.is-on .nvc-barras i { transform: none; transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1); transition-delay: calc(var(--i) * 0.15s + var(--j) * 0.05s); }
+  :global(.js-rv) .nvc-lienzo .nvc-hueco { background: #FDE8E8 !important; color: #C62828; box-shadow: inset 0 0 0 1.5px #E57373; }
+  :global(.js-rv) .nvc-lienzo .nvc-hueco s { opacity: 1; }
+  :global(.js-rv) .nvc-lienzo .nvc-hueco b { opacity: 0; }
+  .nvc-lienzo.is-on .nvc-hueco { animation: nvcTiembla 0.5s ease 1.1s 2; }
+  @keyframes nvcTiembla { 0%, 100% { transform: none; } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+  .nvc-lienzo.is-on .nvc-hueco em { animation: nvcCae 1.1s cubic-bezier(0.22, 1, 0.36, 1) 2.2s both; }
+  @keyframes nvcCae { 0% { opacity: 0; transform: translate(-50%, -26px); } 45% { opacity: 1; transform: translate(-50%, 0); } 80% { opacity: 1; transform: translate(-50%, 18px) scale(0.7); } 100% { opacity: 0; transform: translate(-50%, 26px) scale(0.5); } }
+  .nvc-lienzo.is-on .nvc-hueco { background: #E3F4EA !important; color: #17804F; box-shadow: inset 0 0 0 1.5px #1F9D63; transition: background 0.3s ease 3s, color 0.3s ease 3s, box-shadow 0.3s ease 3s; }
+  .nvc-lienzo.is-on .nvc-hueco s { opacity: 0; transition: opacity 0.2s ease 3s; }
+  .nvc-lienzo.is-on .nvc-hueco b { opacity: 1; transition: opacity 0.3s ease 3.05s; }
+  .nvc-lienzo.is-on .nvc-barras i.is-nucleo { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px #1F9D63; transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease 3s; transition-delay: calc(var(--i) * 0.15s + var(--j) * 0.05s), 3s; }
+  :global(.js-rv) .nvc-mesa.rv { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+  :global(.js-rv) .nvc-mesa.rv.is-on { opacity: 1; transform: none; }
+
+  @media (min-width: 900px) {
+    .nvc-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .nvc-lienzo { grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 3vw; margin-top: 56px; padding: 34px 34px 30px; }
+    .nvc-grupos { gap: 3vw; }
+    .nvc-gt { font-size: 16px; }
+    .nvc-barras { height: 170px; gap: 6px; }
+    .nvc-tallas i { font-size: 12px; }
+    .nvc-tienda { font-size: 13px; }
+    .nvc-hay { gap: 6px; }
+    .nvc-hay i { height: 34px; font-size: 14px; }
+    .nvc-hueco em { font-size: 11.5px; }
+    .nvc-contador { flex-direction: column; align-items: flex-start; gap: 6px; padding: 0 0 0 3vw; border-top: 0; border-left: 1px solid #ECEDEF; }
+    .nvc-contador b { font-size: 88px; }
+    .nvc-ej { right: 22px; top: 20px; }
+    .nvc-mesa { margin-top: 36px; }
+  }
+  @media (max-width: 767px) {
+    /* el recorte de la Mesa se desliza a lo ancho */
+    .nvc-mesa-desliza { overflow-x: auto; overscroll-behavior-x: contain; border-radius: 10px; }
+    .nvc-mesa-desliza img { width: 760px; max-width: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .nvc-lienzo .nvc-barras i, :global(.js-rv) .nvc-mesa.rv { opacity: 1; transform: none; transition: none; }
+    .nvc-lienzo * { animation: none !important; transition: none !important; }
+    :global(.js-rv) .nvc-lienzo .nvc-hueco { background: #E3F4EA !important; color: #17804F; box-shadow: inset 0 0 0 1.5px #1F9D63; }
+    :global(.js-rv) .nvc-lienzo .nvc-hueco s { opacity: 0; }
+    :global(.js-rv) .nvc-lienzo .nvc-hueco b { opacity: 1; }
+  }
+</style>
+
+<script>
+  // Al verse: arranca el dibujo y el contador baja de 14 a 0 cuando las tallas ya llegaron (sin JS, ya está en 0).
+  (() => {
+    const el = document.querySelector<HTMLElement>('[data-nvc]');
+    if (!el) return;
+    const n = el.querySelector<HTMLElement>('[data-rotas]');
+    const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const de = Number(n?.dataset.de || 0);
+    const b = n?.parentElement;
+    if (!('IntersectionObserver' in window) || quieto) { el.classList.add('is-on'); return; }
+    if (n) n.textContent = String(de);
+    b?.classList.add('is-rota');
+    const io = new IntersectionObserver((es) => {
+      if (!es.some((e) => e.isIntersecting)) return;
+      io.disconnect();
+      el.classList.add('is-on');
+      if (!n) return;
+      window.setTimeout(() => {
+        const t0 = performance.now();
+        const paso = (t: number) => {
+          const f = Math.min(1, (t - t0) / 1400);
+          n.textContent = String(Math.round(de * (1 - f)));
+          if (f < 1) requestAnimationFrame(paso); else b?.classList.remove('is-rota');
+        };
+        requestAnimationFrame(paso);
+      }, 2600);
+    }, { threshold: 0.45 });
+    io.observe(el);
+  })();
+</script>

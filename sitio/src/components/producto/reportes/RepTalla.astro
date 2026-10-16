@@ -1,0 +1,160 @@
+---
+/**
+ * «La talla que sí se vende» (/producto/reportes-y-analitica): el sell-through por estilo, talla y tienda en una sola
+ * matriz (dibujo con valores de EJEMPLO; visión del dueño: «sácalo como si existiría»). Cada celda se pinta según lo que
+ * ya se vendió de lo comprado: verde ≥ 70 %, ámbar de 40 a 69 %, rojo < 40 %. Las pestañas de tienda cambian la matriz
+ * (y giran solas mientras se ve, hasta que alguien elige una). Debajo, lo REAL de hoy: el Análisis de ventas por talla
+ * de las cuatro sucursales de la cuenta demo. Entrada: las celdas se encienden en ola diagonal. Fucsia.
+ */
+import { TALLA, I } from '../../../data/producto-reportes';
+import StaffVentana from '../../plugins/staff/StaffVentana.astro';
+const tono = (v: number) => (v >= 70 ? 'alto' : v >= 40 ? 'medio' : 'bajo');
+const primera = TALLA.tiendas[0];
+---
+<section class="pda rpta pd-fucsia" id="rep-talla" aria-labelledby="rpta-h">
+  <div class="pda-fondo" aria-hidden="true"><span>XS · S · M · L · XL · XS · S · M · L · XL</span><span>XS · S · M · L · XL · XS · S · M · L · XL</span></div>
+  <p class="pd-folio"><span>{TALLA.k}</span><span>Por estilo, talla, color y tienda</span></p>
+  <div class="rpta-grid">
+    <div class="rpta-lado">
+      <h2 class="pda-h" id="rpta-h">{TALLA.h}</h2>
+      <p class="rpta-p">{TALLA.p}</p>
+      <ul class="rpta-puntos">{TALLA.puntos.map((x, i) => <li class="rv" style={`--i:${i}`}><b>{x.t}</b><span>{x.d}</span></li>)}</ul>
+    </div>
+
+    <div class="rpta-matriz" data-rpta data-tiendas={JSON.stringify(TALLA.tiendas.map((t) => t.m))}>
+      <div class="rpta-m-cab">
+        <b>Sell-through por talla</b>
+        <em>Ejemplo</em>
+      </div>
+      <div class="rpta-tabs" role="tablist" aria-label="Tienda">
+        {TALLA.tiendas.map((t, i) => (
+          <button type="button" role="tab" class="rpta-tab" aria-selected={i === 0 ? 'true' : 'false'} data-tab={i}>{t.t}</button>
+        ))}
+      </div>
+      <table class="rpta-tabla">
+        <caption class="sr-only">Sell-through de ejemplo por estilo y talla en la tienda elegida</caption>
+        <thead><tr><th scope="col"><span class="sr-only">Estilo</span></th>{TALLA.tallas.map((t) => <th scope="col">{t}</th>)}</tr></thead>
+        <tbody>
+          {TALLA.estilos.map((e, r) => (
+            <tr>
+              <th scope="row">{e}</th>
+              {primera.m[r].map((v, c) => <td data-tono={tono(v)} style={`--d:${(r + c) * 0.06}s`}><span>{v}%</span></td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p class="rpta-leyenda" aria-hidden="true"><span data-tono="alto">70 % o más: se vende</span><span data-tono="medio">40 a 69 %</span><span data-tono="bajo">Menos de 40 %: se queda</span></p>
+    </div>
+  </div>
+
+  <div class="rpta-real">
+    <p class="rpta-real-k">Hoy, en el Análisis de ventas: la venta de cada talla, día por día, en tus cuatro sucursales.</p>
+    <div class="rpta-ventana rv"><StaffVentana src={`${I}pantalla-talla.webp`} w={1400} h={860} alt="Análisis de ventas agrupado por talla en las cuatro sucursales: la venta de cada talla, día por día" barra="Reportes › Análisis de ventas" /></div>
+  </div>
+</section>
+
+<style>
+  .rpta-grid { display: grid; gap: 32px; }
+  .rpta-lado { display: grid; gap: 16px; align-content: start; }
+  .rpta-p { margin: 0; max-width: 46ch; font: 500 17px/1.55 var(--font-body); color: #fff; }
+  .rpta-puntos { display: grid; gap: 0; margin: 10px 0 0; padding: 0; list-style: none; border-top: 1.5px solid rgba(255, 255, 255, 0.6); }
+  .rpta-puntos li { display: grid; gap: 3px; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.35); }
+  .rpta-puntos b { font: 700 16px/1.3 var(--font-display); color: #fff; }
+  .rpta-puntos span { font: 500 14.5px/1.45 var(--font-body); color: #fff; }
+  /* la matriz */
+  .rpta-matriz { display: grid; gap: 14px; padding: 18px; border-radius: 22px; background: #fff; color: #141414; box-shadow: 0 34px 70px -34px rgba(60, 0, 20, 0.6); }
+  .rpta-m-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .rpta-m-cab b { font: 800 13px/1 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: #45433E; }
+  .rpta-m-cab em { padding: 4px 9px; border-radius: 99px; background: #F2F3F6; color: #6B6A64; font: 600 11px/1.2 var(--font-display); font-style: normal; }
+  .rpta-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  .rpta-tabs::-webkit-scrollbar { display: none; }
+  .rpta-tab { flex: none; padding: 8px 12px; border: 0; border-radius: 99px; background: #F2F3F6; color: #45433E; font: 700 12.5px/1.1 var(--font-display); cursor: pointer; transition: background 0.25s ease, color 0.25s ease; }
+  .rpta-tab:hover { background: #E7E8EC; }
+  .rpta-tab[aria-selected="true"] { background: #141414; color: #fff; }
+  .rpta-tab:focus-visible { outline: 2px solid #D03A70; outline-offset: 2px; }
+  .rpta-tabla { width: 100%; border-collapse: separate; border-spacing: 4px; table-layout: fixed; }
+  .rpta-tabla th { font: 700 11.5px/1.2 var(--font-display); color: #6B6A64; }
+  .rpta-tabla thead th { padding-bottom: 2px; }
+  .rpta-tabla thead th:first-child { width: 38%; }
+  .rpta-tabla tbody th { padding-right: 6px; overflow: hidden; color: #141414; font-size: 12.5px; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+  .rpta-tabla td { height: 40px; padding: 0; border-radius: 8px; text-align: center; font: 700 12.5px/1 var(--font-display); font-variant-numeric: tabular-nums; transition: background-color 0.45s ease, color 0.45s ease; }
+  .rpta-tabla td[data-tono="alto"] { background: #1F9D63; color: #fff; }
+  .rpta-tabla td[data-tono="medio"] { background: #F6D58E; color: #5B3B00; }
+  .rpta-tabla td[data-tono="bajo"] { background: #F7C9C9; color: #9B1C1C; }
+  .rpta-tabla td span { display: inline-block; transition: opacity 0.2s ease, transform 0.3s ease; }
+  .rpta-tabla.is-cambia td span { opacity: 0; transform: translateY(-4px); }
+  .rpta-leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; font: 600 11.5px/1.2 var(--font-display); color: #6B6A64; }
+  .rpta-leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+  .rpta-leyenda span::before { content: ''; width: 10px; height: 10px; border-radius: 3px; }
+  .rpta-leyenda [data-tono="alto"]::before { background: #1F9D63; }
+  .rpta-leyenda [data-tono="medio"]::before { background: #F6D58E; }
+  .rpta-leyenda [data-tono="bajo"]::before { background: #F7C9C9; }
+  /* entrada: ola diagonal */
+  :global(.js-rv) .rpta-matriz:not(.is-on) td { opacity: 0; transform: scale(0.6); }
+  .rpta-matriz.is-on td { animation: rptaOla 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both; animation-delay: var(--d); }
+  @keyframes rptaOla { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }
+  .rpta-real { display: grid; gap: 14px; margin-top: 48px; }
+  .rpta-real-k { margin: 0; max-width: 60ch; font: 600 16px/1.45 var(--font-display); color: #fff; }
+  :global(.js-rv) .rpta-puntos .rv { opacity: 0; transform: translateX(-14px); transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.1s + 0.2s); }
+  :global(.js-rv) .rpta-puntos .rv.is-on { opacity: 1; transform: none; }
+  :global(.js-rv) .rpta-ventana.rv { opacity: 0; transform: translateY(50px) scale(0.97); transition: opacity 0.7s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1); }
+  :global(.js-rv) .rpta-ventana.rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .rpta-grid { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 5vw; align-items: center; }
+    .rpta-matriz { padding: 24px; }
+    .rpta-tabla td { height: 50px; font-size: 14px; }
+    .rpta-tabla tbody th { font-size: 14px; }
+    .rpta-real { grid-template-columns: minmax(0, 0.42fr) minmax(0, 1.58fr); gap: 4vw; align-items: center; margin-top: 72px; }
+  }
+  @media (max-width: 767px) {
+    .rpta-matriz { padding: 14px; gap: 12px; }
+    .rpta-tabla { border-spacing: 3px; }
+    .rpta-tabla thead th:first-child { width: 34%; }
+    .rpta-tabla tbody th { font-size: 11.5px; white-space: normal; line-height: 1.15; }
+    .rpta-tabla td { height: 36px; font-size: 11.5px; border-radius: 6px; }
+    .rpta-ventana { overflow-x: auto; overscroll-behavior-x: contain; border-radius: 10px; }
+    .rpta-ventana > :global(.sv) { width: 720px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .rpta-matriz:not(.is-on) td, .rpta-matriz.is-on td { opacity: 1; transform: none; animation: none; }
+    .rpta-tabla td, .rpta-tabla td span, .rpta-tab { transition: none; }
+    :global(.js-rv) .rpta .rv { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // La matriz: se enciende al verse; las pestañas cambian de tienda (y giran solas cada 3.2 s mientras se ve, hasta que
+  // alguien elige una o si pide «reducir movimiento»). Sin JS se queda la primera tienda.
+  (() => {
+    const caja = document.querySelector<HTMLElement>('[data-rpta]');
+    if (!caja) return;
+    const datos: number[][][] = JSON.parse(caja.dataset.tiendas || '[]');
+    const tabs = Array.from(caja.querySelectorAll<HTMLButtonElement>('[data-tab]'));
+    const tabla = caja.querySelector<HTMLElement>('.rpta-tabla');
+    const filas = Array.from(caja.querySelectorAll<HTMLTableRowElement>('tbody tr'));
+    const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const tono = (v: number) => (v >= 70 ? 'alto' : v >= 40 ? 'medio' : 'bajo');
+    let actual = 0, timer = 0, visto = false, tocado = false, cambio = 0;
+    const pon = (i: number) => {
+      actual = i;
+      tabs.forEach((t, k) => t.setAttribute('aria-selected', k === i ? 'true' : 'false'));
+      const m = datos[i];
+      if (!m || !tabla) return;
+      tabla.classList.add('is-cambia');
+      window.clearTimeout(cambio);
+      cambio = window.setTimeout(() => {
+        filas.forEach((f, r) => Array.from(f.querySelectorAll('td')).forEach((td, c) => { const v = m[r][c]; td.dataset.tono = tono(v); const s = td.querySelector('span'); if (s) s.textContent = v + '%'; }));
+        tabla.classList.remove('is-cambia');
+      }, quieto ? 0 : 200);
+    };
+    tabs.forEach((t, k) => t.addEventListener('click', () => { tocado = true; para(); pon(k); }));
+    const para = () => { window.clearInterval(timer); timer = 0; };
+    const arranca = () => { if (!timer && visto && !tocado && !quieto && !document.hidden) timer = window.setInterval(() => pon((actual + 1) % tabs.length), 3200); };
+    if (!('IntersectionObserver' in window)) { caja.classList.add('is-on'); return; }
+    new IntersectionObserver((es) => {
+      visto = es.some((e) => e.isIntersecting);
+      if (visto) { caja.classList.add('is-on'); arranca(); } else para();
+    }, { threshold: 0.35 }).observe(caja);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) para(); else arranca(); });
+  })();
+</script>

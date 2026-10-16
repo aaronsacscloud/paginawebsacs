@@ -1,0 +1,112 @@
+---
+/**
+ * «Tu reporte, en cuatro pasos» (/producto/reportes-y-analitica): el Análisis de ventas. Arriba, su barra de filtros
+ * dibujada con las opciones REALES (sucursal, agrupar por, métrica, período), que van rodando solas como una tragamonedas
+ * mientras la sección se ve; al cambiar, «Generar reporte» late. Abajo, lo que alcanza (22 métricas, 16 formas de agrupar
+ * con talla y color, unos 30 reportes listos) y la pantalla REAL comparando dos semanas por categoría en las cuatro
+ * sucursales de la cuenta demo. Entrada: los cuatro campos entran uno tras otro desde la derecha. Marfil.
+ */
+import { ARMA, I } from '../../../data/producto-reportes';
+import StaffVentana from '../../plugins/staff/StaffVentana.astro';
+---
+<section class="pda rpar pd-marfil" id="rep-arma" aria-labelledby="rpar-h">
+  <p class="pd-folio"><span>{ARMA.k}</span><span>Reportes › Análisis de ventas</span></p>
+  <div class="rpar-cab">
+    <h2 class="pda-h" id="rpar-h">{ARMA.h}</h2>
+    <p class="rpar-p">{ARMA.p}</p>
+  </div>
+
+  <div class="rpar-barra" data-rpar role="img" aria-label="Los cuatro pasos del Análisis de ventas: sucursal, agrupar por (talla, color, categoría, marca, proveedor, vendedor), métrica (ventas, piezas, cheque promedio, descuentos, devoluciones, existencias) y período (atajos o comparar dos períodos)">
+    {ARMA.pasos.map((p, i) => (
+      <span class="rpar-campo rv" style={`--i:${i}`} aria-hidden="true">
+        <small><i>{i + 1}</i>{p.t}</small>
+        <span class="rpar-slot"><span class="rpar-rollo" data-rollo style="--k:0">{p.v.map((v) => <b>{v}</b>)}</span></span>
+      </span>
+    ))}
+    <span class="rpar-boton rv" style="--i:4" aria-hidden="true"><b data-late>Generar reporte</b></span>
+  </div>
+
+  <div class="rpar-grid">
+    <div class="rpar-lado">
+      <ul class="rpar-cuentas">{ARMA.cuentas.map((c, i) => <li class="rv" style={`--i:${i}`}><b>{c.v}</b><span>{c.t}</span></li>)}</ul>
+      <ul class="rpar-puntos">{ARMA.puntos.map((x) => <li><b>{x.t}</b><span>{x.d}</span></li>)}</ul>
+    </div>
+    <div class="rpar-ventana rv"><StaffVentana src={`${I}pantalla-compara.webp`} w={1400} h={860} alt="Análisis de ventas por categoría en las cuatro sucursales, comparando dos semanas: la venta de cada categoría en cada semana y su variación" barra="Reportes › Análisis de ventas" /></div>
+  </div>
+</section>
+
+<style>
+  .rpar-cab { display: grid; gap: 14px; }
+  .rpar-p { margin: 0; max-width: 50ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  /* la barra de filtros, dibujada como la de Sacs */
+  .rpar-barra { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin-top: 40px; overflow: hidden; border-radius: 18px; background: #E6E8EE; box-shadow: 0 30px 60px -36px rgba(16, 24, 40, 0.5), 0 0 0 1px rgba(16, 24, 40, 0.06); }
+  .rpar-campo { display: grid; gap: 10px; padding: 16px 16px 18px; background: #fff; }
+  .rpar-campo small { display: flex; align-items: center; gap: 8px; font: 700 11px/1 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: #6B7080; }
+  .rpar-campo small i { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #2F55C4; color: #fff; font: 800 10.5px/1 var(--font-display); font-style: normal; letter-spacing: 0; }
+  .rpar-slot { position: relative; display: block; height: 44px; overflow: hidden; border: 1px solid #E1E4EA; border-radius: 10px; background: #F8F9FB; }
+  .rpar-rollo { position: absolute; left: 0; right: 0; top: 0; display: grid; transform: translateY(calc(var(--k) * -44px)); transition: transform 0.7s cubic-bezier(0.34, 1.3, 0.64, 1); }
+  .rpar-rollo b { display: flex; align-items: center; height: 44px; padding: 0 12px; overflow: hidden; font: 600 14.5px/1.1 var(--font-display); color: #141414; white-space: nowrap; text-overflow: ellipsis; }
+  .rpar-boton { grid-column: 1 / -1; display: flex; align-items: center; padding: 14px 16px; background: #fff; }
+  .rpar-boton b { display: inline-grid; place-items: center; height: 46px; padding: 0 24px; border-radius: 12px; background: linear-gradient(180deg, #4D8DF6, #2F6FE8); color: #fff; font: 700 15px/1 var(--font-display); box-shadow: 0 10px 22px -10px rgba(47, 111, 232, 0.8); }
+  .rpar-boton b.is-late { animation: rparLate 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  @keyframes rparLate { 40% { transform: scale(1.07); } }
+  .rpar-grid { display: grid; gap: 28px; margin-top: 36px; }
+  .rpar-lado { display: grid; gap: 22px; align-content: start; }
+  .rpar-cuentas { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; border-top: 2px solid var(--pd-texto); }
+  .rpar-cuentas li { display: flex; align-items: baseline; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--pd-filete); }
+  .rpar-cuentas b { min-width: 2.2ch; font: 700 clamp(40px, 4.6vw, 60px)/0.95 var(--pd-clash); letter-spacing: -0.02em; color: #2F55C4; }
+  .rpar-cuentas span { font: 600 16px/1.3 var(--font-display); color: var(--pd-texto); }
+  .rpar-puntos { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+  .rpar-puntos li { display: grid; gap: 2px; }
+  .rpar-puntos b { font: 700 15.5px/1.3 var(--font-display); color: var(--pd-texto); }
+  .rpar-puntos span { font: 500 14.5px/1.45 var(--font-body); color: var(--pd-tenue); }
+  /* entradas: los campos llegan desde la derecha, uno tras otro; los números suben */
+  :global(.js-rv) .rpar-barra .rv { opacity: 0; transform: translateX(46px); transition: opacity 0.5s ease, transform 0.8s cubic-bezier(0.34, 1.3, 0.64, 1); transition-delay: calc(var(--i) * 0.12s); }
+  :global(.js-rv) .rpar-barra .rv.is-on { opacity: 1; transform: none; }
+  :global(.js-rv) .rpar-cuentas .rv { opacity: 0; transform: translateY(24px); transition: opacity 0.5s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 0.1s); }
+  :global(.js-rv) .rpar-cuentas .rv.is-on { opacity: 1; transform: none; }
+  :global(.js-rv) .rpar-ventana.rv { opacity: 0; transform: translateY(40px) rotate(-1.5deg); transform-origin: 0 100%; transition: opacity 0.7s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1); }
+  :global(.js-rv) .rpar-ventana.rv.is-on { opacity: 1; transform: none; }
+  @media (min-width: 900px) {
+    .rpar-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .rpar-barra { grid-template-columns: 1.15fr 1fr 1.15fr 1fr auto; margin-top: 56px; }
+    .rpar-boton { grid-column: auto; padding: 16px 20px; }
+    .rpar-campo { padding: 18px 20px 20px; }
+    .rpar-grid { grid-template-columns: minmax(0, 0.62fr) minmax(0, 1.38fr); gap: 4.5vw; align-items: start; margin-top: 56px; }
+  }
+  @media (max-width: 767px) {
+    .rpar-rollo b { font-size: 13.5px; padding: 0 10px; }
+    .rpar-ventana { overflow-x: auto; overscroll-behavior-x: contain; border-radius: 10px; }
+    .rpar-ventana > :global(.sv) { width: 720px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .rpar .rv { opacity: 1; transform: none; transition: none; }
+    .rpar-rollo { transition: none; }
+    .rpar-boton b.is-late { animation: none; }
+  }
+</style>
+
+<script>
+  // Las opciones ruedan solas mientras la barra se ve (y la pestaña está a la vista): cada campo a su turno, y
+  // «Generar reporte» late cuando termina la vuelta. Con «reducir movimiento» se quedan en la primera opción.
+  (() => {
+    const barra = document.querySelector<HTMLElement>('[data-rpar]');
+    if (!barra || window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return;
+    const rollos = Array.from(barra.querySelectorAll<HTMLElement>('[data-rollo]'));
+    const boton = barra.querySelector<HTMLElement>('[data-late]');
+    const k = rollos.map(() => 0);
+    let turno = 0, timer = 0, visto = false;
+    const paso = () => {
+      const i = turno % rollos.length;
+      const n = rollos[i].children.length;
+      k[i] = (k[i] + 1) % n;
+      rollos[i].style.setProperty('--k', String(k[i]));
+      turno += 1;
+      if (turno % rollos.length === 0 && boton) { boton.classList.remove('is-late'); requestAnimationFrame(() => requestAnimationFrame(() => boton.classList.add('is-late'))); }
+    };
+    const arranca = () => { if (!timer && visto && !document.hidden) timer = window.setInterval(paso, 1300); };
+    const para = () => { window.clearInterval(timer); timer = 0; };
+    new IntersectionObserver((es) => { visto = es.some((e) => e.isIntersecting); if (visto) arranca(); else para(); }, { threshold: 0.3 }).observe(barra);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) para(); else arranca(); });
+  })();
+</script>

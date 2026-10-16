@@ -1,0 +1,434 @@
+---
+/**
+ * «Mientras duermes» (/producto/nivelacion-de-inventario): la corrida de cada madrugada con el scroll
+ * (data-tramos="6"), de las 2:10 a la tienda que recibe. Al fondo, el cielo pasa de la noche al amanecer (--p) y en la
+ * mañana entran las fotos (gpt-image-2.5: la dueña con su café, la caja del traspaso, la tienda que recibe). Encima, el
+ * reloj cambia de hora y cada paso llega como una carta dibujada con los textos reales del tablero, la Mesa y
+ * SACSMobile y los números de la boutique de prueba (Botín de piel con tacón · Negro): el cubo de tiendas × tallas, el
+ * tablero con «NUEVO HOY», «¿Por qué?» en el celular, el plan, un traspaso por tienda y la recepción.
+ * En el teléfono: el escenario arriba y el paso abajo. Sin JS o con «reducir movimiento»: las seis cartas en rejilla,
+ * cada una con su hora, y los pasos en lista.
+ */
+import { NOCHE, I } from '../../../data/producto-nivelacion';
+const FOTOS = [
+  { f: 'madrugada', alt: 'Al amanecer, la dueña de la boutique revisa en su celular el tablero del día, con un café junto a la ventana' },
+  { f: 'caja', alt: 'En la tienda de origen, una vendedora acomoda en una caja los vestidos del traspaso' },
+  { f: 'recibe', alt: 'En la tienda que recibe, una vendedora saca de la caja un vestido de lino y lo cuelga' },
+];
+const T = NOCHE.tramos;
+const ultimo = T.length - 1;
+const totalPlan = NOCHE.plan.reduce((s, p) => s + p.n, 0);
+const leon = NOCHE.plan.find((p) => p.t === 'León Altacia')!;
+---
+<section class="nvn" id="nv-noche" data-escena data-tramos={T.length} data-tramo={ultimo} data-foto={T[ultimo].foto} data-horas={JSON.stringify(T.map((t) => [t.hora, t.sufijo]))} data-fotos={JSON.stringify(T.map((t) => t.foto))} aria-labelledby="nvn-h">
+  <div class="nvn-riel" data-riel>
+    <div class="nvn-escena">
+      <div class="nvn-cielo" aria-hidden="true"><i class="nvn-estrellas"></i><i class="nvn-alba"></i></div>
+      <div class="nvn-fotos">
+        {FOTOS.map((x) => (
+          <img class="nvn-foto" data-f={x.f} src={`${I}${x.f}-1280.webp`} srcset={`${I}${x.f}-900.webp 900w, ${I}${x.f}-1280.webp 1280w, ${I}${x.f}-1536.webp 1536w`} sizes="100vw" width="1536" height="1024" alt={x.alt} loading="lazy" decoding="async" />
+        ))}
+      </div>
+
+      <div class="nvn-mesa" aria-hidden="true">
+        <span class="nvn-reloj"><b data-hora>{T[ultimo].hora}</b><small data-sufijo>{T[ultimo].sufijo}</small></span>
+        <span class="nvn-ej">Ejemplo con la boutique de prueba</span>
+
+        <!-- 0 · el cubo: cada talla en cada tienda y en el CEDIS -->
+        <div class="nvn-carta" data-k="0" data-estado="antes">
+          <span class="nvn-hora-q">{T[0].hora} {T[0].sufijo}</span>
+          <span class="nvn-cubo">
+            <span class="nvn-cubo-cab"><b>Botín de piel con tacón · Negro</b><small>Existencia de hoy, talla por talla</small></span>
+            <span class="nvn-cubo-g" style={`--c:${NOCHE.tallas.length}`}>
+              <i class="nvn-cubo-t">Tienda</i>
+              {NOCHE.tallas.map((t) => <i class="nvn-cubo-t nvn-cubo-num">{t}</i>)}
+              {NOCHE.tiendas.map((s, f) => (
+                <>
+                  <i class="nvn-cubo-s">{s.t}{s.n && <em>{s.n}</em>}</i>
+                  {s.v.map((v, c) => <i class:list={['nvn-cubo-c', { 'is-cero': v === 0 }]} style={`--d:${f * 5 + c}`}>{v}</i>)}
+                </>
+              ))}
+              <i class="nvn-scan"></i>
+            </span>
+            <span class="nvn-capas"><i>Venta</i><i>Existencia</i><i>Apartados</i><i>En camino</i></span>
+          </span>
+        </div>
+
+        <!-- 1 · el tablero de las 3:40 -->
+        <div class="nvn-carta" data-k="1" data-estado="antes">
+          <span class="nvn-hora-q">{T[1].hora} {T[1].sufijo}</span>
+          <span class="nvn-tablero">
+            <span class="nvn-toast"><i>🔔</i>Tu tablero de hoy está listo</span>
+            <span class="nvn-tab-cab"><b>Tablero</b><small>Calculado hoy, 3:40 a. m.</small></span>
+            {NOCHE.tablero.map((c, i) => (
+              <span class="nvn-tarjeta" style={`--i:${i}`}><em>Nuevo hoy</em><b>{c.t}</b><small>{c.d}</small></span>
+            ))}
+            <span class="nvn-espera">▸ Puede esperar (3)</span>
+          </span>
+        </div>
+
+        <!-- 2 · ¿por qué?, en el celular -->
+        <div class="nvn-carta" data-k="2" data-estado="antes">
+          <span class="nvn-hora-q">{T[2].hora} {T[2].sufijo}</span>
+          <span class="nvn-cel">
+            <span class="nvn-cel-top"><b>Tablero</b><small>Hoy</small></span>
+            <span class="nvn-tarjeta nvn-tarjeta--abierta"><em>Nuevo hoy</em><b>{NOCHE.tablero[0].t}</b><small>{NOCHE.tablero[0].d}</small>
+              <span class="nvn-pq"><small>¿Por qué?</small><span>{NOCHE.porque}</span></span>
+            </span>
+            <span class="nvn-tarjeta nvn-tarjeta--gris"><em>Nuevo hoy</em><b>{NOCHE.tablero[1].t}</b></span>
+          </span>
+        </div>
+
+        <!-- 3 · el plan -->
+        <div class="nvn-carta" data-k="3" data-estado="antes">
+          <span class="nvn-hora-q">{T[3].hora} {T[3].sufijo}</span>
+          <span class="nvn-plan">
+            <span class="nvn-plan-cab"><b>El plan</b><small>Mueve solo lo que el destino puede vender</small></span>
+            <span class="nvn-plan-g">
+              <span class="nvn-origen"><b>CEDIS</b><small>sale {totalPlan}</small></span>
+              <span class="nvn-rutas">
+                {NOCHE.plan.map((p, i) => (
+                  <span class="nvn-ruta" style={`--i:${i}`}><i class="nvn-flecha"></i><b>{p.t}</b><em>+{p.n}</em></span>
+                ))}
+              </span>
+            </span>
+            <span class="nvn-quitado"><i>✕</i><s>{NOCHE.quitado}</s></span>
+            <u class="nvn-boton">Crear {NOCHE.plan.length} traspasos seguros</u>
+          </span>
+        </div>
+
+        <!-- 4 · un traspaso por tienda -->
+        <div class="nvn-carta" data-k="4" data-estado="antes">
+          <span class="nvn-hora-q">{T[4].hora} {T[4].sufijo}</span>
+          <span class="nvn-tras">
+            <span class="nvn-pila">
+              {NOCHE.plan.map((p, i) => (
+                <span class="nvn-tr" style={`--i:${i}`}><small>Traspaso · Por enviar</small><b>CEDIS → {p.t}</b><em>{p.n} piezas</em></span>
+              ))}
+            </span>
+            <span class="nvn-surtido">
+              <small>Lista de surtido · {leon.t}</small>
+              <b>Botín de piel con tacón › Negro</b>
+              <span class="nvn-tallas">{NOCHE.surtido.map(([t, n], i) => <i style={`--i:${i}`}><b>{t}</b>×{n}</i>)}</span>
+              <span class="nvn-surtido-pie">Nada sale hasta que lo envíen</span>
+            </span>
+          </span>
+        </div>
+
+        <!-- 5 · se recibe en SACSMobile -->
+        <div class="nvn-carta" data-k="5" data-estado="ahora">
+          <span class="nvn-hora-q">{T[5].hora}</span>
+          <span class="nvn-cel nvn-cel--sm">
+            <span class="nvn-cel-top"><b>Transferencia</b><em>Enviada</em></span>
+            <span class="nvn-cel-ruta"><span><small>Origen</small><b>CEDIS</b></span><span><small>Destino</small><b>{leon.t}</b></span></span>
+            <span class="nvn-cel-prod"><i>B</i><span><b>Botín de piel con tacón</b><small>Negro · 25</small></span><em>11</em></span>
+            <span class="nvn-cel-prod"><i>B</i><span><b>Botín de piel con tacón</b><small>Negro · 26</small></span><em>8</em></span>
+            <span class="nvn-hoja">
+              <b class="nvn-hoja-t">¿Recibir transferencia?</b>
+              <span class="nvn-op is-rec"><b>Recibir solo lo que ingresé</b><small>Recomendado — el inventario queda cuadrado</small></span>
+              <span class="nvn-op"><b>Recibir completa</b><small>Da por recibido todo lo enviado</small></span>
+              <span class="nvn-op"><b>Recibir parcial</b><small>Queda abierta para capturar el resto luego</small></span>
+            </span>
+            <span class="nvn-sello">✓ Recibida completa</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="nvn-txt">
+        <p class="nvn-k">{NOCHE.k}</p>
+        <h2 class="nvn-h" id="nvn-h">{NOCHE.h}</h2>
+        <ol class="nvn-pasos">
+          {T.map((p, k) => (
+            <li class="nvn-paso" data-k={k}>
+              <span class="nvn-paso-n">{p.hora}</span>
+              <span class="nvn-paso-t"><b>{p.t}</b><span>{p.d}</span></span>
+              <i class="nvn-barra" aria-hidden="true"><b></b></i>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .nvn { position: relative; background: #060A1C; color: #fff; }
+  .nvn-escena { position: relative; overflow: hidden; }
+
+  /* ── el cielo: noche con estrellas que se va aclarando (--p) ── */
+  .nvn-cielo { position: absolute; inset: 0; background: linear-gradient(180deg, #03061A 0%, #0A1442 58%, #18245E 100%); }
+  .nvn-cielo i { position: absolute; inset: 0; }
+  .nvn-estrellas { background-image: radial-gradient(1.5px 1.5px at 12% 18%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 28% 42%, rgba(255, 255, 255, 0.8) 50%, transparent 51%), radial-gradient(1.5px 1.5px at 46% 12%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 63% 30%, rgba(255, 255, 255, 0.7) 50%, transparent 51%), radial-gradient(1.5px 1.5px at 78% 8%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 88% 36%, rgba(255, 255, 255, 0.8) 50%, transparent 51%), radial-gradient(1px 1px at 36% 66%, rgba(255, 255, 255, 0.6) 50%, transparent 51%), radial-gradient(1.5px 1.5px at 6% 58%, rgba(255, 255, 255, 0.8) 50%, transparent 51%); opacity: calc(1 - var(--p, 1) * 2.6); }
+  .nvn-alba { background: linear-gradient(180deg, #2B3A7A 0%, #C77D7A 62%, #F2B880 100%); opacity: calc((var(--p, 1) - 0.18) * 3.2); }
+  .nvn:not(.is-escena) .nvn-cielo { display: none; }
+
+  /* ── sin escena: arriba la foto de la mañana, las seis cartas en rejilla y los pasos en lista ── */
+  .nvn-fotos { position: relative; aspect-ratio: 3 / 2; overflow: hidden; }
+  .nvn-foto { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; opacity: 0; transition: opacity 1s ease; }
+  .nvn-foto[data-f="madrugada"] { opacity: 1; }
+  .nvn-mesa { position: relative; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; padding: 28px 20px 0; color: #141414; }
+  .nvn-reloj, .nvn-ej { display: none; }
+  .nvn-carta { position: relative; display: grid; gap: 10px; align-content: start; justify-items: center; }
+  .nvn-hora-q { justify-self: start; font: 700 14px/1 'JetBrains Mono', ui-monospace, monospace; color: #F2B880; }
+  .nvn-txt { position: relative; padding: 36px 20px 56px; }
+  .nvn-k { margin: 0 0 14px; font: 600 12px/1.3 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: #F2B880; }
+  .nvn-h { margin: 0; max-width: 14ch; color: #fff; font: 700 clamp(34px, 3.8vw, 58px)/0.98 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; text-wrap: balance; }
+  .nvn-pasos { margin: 22px 0 0; padding: 0; list-style: none; border-top: 1px solid rgba(255, 255, 255, 0.3); }
+  .nvn-paso { position: relative; display: grid; grid-template-columns: 76px 1fr; gap: 4px; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.18); }
+  .nvn-paso-n { font: 700 16px/1.3 'JetBrains Mono', ui-monospace, monospace; color: #F2B880; white-space: nowrap; }
+  .nvn-paso-t { display: grid; gap: 3px; }
+  .nvn-paso-t b { font: 700 16px/1.3 var(--font-display); color: #fff; }
+  .nvn-paso-t > span { font: 500 14.5px/1.45 var(--font-body); color: rgba(255, 255, 255, 0.82); }
+  .nvn-barra { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; overflow: hidden; }
+  .nvn-barra b { display: block; height: 100%; background: #F2B880; transform: scaleX(0); transform-origin: 0 50%; }
+
+  /* ── las cartas (dibujos) ── */
+  /* 0 · el cubo */
+  .nvn-cubo { position: relative; display: grid; gap: 12px; width: min(100%, 540px); padding: 18px; border-radius: 18px; background: #fff; box-shadow: 0 30px 60px -28px rgba(0, 0, 0, 0.9); }
+  .nvn-cubo-cab { display: grid; gap: 2px; }
+  .nvn-cubo-cab b { font: 700 15px/1.2 var(--font-display); }
+  .nvn-cubo-cab small { font: 600 11.5px/1.2 var(--font-display); color: #6B6A64; }
+  .nvn-cubo-g { position: relative; display: grid; grid-template-columns: minmax(0, 1.9fr) repeat(var(--c), minmax(0, 1fr)); gap: 4px; overflow: hidden; }
+  .nvn-cubo-g i { font-style: normal; }
+  .nvn-cubo-t { padding: 0 0 4px; font: 700 10px/1.2 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: #8A8A85; }
+  .nvn-cubo-num { text-align: center; }
+  .nvn-cubo-s { display: flex; align-items: center; gap: 5px; min-width: 0; overflow: hidden; font: 600 12.5px/1.2 var(--font-display); white-space: nowrap; text-overflow: ellipsis; }
+  .nvn-cubo-s em { flex: none; padding: 1px 5px; border-radius: 5px; background: #F2F3F6; font: 700 10px/1.3 var(--font-display); font-style: normal; color: #6B6A64; }
+  .nvn-cubo-c { display: grid; place-items: center; height: 30px; border-radius: 7px; background: #EEF2FD; font: 700 13px/1 var(--font-display); color: #1F3A8A; font-variant-numeric: tabular-nums; }
+  .nvn-cubo-c.is-cero { background: #FDE8E8; color: #C62828; box-shadow: inset 0 0 0 1.5px #E57373; }
+  .nvn-scan { position: absolute; top: 0; bottom: 0; left: 0; width: 36%; background: linear-gradient(90deg, transparent, rgba(68, 112, 216, 0.22), transparent); pointer-events: none; transform: translateX(-110%); }
+  .nvn-capas { display: flex; flex-wrap: wrap; gap: 6px; }
+  .nvn-capas i { padding: 5px 10px; border-radius: 99px; background: #F2F3F6; font: 700 11px/1.2 var(--font-display); font-style: normal; color: #45433E; }
+
+  /* 1 · el tablero */
+  .nvn-tablero { position: relative; display: grid; gap: 8px; width: min(100%, 430px); padding: 16px; border-radius: 18px; background: #F6F7F9; box-shadow: 0 30px 60px -28px rgba(0, 0, 0, 0.9); }
+  .nvn-toast { display: flex; align-items: center; gap: 8px; justify-self: center; margin: -34px 0 4px; padding: 9px 14px; border-radius: 12px; background: #141414; color: #fff; font: 700 12.5px/1.2 var(--font-display); box-shadow: 0 14px 28px -14px rgba(0, 0, 0, 0.8); }
+  .nvn-toast i { font-style: normal; }
+  .nvn-tab-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 0 2px; }
+  .nvn-tab-cab b { font: 700 16px/1.2 var(--font-display); }
+  .nvn-tab-cab small { font: 600 11px/1.2 var(--font-display); color: #6B6A64; }
+  .nvn-tarjeta { display: grid; gap: 3px; padding: 11px 12px; border-radius: 12px; background: #fff; box-shadow: 0 0 0 1px rgba(20, 20, 20, 0.06); text-align: left; }
+  .nvn-tarjeta em { justify-self: start; padding: 3px 7px; border-radius: 99px; background: #FDE7EF; color: #C2185B; font: 800 9.5px/1.2 var(--font-display); font-style: normal; letter-spacing: 0.08em; text-transform: uppercase; }
+  .nvn-tarjeta b { font: 700 14px/1.25 var(--font-display); color: #141414; }
+  .nvn-tarjeta small { font: 500 12px/1.35 var(--font-body); color: #6B6A64; }
+  .nvn-espera { padding: 7px 10px; border-radius: 10px; border: 1px dashed #C9CBD1; font: 600 11.5px/1.2 var(--font-display); color: #6B6A64; }
+
+  /* 2 y 5 · el celular */
+  .nvn-cel { position: relative; display: grid; align-content: start; gap: 9px; width: min(100%, 290px); padding: 14px 12px; overflow: hidden; border: 9px solid #141416; border-radius: 34px; background: #F6F7F9; box-shadow: 0 30px 60px -28px rgba(0, 0, 0, 0.9); }
+  .nvn-cel-top { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px 4px; }
+  .nvn-cel-top b { font: 700 15px/1.2 var(--font-display); color: #141414; }
+  .nvn-cel-top small { font: 600 11px/1.2 var(--font-display); color: #6B6A64; }
+  .nvn-cel-top em { padding: 3px 8px; border-radius: 99px; background: #EAF0FE; color: #2F55C4; font: 700 10.5px/1.2 var(--font-display); font-style: normal; }
+  .nvn-tarjeta--abierta { box-shadow: 0 0 0 2px #D03A70; }
+  .nvn-tarjeta--gris { opacity: 0.55; }
+  .nvn-pq { display: grid; gap: 4px; margin-top: 6px; padding: 9px 10px; border-radius: 10px; background: #F2F5FD; border-top: 3px solid #4470D8; }
+  .nvn-pq small { font: 800 9.5px/1.2 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: #6B6A64; }
+  .nvn-pq span { font: 600 12.5px/1.45 var(--font-body); color: #141414; }
+  .nvn-cel-ruta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .nvn-cel-ruta > span { display: grid; gap: 1px; padding: 8px 9px; border-radius: 10px; background: #fff; }
+  .nvn-cel-ruta small { font: 600 10px/1.2 var(--font-display); color: #8A8A85; }
+  .nvn-cel-ruta b { font: 700 12.5px/1.2 var(--font-display); color: #141414; }
+  .nvn-cel-prod { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 10px; background: #fff; }
+  .nvn-cel-prod > i { display: grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 8px; background: #EEF2FD; color: #2F55C4; font: 800 11px/1 var(--font-display); font-style: normal; }
+  .nvn-cel-prod > span { display: grid; flex: 1; min-width: 0; }
+  .nvn-cel-prod b { overflow: hidden; font: 700 11.5px/1.25 var(--font-display); color: #141414; white-space: nowrap; text-overflow: ellipsis; }
+  .nvn-cel-prod small { font: 500 10.5px/1.2 var(--font-body); color: #6B6A64; }
+  .nvn-cel-prod em { font: 700 13px/1 var(--font-display); font-style: normal; color: #141414; }
+  .nvn-hoja { display: grid; gap: 6px; margin: 2px -12px -14px; padding: 12px 12px 14px; border-radius: 18px 18px 0 0; background: #fff; box-shadow: 0 -12px 24px -16px rgba(0, 0, 0, 0.35); }
+  .nvn-hoja-t { font: 700 13px/1.2 var(--font-display); color: #141414; }
+  .nvn-op { display: grid; gap: 1px; padding: 8px 10px; border-radius: 10px; background: #F6F7F9; }
+  .nvn-op b { font: 700 12px/1.2 var(--font-display); color: #141414; }
+  .nvn-op small { font: 500 10.5px/1.3 var(--font-body); color: #6B6A64; }
+  .nvn-op.is-rec { background: #E3F4EA; box-shadow: inset 0 0 0 1.5px #1F9D63; }
+  .nvn-op.is-rec small { color: #17804F; }
+  .nvn-sello { position: absolute; left: 50%; top: 40%; padding: 10px 16px; border: 2.5px solid #1F9D63; border-radius: 12px; background: rgba(255, 255, 255, 0.94); color: #17804F; font: 800 15px/1 var(--font-display); white-space: nowrap; transform: translate(-50%, -50%) rotate(-8deg); }
+
+  /* 3 · el plan */
+  .nvn-plan { display: grid; gap: 12px; width: min(100%, 470px); padding: 18px; border-radius: 18px; background: #fff; box-shadow: 0 30px 60px -28px rgba(0, 0, 0, 0.9); }
+  .nvn-plan-cab { display: grid; gap: 2px; }
+  .nvn-plan-cab b { font: 700 18px/1.15 var(--font-display); }
+  .nvn-plan-cab small { font: 600 12px/1.3 var(--font-display); color: #D03A70; }
+  .nvn-plan-g { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; }
+  .nvn-origen { display: grid; place-items: center; gap: 2px; width: 82px; height: 82px; border-radius: 16px; background: #0A1648; color: #fff; text-align: center; }
+  .nvn-origen b { font: 700 15px/1 var(--font-display); }
+  .nvn-origen small { font: 600 10.5px/1.2 var(--font-display); color: #9DB8F5; }
+  .nvn-rutas { display: grid; gap: 7px; }
+  .nvn-ruta { display: grid; grid-template-columns: 34px 1fr auto; gap: 8px; align-items: center; }
+  .nvn-flecha { position: relative; height: 2px; background: #D03A70; transform-origin: 0 50%; }
+  .nvn-flecha::after { content: ''; position: absolute; right: -1px; top: -4px; border: 5px solid transparent; border-left: 7px solid #D03A70; border-right: 0; }
+  .nvn-ruta b { overflow: hidden; font: 600 13px/1.2 var(--font-display); white-space: nowrap; text-overflow: ellipsis; }
+  .nvn-ruta em { padding: 3px 8px; border-radius: 99px; background: #FDE7EF; color: #C2185B; font: 700 12px/1.2 var(--font-display); font-style: normal; }
+  .nvn-quitado { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: #F6F7F9; font: 500 12px/1.35 var(--font-body); color: #6B6A64; }
+  .nvn-quitado i { display: grid; place-items: center; flex: none; width: 20px; height: 20px; border-radius: 50%; background: #FDE8E8; color: #C62828; font: 800 11px/1 var(--font-display); font-style: normal; }
+  .nvn-quitado s { text-decoration-color: rgba(198, 40, 40, 0.7); }
+  .nvn-boton { display: grid; place-items: center; height: 42px; border-radius: 11px; background: #D03A70; color: #fff; font: 700 14px/1 var(--font-display); text-decoration: none; }
+
+  /* 4 · un traspaso por tienda */
+  .nvn-tras { position: relative; display: grid; gap: 14px; justify-items: center; width: min(100%, 470px); }
+  .nvn-pila { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 100%; }
+  .nvn-tr { display: grid; gap: 3px; padding: 11px 12px; border-radius: 12px; background: #fff; box-shadow: 0 18px 30px -20px rgba(0, 0, 0, 0.8); }
+  .nvn-tr small { justify-self: start; padding: 2px 7px; border-radius: 99px; background: #FFF4E5; color: #8A5A00; font: 700 9.5px/1.3 var(--font-display); }
+  .nvn-tr b { overflow: hidden; font: 700 12.5px/1.25 var(--font-display); color: #141414; white-space: nowrap; text-overflow: ellipsis; }
+  .nvn-tr em { font: 600 11.5px/1.2 var(--font-display); font-style: normal; color: #6B6A64; }
+  .nvn-surtido { display: grid; gap: 6px; width: min(100%, 360px); padding: 14px 16px; border-radius: 16px; background: #fff; box-shadow: 0 30px 60px -28px rgba(0, 0, 0, 0.9), 0 0 0 2px #F2B880; }
+  .nvn-surtido > small { font: 700 10px/1.2 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A85; }
+  .nvn-surtido > b { font: 700 14px/1.2 var(--font-display); color: #141414; }
+  .nvn-tallas { display: flex; flex-wrap: wrap; gap: 5px; }
+  .nvn-tallas i { display: inline-flex; align-items: baseline; gap: 3px; padding: 5px 9px; border-radius: 8px; background: #F2F3F6; font: 600 12px/1.2 var(--font-display); font-style: normal; color: #45433E; }
+  .nvn-tallas i b { color: #141414; }
+  .nvn-surtido-pie { font: 600 11.5px/1.3 var(--font-display); color: #17804F; }
+
+  /* ══ con el scroll ══ */
+  .nvn.is-escena .nvn-riel { height: 640vh; }
+  .nvn.is-escena .nvn-escena { position: sticky; top: var(--sub, 0px); height: calc(100vh - var(--sub, 0px)); height: calc(100svh - var(--sub, 0px)); }
+  .nvn.is-escena .nvn-fotos { position: absolute; inset: 0; aspect-ratio: auto; }
+  .nvn.is-escena .nvn-foto { opacity: 0; transform: scale(1.06); transition: opacity 1s ease, transform 6s ease-out; }
+  .nvn.is-escena[data-foto="madrugada"] .nvn-foto[data-f="madrugada"], .nvn.is-escena[data-foto="caja"] .nvn-foto[data-f="caja"], .nvn.is-escena[data-foto="recibe"] .nvn-foto[data-f="recibe"] { opacity: 1; transform: none; }
+  .nvn.is-escena .nvn-mesa { position: absolute; z-index: 3; display: block; padding: 0; }
+  .nvn.is-escena .nvn-reloj { position: absolute; z-index: 2; display: flex; align-items: baseline; gap: 8px; color: #fff; }
+  .nvn-reloj b { font: 700 clamp(40px, 5vw, 76px)/1 'JetBrains Mono', ui-monospace, monospace; letter-spacing: -0.03em; }
+  .nvn-reloj small { font: 700 clamp(14px, 1.3vw, 18px)/1 'JetBrains Mono', ui-monospace, monospace; color: #F2B880; }
+  .nvn-reloj.is-cambia b { animation: nvnFlip 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+  @keyframes nvnFlip { from { opacity: 0; transform: translateY(-40%) rotateX(70deg); } to { opacity: 1; transform: none; } }
+  .nvn.is-escena .nvn-ej { position: absolute; z-index: 2; display: block; padding: 5px 10px; border-radius: 99px; background: rgba(255, 255, 255, 0.14); color: rgba(255, 255, 255, 0.8); font: 600 11px/1.2 var(--font-display); }
+  .nvn.is-escena .nvn-hora-q { display: none; }
+  .nvn.is-escena .nvn-carta { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; transition: opacity 0.55s ease, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
+  .nvn.is-escena .nvn-carta[data-estado="antes"] { opacity: 0; transform: translateY(14%) scale(0.94); pointer-events: none; }
+  .nvn.is-escena .nvn-carta[data-estado="despues"] { opacity: 0; transform: translateY(-10%) scale(0.92); pointer-events: none; }
+  .nvn.is-escena .nvn-carta[data-estado="ahora"] { opacity: 1; transform: none; }
+  .nvn.is-escena .nvn-paso-n { color: rgba(255, 255, 255, 0.45); }
+  .nvn.is-escena .nvn-paso.is-ahora .nvn-paso-n { color: #F2B880; }
+  .nvn.is-escena .nvn-paso.is-ahora .nvn-barra b { animation: nvnBarra 4.5s linear both; }
+  @keyframes nvnBarra { from { transform: scaleX(0); } to { transform: none; } }
+  /* lo que se mueve dentro de cada carta, cuando es la de ahora */
+  .nvn.is-escena .nvn-carta .nvn-cubo-c { opacity: 0; transform: scale(0.6); }
+  .nvn.is-escena .nvn-carta[data-estado="ahora"] .nvn-cubo-c { opacity: 1; transform: none; transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); transition-delay: calc(0.15s + var(--d) * 0.035s); }
+  .nvn.is-escena .nvn-carta[data-estado="ahora"] .nvn-scan { animation: nvnScan 2.4s ease-in-out 0.3s infinite; }
+  @keyframes nvnScan { from { transform: translateX(-110%); } to { transform: translateX(290%); } }
+  .nvn.is-escena .nvn-carta[data-estado="ahora"] .nvn-capas i { animation: nvnCapa 3.2s ease infinite; }
+  .nvn.is-escena .nvn-capas i:nth-child(2) { animation-delay: 0.8s !important; }
+  .nvn.is-escena .nvn-capas i:nth-child(3) { animation-delay: 1.6s !important; }
+  .nvn.is-escena .nvn-capas i:nth-child(4) { animation-delay: 2.4s !important; }
+  @keyframes nvnCapa { 0%, 30%, 100% { background: #F2F3F6; color: #45433E; } 8%, 22% { background: #2F55C4; color: #fff; } }
+  .nvn.is-escena .nvn-carta .nvn-toast { opacity: 0; transform: translateY(-24px); }
+  .nvn.is-escena .nvn-carta[data-estado="ahora"] .nvn-toast { opacity: 1; transform: none; transition: opacity 0.4s ease 0.2s, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s; }
+  .nvn.is-escena .nvn-carta .nvn-tablero .nvn-tarjeta { opacity: 0; transform: translateX(30px); }
+  .nvn.is-escena .nvn-carta[data-estado="ahora"] .nvn-tablero .nvn-tarjeta { opacity: 1; transform: none; transition: opacity 0.4s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(0.55s + var(--i) * 0.14s); }
+  .nvn.is-escena .nvn-carta .nvn-pq { opacity: 0; transform: translateY(10px); }
+  .nvn.is-escena .nvn-carta[data-estado="ahora"] .nvn-pq { opacity: 1; transform: none; transition: opacity 0.5s ease 0.45s, transform 0.6s ease 0.45s; }
+  .nvn.is-escena .nvn-carta .nvn-flecha { transform: scaleX(0); }
+  .nvn.is-escena .nvn-carta[data-estado="ahora"] .nvn-flecha { transform: none; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); transition-delay: calc(0.25s + var(--i) * 0.15s); }
+  .nvn.is-escena .nvn-carta .nvn-quitado s { text-decoration-line: none; }
+  .nvn.is-escena .nvn-carta[data-estado="ahora"] .nvn-quitado s { text-decoration-line: line-through; transition: text-decoration-color 0.3s ease 1.1s; }
+  .nvn.is-escena .nvn-carta[data-estado="ahora"] .nvn-boton { animation: nvnLate 1.6s ease 1.3s 2; }
+  @keyframes nvnLate { 0%, 100% { box-shadow: 0 0 0 0 rgba(208, 58, 112, 0.5); } 50% { box-shadow: 0 0 0 10px rgba(208, 58, 112, 0); } }
+  .nvn.is-escena .nvn-carta .nvn-tr { opacity: 0; transform: translateY(26px) rotate(calc((var(--i) - 1.5) * 4deg)); }
+  .nvn.is-escena .nvn-carta[data-estado="ahora"] .nvn-tr { opacity: 1; transform: none; transition: opacity 0.4s ease, transform 0.7s cubic-bezier(0.34, 1.3, 0.64, 1); transition-delay: calc(0.15s + var(--i) * 0.12s); }
+  .nvn.is-escena .nvn-carta .nvn-surtido { opacity: 0; transform: translateY(30px) scale(0.96); }
+  .nvn.is-escena .nvn-carta[data-estado="ahora"] .nvn-surtido { opacity: 1; transform: none; transition: opacity 0.5s ease 0.8s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.8s; }
+  .nvn.is-escena .nvn-carta .nvn-hoja { transform: translateY(100%); }
+  .nvn.is-escena .nvn-carta[data-estado="ahora"] .nvn-hoja { transform: none; transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.3s; }
+  .nvn.is-escena .nvn-carta .nvn-op.is-rec { background: #F6F7F9; box-shadow: none; }
+  .nvn.is-escena .nvn-carta[data-estado="ahora"] .nvn-op.is-rec { background: #E3F4EA; box-shadow: inset 0 0 0 1.5px #1F9D63; transition: background 0.3s ease 1.2s, box-shadow 0.3s ease 1.2s; }
+  .nvn.is-escena .nvn-carta .nvn-sello { opacity: 0; transform: translate(-50%, -50%) rotate(-8deg) scale(1.8); }
+  .nvn.is-escena .nvn-carta[data-estado="ahora"] .nvn-sello { opacity: 1; transform: translate(-50%, -50%) rotate(-8deg); transition: opacity 0.25s ease 1.9s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 1.9s; }
+
+  @media (min-width: 900px) {
+    .nvn.is-escena .nvn-escena::after { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; background: linear-gradient(90deg, rgba(4, 7, 22, 0.94) 0%, rgba(4, 7, 22, 0.7) 30%, rgba(4, 7, 22, 0.22) 58%, rgba(4, 7, 22, 0.4) 100%); }
+    .nvn.is-escena .nvn-txt { position: absolute; left: 0; top: 50%; z-index: 4; width: min(36vw, 480px); padding: 0 0 0 4.4vw; transform: translateY(-50%); text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45); }
+    .nvn.is-escena .nvn-paso-t > span { display: none; }
+    .nvn.is-escena .nvn-paso.is-ahora .nvn-paso-t > span { display: block; }
+    /* la mesa a la derecha; el reloj arriba de ella */
+    .nvn.is-escena .nvn-mesa { right: 5vw; top: 19%; bottom: 7%; width: min(46vw, 640px); }
+    .nvn.is-escena .nvn-reloj { right: 0; top: -12vh; }
+    .nvn.is-escena .nvn-ej { left: 0; top: calc(-12vh + 14px); }
+    .nvn:not(.is-escena) .nvn-mesa { max-width: 1160px; margin: 0 auto; padding: 40px 5vw 0; }
+    .nvn:not(.is-escena) .nvn-pasos { display: grid; grid-template-columns: 1fr 1fr; column-gap: 32px; }
+    .nvn:not(.is-escena) .nvn-txt { max-width: 1160px; margin: 0 auto; }
+    .nvn:not(.is-escena) .nvn-fotos { aspect-ratio: 21 / 9; }
+  }
+  @media (max-width: 899px) {
+    .nvn.is-escena .nvn-riel { height: 560vh; }
+    /* el escenario arriba (la foto oscurecida y la carta de frente), el paso abajo */
+    .nvn.is-escena .nvn-fotos { bottom: auto; height: calc((100svh - var(--sub, 0px)) * 0.6); }
+    .nvn.is-escena .nvn-fotos::after { content: ''; position: absolute; inset: 0; background: rgba(4, 7, 22, 0.55); }
+    .nvn.is-escena .nvn-mesa { left: 16px; right: 16px; top: 54px; height: calc((100svh - var(--sub, 0px)) * 0.6 - 64px); }
+    .nvn.is-escena .nvn-reloj { left: 0; top: -44px; }
+    .nvn-reloj b { font-size: 30px; }
+    .nvn-reloj small { font-size: 12px; }
+    .nvn.is-escena .nvn-ej { right: 0; top: -38px; }
+    /* las cartas, más compactas */
+    .nvn.is-escena .nvn-cubo { padding: 12px; gap: 8px; }
+    .nvn.is-escena .nvn-cubo-cab small { display: none; }
+    .nvn.is-escena .nvn-cubo-c { height: 24px; font-size: 12px; }
+    .nvn.is-escena .nvn-cubo-s { font-size: 11px; }
+    .nvn.is-escena .nvn-capas i { padding: 4px 8px; font-size: 10px; }
+    .nvn.is-escena .nvn-tablero { gap: 6px; padding: 12px; }
+    .nvn.is-escena .nvn-tarjeta { padding: 8px 10px; }
+    .nvn.is-escena .nvn-tarjeta b { font-size: 12.5px; }
+    .nvn.is-escena .nvn-tarjeta small { font-size: 11px; }
+    .nvn.is-escena .nvn-toast { margin-top: -6px; }
+    .nvn.is-escena .nvn-cel { width: min(100%, 300px); padding: 10px; border-width: 6px; border-radius: 24px; gap: 6px; }
+    .nvn.is-escena .nvn-cel .nvn-tarjeta--gris { display: none; }
+    .nvn.is-escena .nvn-cel-prod + .nvn-cel-prod { display: none; }
+    .nvn.is-escena .nvn-op { padding: 6px 8px; }
+    .nvn.is-escena .nvn-op:nth-child(4) { display: none; }
+    .nvn.is-escena .nvn-hoja { margin: 0 -10px -10px; padding: 10px; }
+    .nvn.is-escena .nvn-plan { padding: 12px; gap: 9px; }
+    .nvn.is-escena .nvn-origen { width: 64px; height: 64px; }
+    .nvn.is-escena .nvn-plan-cab b { font-size: 16px; }
+    .nvn.is-escena .nvn-boton { height: 36px; font-size: 13px; }
+    .nvn.is-escena .nvn-quitado { padding: 6px 8px; font-size: 11px; }
+    .nvn.is-escena .nvn-tr { padding: 8px 10px; }
+    .nvn.is-escena .nvn-surtido { padding: 10px 12px; }
+    .nvn.is-escena .nvn-txt { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; padding: 18px 20px 16px; background: linear-gradient(180deg, rgba(6, 10, 28, 0) 0, #060A1C 22px); }
+    .nvn.is-escena .nvn-k { margin-bottom: 6px; }
+    .nvn.is-escena .nvn-h { font-size: clamp(25px, 7.2vw, 34px); }
+    .nvn.is-escena .nvn-pasos { margin-top: 10px; }
+    .nvn.is-escena .nvn-paso { display: none; padding: 10px 0 8px; }
+    .nvn.is-escena .nvn-paso.is-ahora { display: grid; }
+    .nvn:not(.is-escena) .nvn-cel { border-width: 7px; }
+  }
+  @media (max-width: 899px) and (max-height: 700px) {
+    .nvn.is-escena .nvn-h { display: none; }
+    .nvn.is-escena .nvn-pasos { margin-top: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nvn * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<script>
+  // Lo que el scroll mueve y el CSS no alcanza: el estado de cada carta (antes / ahora / después), el paso de la lista,
+  // la foto del momento y la hora del reloj. Lee data-tramo, que pone iniciaEscenas (scripts/experiencia/escenas.ts);
+  // sin escena todo se queda en su estado final.
+  (() => {
+    const sec = document.querySelector<HTMLElement>('.nvn');
+    if (!sec) return;
+    const cartas = Array.from(sec.querySelectorAll<HTMLElement>('.nvn-carta'));
+    const pasos = Array.from(sec.querySelectorAll<HTMLElement>('.nvn-paso'));
+    const reloj = sec.querySelector<HTMLElement>('.nvn-reloj');
+    const hora = sec.querySelector<HTMLElement>('[data-hora]');
+    const sufijo = sec.querySelector<HTMLElement>('[data-sufijo]');
+    const horas: [string, string][] = JSON.parse(sec.dataset.horas || '[]');
+    const fotos: string[] = JSON.parse(sec.dataset.fotos || '[]');
+    let ultimo = -1;
+    const pinta = () => {
+      const t = Number(sec.dataset.tramo || 0);
+      if (t === ultimo) return;
+      ultimo = t;
+      cartas.forEach((c, k) => { c.dataset.estado = k < t ? 'despues' : k === t ? 'ahora' : 'antes'; });
+      pasos.forEach((p, k) => p.classList.toggle('is-ahora', k === t));
+      sec.dataset.foto = fotos[t] || '';
+      const h = horas[t];
+      if (h && hora && sufijo && reloj) {
+        hora.textContent = h[0];
+        sufijo.textContent = h[1];
+        reloj.classList.remove('is-cambia');
+        requestAnimationFrame(() => requestAnimationFrame(() => reloj.classList.add('is-cambia')));
+      }
+    };
+    new MutationObserver(pinta).observe(sec, { attributes: true, attributeFilter: ['data-tramo', 'class'] });
+    pinta();
+  })();
+</script>

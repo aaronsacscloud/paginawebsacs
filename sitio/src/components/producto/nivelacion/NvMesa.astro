@@ -1,0 +1,112 @@
+---
+/**
+ * «Lo seguro, de un clic» (/producto/nivelacion-de-inventario): la Mesa. Dos pantallas REALES de Demand Planning con
+ * la boutique de prueba (Polanco Boutique): atrás, «Tus nivelaciones»; enfrente, la Mesa de «Nivelación Buen Fin · toda
+ * la red», y encima su barra real «Aprobar lo seguro · 3 de 10 modelos», en el lugar donde vive (pegada abajo). Arriba,
+ * sus cifras (10 modelos, 1,074 piezas, $850,950 a costo) cuentan hasta su número y las curvas rotas bajan de 14 a 0.
+ * Entrada: la lista se asoma, la Mesa llega de lado como una carta que se pone encima y la barra sube con rebote.
+ * Marfil.
+ */
+import { MESA, I } from '../../../data/producto-nivelacion';
+import StaffVentana from '../../plugins/staff/StaffVentana.astro';
+const fmt = (n: number, pesos?: boolean) => (pesos ? '$' : '') + n.toLocaleString('en-US');
+---
+<section class="pda nvm pd-marfil" id="nv-mesa" aria-labelledby="nvm-h">
+  <p class="pd-folio"><span>{MESA.k}</span><span>La Mesa</span></p>
+  <div class="nvm-cab">
+    <h2 class="pda-h" id="nvm-h">{MESA.h}</h2>
+    <p class="nvm-p">{MESA.p}</p>
+  </div>
+
+  <div class="nvm-cifras" data-nvm>
+    {MESA.cifras.map((c) => (
+      <span class="nvm-cifra"><b data-n={c.n} data-pesos={c.pesos ? '1' : undefined}>{fmt(c.n, c.pesos)}</b><small>{c.t}</small></span>
+    ))}
+    <span class="nvm-cifra nvm-cifra--rotas"><b><span>{MESA.curvas.de}</span><i aria-hidden="true">→</i><em>{MESA.curvas.a}</em></b><small>curvas rotas al terminar</small></span>
+    <p class="nvm-nota">Nivelación Buen Fin · toda la red, en la boutique de prueba.</p>
+  </div>
+
+  <div class="nvm-pila">
+    <div class="nvm-atras rv"><StaffVentana src={`${I}pantalla-nivelaciones.webp`} w={1440} h={880} alt="Tus nivelaciones en Sacs: tres por aprobar y una completada, cada una con sus modelos, piezas, costo y lo que hay que comprar, y el botón Revisar" barra="Demand Planning › Nivelaciones" /></div>
+    <div class="nvm-frente rv">
+      <StaffVentana src={`${I}pantalla-mesa.webp`} w={1440} h={1060} alt="La Mesa de la Nivelación Buen Fin: 10 modelos, 1,074 piezas, $850,950 a costo y 14 curvas rotas que quedan en 0; cada modelo con su curva de la red, su curva por grupo de tiendas, su confianza y los botones Aprobar y Quitar" barra="Nivelaciones › Nivelación Buen Fin · toda la red" />
+      <img class="nvm-barra" src={`${I}recorte-aprobar.webp`} width="1100" height="88" alt="La barra de la Mesa: 7 modelos por revisar, 3 seguros sin aprobar y el botón Aprobar lo seguro · 3 de 10 modelos" loading="lazy" decoding="async" />
+    </div>
+  </div>
+
+  <ul class="nvm-chips">{MESA.chips.map((c, i) => <li class="rv" style={`--i:${i}`}>{c}</li>)}</ul>
+</section>
+
+<style>
+  .nvm-cab { display: grid; gap: 14px; }
+  .nvm-p { margin: 0; max-width: 48ch; font: 500 17px/1.55 var(--font-body); color: var(--pd-tenue); }
+  .nvm-cifras { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 12px; margin-top: 36px; padding: 20px 0 0; border-top: 2px solid var(--pd-texto); }
+  .nvm-cifra { display: grid; gap: 4px; }
+  .nvm-cifra b { display: flex; align-items: baseline; gap: 8px; font: 700 clamp(30px, 3.6vw, 52px)/1 var(--pd-clash); letter-spacing: -0.02em; color: var(--pd-texto); font-variant-numeric: tabular-nums; }
+  .nvm-cifra small { font: 600 12px/1.3 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--pd-apagado); }
+  .nvm-cifra--rotas i { font-style: normal; color: var(--pd-apagado); }
+  .nvm-cifra--rotas em { font-style: normal; color: #17804F; }
+  .nvm-nota { grid-column: 1 / -1; margin: 0; font: 500 13px/1.4 var(--font-body); color: var(--pd-apagado); }
+  /* las dos ventanas, una sobre otra */
+  .nvm-pila { position: relative; margin-top: 36px; }
+  .nvm-atras { display: none; }
+  .nvm-frente { position: relative; }
+  /* la barra real va donde vive: pegada abajo, a lo ancho del contenido (sin la barra lateral) */
+  .nvm-barra { position: absolute; left: 22.1%; bottom: 2.2%; width: 76.4%; height: auto; border-radius: 6px; box-shadow: 0 18px 30px -16px rgba(16, 24, 40, 0.55); }
+  .nvm-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 28px 0 0; padding: 0; list-style: none; }
+  .nvm-chips li { padding: 9px 14px; border-radius: 99px; background: #fff; box-shadow: 0 0 0 1px rgba(20, 20, 20, 0.08); font: 600 13.5px/1.2 var(--font-display); color: #141414; }
+  /* entradas */
+  :global(.js-rv) .nvm-atras.rv { opacity: 0; transform: translateY(40px) rotate(-2.5deg); transition: opacity 0.7s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1); }
+  :global(.js-rv) .nvm-frente.rv { opacity: 0; transform: translateX(90px) rotate(3deg); transition: opacity 0.7s ease 0.25s, transform 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.25s; }
+  :global(.js-rv) .nvm-frente.rv .nvm-barra { opacity: 0; transform: translateY(60%); }
+  :global(.js-rv) .nvm-frente.rv.is-on .nvm-barra { opacity: 1; transform: none; transition: opacity 0.35s ease 1.1s, transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 1.1s; }
+  :global(.js-rv) .nvm-chips .rv { opacity: 0; transform: translateY(10px); transition: opacity 0.4s ease, transform 0.5s ease; transition-delay: calc(var(--i) * 0.07s); }
+  :global(.js-rv) .nvm .rv.is-on { opacity: 1; transform: none; }
+  :global(.js-rv) .nvm-cifra--rotas em { opacity: 0; transform: scale(1.8); display: inline-block; }
+  .nvm-cifras.is-on .nvm-cifra--rotas em { opacity: 1; transform: none; transition: opacity 0.3s ease 1.3s, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 1.3s; }
+  @media (min-width: 900px) {
+    .nvm-cab { grid-template-columns: 1.1fr 1fr; align-items: end; gap: 5vw; }
+    .nvm-cifras { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 56px; }
+    .nvm-pila { margin-top: 48px; padding: 0 0 0 0; }
+    .nvm-atras { display: block; width: 62%; }
+    .nvm-frente { width: 70%; margin: -26% 0 0 auto; }
+  }
+  @media (max-width: 899px) {
+    /* en el teléfono solo la Mesa, y se desliza: a lo ancho de la pantalla no se leería */
+    .nvm-frente { overflow-x: auto; overscroll-behavior-x: contain; border-radius: 10px; }
+    .nvm-frente > :global(.sv) { width: 760px; }
+    .nvm-barra { left: calc(760px * 0.221); width: calc(760px * 0.764); bottom: 12px; }
+    :global(.js-rv) .nvm-frente.rv { transform: translateY(40px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rv) .nvm .rv, :global(.js-rv) .nvm-frente.rv .nvm-barra, :global(.js-rv) .nvm-cifra--rotas em { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // Las cifras cuentan hasta su número la primera vez que se ven (sin JS o con «reducir movimiento», ya están).
+  (() => {
+    const el = document.querySelector<HTMLElement>('[data-nvm]');
+    if (!el) return;
+    const nums = Array.from(el.querySelectorAll<HTMLElement>('[data-n]'));
+    const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const fmt = (n: number, pesos: boolean) => (pesos ? '$' : '') + Math.round(n).toLocaleString('en-US');
+    const corre = () => {
+      el.classList.add('is-on');
+      if (quieto) return;
+      const t0 = performance.now();
+      const paso = (t: number) => {
+        const f = Math.min(1, (t - t0) / 1300);
+        const e = 1 - Math.pow(1 - f, 3);
+        nums.forEach((b) => { b.textContent = fmt(Number(b.dataset.n) * e, !!b.dataset.pesos); });
+        if (f < 1) requestAnimationFrame(paso);
+      };
+      requestAnimationFrame(paso);
+    };
+    if (!('IntersectionObserver' in window)) { el.classList.add('is-on'); return; }
+    // antes de verse, en cero (así no brincan del número final al cero)
+    if (!quieto && el.getBoundingClientRect().top > window.innerHeight) nums.forEach((b) => { b.textContent = fmt(0, !!b.dataset.pesos); });
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); corre(); } }, { threshold: 0.5 });
+    io.observe(el);
+  })();
+</script>
