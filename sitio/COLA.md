@@ -1174,7 +1174,7 @@ Revisar antes: cómo se sirven hoy los documentos públicos (foto en jsonb + lig
 
 - **2026-10-03** (casos de éxito, sesión VTC) — «En esta parte de la entrada para el live show, házla un poquito más enfocada en los colores, como los de Vende Tu Clóset, porque acuérdate que es el contraste: uno negro, uno blanco, uno negro y así.» → **hecho (3-oct-2026)**, subido junto con la página de Vende Tu Clóset.
 
-## 18-oct-2026 · /planes · Enterprise «Tu operación es única. Tu plan también.» más visual e interactivo (HECHO 18-oct — «Arma tu plan»; fotos de gpt-image-2 pendientes de créditos de OpenAI)
+## 18-oct-2026 · /planes · Enterprise «Tu operación es única. Tu plan también.» más visual e interactivo (HECHO 18-oct — «Arma tu plan» con 5 fotos propias de gpt-image-2)
 > «aqui hazlo más visual se ve muy generiiico manejalo algo mas interactivo y más claro usa chatgpt imasge 2»
 
 ## 18-oct-2026 · carrusel de plugins: agregar «Planeación de demanda» como plugin, al inicio, y que el carrusel avance a la derecha con el scroll (HECHO 18-oct — primera tarjeta y avance con el scroll en escritorio)
