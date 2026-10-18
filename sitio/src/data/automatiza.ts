@@ -109,7 +109,24 @@ export interface Planes {
   notas: string[];
   cta: { t: string; href: string };
 }
-export type Seccion = Chat | Lista | Antes | Hub | Pronostico | Habilidades | Planes;
+/** Flujos de punta a punta en 3D (Three.js): cada etapa es una puerta que el pedido cruza mientras AXO la orquesta. */
+export type TipoEtapa = 'auto' | 'aprobacion' | 'regla' | 'aviso';
+export interface Flujos3D {
+  tipo: 'flujos3d';
+  id: string;
+  folio: [string, string];
+  titulo: string;
+  bajada: string;
+  flujos: {
+    id: string;
+    nombre: string;
+    cuando: string;
+    resultado: string;
+    etapas: { t: string; area: string; hace: string; tipo: TipoEtapa }[];
+    cifras?: [string, string][];
+  }[];
+}
+export type Seccion = Chat | Lista | Antes | Hub | Pronostico | Habilidades | Planes | Flujos3D;
 
 export interface PaginaAuto {
   slug: string;
@@ -117,6 +134,8 @@ export interface PaginaAuto {
   nombre: string;
   seo: { title: string; description: string };
   hero: { etiqueta: string; titulo: string; bajada: string; foto: string; alt: string; aviso?: string; foco?: string };
+  /** La página es la de un plugin (AXO): sin la barra de Automatiza y, al final, los demás plugins. */
+  plugin?: boolean;
   secciones: Seccion[];
   faqs: { question: string; answer: string }[];
 }
@@ -132,6 +151,7 @@ export const AUTOMATIZA: PaginaAuto[] = [
     slug: 'axo-copiloto-ia',
     n: '01',
     nombre: 'AXO · Copiloto IA',
+    plugin: true,
     seo: {
       title: 'AXO, el copiloto de IA para tiendas de moda | Sacs',
       description: 'Pregúntale a tu tienda en tus palabras o con tu voz: AXO consulta tus ventas, inventario y clientas reales, y prepara apartados, traspasos u órdenes de compra que solo pasan con tu visto bueno.',
@@ -297,17 +317,79 @@ export const AUTOMATIZA: PaginaAuto[] = [
         ],
       },
       {
-        tipo: 'lista', id: 'axo-flujos', tema: 'marfil', estilo: 'tarjetas',
-        folio: ['09 · Flujos completos', 'De punta a punta'],
-        titulo: 'Procesos enteros que corren solos.',
-        bajada: 'Ejemplos de flujos que AXO configura a la medida de cada negocio. Tú defines qué pasa en automático y qué requiere tu aprobación.',
-        items: [
-          { tag: 'Cada noche', t: 'Reabasto automático', d: 'Revisa ventas y existencias de cada tienda, calcula lo que vas a necesitar según tendencia y temporada, arma las órdenes por proveedor y te las manda a WhatsApp. Nunca te quedas sin lo que más se vende.' },
-          { tag: 'Al llegar la mercancía', t: 'Recepción con una foto', d: 'Lee la factura o la remisión, la compara contra la orden, registra la entrada y marca faltantes o diferencias de precio. Recepciones en minutos, sin capturar.' },
-          { tag: 'Todos los días', t: 'Cobranza que se hace sola', d: 'Detecta saldos vencidos o por vencer, manda recordatorio por WhatsApp con liga de pago, registra el pago y lo concilia. Escala a tu equipo a quien no responde.' },
-          { tag: 'Al cerrar las cajas', t: 'Cierre del día', d: 'Revisa los cortes de cada caja, detecta diferencias, cancelaciones y descuentos fuera de lo normal, compara contra la meta y te manda el resumen antes de dormir.' },
-          { tag: 'Cuando escribe una clienta', t: 'Venta por WhatsApp', d: 'Revisa existencias en todas las tiendas, aparta la prenda, genera la liga de pago, avisa a la tienda para preparar el pedido y da seguimiento hasta la entrega.' },
-          { tag: 'Cada semana', t: 'Tu equipo en orden', d: 'Cruza la venta esperada con los horarios, sugiere los turnos, avisa de retardos y faltas, recuerda documentos por vencer y deja lista la prenómina.' },
+        tipo: 'flujos3d', id: 'axo-flujos',
+        folio: ['09 · Flujos completos', 'De punta a punta, en 3D'],
+        titulo: 'Mira un proceso entero correr solo.',
+        bajada: 'Cada puerta es una etapa de tu operación. El pedido las cruza de inicio a fin mientras AXO, al centro, hace el trabajo, pide tu aprobación donde hace falta y avisa a quien corresponde. Elige un flujo y míralo pasar.',
+        flujos: [
+          {
+            id: 'compras', nombre: 'Compras de punta a punta', cuando: 'Cuando algo se agota',
+            resultado: 'Tú solo lo platicaste. AXO lo convirtió en este proceso y lo dejó configurado en Sacs.',
+            cifras: [['21', 'variables'], ['8', 'automatizaciones'], ['4', 'aprobaciones'], ['4', 'avisos']],
+            etapas: [
+              { t: 'Requisición', area: 'Tienda', tipo: 'auto', hace: 'La existencia bajó del mínimo: AXO crea la requisición sola y sugiere la cantidad con las ventas de 8 semanas.' },
+              { t: 'Orden de compra', area: 'Compras', tipo: 'aprobacion', hace: 'Agrupa las requisiciones por proveedor con su último precio. Si pasa de $50,000, la aprueba dirección.' },
+              { t: 'Recepción', area: 'Almacén', tipo: 'regla', hace: 'Lee la foto de la factura y la compara con la orden. Si la diferencia pasa del 2 %, el pago se detiene.' },
+              { t: 'Cuentas por pagar', area: 'Administración', tipo: 'auto', hace: 'Valida el CFDI y cruza orden, recepción y factura. Contraloría solo revisa si hay diferencias.' },
+              { t: 'Tesorería', area: 'Finanzas', tipo: 'aprobacion', hace: 'Arma los pagos en lote martes y viernes, por vencimiento. Dirección autoriza el lote desde WhatsApp.' },
+              { t: 'Contabilidad', area: 'Contador', tipo: 'aviso', hace: 'Genera la póliza de egreso, concilia con el estado de cuenta y le manda al proveedor su comprobante.' },
+            ],
+          },
+          {
+            id: 'reabasto', nombre: 'Reabasto automático', cuando: 'Cada noche',
+            resultado: 'Nunca te quedas sin lo que más se vende.',
+            etapas: [
+              { t: 'Revisa', area: 'Inventario', tipo: 'auto', hace: 'Revisa las ventas y las existencias de cada tienda, talla por talla.' },
+              { t: 'Calcula', area: 'Planeación', tipo: 'auto', hace: 'Calcula lo que vas a necesitar según la tendencia y la temporada.' },
+              { t: 'Arma las órdenes', area: 'Compras', tipo: 'auto', hace: 'Arma las órdenes de compra por proveedor.' },
+              { t: 'Tu sí', area: 'Dirección', tipo: 'aprobacion', hace: 'Te las manda a WhatsApp y las apruebas con un mensaje.' },
+              { t: 'Al proveedor', area: 'Proveedores', tipo: 'aviso', hace: 'Las envía al proveedor y agenda la recepción.' },
+            ],
+          },
+          {
+            id: 'whatsapp', nombre: 'Venta por WhatsApp', cuando: 'Cuando escribe una clienta',
+            resultado: 'Vendes a cualquier hora, sin perder clientas.',
+            etapas: [
+              { t: 'Pregunta', area: 'Inbox', tipo: 'aviso', hace: 'Una clienta pregunta por una prenda en el Inbox.' },
+              { t: 'Existencias', area: 'Inventario', tipo: 'auto', hace: 'AXO revisa existencias en todas las tiendas, en su talla y color.' },
+              { t: 'Aparta y cobra', area: 'Ventas', tipo: 'auto', hace: 'Aparta la prenda y le manda la liga de pago.' },
+              { t: 'Prepara', area: 'Tienda', tipo: 'aviso', hace: 'Avisa a la tienda para preparar el pedido.' },
+              { t: 'Entrega', area: 'Logística', tipo: 'auto', hace: 'Da seguimiento hasta que la prenda llega a sus manos.' },
+            ],
+          },
+          {
+            id: 'cobranza', nombre: 'Cobranza que se hace sola', cuando: 'Todos los días',
+            resultado: 'Cobras antes y sin perseguir a nadie.',
+            etapas: [
+              { t: 'Detecta', area: 'Cuentas por cobrar', tipo: 'auto', hace: 'Detecta saldos vencidos o por vencer.' },
+              { t: 'Recuerda', area: 'Clientas', tipo: 'aviso', hace: 'Manda el recordatorio por WhatsApp con su liga de pago.' },
+              { t: 'Concilia', area: 'Tesorería', tipo: 'auto', hace: 'Registra el pago y lo concilia con el banco.' },
+              { t: 'Escala', area: 'Equipo', tipo: 'regla', hace: 'A quien no responde, se lo pasa a tu equipo.' },
+              { t: 'Te reporta', area: 'Dirección', tipo: 'aviso', hace: 'Te reporta lo cobrado y lo pendiente.' },
+            ],
+          },
+          {
+            id: 'devoluciones', nombre: 'Devoluciones', cuando: 'Procedimiento empresarial',
+            resultado: 'Cinco áreas, un solo camino. Si alguien se salta un paso, Sacs no lo deja.',
+            etapas: [
+              { t: 'Registra', area: 'Punto de venta', tipo: 'auto', hace: 'Ventas registra la devolución con su motivo y su foto.' },
+              { t: 'Revisa', area: 'Almacén', tipo: 'regla', hace: 'Reingresa la prenda o la manda a merma. Más de $5,000: aprueba la gerente.' },
+              { t: 'Reclama', area: 'Compras', tipo: 'auto', hace: 'Si es defecto, abre el reclamo al proveedor.' },
+              { t: 'Reembolsa', area: 'Tesorería', tipo: 'aprobacion', hace: 'Reembolsa en máximo 48 horas; 24 para clientas frecuentes.' },
+              { t: 'Nota de crédito', area: 'Contabilidad', tipo: 'aviso', hace: 'Registra la nota de crédito y le avisa a la clienta por WhatsApp.' },
+            ],
+          },
+          {
+            id: 'cierre', nombre: 'Cierre del día', cuando: 'Al cerrar las cajas',
+            resultado: 'Sabes cómo cerraste sin abrir un reporte.',
+            etapas: [
+              { t: 'Cortes', area: 'Cajas', tipo: 'auto', hace: 'Revisa los cortes de cada caja y cada tienda.' },
+              { t: 'Diferencias', area: 'Contraloría', tipo: 'regla', hace: 'Detecta diferencias, cancelaciones y descuentos fuera de lo normal.' },
+              { t: 'Meta', area: 'Ventas', tipo: 'auto', hace: 'Compara la venta contra la meta del día.' },
+              { t: 'Tarea', area: 'Gerencia', tipo: 'aviso', hace: 'Si hay un faltante, le abre la tarea a la gerente.' },
+              { t: 'Tu resumen', area: 'Dirección', tipo: 'aviso', hace: 'Te manda el resumen antes de dormir.' },
+            ],
+          },
         ],
       },
       {

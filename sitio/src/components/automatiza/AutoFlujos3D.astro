@@ -1,0 +1,522 @@
+---
+/**
+ * Flujos de punta a punta en 3D (/producto/axo-copiloto-ia, 18-oct-2026). Pedido del dueño: «animaciones locas con
+ * 3D que permitan ver flujos de trabajo completos de inicio a fin… algo nunca antes visto».
+ *
+ * La escena (Three.js, se carga solo al acercarse): una vía de luz en espiral alrededor de AXO —un núcleo que gira
+ * al centro—; cada etapa del flujo es una puerta. El pedido viaja por la vía y cruza las puertas una a una: AXO le
+ * manda un rayo a cada puerta cuando le toca; en una aprobación el pedido se detiene hasta que la puerta pasa de
+ * dorado a verde, en una regla sale una onda de control. Arranca en «Vista completa» (todo el flujo, girando
+ * despacio) y con «Seguir el pedido» la cámara lo persigue y al terminar sale el resultado y arranca el siguiente flujo.
+ *
+ * Sin JS, sin WebGL o con «reducir movimiento»: se ve la lista de flujos con sus etapas (el mismo HTML), sin canvas.
+ */
+import type { Flujos3D } from '../../data/automatiza';
+interface Props { f: Flujos3D }
+const { f } = Astro.props;
+const TIPO = { auto: 'Automatización', aprobacion: 'Aprobación', regla: 'Regla de control', aviso: 'Aviso' } as const;
+---
+<section class="auf" id={f.id} aria-labelledby={`${f.id}-h`}>
+  <div class="auf-in">
+    <p class="auf-folio"><span>{f.folio[0]}</span><span>{f.folio[1]}</span></p>
+    <h2 class="auf-h" id={`${f.id}-h`}>{f.titulo}</h2>
+    <p class="auf-bajada">{f.bajada}</p>
+
+    <div class="auf-tabs" role="tablist" aria-label="Flujos">
+      {f.flujos.map((fl, i) => (
+        <button type="button" role="tab" class="auf-tab" data-flujo={i} aria-selected={i === 0 ? 'true' : 'false'}>
+          <small>{fl.cuando}</small>{fl.nombre}
+        </button>
+      ))}
+    </div>
+
+    <div class="auf-stage" data-stage>
+      <canvas class="auf-canvas" aria-hidden="true"></canvas>
+      <div class="auf-labels" aria-hidden="true"></div>
+      <div class="auf-hud" aria-live="polite">
+        <p class="auf-hud-k"><span data-hud-flujo></span><em data-hud-paso></em></p>
+        <p class="auf-hud-t"><b data-hud-t></b><span data-hud-area></span></p>
+        <p class="auf-hud-tipo" data-hud-tipo></p>
+        <p class="auf-hud-d" data-hud-d></p>
+        <ol class="auf-hud-prog" data-hud-prog></ol>
+        <div class="auf-hud-fin" data-hud-fin hidden>
+          <p data-hud-res></p>
+          <ul data-hud-cifras></ul>
+        </div>
+      </div>
+      <div class="auf-ctrl">
+        <button type="button" data-vista aria-pressed="true">Seguir el pedido</button>
+        <button type="button" data-pausa>Pausa</button>
+      </div>
+      <p class="auf-ley" aria-hidden="true"><i class="t-auto"></i>Automatización<i class="t-aprobacion"></i>Aprobación<i class="t-regla"></i>Regla<i class="t-aviso"></i>Aviso</p>
+    </div>
+
+    <div class="auf-lista">
+      {f.flujos.map((fl, i) => (
+        <div class="auf-flujo" data-lista={i}>
+          <p class="auf-flujo-k"><b>{fl.nombre}</b><span>{fl.cuando}</span></p>
+          <ol>
+            {fl.etapas.map((e, k) => (
+              <li class={`t-${e.tipo}`}>
+                <span class="auf-n">{String(k + 1).padStart(2, '0')}</span>
+                <span><b>{e.t}</b> · {e.area}<em>{TIPO[e.tipo]}</em><br />{e.hace}</span>
+              </li>
+            ))}
+          </ol>
+          <p class="auf-flujo-res">{fl.resultado}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+  <script type="application/json" data-flujos set:html={JSON.stringify(f.flujos)}></script>
+</section>
+
+<style>
+  .auf { --oro: #E8C84A; --azul: #6E9BFF; --rojo: #FF6B6B; --teal: #5FD3B5; background: #050608; color: #fff; overflow: hidden; }
+  .auf-in { max-width: 1240px; margin: 0 auto; padding: 88px 20px; }
+  .auf-folio { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin: 0 0 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.18); font: 600 11px/1.35 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; }
+  .auf-h { margin: 0; max-width: 17ch; color: #fff; font: 700 clamp(36px, 5.6vw, 76px)/0.96 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; text-wrap: balance; }
+  .auf-bajada { margin: 18px 0 0; max-width: 62ch; font: 400 17px/1.55 var(--font-body); color: rgba(255, 255, 255, 0.72); }
+
+  .auf-tabs { display: flex; gap: 8px; margin: 36px -20px 0; padding: 0 20px 4px; overflow-x: auto; scrollbar-width: none; }
+  .auf-tabs::-webkit-scrollbar { display: none; }
+  .auf-tab { flex: none; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(255, 255, 255, 0.04); color: rgba(255, 255, 255, 0.78); font: 700 14px/1.2 var(--font-display); cursor: pointer; transition: background 0.25s, border-color 0.25s, color 0.25s; }
+  .auf-tab small { font: 600 10px/1 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5); }
+  .auf-tab[aria-selected='true'] { background: #fff; color: #0B0B0C; border-color: #fff; }
+  .auf-tab[aria-selected='true'] small { color: #6B7080; }
+  .auf-tab:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
+
+  /* sin 3D: el escenario no se ve y la lista va completa */
+  .auf-stage { display: none; position: relative; margin-top: 18px; height: min(82vh, 760px); min-height: 520px; border-radius: 24px; overflow: hidden; background: radial-gradient(120% 90% at 50% 40%, #12132A 0%, #050608 70%); border: 1px solid rgba(255, 255, 255, 0.08); }
+  .auf-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: pan-y; }
+  .auf-canvas:active { cursor: grabbing; }
+  .auf-labels { position: absolute; inset: 0; pointer-events: none; }
+  :global(.auf-lb) { position: absolute; left: 0; top: 0; padding: 5px 9px; border-radius: 99px; background: rgba(8, 9, 14, 0.72); border: 1px solid rgba(255, 255, 255, 0.18); color: rgba(255, 255, 255, 0.82); font: 700 11px/1 var(--font-display); white-space: nowrap; backdrop-filter: blur(6px); transition: opacity 0.3s, background 0.3s, color 0.3s, border-color 0.3s; will-change: transform; }
+  :global(.auf-lb i) { font-style: normal; opacity: 0.55; margin-right: 6px; }
+  :global(.auf-lb.is-on) { background: #fff; color: #0B0B0C; border-color: #fff; }
+  :global(.auf-lb.is-ok) { border-color: rgba(95, 211, 181, 0.6); }
+
+  .auf-hud { position: absolute; left: 16px; right: 16px; bottom: 16px; max-width: 400px; padding: 16px 18px; border-radius: 18px; background: rgba(10, 11, 18, 0.78); border: 1px solid rgba(255, 255, 255, 0.14); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  .auf-hud p { margin: 0; }
+  .auf-hud-k { display: flex; justify-content: space-between; gap: 10px; font: 600 10.5px/1.3 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.55); }
+  .auf-hud-k em { font-style: normal; color: #fff; }
+  .auf-hud-t { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-top: 10px !important; }
+  .auf-hud-t b { font: 700 24px/1.1 var(--pd-clash, var(--font-display)); }
+  .auf-hud-t span { font: 500 13px/1.2 var(--font-body); color: rgba(255, 255, 255, 0.6); }
+  .auf-hud-tipo { display: inline-block; margin-top: 8px !important; padding: 4px 9px; border-radius: 99px; font: 700 10.5px/1 var(--font-display); letter-spacing: 0.06em; color: #0B0B0C; background: var(--azul); }
+  .auf-hud-tipo.t-aprobacion { background: var(--oro); }
+  .auf-hud-tipo.t-regla { background: var(--rojo); }
+  .auf-hud-tipo.t-aviso { background: var(--teal); }
+  .auf-hud-d { margin-top: 10px !important; min-height: 4.4em; font: 400 14.5px/1.5 var(--font-body); color: rgba(255, 255, 255, 0.85); }
+  .auf-hud-prog { list-style: none; display: flex; gap: 5px; margin: 12px 0 0; padding: 0; }
+  .auf-hud-prog li { flex: 1; height: 3px; border-radius: 3px; background: rgba(255, 255, 255, 0.16); transition: background 0.4s; }
+  .auf-hud-prog li.is-ok { background: var(--teal); }
+  .auf-hud-prog li.is-on { background: #fff; }
+  .auf-hud-fin p { margin-top: 12px !important; font: 600 15px/1.45 var(--font-body); }
+  .auf-hud-fin ul { list-style: none; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 12px 0 0; padding: 0; }
+  .auf-hud-fin li { padding: 8px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.07); font: 500 12px/1.2 var(--font-body); color: rgba(255, 255, 255, 0.7); }
+  .auf-hud-fin li b { display: block; font: 700 22px/1 var(--pd-clash, var(--font-display)); color: #fff; margin-bottom: 3px; }
+  .auf-ctrl { position: absolute; top: 14px; right: 14px; display: flex; gap: 6px; }
+  .auf-ctrl button { padding: 8px 12px; border-radius: 99px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(10, 11, 18, 0.6); color: #fff; font: 700 12px/1 var(--font-display); cursor: pointer; backdrop-filter: blur(8px); }
+  .auf-ctrl button[aria-pressed='true'] { background: #fff; color: #0B0B0C; }
+  .auf-ley { position: absolute; top: 18px; left: 18px; display: none; align-items: center; gap: 6px; margin: 0; font: 600 11px/1 var(--font-display); color: rgba(255, 255, 255, 0.6); }
+  .auf-ley i { width: 8px; height: 8px; border-radius: 50%; margin-left: 8px; }
+  .auf-ley i:first-child { margin-left: 0; }
+  .t-auto { --c: var(--azul); } .t-aprobacion { --c: var(--oro); } .t-regla { --c: var(--rojo); } .t-aviso { --c: var(--teal); }
+  .auf-ley i { background: var(--c); }
+
+  .auf-lista { display: grid; gap: 14px; margin-top: 20px; }
+  .auf-flujo { padding: 20px; border-radius: 18px; background: #101116; border: 1px solid rgba(255, 255, 255, 0.1); }
+  .auf-flujo-k { display: flex; justify-content: space-between; gap: 10px; margin: 0 0 10px; }
+  .auf-flujo-k b { font: 700 19px/1.2 var(--font-display); }
+  .auf-flujo-k span { font: 600 10.5px/1.6 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5); }
+  .auf-flujo ol { list-style: none; margin: 0; padding: 0; }
+  .auf-flujo li { display: grid; grid-template-columns: 34px 1fr; gap: 8px; padding: 10px 0; border-top: 1px solid rgba(255, 255, 255, 0.1); font: 400 14px/1.5 var(--font-body); color: rgba(255, 255, 255, 0.78); }
+  .auf-flujo li b { color: #fff; }
+  .auf-flujo li em { margin-left: 8px; padding: 2px 7px; border-radius: 99px; border: 1px solid var(--c); color: var(--c); font: 700 10px/1.4 var(--font-display); font-style: normal; }
+  .auf-n { font: 700 12px/1.7 var(--font-display); color: var(--c); }
+  .auf-flujo-res { margin: 10px 0 0; font: 600 14.5px/1.5 var(--font-body); }
+
+  /* con 3D: el escenario manda y la lista se queda solo para lectores de pantalla */
+  .auf.is-3d .auf-stage { display: block; }
+  .auf.is-3d .auf-lista { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .auf:not(.is-3d) .auf-tabs { display: none; }
+
+  @media (min-width: 720px) {
+    .auf-lista { grid-template-columns: repeat(2, 1fr); }
+    .auf-ley { display: flex; }
+    .auf-hud { left: 22px; bottom: 22px; right: auto; width: 400px; }
+  }
+  @media (min-width: 1040px) {
+    .auf-in { padding: 120px 4vw; }
+    .auf-lista { grid-template-columns: repeat(3, 1fr); }
+    .auf-tabs { margin: 40px 0 0; padding: 0; flex-wrap: wrap; }
+  }
+  @media (max-width: 719px) {
+    .auf-stage { height: 86vh; min-height: 600px; }
+    .auf-hud { padding: 14px 15px; }
+    .auf-hud-t b { font-size: 20px; }
+    .auf-hud-d { min-height: 0; font-size: 13.5px; }
+  }
+</style>
+
+<script>
+  type Etapa = { t: string; area: string; hace: string; tipo: 'auto' | 'aprobacion' | 'regla' | 'aviso' };
+  type Flujo = { id: string; nombre: string; cuando: string; resultado: string; etapas: Etapa[]; cifras?: [string, string][] };
+  const TIPO = { auto: 'Automatización', aprobacion: 'Aprobación · espera tu sí', regla: 'Regla de control', aviso: 'Aviso' };
+  const COLOR = { auto: 0x6e9bff, aprobacion: 0xe8c84a, regla: 0xff6b6b, aviso: 0x5fd3b5 };
+
+  function webgl() {
+    try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl'))); } catch (e) { return false; }
+  }
+
+  document.querySelectorAll<HTMLElement>('.auf').forEach((sec) => {
+    const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (quieto || !webgl()) return;
+    const datos = JSON.parse(sec.querySelector('[data-flujos]')!.textContent || '[]') as Flujo[];
+    sec.classList.add('is-3d');
+    let iniciado = false;
+    const io = new IntersectionObserver((es) => {
+      if (es.some((e) => e.isIntersecting) && !iniciado) { iniciado = true; io.disconnect(); arranca(sec, datos).catch(() => sec.classList.remove('is-3d')); }
+    }, { rootMargin: '400px 0px' });
+    io.observe(sec);
+  });
+
+  async function arranca(sec: HTMLElement, flujos: Flujo[]) {
+    const THREE = await import('three');
+    const { EffectComposer } = await import('three/examples/jsm/postprocessing/EffectComposer.js');
+    const { RenderPass } = await import('three/examples/jsm/postprocessing/RenderPass.js');
+    const { UnrealBloomPass } = await import('three/examples/jsm/postprocessing/UnrealBloomPass.js');
+    const { OutputPass } = await import('three/examples/jsm/postprocessing/OutputPass.js');
+
+    const stage = sec.querySelector<HTMLElement>('[data-stage]')!;
+    const canvas = stage.querySelector<HTMLCanvasElement>('canvas')!;
+    const labelsEl = stage.querySelector<HTMLElement>('.auf-labels')!;
+    const $ = (s: string) => stage.querySelector<HTMLElement>(s)!;
+    const movil = window.innerWidth < 720;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, movil ? 1.5 : 1.75));
+    renderer.setClearColor(0x000000, 1);   // el render target es lineal: 0x05 saldría gris tras el OutputPass
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x050608, 0.018);
+    const camera = new THREE.PerspectiveCamera(movil ? 62 : 50, 1, 0.1, 400);
+    camera.position.set(0, 8, 30);
+
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.85, 0.45, 0.28);
+    composer.addPass(bloom);
+    composer.addPass(new OutputPass());
+
+    // ── fondo: estrellas
+    {
+      const n = movil ? 900 : 1800, pos = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) {
+        const r = 60 + Math.random() * 120, a = Math.random() * Math.PI * 2, b = Math.acos(Math.random() * 2 - 1);
+        pos.set([r * Math.sin(b) * Math.cos(a), r * Math.cos(b) * 0.6, r * Math.sin(b) * Math.sin(a)], i * 3);
+      }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0x6f7fb8, size: 0.22, transparent: true, opacity: 0.5, fog: false, depthWrite: false })));
+    }
+
+    // ── AXO al centro: núcleo, cascarón de alambre y anillos
+    const axo = new THREE.Group();
+    const nucleo = new THREE.Mesh(new THREE.SphereGeometry(0.8, 48, 48), new THREE.MeshBasicMaterial({ color: 0x7a5cf0 }));
+    const casco = new THREE.Mesh(new THREE.IcosahedronGeometry(1.9, 1), new THREE.MeshBasicMaterial({ color: 0x8c6bf0, wireframe: true, transparent: true, opacity: 0.38 }));
+    axo.add(nucleo, casco);
+    const anillos: THREE.Mesh[] = [];
+    [[2.7, 0x6e9bff], [3.3, 0xe8c84a], [3.9, 0x5fd3b5]].forEach(([r, c], i) => {
+      const m = new THREE.Mesh(new THREE.TorusGeometry(r as number, 0.025, 8, 160), new THREE.MeshBasicMaterial({ color: c as number, transparent: true, opacity: 0.55 }));
+      m.rotation.set(Math.PI / 2 + i * 0.5, i * 0.7, 0); anillos.push(m); axo.add(m);
+    });
+    scene.add(axo);
+
+    // ── estado del flujo actual (se reconstruye al cambiar de flujo)
+    let grupo = new THREE.Group(); scene.add(grupo);
+    let curva: THREE.CatmullRomCurve3;
+    let lut: THREE.Vector3[] = [];
+    let paradas: number[] = [];       // u de cada puerta sobre la vía (0..1)
+    let puertas: { anillo: THREE.Mesh; disco: THREE.Mesh; rayo: THREE.Line; tipo: Etapa['tipo']; pos: THREE.Vector3; lb: HTMLElement; ok: boolean }[] = [];
+    let vias: THREE.ShaderMaterial;
+    let flujoPts: THREE.Points; let flujoOff: Float32Array;
+    let ondas: { m: THREE.Mesh; t: number }[] = [];
+    let chispas: { m: THREE.Mesh; a: THREE.Vector3; b: THREE.Vector3; t: number }[] = [];
+    let flujo = 0, etapa = -1, u = 0, fase: 'viaja' | 'espera' | 'fin' = 'viaja', reloj = 0;
+
+    const viajero = new THREE.Mesh(new THREE.OctahedronGeometry(0.32), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    const halo = new THREE.Mesh(new THREE.SphereGeometry(0.5, 24, 24), new THREE.MeshBasicMaterial({ color: 0x9fb4ff, transparent: true, opacity: 0.18 }));
+    viajero.add(halo); scene.add(viajero);
+    const ESTELA = 60;
+    const estelaPos = new Float32Array(ESTELA * 3), estelaCol = new Float32Array(ESTELA * 3);
+    const estelaGeo = new THREE.BufferGeometry();
+    estelaGeo.setAttribute('position', new THREE.BufferAttribute(estelaPos, 3));
+    estelaGeo.setAttribute('color', new THREE.BufferAttribute(estelaCol, 3));
+    const estela = new THREE.Line(estelaGeo, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending }));
+    scene.add(estela);
+
+    const enLut = (x: number) => lut[Math.min(lut.length - 1, Math.max(0, Math.round(x * (lut.length - 1))))];
+
+    function limpia() {
+      grupo.traverse((o: any) => { o.geometry?.dispose?.(); o.material?.dispose?.(); });
+      scene.remove(grupo); grupo = new THREE.Group(); scene.add(grupo);
+      labelsEl.innerHTML = ''; ondas = []; chispas = [];
+    }
+
+    function construye(i: number) {
+      limpia();
+      flujo = i; etapa = -1; u = 0; fase = 'viaja'; reloj = 0;
+      const fl = flujos[i], n = fl.etapas.length;
+      // las puertas en una espiral que sube alrededor de AXO
+      const R = movil ? 8 : 10.5, giro = Math.PI * 2 * 0.86;
+      const pos = fl.etapas.map((_, k) => {
+        const a = -Math.PI * 0.62 + (k / Math.max(1, n - 1)) * giro;
+        return new THREE.Vector3(Math.cos(a) * R, -4 + (k / Math.max(1, n - 1)) * 8, Math.sin(a) * R);
+      });
+      const ini = pos[0].clone().add(new THREE.Vector3(-6, -2.5, -3));
+      const fin = pos[n - 1].clone().add(new THREE.Vector3(0, 4, 0)).multiplyScalar(0.55);
+      curva = new THREE.CatmullRomCurve3([ini, ...pos, fin], false, 'centripetal');
+      lut = curva.getSpacedPoints(1200);
+      paradas = pos.map((p) => { let best = 0, d = Infinity; lut.forEach((q, j) => { const dd = q.distanceToSquared(p); if (dd < d) { d = dd; best = j; } }); return best / (lut.length - 1); });
+      axo.position.set(0, 0.5, 0);
+
+      // la vía: un tubo con pulsos de luz que corren hacia adelante y se enciende por donde ya pasó el pedido
+      vias = new THREE.ShaderMaterial({
+        transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+        uniforms: { uT: { value: 0 }, uP: { value: 0 }, uA: { value: new THREE.Color(0x6e9bff) }, uB: { value: new THREE.Color(0xa68bf5) } },
+        vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+        fragmentShader: `varying vec2 vUv; uniform float uT; uniform float uP; uniform vec3 uA; uniform vec3 uB;
+          void main(){ float f = fract(vUv.x * 14.0 - uT * 0.9); float p = smoothstep(0.0, 0.04, f) * smoothstep(0.35, 0.04, f);
+            float hecho = smoothstep(uP + 0.004, uP - 0.004, vUv.x); float borde = pow(1.0 - abs(vUv.y - 0.5) * 2.0, 2.0);
+            vec3 c = mix(uA, uB, vUv.x); gl_FragColor = vec4(c * (0.25 + p * 1.4 + hecho * 0.9), (0.10 + p * 0.55 + hecho * 0.45) * borde); }`,
+      });
+      grupo.add(new THREE.Mesh(new THREE.TubeGeometry(curva, 600, 0.09, 10, false), vias));
+      const aura = new THREE.Mesh(new THREE.TubeGeometry(curva, 300, 0.35, 8, false), new THREE.MeshBasicMaterial({ color: 0x3b3f9a, transparent: true, opacity: 0.06, depthWrite: false }));
+      grupo.add(aura);
+
+      // partículas: los datos que corren por la vía todo el tiempo
+      const np = movil ? 260 : 620;
+      flujoOff = new Float32Array(np * 4);
+      for (let k = 0; k < np; k++) flujoOff.set([Math.random(), (Math.random() - 0.5) * 0.7, (Math.random() - 0.5) * 0.7, 0.4 + Math.random() * 0.8], k * 4);
+      const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(np * 3), 3));
+      flujoPts = new THREE.Points(pg, new THREE.PointsMaterial({ color: 0xbfd0ff, size: 0.11, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
+      grupo.add(flujoPts);
+
+      // las puertas
+      puertas = fl.etapas.map((e, k) => {
+        const p = pos[k], tan = curva.getTangentAt(paradas[k]);
+        const g = new THREE.Group(); g.position.copy(p); g.lookAt(p.clone().add(tan));
+        const anillo = new THREE.Mesh(new THREE.TorusGeometry(1.25, 0.07, 12, 96), new THREE.MeshBasicMaterial({ color: COLOR[e.tipo], transparent: true, opacity: 0.55 }));
+        const disco = new THREE.Mesh(new THREE.CircleGeometry(1.18, 64), new THREE.MeshBasicMaterial({ color: COLOR[e.tipo], transparent: true, opacity: 0.05, side: THREE.DoubleSide, depthWrite: false }));
+        const marco = new THREE.Mesh(new THREE.TorusGeometry(1.55, 0.012, 6, 6), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.25 }));
+        g.add(anillo, disco, marco); grupo.add(g);
+        const rg = new THREE.BufferGeometry().setFromPoints([axo.position.clone(), p.clone()]);
+        const rayo = new THREE.Line(rg, new THREE.LineBasicMaterial({ color: COLOR[e.tipo], transparent: true, opacity: 0.07, blending: THREE.AdditiveBlending }));
+        grupo.add(rayo);
+        const lb = document.createElement('span'); lb.className = 'auf-lb'; lb.innerHTML = `<i>${String(k + 1).padStart(2, '0')}</i>${e.t}`;
+        labelsEl.appendChild(lb);
+        return { anillo, disco, rayo, tipo: e.tipo, pos: p, lb, ok: false };
+      });
+
+      // HUD
+      $('[data-hud-flujo]').textContent = fl.nombre;
+      $('[data-hud-prog]').innerHTML = fl.etapas.map(() => '<li></li>').join('');
+      $('[data-hud-fin]').hidden = true;
+      hud(-1);
+      for (let k = 0; k < ESTELA; k++) estelaPos.set([ini.x, ini.y, ini.z], k * 3);
+      sec.querySelectorAll<HTMLElement>('.auf-tab').forEach((b, k) => b.setAttribute('aria-selected', k === i ? 'true' : 'false'));
+    }
+
+    function hud(k: number) {
+      const fl = flujos[flujo];
+      const tipoEl = $('[data-hud-tipo]');
+      if (k < 0) {
+        $('[data-hud-paso]').textContent = fl.cuando;
+        $('[data-hud-t]').textContent = 'Arranca el flujo'; $('[data-hud-area]').textContent = '';
+        tipoEl.textContent = 'AXO'; tipoEl.className = 'auf-hud-tipo';
+        $('[data-hud-d]').textContent = `${fl.etapas.length} etapas, de inicio a fin. Sigue el pedido.`;
+        return;
+      }
+      const e = fl.etapas[k];
+      $('[data-hud-paso]').textContent = `${String(k + 1).padStart(2, '0')} / ${String(fl.etapas.length).padStart(2, '0')}`;
+      $('[data-hud-t]').textContent = e.t; $('[data-hud-area]').textContent = e.area;
+      tipoEl.textContent = TIPO[e.tipo]; tipoEl.className = `auf-hud-tipo t-${e.tipo}`;
+      $('[data-hud-d]').textContent = e.hace;
+      $('[data-hud-prog]').querySelectorAll('li').forEach((li, j) => { li.className = j < k ? 'is-ok' : j === k ? 'is-on' : ''; });
+    }
+
+    function terminaHud() {
+      const fl = flujos[flujo];
+      $('[data-hud-paso]').textContent = 'Listo';
+      $('[data-hud-t]').textContent = fl.nombre; $('[data-hud-area]').textContent = '';
+      const tipoEl = $('[data-hud-tipo]'); tipoEl.textContent = 'Corrió solo, de punta a punta'; tipoEl.className = 'auf-hud-tipo t-aviso';
+      $('[data-hud-d]').textContent = '';
+      $('[data-hud-prog]').querySelectorAll('li').forEach((li) => { li.className = 'is-ok'; });
+      $('[data-hud-res]').textContent = fl.resultado;
+      $('[data-hud-cifras]').innerHTML = (fl.cifras || []).map(([n, t]) => `<li><b>${n}</b>${t}</li>`).join('');
+      $('[data-hud-fin]').hidden = false;
+    }
+
+    function onda(p: THREE.Vector3, color: number, mirando: THREE.Vector3) {
+      const m = new THREE.Mesh(new THREE.RingGeometry(1.2, 1.32, 64), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }));
+      m.position.copy(p); m.lookAt(p.clone().add(mirando)); grupo.add(m); ondas.push({ m, t: 0 });
+    }
+    function chispa(a: THREE.Vector3, b: THREE.Vector3, color: number) {
+      const m = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 12), new THREE.MeshBasicMaterial({ color }));
+      grupo.add(m); chispas.push({ m, a: a.clone(), b: b.clone(), t: 0 });
+    }
+
+    function llega(k: number) {
+      etapa = k; fase = 'espera'; reloj = 0;
+      const p = puertas[k], tan = curva.getTangentAt(paradas[k]);
+      hud(k);
+      p.lb.classList.add('is-on');
+      chispa(axo.position, p.pos, COLOR[p.tipo]);            // AXO le manda la orden a la puerta
+      (p.rayo.material as THREE.LineBasicMaterial).opacity = 0.9;
+      if (p.tipo === 'regla') { onda(p.pos, 0xff6b6b, tan); setTimeout(() => onda(p.pos, 0xff6b6b, tan), 260); }
+      else onda(p.pos, COLOR[p.tipo], tan);
+    }
+    function sale(k: number) {
+      const p = puertas[k], tan = curva.getTangentAt(paradas[k]);
+      p.ok = true; p.lb.classList.remove('is-on'); p.lb.classList.add('is-ok');
+      (p.anillo.material as THREE.MeshBasicMaterial).color.setHex(0x5fd3b5);
+      (p.rayo.material as THREE.LineBasicMaterial).opacity = 0.18;
+      onda(p.pos, 0x5fd3b5, tan);
+      fase = 'viaja';
+    }
+
+    // ── cámara: persigue al pedido; «Vista completa» enseña todo el flujo; arrastrar la gira
+    let vista = true, pausa = false, yaw = 0, pitch = 0, arrastre: { x: number; y: number } | null = null;
+    const camObj = new THREE.Vector3(), miraObj = new THREE.Vector3(), mira = new THREE.Vector3(0, 0, 0);
+    canvas.addEventListener('pointerdown', (e) => { arrastre = { x: e.clientX, y: e.clientY }; canvas.setPointerCapture(e.pointerId); });
+    canvas.addEventListener('pointermove', (e) => { if (!arrastre) return; yaw += (e.clientX - arrastre.x) * 0.006; pitch = Math.max(-0.5, Math.min(0.8, pitch + (e.clientY - arrastre.y) * 0.004)); arrastre = { x: e.clientX, y: e.clientY }; });
+    const suelta = () => { arrastre = null; };
+    canvas.addEventListener('pointerup', suelta); canvas.addEventListener('pointercancel', suelta);
+    const bVista = $('[data-vista]'), bPausa = $('[data-pausa]');
+    bVista.addEventListener('click', () => { vista = !vista; bVista.setAttribute('aria-pressed', String(vista)); bVista.textContent = vista ? 'Seguir el pedido' : 'Vista completa'; });
+    bPausa.addEventListener('click', () => { pausa = !pausa; bPausa.setAttribute('aria-pressed', String(pausa)); bPausa.textContent = pausa ? 'Seguir' : 'Pausa'; });
+    sec.querySelectorAll<HTMLElement>('.auf-tab').forEach((b) => b.addEventListener('click', () => construye(Number(b.dataset.flujo))));
+
+    function tamano() {
+      const w = stage.clientWidth, h = stage.clientHeight;
+      renderer.setSize(w, h, false); composer.setSize(w, h); bloom.setSize(w, h);
+      camera.aspect = w / h; camera.updateProjectionMatrix();
+    }
+    new ResizeObserver(tamano).observe(stage); tamano();
+
+    let visible = true;
+    new IntersectionObserver((es) => { visible = es.some((e) => e.isIntersecting); }, { threshold: 0.05 }).observe(stage);
+
+    construye(0);
+    const clk = new THREE.Clock();
+    const tmp = new THREE.Vector3(), side = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0), proj = new THREE.Vector3();
+    let t = 0;
+
+    function cuadro() {
+      requestAnimationFrame(cuadro);
+      if (!visible) { clk.getDelta(); return; }
+      const dt = Math.min(0.05, clk.getDelta());
+      t += dt;
+      const fl = flujos[flujo];
+
+      // AXO respira y gira
+      nucleo.scale.setScalar(1 + Math.sin(t * 2.2) * 0.06);
+      casco.rotation.y += dt * 0.25; casco.rotation.x += dt * 0.1;
+      anillos.forEach((a, i) => { a.rotation.z += dt * (0.35 + i * 0.22) * (i % 2 ? -1 : 1); a.rotation.x += dt * 0.05 * (i + 1); });
+      vias.uniforms.uT.value = t;
+
+      // el pedido avanza
+      if (!pausa) {
+        if (fase === 'viaja') {
+          const sig = etapa + 1;
+          const meta = sig < paradas.length ? paradas[sig] : 1;
+          const vel = movil ? 0.075 : 0.065;
+          u = Math.min(meta, u + dt * vel * (0.55 + Math.min(1, (meta - u) * 12)));
+          if (u >= meta - 1e-4) {
+            if (sig < paradas.length) llega(sig);
+            else { fase = 'fin'; reloj = 0; terminaHud(); }
+          }
+        } else if (fase === 'espera') {
+          reloj += dt;
+          const p = puertas[etapa];
+          const dura = p.tipo === 'aprobacion' ? 3.2 : p.tipo === 'regla' ? 2.6 : 2.0;
+          if (p.tipo === 'aprobacion' && reloj > dura * 0.62 && !(p as any).dijoSi) {
+            (p as any).dijoSi = true;              // llega el «sí»: la puerta pasa a verde y el pedido sigue
+            chispa(axo.position, p.pos, 0x5fd3b5);
+          }
+          if (reloj > dura) sale(etapa);
+        } else if (fase === 'fin') {
+          reloj += dt;
+          if (reloj > 6.5) construye((flujo + 1) % flujos.length);
+        }
+      }
+      vias.uniforms.uP.value = u;
+      const pv = enLut(u);
+      viajero.position.copy(pv);
+      viajero.rotation.x += dt * 2.4; viajero.rotation.y += dt * 3.1;
+      halo.scale.setScalar(1 + Math.sin(t * 6) * 0.15);
+
+      // estela
+      estelaPos.copyWithin(3, 0, (ESTELA - 1) * 3); estelaPos.set([pv.x, pv.y, pv.z], 0);
+      for (let k = 0; k < ESTELA; k++) { const a = Math.pow(1 - k / ESTELA, 1.6); estelaCol.set([0.62 * a, 0.72 * a, 1.0 * a], k * 3); }
+      estelaGeo.attributes.position.needsUpdate = true; estelaGeo.attributes.color.needsUpdate = true;
+
+      // partículas por la vía
+      const arr = flujoPts.geometry.attributes.position.array as Float32Array;
+      for (let k = 0; k < arr.length / 3; k++) {
+        const o = k * 4; let uu = flujoOff[o] + t * 0.02 * flujoOff[o + 3]; uu -= Math.floor(uu);
+        const q = enLut(uu);
+        arr[k * 3] = q.x + flujoOff[o + 1] * Math.sin(t + k); arr[k * 3 + 1] = q.y + flujoOff[o + 2]; arr[k * 3 + 2] = q.z + flujoOff[o + 1] * Math.cos(t * 0.7 + k);
+      }
+      flujoPts.geometry.attributes.position.needsUpdate = true;
+
+      // puertas: la de turno late; la aprobación brilla dorada hasta el «sí»
+      puertas.forEach((p, k) => {
+        const on = k === etapa && fase === 'espera';
+        const mat = p.anillo.material as THREE.MeshBasicMaterial;
+        const s = on ? 1 + Math.sin(t * 8) * 0.06 + 0.12 : 1;
+        p.anillo.scale.setScalar(THREE.MathUtils.lerp(p.anillo.scale.x, s, 0.15));
+        mat.opacity = THREE.MathUtils.lerp(mat.opacity, on ? 1 : p.ok ? 0.75 : 0.45, 0.1);
+        (p.disco.material as THREE.MeshBasicMaterial).opacity = THREE.MathUtils.lerp((p.disco.material as THREE.MeshBasicMaterial).opacity, on ? 0.22 : 0.04, 0.1);
+        if (on && p.tipo === 'aprobacion' && (p as any).dijoSi) mat.color.lerp(new THREE.Color(0x5fd3b5), 0.12);
+        p.anillo.rotation.z += dt * (on ? 1.6 : 0.2);
+        const rm = p.rayo.material as THREE.LineBasicMaterial; if (!on) rm.opacity = THREE.MathUtils.lerp(rm.opacity, p.ok ? 0.16 : 0.06, 0.05);
+      });
+
+      // ondas y chispas
+      ondas = ondas.filter((o) => { o.t += dt; o.m.scale.setScalar(1 + o.t * 1.8); (o.m.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.6 - o.t * 0.75); if (o.t > 0.85) { grupo.remove(o.m); o.m.geometry.dispose(); (o.m.material as THREE.Material).dispose(); return false; } return true; });
+      chispas = chispas.filter((c) => { c.t += dt * 1.6; const e = Math.min(1, c.t); c.m.position.lerpVectors(c.a, c.b, e * e * (3 - 2 * e)); c.m.position.y += Math.sin(e * Math.PI) * 2.2; if (c.t >= 1) { grupo.remove(c.m); c.m.geometry.dispose(); (c.m.material as THREE.Material).dispose(); return false; } return true; });
+
+      // cámara
+      if (vista) {
+        const r = movil ? 38 : 25;
+        camObj.set(Math.sin(yaw + t * 0.05) * r, (movil ? 6 : 10) + pitch * 14, Math.cos(yaw + t * 0.05) * r);
+        miraObj.set(0, movil ? -4.5 : -1, 0);
+      } else {
+        const tan = curva.getTangentAt(Math.min(0.999, Math.max(0.001, u)));
+        side.crossVectors(tan, up).normalize();
+        const orbita = fase === 'espera' ? Math.sin(reloj * 0.9) * 1.6 : 0;
+        camObj.copy(pv).addScaledVector(tan, -6.2).addScaledVector(up, 2.6 + pitch * 6).addScaledVector(side, 2.2 + orbita + yaw * 4);
+        if (fase === 'fin') camObj.set(Math.sin(t * 0.15) * 26, 9, Math.cos(t * 0.15) * 26);
+        tmp.copy(pv).addScaledVector(tan, 3);
+        miraObj.copy(fase === 'fin' ? axo.position : tmp);
+      }
+      camera.position.lerp(camObj, vista || fase === 'fin' ? 0.045 : 0.05);
+      mira.lerp(miraObj, 0.07); camera.lookAt(mira);
+
+      // etiquetas de las puertas
+      const w = stage.clientWidth, h = stage.clientHeight;
+      puertas.forEach((p) => {
+        proj.copy(p.pos); proj.y += 1.9; proj.project(camera);
+        const detras = proj.z > 1;
+        const x = (proj.x * 0.5 + 0.5) * w, y = (-proj.y * 0.5 + 0.5) * h;
+        p.lb.style.opacity = detras || x < -40 || x > w + 40 ? '0' : '1';
+        p.lb.style.transform = `translate(-50%,-50%) translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`;
+      });
+
+      composer.render();
+      void fl;
+    }
+    cuadro();
+  }
+</script>

@@ -4,8 +4,8 @@
  * las /experiencia (ExpHero). En escritorio la foto horizontal y el texto en su lado tranquilo (izquierda); en el
  * teléfono, la vertical con el texto abajo sobre un velo. La foto es el LCP (eager + fetchpriority).
  */
-interface Props { n: string; etiqueta: string; titulo: string; bajada: string; foto: string; alt: string; ancla: string; aviso?: string; foco?: string }
-const { n, etiqueta, titulo, bajada, foto, alt, ancla, aviso, foco = '50% 80%' } = Astro.props;
+interface Props { n: string; etiqueta: string; titulo: string; bajada: string; foto: string; alt: string; ancla: string; aviso?: string; foco?: string; seccion?: string }
+const { n, etiqueta, titulo, bajada, foto, alt, ancla, aviso, foco = '50% 80%', seccion = `Automatiza · ${n}` } = Astro.props;
 const I = '/images/automatiza/';
 ---
 <section class="auh" aria-labelledby="auh-h" style={`--foco:${foco}`}>
@@ -15,7 +15,7 @@ const I = '/images/automatiza/';
   </picture>
   <div class="auh-velo" aria-hidden="true"></div>
   <div class="auh-in">
-    <p class="auh-folio"><span>Automatiza · {n}</span><span>{etiqueta}</span></p>
+    <p class="auh-folio"><span>{seccion}</span><span>{etiqueta}</span></p>
     {aviso && <p class="auh-aviso"><i aria-hidden="true"></i>{aviso}</p>}
     <h1 class="auh-h" id="auh-h">{titulo}</h1>
     <p class="auh-p">{bajada}</p>
