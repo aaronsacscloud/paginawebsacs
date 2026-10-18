@@ -88,9 +88,14 @@ const casosCarrusel = [
     img: '/images/mits-poncho.webp', alt: 'Mujer con el poncho «Mexico Is The Shit»', pos: 'center 30%',
     stats: [{ num: '7', label: 'colecciones' }, { num: '100%', label: 'hecho en México' }] },
 ];
+import PlanesEnterprise from '../components/planes/PlanesEnterprise.astro';
 
 // Plugins del carrusel (fotos de la misma serie que usan las páginas de cada plugin).
 const plugins = [
+  // 18-oct-2026 (dueño): Planeación de demanda también va como plugin, la primera del carrusel.
+  { href: '/planeacion-de-demanda', kicker: 'Planeación', name: 'Planeación de demanda',
+    desc: 'Pronóstico por temporada, modelo, talla y tienda: qué comprar, cuánto y cuándo, cómo repartirlo y cuándo resurtir.',
+    img: '/images/automatiza/forecast-1536.webp', alt: 'Directora de una marca de moda revisando el pronóstico de la temporada', pos: 'center 40%' },
   { href: '/producto/api-e-integraciones', kicker: 'Conector de datos', name: 'Opera Sacs desde tu IA',
     desc: 'Conecta tu cuenta a ChatGPT, Claude, Grok o Muse y pídele en tus palabras: qué talla se acaba, cuánto vendió la colección, que arme el traspaso.',
     chips: ['ChatGPT', 'Claude', 'Grok', 'Muse'], img: '/images/axo-copiloto-ia-hero.webp', alt: 'Encargada de boutique consultando Sacs desde su tableta', pos: 'center 35%' },
@@ -389,50 +394,8 @@ const integraciones = [
   </div>
 </section>
 
-<!-- ═══ SECTION: Enterprise ═══ -->
-<section class="enterprise-section">
-  <div class="container enterprise-grid">
-    <div class="enterprise-content">
-      <h2 class="enterprise-title">Tu operación es única. Tu plan también.</h2>
-      <p class="enterprise-desc">Si manejas más de 20 sucursales o más de 20,000 productos, diseñamos un plan a tu medida. Personalizaciones, apps custom, integraciones dedicadas y todo lo necesario para crear una experiencia extraordinaria con Sacs.</p>
-      <ul class="enterprise-points">
-        <li>Ejecutivo SR dedicado y soporte prioritario</li>
-        <li>Personalizaciones y desarrollos a medida</li>
-        <li>Integraciones custom con tus sistemas</li>
-        <li>Descuento por volumen en licencias</li>
-      </ul>
-      <a class="enterprise-btn" href="/contacto">Hablar con ventas</a>
-    </div>
-    <div class="enterprise-visual">
-      <div class="enterprise-card">
-        <div class="enterprise-card-glow"></div>
-        <div class="enterprise-card-inner">
-          <div class="enterprise-card-header">
-            <span class="enterprise-card-logo">Sacs</span>
-            <span class="enterprise-card-label">Enterprise</span>
-          </div>
-          <div class="enterprise-card-body">
-            <div class="enterprise-card-stat">
-              <span class="enterprise-card-stat-num">∞</span>
-              <span class="enterprise-card-stat-label">Sucursales</span>
-            </div>
-            <div class="enterprise-card-divider"></div>
-            <div class="enterprise-card-stat">
-              <span class="enterprise-card-stat-num">∞</span>
-              <span class="enterprise-card-stat-label">Productos</span>
-            </div>
-          </div>
-          <div class="enterprise-card-features">
-            <span>✓ Apps custom</span>
-            <span>✓ API dedicada</span>
-            <span>✓ SLA garantizado</span>
-          </div>
-          <div class="enterprise-card-price">Personalizado</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+<!-- ═══ SECTION: Enterprise (18-oct-2026: interactiva, ver components/planes/PlanesEnterprise.astro) ═══ -->
+<PlanesEnterprise />
 
 <!-- ═══ SECTION 3: Universal Features ═══ -->
 <section class="universal-section">
@@ -496,7 +459,9 @@ const integraciones = [
 </section>
 
 <!-- ═══ SECTION: Plugins (carrusel) — 18-oct-2026: el dueño pidió fotos grandes y una explicación breve ═══ -->
-<section class="addons-section plg-section">
+<section class="addons-section plg-section" data-plg>
+  <div class="plg-riel" data-plg-riel>
+  <div class="plg-pin" data-plg-pin>
   <div class="container">
     <h2 class="addons-title">Súmale lo que tu giro necesita</h2>
     <p class="addons-subtitle">Plugins que le agregan superpoderes a tu plan. Los que piden un plan base lo dicen en su tarjeta.</p>
@@ -526,6 +491,8 @@ const integraciones = [
       </div>
     </div>
     <button type="button" class="reels-nav reels-nav--next" aria-label="Plugin siguiente" data-dir="1">›</button>
+  </div>
+  </div>
   </div>
 </section>
 
@@ -610,91 +577,6 @@ const integraciones = [
           </div>
         </div>
       ))}
-    </div>
-  </div>
-</section>
-
-<!-- ═══ SECTION: ROI Calculator ═══ -->
-<section class="calc-section" id="roi-calculator">
-  <div class="container">
-    <h2 class="calc-title">Descubre cuánto puedes ahorrar con Sacs</h2>
-    <p class="calc-subtitle">Configura tu negocio y mira el impacto en dinero y tiempo.</p>
-
-    <div class="calc-grid">
-      <div class="calc-inputs">
-        <!-- Plan selector -->
-        <div class="calc-plan-selector">
-          <span class="calc-slider-label">Tu plan</span>
-          <div class="calc-plan-options" id="calc-plan-options">
-            <button class="calc-plan-opt" data-plan="vende" data-price="810">Vende<span>$810/mes</span></button>
-            <button class="calc-plan-opt active" data-plan="controla" data-price="1215">Controla<span>$1,215/mes</span></button>
-            <button class="calc-plan-opt" data-plan="fideliza" data-price="1890">Fideliza<span>$1,890/mes</span></button>
-          </div>
-        </div>
-
-        <div class="calc-slider-group">
-          <div class="calc-slider-header">
-            <span class="calc-slider-label">Facturación anual</span>
-            <span class="calc-slider-value" id="calc-revenue-display">$1M MXN</span>
-          </div>
-          <input type="range" id="calc-revenue" min="500000" max="500000000" step="500000" value="1000000" class="calc-range" aria-label="Facturación anual" />
-          <div class="calc-slider-ticks"><span>$500K</span><span>$500M</span></div>
-        </div>
-        <div class="calc-slider-group">
-          <div class="calc-slider-header">
-            <span class="calc-slider-label">Número de sucursales</span>
-            <span class="calc-slider-value" id="calc-branches-display">3</span>
-          </div>
-          <input type="range" id="calc-branches" min="1" max="50" step="1" value="3" class="calc-range" aria-label="Número de sucursales" />
-          <div class="calc-slider-ticks"><span>1</span><span>50</span></div>
-        </div>
-
-        <div class="calc-benefits">
-          <div class="calc-category">
-            <span class="calc-category-label">Control de tu operación diaria</span>
-            <label class="calc-benefit"><input type="checkbox" checked data-pct="0.8" data-hrs="0" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Corte de caja ciego antifraude</span><span class="calc-benefit-why">El cajero reporta sin ver el total real. Sacs compara y detecta faltantes al instante.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
-            <label class="calc-benefit"><input type="checkbox" checked data-pct="0" data-hrs="6" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Conteo de inventario desde el celular</span><span class="calc-benefit-why">Antes cerrabas la tienda para contar. Ahora tu equipo cuenta desde el celular en horario normal.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
-            <label class="calc-benefit"><input type="checkbox" checked data-pct="0" data-hrs="4" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Facturación CFDI automática</span><span class="calc-benefit-why">Cada factura manual toma ~15 min. Con Sacs se genera automáticamente desde cada venta.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
-            <label class="calc-benefit"><input type="checkbox" checked data-pct="0" data-hrs="3" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Recepción de mercancía con escáner</span><span class="calc-benefit-why">Escaneas las cajas al recibirlas y Sacs valida contra la orden de compra. Sin contar a mano.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
-          </div>
-          <div class="calc-category">
-            <span class="calc-category-label">Inventario que se mueve donde se vende</span>
-            <label class="calc-benefit"><input type="checkbox" checked data-pct="1.5" data-hrs="0" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Detectar productos estancados</span><span class="calc-benefit-why">El reporte Dusty detecta productos con 0 ventas en 60 días. Los descuentas antes de que pierdan valor.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
-            <label class="calc-benefit"><input type="checkbox" checked data-pct="0.8" data-hrs="2" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Traspasos inteligentes entre sucursales</span><span class="calc-benefit-why">Si una talla está agotada en una tienda pero sobra en otra, Sacs lo detecta y sugiere el traspaso.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
-            <label class="calc-benefit"><input type="checkbox" checked data-pct="0.5" data-hrs="2" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Reabasto basado en velocidad de venta</span><span class="calc-benefit-why">En vez de pedir "a ojo", Sacs calcula cuántas unidades necesitas basado en ventas reales por talla.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
-          </div>
-          <div class="calc-category">
-            <span class="calc-category-label">Clientes que regresan y gastan más</span>
-            <label class="calc-benefit"><input type="checkbox" checked data-pct="1.5" data-hrs="0" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Programa de lealtad integrado al cobro</span><span class="calc-benefit-why">Un cliente con puntos regresa 2x más. El monedero se activa al cobrar, sin apps extras.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
-            <label class="calc-benefit"><input type="checkbox" checked data-pct="0.5" data-hrs="2" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Promociones automáticas por fecha</span><span class="calc-benefit-why">Programas la promoción del Buen Fin una vez. Se activa y desactiva sola en todas las sucursales.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
-            <label class="calc-benefit"><input type="checkbox" checked data-pct="1" data-hrs="0" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Venta en tienda + web + WhatsApp + redes</span><span class="calc-benefit-why">Vendes en 5 canales sin miedo a vender algo agotado. El stock se actualiza en segundos.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
-          </div>
-          <div class="calc-category">
-            <span class="calc-category-label">Decisiones con datos, no con intuición</span>
-            <label class="calc-benefit"><input type="checkbox" checked data-pct="0" data-hrs="4" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Reportes automáticos de venta y margen</span><span class="calc-benefit-why">En vez de 2 horas en Excel cada semana, Sacs genera tus reportes automáticamente.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
-            <label class="calc-benefit"><input type="checkbox" checked data-pct="0.8" data-hrs="0" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Predicción de demanda con IA</span><span class="calc-benefit-why">La IA analiza ventas históricas y te dice qué comprar para la siguiente temporada. Menos sobrantes.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
-          </div>
-        </div>
-      </div>
-
-      <div class="calc-results">
-        <div class="calc-results-card">
-          <h3 class="calc-results-title">Ahorro estimado anual</h3>
-          <div class="calc-results-row">
-            <div class="calc-result-item"><span class="calc-result-num" id="calc-money">$136,000</span><span class="calc-result-label">MXN en dinero</span></div>
-            <div class="calc-result-divider"></div>
-            <div class="calc-result-item"><span class="calc-result-num calc-result-num--time" id="calc-hours">936</span><span class="calc-result-label">horas al año</span></div>
-          </div>
-          <div class="calc-results-equiv">≈ <span id="calc-fte">5.9</span> temporadas de trabajo recuperadas</div>
-          <div class="calc-results-divider"></div>
-          <div class="calc-results-plan">
-            <span class="calc-results-plan-label">Costo de Sacs · <strong id="calc-plan-name">Controla</strong></span>
-            <span class="calc-results-plan-price" id="calc-sacs-cost">$28,431 MXN/año</span>
-            <span class="calc-results-plan-roi">Retorno de inversión: <strong id="calc-roi">4.2x</strong></span>
-          </div>
-          <a class="calc-results-btn" href="/prueba-gratis">Prueba 7 días gratis</a>
-        </div>
-      </div>
     </div>
   </div>
 </section>
@@ -1651,666 +1533,6 @@ const integraciones = [
 }
 
 /* ═══════════════════════════════════════
-   ENTERPRISE
-   ═══════════════════════════════════════ */
-.enterprise-section {
-  background: var(--color-bg-dark);
-  padding: var(--space-16) 0;
-  overflow: hidden;
-}
-
-@media (min-width: 768px) {
-  .enterprise-section { padding: var(--space-20) 0; }
-}
-
-@media (min-width: 1024px) {
-  .enterprise-section { padding: var(--space-24) 0; }
-}
-
-.enterprise-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-10);
-  align-items: center;
-}
-
-@media (min-width: 768px) {
-  .enterprise-grid { grid-template-columns: 1fr 1fr; gap: var(--space-16); }
-}
-
-.enterprise-eyebrow {
-  display: block;
-  font-family: var(--font-body);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-secondary-texto);
-  margin-bottom: var(--space-4);
-}
-
-.enterprise-title {
-  font-family: var(--font-display);
-  font-size: clamp(1.75rem, 3.5vw, 2.75rem);
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
-  margin: 0 0 var(--space-5);
-}
-
-.enterprise-desc {
-  font-size: 1rem;
-  color: rgba(255, 255, 255, 0.6);
-  line-height: 1.65;
-  margin: 0 0 var(--space-6);
-  max-width: 500px;
-}
-
-.enterprise-points {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 var(--space-8);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.enterprise-points li {
-  font-size: 0.9375rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.85);
-  padding-left: 24px;
-  position: relative;
-}
-
-.enterprise-points li::before {
-  content: '✓';
-  position: absolute;
-  left: 0;
-  color: var(--color-secondary-texto);
-  font-weight: 700;
-}
-
-.enterprise-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px 36px;
-  background: #fff;
-  color: var(--color-bg-dark);
-  font-family: var(--font-body);
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: var(--radius-full);
-  text-decoration: none;
-  transition: all var(--duration-fast) var(--ease-default);
-}
-
-.enterprise-btn:hover {
-  background: #f0f0f0;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15);
-}
-
-/* Enterprise card */
-.enterprise-visual {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.enterprise-card {
-  position: relative;
-  width: 100%;
-  max-width: 340px;
-}
-
-.enterprise-card-glow {
-  position: absolute;
-  inset: -20px;
-  background: radial-gradient(circle at 50% 50%, rgba(75, 123, 229, 0.2) 0%, transparent 70%);
-  border-radius: 50%;
-  animation: enterprise-pulse 4s ease-in-out infinite;
-}
-
-@keyframes enterprise-pulse {
-  0%, 100% { transform: scale(1); opacity: 0.5; }
-  50% { transform: scale(1.08); opacity: 0.8; }
-}
-
-.enterprise-card-inner {
-  position: relative;
-  background: linear-gradient(145deg, #2a2a3e 0%, #1a1a2e 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-xl);
-  padding: var(--space-8);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-}
-
-.enterprise-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--space-8);
-}
-
-.enterprise-card-logo {
-  font-family: var(--font-logo);
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #fff;
-}
-
-.enterprise-card-label {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--color-secondary-texto);
-  background: rgba(42, 181, 160, 0.15);
-  padding: 4px 12px;
-  border-radius: var(--radius-full);
-}
-
-.enterprise-card-body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-8);
-  margin-bottom: var(--space-6);
-}
-
-.enterprise-card-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.enterprise-card-stat-num {
-  font-family: var(--font-display);
-  font-size: 3rem;
-  font-weight: 800;
-  color: #fff;
-  line-height: 1;
-}
-
-.enterprise-card-stat-label {
-  font-size: 0.6875rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.45);
-  margin-top: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.enterprise-card-divider {
-  width: 1px;
-  height: 48px;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.enterprise-card-features {
-  display: flex;
-  justify-content: center;
-  gap: var(--space-4);
-  margin-bottom: var(--space-6);
-  flex-wrap: wrap;
-}
-
-.enterprise-card-features span {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.06);
-  padding: 6px 14px;
-  border-radius: var(--radius-full);
-}
-
-.enterprise-card-price {
-  text-align: center;
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--color-primary-texto);
-  letter-spacing: -0.02em;
-}
-
-@media (max-width: 767px) {
-  .enterprise-card { max-width: 280px; }
-  .enterprise-card-stat-num { font-size: 2.25rem; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .enterprise-card-glow { animation: none; }
-}
-
-/* ═══════════════════════════════════════
-   ROI CALCULATOR
-   ═══════════════════════════════════════ */
-.calc-section {
-  padding: var(--space-16) 0;
-  background: #fff;
-}
-
-@media (min-width: 768px) { .calc-section { padding: var(--space-20) 0; } }
-@media (min-width: 1024px) { .calc-section { padding: var(--space-24) 0; } }
-
-.calc-eyebrow {
-  display: block;
-  text-align: center;
-  font-family: var(--font-body);
-  font-size: clamp(0.75rem, 1vw, 0.8125rem);
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-primary-texto);
-  margin-bottom: var(--space-4);
-}
-
-.calc-title {
-  font-family: var(--font-display);
-  font-size: clamp(1.75rem, 3vw, 2.5rem);
-  font-weight: 800;
-  color: var(--color-text-primary);
-  text-align: center;
-  margin: 0 0 var(--space-3);
-  letter-spacing: -0.03em;
-}
-
-.calc-subtitle {
-  font-size: 1rem;
-  color: var(--color-text-tertiary);
-  text-align: center;
-  margin: 0 0 var(--space-12);
-}
-
-.calc-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-10);
-}
-
-@media (min-width: 1024px) {
-  .calc-grid { grid-template-columns: 1fr 400px; gap: var(--space-12); }
-}
-
-/* Plan selector */
-.calc-plan-selector {
-  margin-bottom: var(--space-8);
-}
-
-.calc-plan-options {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  margin-top: var(--space-3);
-}
-
-@media (min-width: 768px) {
-  .calc-plan-options { grid-template-columns: repeat(3, 1fr); }
-}
-
-.calc-plan-opt {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 12px 8px;
-  border: 2px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  background: #fff;
-  cursor: pointer;
-  font-family: var(--font-display);
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  transition: all var(--duration-fast) var(--ease-default);
-}
-
-.calc-plan-opt span {
-  font-family: var(--font-body);
-  font-size: 0.6875rem;
-  font-weight: 500;
-  color: var(--color-text-tertiary);
-}
-
-.calc-plan-opt.active {
-  border-color: var(--color-primary-texto);
-  background: rgba(75, 123, 229, 0.06);
-}
-
-.calc-plan-opt.active span {
-  color: var(--color-primary-texto);
-}
-
-.calc-plan-opt:hover:not(.active) {
-  border-color: var(--color-border);
-}
-
-/* Sliders */
-.calc-slider-group {
-  margin-bottom: var(--space-8);
-}
-
-.calc-slider-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: var(--space-3);
-}
-
-.calc-slider-label {
-  font-family: var(--font-display);
-  font-size: 0.9375rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.calc-slider-value {
-  font-family: var(--font-display);
-  font-size: 1rem;
-  font-weight: 800;
-  color: var(--color-primary-texto);
-}
-
-.calc-range {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  background: var(--color-bg-secondary);
-  outline: none;
-  cursor: pointer;
-}
-
-.calc-range::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  border: 3px solid #fff;
-  box-shadow: 0 2px 8px rgba(75, 123, 229, 0.3);
-  cursor: pointer;
-  transition: transform var(--duration-fast) var(--ease-default);
-}
-
-.calc-range::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
-}
-
-.calc-range::-moz-range-thumb {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  border: 3px solid #fff;
-  box-shadow: 0 2px 8px rgba(75, 123, 229, 0.3);
-  cursor: pointer;
-}
-
-.calc-slider-ticks {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 6px;
-  font-size: 0.6875rem;
-  color: var(--color-text-tertiary);
-}
-
-/* Benefits */
-.calc-benefits {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-}
-
-.calc-category-label {
-  display: block;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--color-text-tertiary);
-  margin-bottom: var(--space-3);
-}
-
-.calc-benefit {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-  cursor: pointer;
-  transition: opacity var(--duration-fast) var(--ease-default);
-}
-
-.calc-benefit:has(input:not(:checked)) {
-  opacity: 0.4;
-}
-
-.calc-benefit input {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.calc-benefit-check {
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
-  border: 2px solid var(--color-border);
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--duration-fast) var(--ease-default);
-}
-
-.calc-benefit input:checked ~ .calc-benefit-check {
-  background: var(--color-primary);
-  border-color: var(--color-primary-texto);
-}
-
-.calc-benefit input:checked ~ .calc-benefit-check::after {
-  content: '✓';
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.calc-benefit-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.calc-benefit-text {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.calc-benefit-why {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 400;
-  color: var(--color-text-tertiary);
-  line-height: 1.4;
-  margin-top: 2px;
-}
-
-.calc-benefit-pct {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  color: var(--color-text-tertiary);
-  white-space: nowrap;
-  margin-left: auto;
-}
-
-.calc-benefit-save {
-  font-family: var(--font-display);
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--color-secondary-texto);
-  white-space: nowrap;
-  min-width: 70px;
-  text-align: right;
-}
-
-/* Results */
-.calc-results {
-  position: sticky;
-  top: 90px;
-  align-self: start;
-}
-
-.calc-results-card {
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-xl);
-  padding: var(--space-8);
-}
-
-.calc-results-title {
-  font-family: var(--font-display);
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--color-text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin: 0 0 var(--space-6);
-  text-align: center;
-}
-
-.calc-results-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-6);
-  margin-bottom: var(--space-5);
-}
-
-.calc-result-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.calc-result-icon {
-  font-size: 1.5rem;
-  margin-bottom: 4px;
-}
-
-.calc-result-num {
-  font-family: var(--font-display);
-  font-size: clamp(1.75rem, 3vw, 2.25rem);
-  font-weight: 800;
-  color: var(--color-primary-texto);
-  letter-spacing: -0.03em;
-  line-height: 1;
-  transition: color 0.3s ease;
-}
-
-.calc-result-num--time {
-  color: var(--color-secondary-texto);
-}
-
-.calc-result-label {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--color-text-tertiary);
-  margin-top: 4px;
-}
-
-.calc-result-divider {
-  width: 1px;
-  height: 48px;
-  background: var(--color-border-light);
-}
-
-.calc-results-equiv {
-  text-align: center;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-text-tertiary);
-  margin-bottom: var(--space-6);
-}
-
-.calc-results-equiv span {
-  font-weight: 800;
-  color: var(--color-text-primary);
-}
-
-.calc-results-divider {
-  height: 1px;
-  background: var(--color-border-light);
-  margin-bottom: var(--space-5);
-}
-
-.calc-results-plan {
-  text-align: center;
-  margin-bottom: var(--space-6);
-}
-
-.calc-results-plan-label {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 4px;
-}
-
-.calc-results-plan-price {
-  display: block;
-  font-family: var(--font-display);
-  font-size: 1.125rem;
-  font-weight: 800;
-  color: var(--color-text-primary);
-  margin-bottom: 4px;
-}
-
-.calc-results-plan-roi {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-}
-
-.calc-results-plan-roi strong {
-  color: var(--color-secondary-texto);
-  font-weight: 800;
-}
-
-.calc-results-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: 16px;
-  background: var(--color-primary-btn, #4470D8);
-  color: #fff;
-  font-family: var(--font-body);
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: var(--radius-full);
-  text-decoration: none;
-  transition: all var(--duration-fast) var(--ease-default);
-}
-
-.calc-results-btn:hover {
-  background: var(--color-primary-hover);
-  transform: scale(1.02);
-}
-
-@media (max-width: 1023px) {
-  .calc-results { position: static; }
-}
-
-/* ═══════════════════════════════════════
    UNIVERSAL FEATURES
    ═══════════════════════════════════════ */
 .universal-section {
@@ -3030,6 +2252,13 @@ const integraciones = [
   scrollbar-width: none;
 }
 .reels-track-wrapper::-webkit-scrollbar { display: none; }
+/* Plugins con el scroll (18-oct-2026, dueño): en escritorio la sección se queda pegada y, al bajar, el carrusel
+   avanza hacia la derecha hasta enseñar el último plugin; luego la página sigue. Ver el script «plugins con el scroll». */
+.plg-section.is-scrub .plg-pin { position: sticky; }
+.plg-section.is-scrub .reels-track-wrapper { scroll-snap-type: none; }
+/* pegada tiene que caber en la pantalla: la foto se acorta y la tarjeta se angosta un poco */
+.plg-section.is-scrub .plg-foto { aspect-ratio: auto; height: clamp(200px, calc(100vh - 520px), 400px); }
+.plg-section.is-scrub .plg-card { width: clamp(320px, 38vw, 560px); }
 .reels-track {
   display: flex;
   gap: clamp(16px, 2vw, 24px);
@@ -3467,6 +2696,46 @@ const integraciones = [
 </script>
 
 <script>
+  // Plugins con el scroll: la sección se pega y bajar = avanzar el carrusel a la derecha (solo escritorio y si no se
+  // pidió reducir movimiento; en el teléfono sigue siendo un carrusel que se desliza con el dedo).
+  document.querySelectorAll<HTMLElement>('[data-plg]').forEach((sec) => {
+    const riel = sec.querySelector<HTMLElement>('[data-plg-riel]')!;
+    const pin = sec.querySelector<HTMLElement>('[data-plg-pin]')!;
+    const wrap = pin.querySelector<HTMLElement>('[data-carrusel-pista]')!;
+    const mq = window.matchMedia('(min-width: 900px) and (prefers-reduced-motion: no-preference)');
+    let extra = 0;
+    const medir = () => {
+      riel.style.height = ''; pin.style.top = '';
+      if (!mq.matches) { sec.classList.remove('is-scrub'); return; }
+      sec.classList.add('is-scrub');                       // se mide ya con las tarjetas del modo pegado
+      extra = wrap.scrollWidth - wrap.clientWidth;
+      if (extra < 40) { sec.classList.remove('is-scrub'); return; }
+      riel.style.height = `${pin.offsetHeight + extra}px`;
+      pin.style.top = `${Math.max(64, (window.innerHeight - pin.offsetHeight) / 2)}px`;
+      mueve();
+    };
+    const mueve = () => {
+      if (!sec.classList.contains('is-scrub')) return;
+      const top = parseFloat(pin.style.top) || 0;
+      const p = Math.min(1, Math.max(0, (top - riel.getBoundingClientRect().top) / extra));
+      wrap.scrollLeft = p * extra;
+    };
+    // con la sección pegada, las flechas bajan o suben la página lo que mide una tarjeta
+    pin.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLElement>('[data-dir]');
+      if (!b || !sec.classList.contains('is-scrub')) return;
+      e.stopImmediatePropagation();
+      const card = wrap.querySelector('.plg-card');
+      window.scrollBy({ top: Number(b.dataset.dir) * (card ? card.getBoundingClientRect().width + 24 : 400), behavior: 'smooth' });
+    }, true);
+    window.addEventListener('scroll', mueve, { passive: true });
+    window.addEventListener('resize', medir);
+    mq.addEventListener('change', medir);
+    if (document.readyState === 'complete') medir(); else window.addEventListener('load', medir);
+  });
+</script>
+
+<script>
   // TikTok: user viewed pricing page
   try {
     if (typeof ttq !== 'undefined') {
@@ -3715,106 +2984,6 @@ const integraciones = [
       });
     });
   }
-
-  // ─── ROI Calculator ───
-  const revenueSlider = document.getElementById('calc-revenue') as HTMLInputElement;
-  const branchesSlider = document.getElementById('calc-branches') as HTMLInputElement;
-  const revenueDisplay = document.getElementById('calc-revenue-display');
-  const branchesDisplay = document.getElementById('calc-branches-display');
-  const moneyEl = document.getElementById('calc-money');
-  const hoursEl = document.getElementById('calc-hours');
-  const fteEl = document.getElementById('calc-fte');
-  const sacsCostEl = document.getElementById('calc-sacs-cost');
-  const roiEl = document.getElementById('calc-roi');
-  const planNameEl = document.getElementById('calc-plan-name');
-  const planOptions = document.querySelectorAll<HTMLButtonElement>('.calc-plan-opt');
-  const benefitCheckboxes = document.querySelectorAll<HTMLInputElement>('.calc-benefit input[type="checkbox"]');
-  let selectedPlanPrice = 900;
-  let selectedPlanName = 'Controla';
-
-  function formatMoney(n: number): string {
-    if (n >= 1000000) return '$' + (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-    if (n >= 1000) return '$' + Math.round(n).toLocaleString('es-MX');
-    return '$' + Math.round(n);
-  }
-
-  // Plan selector
-  planOptions.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      planOptions.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      selectedPlanPrice = parseInt(btn.dataset.price || '900');
-      selectedPlanName = btn.dataset.plan || 'controla';
-      selectedPlanName = selectedPlanName.charAt(0).toUpperCase() + selectedPlanName.slice(1);
-      calculateROI();
-    });
-  });
-
-  function calculateROI() {
-    const revenue = parseInt(revenueSlider?.value || '1000000');
-    const branches = parseInt(branchesSlider?.value || '3');
-
-    if (revenueDisplay) {
-      if (revenue >= 1000000) {
-        revenueDisplay.textContent = '$' + (revenue / 1000000).toFixed(1).replace(/\.0$/, '') + 'M MXN';
-      } else {
-        revenueDisplay.textContent = '$' + (revenue / 1000).toFixed(0) + 'K MXN';
-      }
-    }
-    if (branchesDisplay) branchesDisplay.textContent = String(branches);
-
-    let totalPct = 0;
-    let totalHrsMonth = 0;
-
-    benefitCheckboxes.forEach((cb) => {
-      const pct = parseFloat(cb.dataset.pct || '0');
-      const hrs = parseFloat(cb.dataset.hrs || '0');
-      const row = cb.closest('.calc-benefit');
-      const pctEl = row?.querySelector('.calc-benefit-pct');
-      const saveEl = row?.querySelector('.calc-benefit-save');
-
-      if (!cb.checked) {
-        if (pctEl) pctEl.textContent = '';
-        if (saveEl) saveEl.textContent = '';
-        return;
-      }
-
-      totalPct += pct;
-      totalHrsMonth += hrs * branches;
-
-      if (pctEl) {
-        if (pct > 0) pctEl.textContent = pct + '%';
-        else pctEl.textContent = '';
-      }
-
-      if (saveEl) {
-        const moneySave = revenue * (pct / 100);
-        const hrsSave = hrs * branches * 12;
-        if (pct > 0 && hrs > 0) saveEl.textContent = formatMoney(moneySave) + ' · ' + hrsSave + 'h';
-        else if (pct > 0) saveEl.textContent = formatMoney(moneySave);
-        else if (hrs > 0) saveEl.textContent = hrsSave + 'h/año';
-      }
-    });
-
-    const totalMoney = revenue * (totalPct / 100);
-    const totalHrsYear = totalHrsMonth * 12;
-    // Una temporada de operación de tienda ≈ 6 meses de jornada (960 h).
-    const fte = totalHrsYear / 960;
-    const sacsCost = branches * selectedPlanPrice * 12 * 0.65; // anual = 35% de descuento sobre 12 meses
-    const roi = sacsCost > 0 ? totalMoney / sacsCost : 0;
-
-    if (moneyEl) moneyEl.textContent = formatMoney(totalMoney);
-    if (hoursEl) hoursEl.textContent = totalHrsYear.toLocaleString('es-MX');
-    if (fteEl) fteEl.textContent = fte.toFixed(1);
-    if (planNameEl) planNameEl.textContent = selectedPlanName;
-    if (sacsCostEl) sacsCostEl.textContent = formatMoney(sacsCost) + ' MXN/año';
-    if (roiEl) roiEl.textContent = roi.toFixed(1) + 'x';
-  }
-
-  revenueSlider?.addEventListener('input', calculateROI);
-  branchesSlider?.addEventListener('input', calculateROI);
-  benefitCheckboxes.forEach((cb) => cb.addEventListener('change', calculateROI));
-  calculateROI();
 
   // ─── Social proof: count-up on scroll into view ───
   const socialProofSection = document.querySelector('.social-proof-section');

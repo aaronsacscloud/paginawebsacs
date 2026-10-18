@@ -1,0 +1,110 @@
+---
+/**
+ * Enterprise en /planes (18-oct-2026). Pedido del dueño: «hazlo más visual, se ve muy genérico». Foto grande de una
+ * operación de muchas tiendas con el titular y «Hablar con ventas»; abajo lo que incluye, con foto, y cómo se trabaja.
+ * El configurador «Arma tu plan» salió el mismo día («eso normalmente es personalizado»).
+ * Fotos: propias, hechas con gpt-image-2 (scripts/generate-enterprise.mjs) en public/images/enterprise/.
+ */
+const E = '/images/enterprise/';
+const FOTOS = {
+  hero: `${E}ent-hero`,
+  ejecutivo: `${E}ent-ejecutivo`,
+  medida: `${E}ent-medida`,
+  integra: `${E}ent-integra`,
+  volumen: `${E}ent-volumen`,
+};
+const src = (base: string, w: number) => `${base}-${w}.webp`;
+
+const INCLUYE = [
+  { foto: FOTOS.ejecutivo, t: 'Ejecutivo SR dedicado', d: 'Una persona que conoce tu operación y da la cara por ella, con soporte prioritario.' },
+  { foto: FOTOS.medida, t: 'Personalizaciones y desarrollos', d: 'Sacs se ajusta a tus procesos: pantallas, reportes y apps a la medida.' },
+  { foto: FOTOS.integra, t: 'Integraciones custom', d: 'Conectamos Sacs con los sistemas que ya usas, con API dedicada.' },
+  { foto: FOTOS.volumen, t: 'Descuento por volumen', d: 'Entre más tiendas y licencias, mejor precio por cada una.' },
+];
+const PASOS = [
+  { t: 'Platicamos tu operación', d: 'Tiendas, CEDIS, canales y cómo trabaja hoy tu equipo.' },
+  { t: 'Diseñamos tu plan', d: 'Licencias, desarrollos e integraciones, con su precio.' },
+  { t: 'Lo construimos contigo', d: 'Configuración, desarrollos y conexión con tus sistemas.' },
+  { t: 'Arrancas acompañado', d: 'Tu ejecutivo SR sigue contigo después del arranque.' },
+];
+---
+<section class="ent" id="enterprise" aria-labelledby="ent-h">
+  <div class="ent-hero">
+    <img src={src(FOTOS.hero, 1536)} alt="La directora de un grupo de moda, de traje azul, revisa la operación de todas sus tiendas con su equipo al anochecer" width="1536" height="1024" loading="lazy" decoding="async" />
+    <div class="ent-hero-velo" aria-hidden="true"></div>
+    <div class="ent-hero-txt">
+      <p class="ent-k">Enterprise · más de 20 tiendas o más de 20,000 productos</p>
+      <h2 class="ent-h" id="ent-h">Tu operación es única. <span>Tu plan también.</span></h2>
+      <p class="ent-bajada">Diseñamos un plan a tu medida: personalizaciones, apps custom, integraciones dedicadas y todo lo necesario para crear una experiencia extraordinaria con Sacs.</p>
+      <a class="ent-hero-cta" href="/contacto?de=enterprise" data-evento="planes_enterprise_cta">Hablar con ventas <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+
+  <div class="ent-in">
+    <h3 class="ent-sub">Lo que incluye</h3>
+    <ul class="ent-incluye">
+      {INCLUYE.map((it) => (
+        <li>
+          <img src={src(it.foto, 960)} alt="" width="960" height="640" loading="lazy" decoding="async" />
+          <div><b>{it.t}</b><span>{it.d}</span></div>
+        </li>
+      ))}
+    </ul>
+
+    <h3 class="ent-sub">Cómo trabajamos</h3>
+    <ol class="ent-pasos">
+      {PASOS.map((p, i) => <li><span>{String(i + 1).padStart(2, '0')}</span><b>{p.t}</b><small>{p.d}</small></li>)}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .ent { background: #0B0B0C; color: #fff; }
+  .ent-hero { position: relative; min-height: 560px; display: flex; align-items: flex-end; overflow: hidden; }
+  .ent-hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 35% 40%; transform: scale(1.04); animation: ent-zoom 18s ease-out both; }
+  @keyframes ent-zoom { to { transform: scale(1); } }
+  .ent-hero-velo { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11, 11, 12, 0.15) 0%, rgba(11, 11, 12, 0.55) 45%, #0B0B0C 100%), linear-gradient(90deg, rgba(11, 11, 12, 0.75) 0%, transparent 70%); }
+  .ent-hero-txt { position: relative; max-width: 1200px; width: 100%; margin: 0 auto; padding: 120px 20px 56px; }
+  .ent-k { margin: 0 0 14px; font: 600 11.5px/1.4 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.7); }
+  .ent-h { margin: 0; max-width: 15ch; font: 700 clamp(40px, 6.4vw, 92px)/0.95 var(--pd-clash, var(--font-display)); letter-spacing: -0.025em; text-wrap: balance; color: #fff; }
+  .ent-h span { color: #7FA2F0; }
+  .ent-bajada { margin: 20px 0 0; max-width: 54ch; font: 400 17px/1.55 var(--font-body); color: rgba(255, 255, 255, 0.78); }
+  .ent-hero-cta { display: inline-flex; gap: 8px; margin-top: 28px; padding: 14px 22px; border-radius: 99px; background: #fff; color: #0B0B0C; font: 700 15px/1 var(--font-display); text-decoration: none; transition: transform 0.2s; }
+  .ent-hero-cta:hover { transform: translateY(-2px); color: #0B0B0C; text-decoration: none; }
+
+  .ent-in { max-width: 1200px; margin: 0 auto; padding: 24px 20px 96px; }
+  .ent-sub { margin: 56px 0 22px; font: 700 clamp(28px, 3.4vw, 44px)/1.05 var(--pd-clash, var(--font-display)); letter-spacing: -0.015em; color: #fff; }
+  .ent-incluye { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+  .ent-incluye li { position: relative; overflow: hidden; border-radius: 20px; min-height: 300px; display: flex; align-items: flex-end; isolation: isolate; }
+  .ent-incluye img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .ent-incluye li::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, transparent 30%, rgba(11, 11, 12, 0.92) 100%); }
+  .ent-incluye li:hover img { transform: scale(1.06); }
+  .ent-incluye div { padding: 20px; }
+  .ent-incluye b { display: block; font: 700 20px/1.2 var(--font-display); }
+  .ent-incluye span { display: block; margin-top: 6px; font: 400 14px/1.5 var(--font-body); color: rgba(255, 255, 255, 0.8); }
+
+  .ent-pasos { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border-top: 1px solid rgba(255, 255, 255, 0.16); }
+  .ent-pasos li { display: grid; grid-template-columns: 44px 1fr; gap: 4px 12px; padding: 18px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+  .ent-pasos span { grid-row: span 2; font: 700 14px/1.4 var(--font-display); color: #7FA2F0; }
+  .ent-pasos b { font: 700 18px/1.25 var(--font-display); }
+  .ent-pasos small { font: 400 14px/1.5 var(--font-body); color: rgba(255, 255, 255, 0.65); }
+
+  @media (min-width: 720px) {
+    .ent-hero { min-height: 640px; }
+    .ent-incluye { grid-template-columns: repeat(2, 1fr); }
+    .ent-pasos { grid-template-columns: repeat(2, 1fr); column-gap: 32px; }
+  }
+  @media (min-width: 1040px) {
+    .ent-hero { min-height: 720px; }
+    .ent-hero-txt { padding: 160px 4vw 72px; }
+    .ent-in { padding: 32px 4vw 120px; }
+    .ent-incluye { grid-template-columns: repeat(4, 1fr); }
+    .ent-incluye li { min-height: 380px; }
+    .ent-pasos { grid-template-columns: repeat(4, 1fr); border-top: 0; column-gap: 20px; }
+    .ent-pasos li { grid-template-columns: 1fr; border-bottom: 0; border-top: 2px solid rgba(255, 255, 255, 0.16); padding-top: 16px; }
+    .ent-pasos span { grid-row: auto; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ent-hero img { animation: none; }
+  }
+</style>
