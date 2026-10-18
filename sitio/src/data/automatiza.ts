@@ -94,19 +94,16 @@ export interface Habilidades {
   items: { n: string; t: string; d: string; puntos: string[]; desde: string; super?: boolean }[];
   memoria: { t: string; d: string; puntos: string[] };
 }
-/** Planes y precios de AXO, con la comparativa de habilidades plan por plan. */
-export interface Planes {
-  tipo: 'planes';
+/** AXO Free: lo que trae cualquier plan de Sacs, sin costo extra (los precios de AXO salieron el 18-oct-2026). */
+export interface AxoFree {
+  tipo: 'axofree';
   id: string;
   folio: [string, string];
   titulo: string;
   bajada: string;
-  /** precios en pesos, antes de IVA */
-  planes: { n: string; x: string; para: string; mes: number; anual: number; usuarios: string; base?: string; incluye: string[]; anualExtra?: string; badge?: string; destacado?: boolean }[];
-  /** v: un valor por plan, en el orden de `planes` (true = incluida, false = no, texto = se muestra tal cual) */
-  filas: { grupo: string; items: { t: string; d?: string; v: (boolean | string)[] }[] }[];
-  capacidad: string;
-  notas: string[];
+  destacados: { t: string; d: string }[];
+  /** cada bloque: cuándo se renueva y lo que incluye (no = no incluido) */
+  limites: { t: string; nota: string; items: { t: string; nota?: string; v: string; no?: boolean }[] }[];
   cta: { t: string; href: string };
 }
 /** Flujos de punta a punta en 3D (Three.js): cada etapa es una puerta que el pedido cruza mientras AXO la orquesta. */
@@ -126,7 +123,7 @@ export interface Flujos3D {
     cifras?: [string, string][];
   }[];
 }
-export type Seccion = Chat | Lista | Antes | Hub | Pronostico | Habilidades | Planes | Flujos3D;
+export type Seccion = Chat | Lista | Antes | Hub | Pronostico | Habilidades | AxoFree | Flujos3D;
 
 export interface PaginaAuto {
   slug: string;
@@ -412,48 +409,22 @@ export const AUTOMATIZA: PaginaAuto[] = [
         despues: { k: 'Con AXO', total: '30 segundos', pasos: ['Le preguntas en tus palabras o con tu voz', 'Te contesta con la cifra y las prendas', 'Te propone el traspaso y tú confirmas'] },
       },
       {
-        tipo: 'planes', id: 'axo-planes',
-        folio: ['12 · Planes', 'Precio de inauguración'],
-        titulo: 'Elige qué habilidades le das.',
-        bajada: 'Empieza por el plan que se parezca a tu operación de hoy. Tu asesor Sacs te ayuda a elegirlo y lo activa en tu cuenta: le pides a AXO desde el primer día.',
-        planes: [
-          { n: 'Starter', x: '1x', para: 'Para empresas que apenas empiezan a usar la IA.', mes: 1500, anual: 14400, usuarios: '1 usuario', incluye: ['Analítica · business intelligence y reportes', 'Importación · migración a cualquier módulo', 'Memoria'] },
-          { n: 'Pro', x: '2x', para: 'Para equipos que quieren que AXO también ejecute.', mes: 3000, anual: 28800, usuarios: 'Hasta 3 usuarios', base: 'Todo Starter, más', incluye: ['Ejecución · acciones en cualquier área', 'Visión · fotos, documentos y video', 'El doble de capacidad'] },
-          { n: 'Super Power', x: '10x', para: 'Para automatizar tu operación de punta a punta.', mes: 10500, anual: 100800, usuarios: 'Hasta 5 usuarios', base: 'Todo Pro, más', badge: 'El más elegido', destacado: true, incluye: ['Automatizaciones · consultor de procesos', 'Construcción · mejoras a tus módulos', 'Colaboración · canales ilimitados y WhatsApp', 'Procedimientos · sugiere y vuelve regla', 'Capacitación · onboarding con exámenes', '10 veces la capacidad'] },
-          { n: 'Super Power 20x', x: '20x', para: 'Todo Super Power, para operaciones intensivas.', mes: 19000, anual: 182400, usuarios: 'Hasta 5 usuarios', base: 'Todo Super Power, más', incluye: ['Voz · llamadas, con costo por llamada completada', '20 veces la capacidad'], anualExtra: 'Pagando el año: implementación incluida y 5 flujos de automatización con un orquestador certificado por Sacs.' },
-          { n: 'Corporativo 50x', x: '50x', para: 'AXO administra toda tu empresa y es tu centro de control operativo.', mes: 46000, anual: 441600, usuarios: 'Hasta 15 usuarios', base: 'Todo Super Power 20x, más', badge: 'Corporativos', incluye: ['Centro de control operativo · administra y coordina toda la empresa', '50 veces la capacidad'], anualExtra: 'Pagando el año: implementación incluida y 5 flujos de automatización con un orquestador certificado por Sacs.' },
+        tipo: 'axofree', id: 'axo-free',
+        folio: ['12 · AXO Free', 'Incluido en todos los planes'],
+        titulo: 'Tu plan ya trae a AXO Free.',
+        bajada: 'AXO es la inteligencia artificial que trabaja dentro de Sacs: responde tus dudas, revisa tus números y hace tareas por ti. Viene con cualquier plan, sin costo extra.',
+        destacados: [
+          { t: 'Crea tu tienda en línea', d: 'y la opera por ti de forma autónoma' },
+          { t: 'Soporte 24/7', d: 'a cualquier hora, todos los días' },
+          { t: 'Onboarding 1 a 1 con AXO', d: 'por el chat y guiándote dentro del sistema' },
         ],
-        filas: [
-          { grupo: 'Capacidad y usuarios', items: [
-            { t: 'Capacidad', v: ['1x', '2x', '10x', '20x', '50x'] },
-            { t: 'Usuarios incluidos', v: ['1', 'Hasta 3', 'Hasta 5', 'Hasta 5', 'Hasta 15'] },
-            { t: 'Usuario extra', v: ['$1,500/mes', '$1,500/mes', '$1,500/mes', '$1,500/mes', '$1,500/mes'] },
-          ] },
-          { grupo: 'Habilidades de AXO', items: [
-            { t: 'Analítica', d: 'Business intelligence, reportes y datos externos', v: [true, true, true, true, true] },
-            { t: 'Importación', d: 'Carga y migración en cualquier módulo', v: [true, true, true, true, true] },
-            { t: 'Memoria', d: 'Aprende de tu operación con el uso', v: [true, true, true, true, true] },
-            { t: 'Ejecución', d: 'Acciones en cualquier área de Sacs', v: [false, true, true, true, true] },
-            { t: 'Visión', d: 'Lee fotos, documentos y video', v: [false, true, true, true, true] },
-            { t: 'Automatizaciones', d: 'Consultor de procesos y tareas programadas', v: [false, false, true, true, true] },
-            { t: 'Construcción', d: 'Campos, filtros, reportes y tableros en tus módulos', v: [false, false, true, true, true] },
-            { t: 'Colaboración', d: 'Canales ilimitados y AXO en WhatsApp', v: [false, false, true, true, true] },
-            { t: 'Procedimientos empresariales', d: 'AXO los sugiere, tu orquestador los vuelve regla', v: [false, false, true, true, true] },
-            { t: 'Capacitación y onboarding', d: 'Entrena, examina y avisa cuando está lista', v: [false, false, true, true, true] },
-            { t: 'Voz', d: 'Llamadas transcritas y registradas (costo por llamada completada)', v: [false, false, false, true, true] },
-            { t: 'Centro de control operativo', d: 'Súper habilidad: administra y coordina toda la empresa', v: [false, false, false, false, true] },
-          ] },
-          { grupo: 'Solo pagando el año', items: [
-            { t: 'Implementación incluida', v: [false, false, false, true, true] },
-            { t: '5 flujos de automatización', d: 'Con un orquestador certificado por Sacs', v: [false, false, false, true, true] },
-          ] },
+        limites: [
+          { t: 'Cada día', nota: 'Se renueva 24 h después del último uso', items: [{ t: 'Preguntas de uso', v: '3' }, { t: 'Análisis de tus números', v: '2' }, { t: 'AXO por WhatsApp', v: '1' }] },
+          { t: 'Cada semana', nota: 'Se renueva 7 días después', items: [{ t: 'Acciones dentro de Sacs', nota: '1 por caso completo', v: '3' }, { t: 'Reportes nuevos', v: '1' }, { t: 'Importación de datos', v: '1' }, { t: 'Notas de voz', v: '3' }] },
+          { t: 'Cada mes', nota: 'Se renueva cada mes', items: [{ t: 'Leer imágenes', v: '3' }, { t: 'Leer archivos', nota: 'PDF, XML, estados financieros', v: '3' }, { t: 'Análisis con datos externos', v: '1' }] },
+          { t: 'Además', nota: 'Sin renovación', items: [{ t: 'Automatización activa', v: '1 a la vez' }, { t: 'Capacitación completa', v: '1 vez' }, { t: 'Llamadas con AXO', v: 'No incluidas', no: true }] },
         ],
-        capacidad: 'Cada plan incluye una capacidad de uso de AXO: cuántas preguntas, reportes, acciones y automatizaciones puede resolver por ti. Starter es la base y los demás la multiplican. ¿Te quedas corto? Subes de plan en cualquier momento y la capacidad crece al instante.',
-        notas: [
-          'Precios en pesos mexicanos, más IVA (16 %). Pago anual: 20 % de descuento. Usuario extra: $1,500 al mes + IVA, en cualquier plan.',
-          'Son precios de inauguración de AXO y subirán en las próximas semanas. Si contratas ahora, conservas este precio en los próximos años.',
-        ],
-        cta: { t: 'Elige tu plan con un asesor', href: '/agendar/demo' },
+        cta: { t: 'Ver los planes de Sacs', href: '/planes#axo' },
       },
     ],
     faqs: [
@@ -462,9 +433,8 @@ export const AUTOMATIZA: PaginaAuto[] = [
       { question: '¿Puedo limitar quién usa AXO y qué puede pedirle?', answer: 'Sí. Hay un permiso «Usar AXO» por grupo de usuarios y una política por cuenta: quién puede pedir cada acción, cuál necesita aprobación de un administrador y topes de monto.' },
       { question: '¿Qué IA usa?', answer: 'El chat y las acciones corren con Claude, de Anthropic. La voz en tiempo real usa OpenAI y las fotos de producto, GPT Image.' },
       { question: '¿Funciona en el celular?', answer: 'Sí: en la app de Sacs para celular, con voz y foto, y también desde tu WhatsApp una vez que registras tu número.' },
-      { question: '¿Cuánto cuesta usarlo?', answer: 'Depende de las habilidades que le des: AXO tiene cinco planes, desde Starter a $1,500 al mes + IVA hasta Corporativo 50x a $46,000 al mes + IVA. Pagando el año tienes 20 % de descuento. En Configuración › Créditos de IA ves tu saldo y tu historial de consumo.' },
-      { question: '¿Qué significa 1x, 2x, 10x?', answer: 'Es la capacidad de uso de AXO que incluye cada plan: cuántas preguntas, reportes, acciones y automatizaciones puede resolver por ti. Starter es la base y los demás la multiplican. Si te quedas corto, subes de plan en cualquier momento y la capacidad crece al instante.' },
-      { question: '¿Qué es el orquestador?', answer: 'La persona que dirige a AXO en tu empresa. Revisa los procedimientos que AXO sugiere, los ajusta a como quiere que se trabaje y, al aprobarlos, Sacs los aplica como regla. También puede revisar y corregir lo que AXO aprendió. En Super Power 20x y Corporativo 50x, pagando el año, incluye 5 flujos de automatización con un orquestador certificado por Sacs.' },
+      { question: '¿Cuánto cuesta usarlo?', answer: 'Nada extra: AXO Free viene incluido en todos los planes de Sacs. Trae, por ejemplo, 3 preguntas y 2 análisis de tus números al día, 3 acciones dentro de Sacs a la semana y 1 automatización activa a la vez. En Configuración › Créditos de IA ves tu saldo y tu historial de consumo.' },
+      { question: '¿Qué es el orquestador?', answer: 'La persona que dirige a AXO en tu empresa. Revisa los procedimientos que AXO sugiere, los ajusta a como quiere que se trabaje y, al aprobarlos, Sacs los aplica como regla. También puede revisar y corregir lo que AXO aprendió.' },
       { question: '¿AXO recuerda cómo trabajo?', answer: 'Sí, en todos los planes. Aprende de lo que tu equipo usa, comenta y revisa en Sacs; recuerda tus reglas y procedimientos, y con el tiempo automatiza cada vez más.' },
     ],
   },

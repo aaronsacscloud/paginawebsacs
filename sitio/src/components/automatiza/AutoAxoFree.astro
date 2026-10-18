@@ -1,0 +1,82 @@
+---
+/**
+ * AXO Free en la página de AXO (18-oct-2026): ocupa el lugar de los planes con precio, que salieron de /planes porque
+ * «no convencieron». Mismo contenido que el banner de /planes#axo (AXO de cuerpo entero, los 3 destacados y los
+ * límites por día, semana y mes), con el diseño de esta página: folio, titular grande y tarjetas.
+ */
+import type { AxoFree } from '../../data/automatiza';
+interface Props { a: AxoFree }
+const { a } = Astro.props;
+---
+<section class="aux" id={a.id} aria-labelledby={`${a.id}-h`}>
+  <div class="aux-in">
+    <p class="aux-folio"><span>{a.folio[0]}</span><span>{a.folio[1]}</span></p>
+    <div class="aux-top">
+      <div>
+        <h2 class="aux-h" id={`${a.id}-h`}>{a.titulo}</h2>
+        <p class="aux-bajada">{a.bajada}</p>
+        <ul class="aux-dest">
+          {a.destacados.map((d, i) => <li class="rv" style={`--i:${i}`}><b>{d.t}</b><span>{d.d}</span></li>)}
+        </ul>
+      </div>
+      <img class="aux-axo" src="/images/axo/axo-mascota.webp" alt="AXO, el asistente de inteligencia artificial de Sacs" width="560" height="860" loading="lazy" decoding="async" />
+    </div>
+
+    <div class="aux-lims">
+      {a.limites.map((l, i) => (
+        <div class="aux-lim rv" style={`--i:${i}`}>
+          <b class="aux-lim-t">{l.t}</b>
+          <span class="aux-lim-n">{l.nota}</span>
+          <ul>
+            {l.items.map((it) => (
+              <li class={it.no ? 'is-no' : ''}><span>{it.t}{it.nota && <small>{it.nota}</small>}</span><em>{it.v}</em></li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+
+    <a class="aux-cta" href={a.cta.href} data-evento="automatiza_planes">{a.cta.t} <span aria-hidden="true">→</span></a>
+  </div>
+</section>
+
+<style>
+  .aux { background: linear-gradient(135deg, #FBEFF6 0%, #EEF3FF 50%, #E6F6F2 100%); color: #141414; }
+  .aux-in { max-width: 1160px; margin: 0 auto; padding: 88px 20px; }
+  .aux-folio { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin: 0 0 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(20, 20, 20, 0.14); font: 600 11px/1.35 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; }
+  .aux-top { display: grid; gap: 24px; align-items: end; }
+  .aux-h { margin: 0; max-width: 14ch; font: 700 clamp(36px, 5.6vw, 76px)/0.96 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; text-wrap: balance; }
+  .aux-bajada { margin: 18px 0 0; max-width: 56ch; font: 400 17px/1.55 var(--font-body); color: rgba(20, 20, 20, 0.7); }
+  .aux-dest { list-style: none; margin: 32px 0 0; padding: 0; display: grid; gap: 10px; }
+  .aux-dest li { display: flex; flex-direction: column; gap: 3px; padding: 16px 18px; border-radius: 16px; background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(20, 20, 20, 0.06); }
+  .aux-dest b { font: 700 17px/1.25 var(--font-display); }
+  .aux-dest span { font: 400 14px/1.45 var(--font-body); color: rgba(20, 20, 20, 0.62); }
+  .aux-axo { display: none; justify-self: center; width: 100%; max-width: 260px; height: auto; }
+
+  .aux-lims { display: grid; gap: 12px; margin-top: 40px; }
+  .aux-lim { display: flex; flex-direction: column; padding: 20px; border-radius: 18px; background: #fff; border: 1px solid rgba(20, 20, 20, 0.08); }
+  .aux-lim-t { font: 700 20px/1.2 var(--font-display); }
+  .aux-lim-n { margin: 4px 0 10px; font: 500 12.5px/1.4 var(--font-body); color: rgba(20, 20, 20, 0.5); }
+  .aux-lim ul { list-style: none; margin: 0; padding: 0; }
+  .aux-lim li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 9px 0; border-top: 1px solid rgba(20, 20, 20, 0.08); font: 500 14.5px/1.4 var(--font-body); }
+  .aux-lim li small { display: block; font-size: 12px; color: rgba(20, 20, 20, 0.5); }
+  .aux-lim li em { font: 700 17px/1 var(--pd-clash, var(--font-display)); font-style: normal; color: #2F5BEA; white-space: nowrap; }
+  .aux-lim li.is-no em { font: 600 13px/1 var(--font-display); color: rgba(20, 20, 20, 0.4); }
+
+  .aux-cta { display: inline-flex; gap: 8px; margin-top: 32px; padding-bottom: 3px; border-bottom: 1.5px solid currentColor; color: #141414; font: 700 16px/1.2 var(--font-display); text-decoration: none; }
+  .aux-cta:hover { color: #141414; text-decoration: none; opacity: 0.8; }
+
+  :global(.js-rv) .aux .rv { opacity: 0; transform: translateY(16px); transition: opacity 0.6s ease calc(var(--i, 0) * 0.08s), transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) calc(var(--i, 0) * 0.08s); }
+  :global(.js-rv) .aux .rv:global(.is-on) { opacity: 1; transform: none; }
+  @media (min-width: 720px) {
+    .aux-dest { grid-template-columns: repeat(3, 1fr); }
+    .aux-lims { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (min-width: 1040px) {
+    .aux-in { padding: 120px 5vw; }
+    .aux-top { grid-template-columns: minmax(0, 1fr) 260px; gap: 48px; }
+    .aux-axo { display: block; margin-bottom: -40px; }
+    .aux-lims { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (prefers-reduced-motion: reduce) { :global(.js-rv) .aux .rv { opacity: 1; transform: none; transition: none; } }
+</style>
