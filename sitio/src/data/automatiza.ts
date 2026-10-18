@@ -316,9 +316,9 @@ export const AUTOMATIZA: PaginaAuto[] = [
       },
       {
         tipo: 'flujos3d', id: 'axo-flujos',
-        folio: ['09 · Flujos completos', 'En vivo, de punta a punta'],
+        folio: ['09 · Un proceso completo', 'Baja y míralo pasar'],
         titulo: 'AXO vuela por tus datos.',
-        bajada: 'Los datos de tu operación le llegan a AXO en cuanto pasan: los lee, decide y deja cada acción hecha, pide tu aprobación donde hace falta o avisa a quien corresponde. Elige un flujo y míralo trabajar.',
+        bajada: 'Los datos de tu operación le llegan a AXO en cuanto pasan: los lee, decide y deja cada acción hecha, pide tu aprobación donde hace falta o avisa a quien corresponde. Baja y mira una compra completa, de la requisición a la póliza.',
         flujos: [
           {
             id: 'compras', nombre: 'Compras de punta a punta', cuando: 'Cuando algo se agota',
@@ -331,61 +331,6 @@ export const AUTOMATIZA: PaginaAuto[] = [
               { t: 'Cuentas por pagar', area: 'Administración', tipo: 'auto', hace: 'Valida el CFDI y cruza orden, recepción y factura. Contraloría solo revisa si hay diferencias.', llega: ['CFDI · válido SAT', 'orden ⇄ recepción ⇄ factura', 'vence · en 30 días'] },
               { t: 'Tesorería', area: 'Finanzas', tipo: 'aprobacion', hace: 'Arma los pagos en lote martes y viernes, por vencimiento. Dirección autoriza el lote desde WhatsApp.', llega: ['banco · saldo $412,000', 'lote martes · 6 pagos', 'mínimo de caja · ok'] },
               { t: 'Contabilidad', area: 'Contador', tipo: 'aviso', hace: 'Genera la póliza de egreso, concilia con el estado de cuenta y le manda al proveedor su comprobante.', llega: ['pagos · 6 aplicados', 'estado de cuenta · conciliado', 'póliza de egreso · lista'] },
-            ],
-          },
-          {
-            id: 'reabasto', nombre: 'Reabasto automático', cuando: 'Cada noche',
-            resultado: 'Nunca te quedas sin lo que más se vende.',
-            etapas: [
-              { t: 'Revisa', area: 'Inventario', tipo: 'auto', hace: 'Revisa las ventas y las existencias de cada tienda, talla por talla.', llega: ['23:00 · cierre de las 3 tiendas', 'existencias · 1,284 modelos', 'ventas de hoy · 412 pzs'] },
-              { t: 'Calcula', area: 'Planeación', tipo: 'auto', hace: 'Calcula lo que vas a necesitar según la tendencia y la temporada.', llega: ['tendencia 8 sem · +12 %', 'temporada · otoño', 'faltan · 38 modelos'] },
-              { t: 'Arma las órdenes', area: 'Compras', tipo: 'auto', hace: 'Arma las órdenes de compra por proveedor.', llega: ['proveedores · 4', 'OC armadas · 4', 'total · $186,300'] },
-              { t: 'Tu sí', area: 'Dirección', tipo: 'aprobacion', hace: 'Te las manda a WhatsApp y las apruebas con un mensaje.', llega: ['WhatsApp · dirección', 'respuesta · «sí»', 'aprobadas · 4 de 4'] },
-              { t: 'Al proveedor', area: 'Proveedores', tipo: 'aviso', hace: 'Las envía al proveedor y agenda la recepción.', llega: ['correo + WhatsApp · enviados', 'recepción · jueves 10:00', 'almacén · avisado'] },
-            ],
-          },
-          {
-            id: 'whatsapp', nombre: 'Venta por WhatsApp', cuando: 'Cuando escribe una clienta',
-            resultado: 'Vendes a cualquier hora, sin perder clientas.',
-            etapas: [
-              { t: 'Pregunta', area: 'Inbox', tipo: 'aviso', hace: 'Una clienta pregunta por una prenda en el Inbox.', llega: ['whatsapp · Sofía Medina', '«¿tienen el blazer de lino en M?»', 'clienta frecuente · 9 compras'] },
-              { t: 'Existencias', area: 'Inventario', tipo: 'auto', hace: 'AXO revisa existencias en todas las tiendas, en su talla y color.', llega: ['blazer lino ivory · M', 'Polanco · 0 · Centro · 2', 'en línea · 1'] },
-              { t: 'Aparta y cobra', area: 'Ventas', tipo: 'auto', hace: 'Aparta la prenda y le manda la liga de pago.', llega: ['apartado AP-1044 · creado', 'liga de pago · $2,890', 'pagado · tarjeta'] },
-              { t: 'Prepara', area: 'Tienda', tipo: 'aviso', hace: 'Avisa a la tienda para preparar el pedido.', llega: ['tienda Centro · avisada', 'pedido · por empacar', 'guía · generada'] },
-              { t: 'Entrega', area: 'Logística', tipo: 'auto', hace: 'Da seguimiento hasta que la prenda llega a sus manos.', llega: ['paquetería · en camino', 'entrega · mañana 13:00', 'clienta · avisada'] },
-            ],
-          },
-          {
-            id: 'cobranza', nombre: 'Cobranza que se hace sola', cuando: 'Todos los días',
-            resultado: 'Cobras antes y sin perseguir a nadie.',
-            etapas: [
-              { t: 'Detecta', area: 'Cuentas por cobrar', tipo: 'auto', hace: 'Detecta saldos vencidos o por vencer.', llega: ['saldos vencidos · 7', 'por vencer esta semana · 4', 'total · $48,600'] },
-              { t: 'Recuerda', area: 'Clientas', tipo: 'aviso', hace: 'Manda el recordatorio por WhatsApp con su liga de pago.', llega: ['recordatorios · 11 enviados', 'liga de pago · incluida', 'leídos · 9'] },
-              { t: 'Concilia', area: 'Tesorería', tipo: 'auto', hace: 'Registra el pago y lo concilia con el banco.', llega: ['pagos recibidos · 4', 'banco · conciliado', 'por cobrar · $31,200'] },
-              { t: 'Escala', area: 'Equipo', tipo: 'regla', hace: 'A quien no responde, se lo pasa a tu equipo.', llega: ['sin respuesta · 3 clientas', '+5 días vencidas', 'asignado a · cobranza'] },
-              { t: 'Te reporta', area: 'Dirección', tipo: 'aviso', hace: 'Te reporta lo cobrado y lo pendiente.', llega: ['cobrado hoy · $17,400', 'pendiente · $31,200', 'resumen · enviado'] },
-            ],
-          },
-          {
-            id: 'devoluciones', nombre: 'Devoluciones', cuando: 'Procedimiento empresarial',
-            resultado: 'Cinco áreas, un solo camino. Si alguien se salta un paso, Sacs no lo deja.',
-            etapas: [
-              { t: 'Registra', area: 'Punto de venta', tipo: 'auto', hace: 'Ventas registra la devolución con su motivo y su foto.', llega: ['devolución · ticket 4821', 'motivo · defecto de costura', 'foto · adjunta'] },
-              { t: 'Revisa', area: 'Almacén', tipo: 'regla', hace: 'Reingresa la prenda o la manda a merma. Más de $5,000: aprueba la gerente.', llega: ['prenda · no vendible', 'monto · $1,290', 'destino · merma'] },
-              { t: 'Reclama', area: 'Compras', tipo: 'auto', hace: 'Si es defecto, abre el reclamo al proveedor.', llega: ['proveedor · Textiles del Norte', 'reclamo · RC-212 abierto', 'evidencia · foto'] },
-              { t: 'Reembolsa', area: 'Tesorería', tipo: 'aprobacion', hace: 'Reembolsa en máximo 48 horas; 24 para clientas frecuentes.', llega: ['clienta frecuente · sí', 'plazo · 24 h', 'reembolso · $1,290'] },
-              { t: 'Nota de crédito', area: 'Contabilidad', tipo: 'aviso', hace: 'Registra la nota de crédito y le avisa a la clienta por WhatsApp.', llega: ['nota de crédito · NC-88', 'WhatsApp · clienta avisada', 'devolución · cerrada'] },
-            ],
-          },
-          {
-            id: 'cierre', nombre: 'Cierre del día', cuando: 'Al cerrar las cajas',
-            resultado: 'Sabes cómo cerraste sin abrir un reporte.',
-            etapas: [
-              { t: 'Cortes', area: 'Cajas', tipo: 'auto', hace: 'Revisa los cortes de cada caja y cada tienda.', llega: ['cortes · 7 cajas', 'cerradas · 7 de 7', 'venta del día · $142,800'] },
-              { t: 'Diferencias', area: 'Contraloría', tipo: 'regla', hace: 'Detecta diferencias, cancelaciones y descuentos fuera de lo normal.', llega: ['caja 3 · faltan $1,200', 'cancelaciones · 12 en caja 5', 'descuento fuera de lo normal · 1'] },
-              { t: 'Meta', area: 'Ventas', tipo: 'auto', hace: 'Compara la venta contra la meta del día.', llega: ['meta del día · $150,000', 'real · $142,800', 'avance · 95 %'] },
-              { t: 'Tarea', area: 'Gerencia', tipo: 'aviso', hace: 'Si hay un faltante, le abre la tarea a la gerente.', llega: ['tarea · revisar caja 3', 'asignada a · gerente Centro', 'vence · mañana 10:00'] },
-              { t: 'Tu resumen', area: 'Dirección', tipo: 'aviso', hace: 'Te manda el resumen antes de dormir.', llega: ['resumen · listo', 'WhatsApp · 22:40', 'pendientes · 2'] },
             ],
           },
         ],

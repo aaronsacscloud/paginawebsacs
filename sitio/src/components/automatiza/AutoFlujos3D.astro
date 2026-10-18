@@ -1,20 +1,24 @@
 ---
 /**
- * Flujos de punta a punta, en vivo (/producto/axo-copiloto-ia). 18-oct-2026, segunda versión. El dueño: «esto no me
- * gustó; me imagino más a un AXO volando y que le lleguen datos y, basado en eso, avise de acciones que debe realizar,
- * todo en formato tecnológico tipo Matrix».
+ * Un proceso completo, en vivo y con el scroll (/producto/axo-copiloto-ia). 18-oct-2026, tercera versión. El dueño:
+ * «me imagino a un AXO volando, que le lleguen datos y, basado en eso, avise de acciones, tipo Matrix» y luego «no uses
+ * el verde; que el scroll vaya interactuando, que mientras bajo vaya apareciendo el proceso; no pongas los tabs, elige
+ * un proceso; usa los colores de Sacs: negro con el azul Sacs».
  *
- * Un canvas 2D (sin three.js): lluvia de código al fondo, estelas de velocidad y AXO volando (public/images/axo/
- * axo-volando.webp, hecho con gpt-image-2 a partir de la mascota). En cada etapa le llegan los datos de esa etapa
- * (`llega`, en src/data/automatiza.ts) desde enfrente: entran cifrados y se descifran mientras vuelan; AXO los absorbe
- * en el pecho y lanza la acción a la bitácora (a su espalda, a la izquierda; en el teléfono, abajo), que se escribe sola. Una aprobación espera el «sí» y pasa
- * a aprobada; una regla se marca en rojo. Al terminar, el resultado y arranca el siguiente flujo.
+ * La sección se queda pegada mientras el riel pasa; cada tramo del scroll es una etapa del flujo (el primero de
+ * `flujos`, compras de punta a punta). En cada etapa le llegan a AXO los datos de esa etapa (`llega`): entran cifrados
+ * por enfrente y se descifran mientras vuelan; AXO los absorbe en el pecho y lanza la acción a la bitácora, que se
+ * escribe sola (una aprobación espera el «sí»; una regla se marca en coral). Al final, el resultado. Si el visitante
+ * sube, la bitácora regresa a esa etapa. Fondo: lluvia de código en azules, estelas y AXO volando
+ * (public/images/axo/axo-volando.webp, gpt-image-2).
  *
- * Sin JS o con «reducir movimiento»: la lista de flujos con sus etapas (el mismo HTML), sin canvas.
+ * Sin JS o con «reducir movimiento»: la lista de etapas (el mismo HTML), sin canvas ni riel.
  */
 import type { Flujos3D } from '../../data/automatiza';
 interface Props { f: Flujos3D }
 const { f } = Astro.props;
+const fl = f.flujos[0];
+const n = fl.etapas.length;
 const TIPO = { auto: 'Automatización', aprobacion: 'Aprobación', regla: 'Regla de control', aviso: 'Aviso' } as const;
 ---
 <section class="aum" id={f.id} aria-labelledby={`${f.id}-h`}>
@@ -22,76 +26,80 @@ const TIPO = { auto: 'Automatización', aprobacion: 'Aprobación', regla: 'Regla
     <p class="aum-folio"><span>{f.folio[0]}</span><span>{f.folio[1]}</span></p>
     <h2 class="aum-h" id={`${f.id}-h`}>{f.titulo}</h2>
     <p class="aum-bajada">{f.bajada}</p>
+  </div>
 
-    <div class="aum-tabs" role="tablist" aria-label="Flujos">
-      {f.flujos.map((fl, i) => (
-        <button type="button" role="tab" class="aum-tab" data-flujo={i} aria-selected={i === 0 ? 'true' : 'false'}>
-          <small>{fl.cuando}</small>{fl.nombre}
-        </button>
-      ))}
-    </div>
-
+  <div class="aum-riel" data-riel style={`--n:${n + 1}`}>
     <div class="aum-stage" data-stage>
       <canvas class="aum-canvas" aria-hidden="true"></canvas>
-      <p class="aum-top"><span class="aum-live"><i></i>AXO · en vivo</span><b data-nombre></b><em data-paso></em></p>
-      <button type="button" class="aum-pausa" data-pausa>Pausa</button>
+      <div class="aum-top">
+        <p class="aum-top-k"><span class="aum-live"><i></i>AXO · en vivo</span><b>{fl.nombre}</b><em data-paso></em></p>
+        <ol class="aum-pasos" aria-hidden="true">
+          {fl.etapas.map((e, k) => <li data-k={k} class={`t-${e.tipo}`}><span>{String(k + 1).padStart(2, '0')}</span>{e.t}</li>)}
+          <li data-k={n} class="t-fin"><span>✓</span>Resultado</li>
+        </ol>
+      </div>
       <div class="aum-log" data-log aria-live="polite"></div>
-    </div>
-
-    <div class="aum-lista">
-      {f.flujos.map((fl) => (
-        <div class="aum-flujo">
-          <p class="aum-flujo-k"><b>{fl.nombre}</b><span>{fl.cuando}</span></p>
-          <ol>
-            {fl.etapas.map((e, k) => (
-              <li class={`t-${e.tipo}`}>
-                <span class="aum-n">{String(k + 1).padStart(2, '0')}</span>
-                <span><b>{e.t}</b> · {e.area}<em>{TIPO[e.tipo]}</em><br /><small>{e.llega.join(' · ')}</small><br />{e.hace}</span>
-              </li>
-            ))}
-          </ol>
-          <p class="aum-flujo-res">{fl.resultado}</p>
-        </div>
-      ))}
+      <p class="aum-baja" data-baja aria-hidden="true">Baja para seguir el proceso <span>↓</span></p>
     </div>
   </div>
-  <script type="application/json" data-flujos set:html={JSON.stringify(f.flujos)}></script>
+
+  <div class="aum-in aum-lista">
+    <div class="aum-flujo">
+      <p class="aum-flujo-k"><b>{fl.nombre}</b><span>{fl.cuando}</span></p>
+      <ol>
+        {fl.etapas.map((e, k) => (
+          <li class={`t-${e.tipo}`}>
+            <span class="aum-n">{String(k + 1).padStart(2, '0')}</span>
+            <span><b>{e.t}</b> · {e.area}<em>{TIPO[e.tipo]}</em><br /><small>{e.llega.join(' · ')}</small><br />{e.hace}</span>
+          </li>
+        ))}
+      </ol>
+      <p class="aum-flujo-res">{fl.resultado}</p>
+    </div>
+  </div>
+  <script type="application/json" data-flujo set:html={JSON.stringify(fl)}></script>
 </section>
 
 <style>
-  .aum { --verde: #5FD3B5; --azul: #6E9BFF; --oro: #E8C84A; --rojo: #FF6B6B; --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace; background: #030508; color: #fff; overflow: hidden; }
-  .aum-in { max-width: 1240px; margin: 0 auto; padding: 88px 20px; }
-  .aum-folio { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin: 0 0 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(95, 211, 181, 0.25); font: 600 11px/1.35 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--verde); }
+  /* Colores de Sacs: negro con el azul de la marca; dorado para lo que pide aprobación, coral para las reglas. */
+  .aum { --azul: #4B7BE5; --claro: #9DB8FF; --violeta: #A68BF5; --oro: #E8C84A; --coral: #FF7A7A; --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace; background: #04060C; color: #fff; }
+  .aum-in { max-width: 1240px; margin: 0 auto; padding: 88px 20px 40px; }
+  .aum-folio { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin: 0 0 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(157, 184, 255, 0.25); font: 600 11px/1.35 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--claro); }
   .aum-h { margin: 0; max-width: 16ch; color: #fff; font: 700 clamp(36px, 5.6vw, 76px)/0.96 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; text-wrap: balance; }
   .aum-bajada { margin: 18px 0 0; max-width: 62ch; font: 400 17px/1.55 var(--font-body); color: rgba(255, 255, 255, 0.72); }
 
-  .aum-tabs { display: flex; gap: 8px; margin: 36px -20px 0; padding: 0 20px 4px; overflow-x: auto; scrollbar-width: none; }
-  .aum-tabs::-webkit-scrollbar { display: none; }
-  .aum-tab { flex: none; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(95, 211, 181, 0.22); background: rgba(95, 211, 181, 0.04); color: rgba(255, 255, 255, 0.8); font: 700 14px/1.2 var(--font-display); cursor: pointer; transition: background 0.25s, border-color 0.25s, color 0.25s; }
-  .aum-tab small { font: 600 10px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: rgba(95, 211, 181, 0.7); }
-  .aum-tab[aria-selected='true'] { background: var(--verde); color: #021410; border-color: var(--verde); }
-  .aum-tab[aria-selected='true'] small { color: rgba(2, 20, 16, 0.65); }
-  .aum-tab:focus-visible { outline: 2px solid var(--verde); outline-offset: 2px; }
-
-  .aum-stage { display: none; position: relative; margin-top: 18px; height: min(82vh, 760px); min-height: 560px; border-radius: 22px; overflow: hidden; background: #020407; border: 1px solid rgba(95, 211, 181, 0.18); box-shadow: inset 0 0 120px rgba(95, 211, 181, 0.06); }
+  /* el riel: 70 vh por etapa; adentro, la escena pegada */
+  .aum-riel { display: none; position: relative; max-width: 1240px; margin: 0 auto; padding: 0 20px; height: calc(var(--n) * 70vh + 100vh); }
+  .aum-stage { position: sticky; top: 72px; height: calc(100vh - 92px); min-height: 520px; border-radius: 22px; overflow: hidden; background: #02040A; border: 1px solid rgba(157, 184, 255, 0.18); box-shadow: inset 0 0 140px rgba(75, 123, 229, 0.12); }
   .aum-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-  .aum-top { position: absolute; top: 16px; left: 18px; right: 120px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0; font: 600 12px/1.2 var(--mono); color: rgba(255, 255, 255, 0.75); }
-  .aum-live { display: inline-flex; align-items: center; gap: 7px; padding: 5px 9px; border-radius: 6px; background: rgba(95, 211, 181, 0.12); color: var(--verde); letter-spacing: 0.06em; text-transform: uppercase; font-size: 10.5px; }
-  .aum-live i { width: 7px; height: 7px; border-radius: 50%; background: var(--verde); box-shadow: 0 0 10px var(--verde); animation: aum-late 1.2s ease-in-out infinite; }
+
+  .aum-top { position: absolute; top: 14px; left: 16px; right: 16px; }
+  .aum-top-k { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0; font: 600 12px/1.2 var(--mono); color: rgba(255, 255, 255, 0.75); }
+  .aum-live { display: inline-flex; align-items: center; gap: 7px; padding: 5px 9px; border-radius: 6px; background: rgba(75, 123, 229, 0.18); color: var(--claro); letter-spacing: 0.06em; text-transform: uppercase; font-size: 10.5px; }
+  .aum-live i { width: 7px; height: 7px; border-radius: 50%; background: var(--claro); box-shadow: 0 0 10px var(--azul); animation: aum-late 1.2s ease-in-out infinite; }
   @keyframes aum-late { 50% { opacity: 0.3; } }
-  .aum-top b { color: #fff; font-weight: 700; }
-  .aum-top em { font-style: normal; color: rgba(95, 211, 181, 0.85); }
-  .aum-pausa { position: absolute; top: 12px; right: 14px; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(95, 211, 181, 0.35); background: rgba(2, 4, 7, 0.7); color: var(--verde); font: 700 12px/1 var(--mono); cursor: pointer; }
-  .aum-pausa[aria-pressed='true'] { background: var(--verde); color: #021410; }
+  .aum-top-k b { color: #fff; font-weight: 700; }
+  .aum-top-k em { font-style: normal; color: var(--claro); }
+  .aum-pasos { display: none; list-style: none; margin: 12px 0 0; padding: 0; gap: 6px; }
+  .aum-pasos li { --c: var(--claro); flex: 1; display: flex; align-items: center; gap: 6px; padding: 8px 0 0; border-top: 2px solid rgba(157, 184, 255, 0.16); font: 600 11px/1.2 var(--mono); color: rgba(255, 255, 255, 0.35); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.3s, border-color 0.3s; }
+  .aum-pasos li span { color: inherit; opacity: 0.7; }
+  .aum-pasos li.is-hecho { border-color: var(--azul); color: rgba(255, 255, 255, 0.7); }
+  .aum-pasos li.is-on { border-color: var(--c); color: #fff; }
+  .aum-pasos li.t-aprobacion { --c: var(--oro); } .aum-pasos li.t-regla { --c: var(--coral); } .aum-pasos li.t-aviso { --c: var(--violeta); }
+
+  .aum-baja { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); margin: 0; padding: 7px 12px; border-radius: 99px; background: rgba(4, 6, 12, 0.7); border: 1px solid rgba(157, 184, 255, 0.3); font: 600 11.5px/1 var(--mono); color: var(--claro); white-space: nowrap; transition: opacity 0.4s; }
+  .aum-baja span { display: inline-block; animation: aum-baja 1.4s ease-in-out infinite; }
+  @keyframes aum-baja { 50% { transform: translateY(3px); } }
+  .aum-baja.is-fuera { opacity: 0; }
 
   /* bitácora de acciones: las tarjetas entran de abajo y las viejas se apagan */
-  .aum-log { position: absolute; left: 14px; right: 14px; bottom: 14px; height: 44%; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; overflow: hidden; pointer-events: none; -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 22%); mask-image: linear-gradient(180deg, transparent 0%, #000 22%); }
-  :global(.aum-card) { --c: var(--azul); flex: none; padding: 12px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); border-left: 3px solid var(--c); background: rgba(4, 10, 14, 0.86); backdrop-filter: blur(8px); font: 500 13px/1.45 var(--mono); color: rgba(255, 255, 255, 0.88); animation: aum-entra 0.45s cubic-bezier(0.2, 0.8, 0.2, 1); transition: opacity 0.5s; }
+  .aum-log { position: absolute; left: 12px; right: 12px; bottom: 52px; height: 42%; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; overflow: hidden; pointer-events: none; -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 22%); mask-image: linear-gradient(180deg, transparent 0%, #000 22%); }
+  :global(.aum-card) { --c: var(--claro); flex: none; padding: 12px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--c) 40%, transparent); border-left: 3px solid var(--c); background: rgba(6, 10, 22, 0.88); backdrop-filter: blur(8px); font: 500 13px/1.45 var(--mono); color: rgba(255, 255, 255, 0.88); animation: aum-entra 0.45s cubic-bezier(0.2, 0.8, 0.2, 1); transition: opacity 0.5s; }
   :global(.aum-card.is-vieja) { opacity: 0.45; }
   :global(.aum-card.t-aprobacion) { --c: var(--oro); }
-  :global(.aum-card.t-regla) { --c: var(--rojo); }
-  :global(.aum-card.t-aviso) { --c: var(--verde); }
-  :global(.aum-card.t-fin) { --c: var(--verde); background: rgba(6, 30, 24, 0.9); }
+  :global(.aum-card.t-regla) { --c: var(--coral); }
+  :global(.aum-card.t-aviso) { --c: var(--violeta); }
+  :global(.aum-card.t-fin) { --c: var(--azul); background: linear-gradient(135deg, rgba(47, 91, 234, 0.35), rgba(6, 10, 22, 0.92)); }
   @keyframes aum-entra { from { opacity: 0; transform: translateY(18px) scale(0.98); } }
   :global(.aum-card-k) { display: flex; justify-content: space-between; gap: 8px; margin: 0 0 4px; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5); }
   :global(.aum-card-k em) { font-style: normal; color: var(--c); }
@@ -101,42 +109,36 @@ const TIPO = { auto: 'Automatización', aprobacion: 'Aprobación', regla: 'Regla
   :global(.aum-card-d.is-listo::after) { content: none; }
   :global(.aum-card-s) { display: inline-flex; align-items: center; gap: 7px; margin: 8px 0 0; padding: 4px 9px; border-radius: 6px; background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--c); font-size: 11.5px; font-weight: 700; }
   :global(.aum-card-s.is-espera i) { width: 7px; height: 7px; border-radius: 50%; background: var(--c); animation: aum-late 0.7s ease-in-out infinite; }
-  :global(.aum-card-s.is-ok) { --c: var(--verde); }
+  :global(.aum-card-s.is-ok) { --c: #fff; background: rgba(75, 123, 229, 0.3); }
   :global(.aum-cifras) { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
-  :global(.aum-cifras li) { padding: 6px 8px; border-radius: 8px; background: rgba(95, 211, 181, 0.08); font-size: 11px; color: rgba(255, 255, 255, 0.65); }
-  :global(.aum-cifras b) { font: 700 18px/1 var(--pd-clash, var(--font-display)); color: var(--verde); }
+  :global(.aum-cifras li) { padding: 6px 8px; border-radius: 8px; background: rgba(157, 184, 255, 0.1); font-size: 11px; color: rgba(255, 255, 255, 0.7); }
+  :global(.aum-cifras b) { font: 700 18px/1 var(--pd-clash, var(--font-display)); color: var(--claro); }
 
-  .aum-lista { display: grid; gap: 14px; margin-top: 20px; }
-  .aum-flujo { padding: 20px; border-radius: 16px; background: #0A0F12; border: 1px solid rgba(95, 211, 181, 0.15); }
+  .aum-lista { padding-top: 0; }
+  .aum-flujo { padding: 20px; border-radius: 16px; background: #0A0E1A; border: 1px solid rgba(157, 184, 255, 0.15); }
   .aum-flujo-k { display: flex; justify-content: space-between; gap: 10px; margin: 0 0 10px; }
   .aum-flujo-k b { font: 700 19px/1.2 var(--font-display); }
-  .aum-flujo-k span { font: 600 10.5px/1.6 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: rgba(95, 211, 181, 0.7); }
+  .aum-flujo-k span { font: 600 10.5px/1.6 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--claro); }
   .aum-flujo ol { list-style: none; margin: 0; padding: 0; }
   .aum-flujo li { display: grid; grid-template-columns: 34px 1fr; gap: 8px; padding: 10px 0; border-top: 1px solid rgba(255, 255, 255, 0.08); font: 400 14px/1.5 var(--font-body); color: rgba(255, 255, 255, 0.78); }
   .aum-flujo li b { color: #fff; }
-  .aum-flujo li small { font: 500 12px/1.5 var(--mono); color: rgba(95, 211, 181, 0.8); }
+  .aum-flujo li small { font: 500 12px/1.5 var(--mono); color: var(--claro); }
   .aum-flujo li em { margin-left: 8px; padding: 2px 7px; border-radius: 99px; border: 1px solid var(--c); color: var(--c); font: 700 10px/1.4 var(--font-display); font-style: normal; }
-  .t-auto { --c: var(--azul); } .t-aprobacion { --c: var(--oro); } .t-regla { --c: var(--rojo); } .t-aviso { --c: var(--verde); }
+  .aum-flujo .t-auto { --c: var(--claro); } .aum-flujo .t-aprobacion { --c: var(--oro); } .aum-flujo .t-regla { --c: var(--coral); } .aum-flujo .t-aviso { --c: var(--violeta); }
   .aum-n { font: 700 12px/1.7 var(--mono); color: var(--c); }
   .aum-flujo-res { margin: 10px 0 0; font: 600 14.5px/1.5 var(--font-body); }
 
-  .aum.is-vivo .aum-stage { display: block; }
+  .aum.is-vivo .aum-riel { display: block; }
   .aum.is-vivo .aum-lista { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .aum:not(.is-vivo) .aum-tabs { display: none; }
 
-  @media (min-width: 720px) {
-    .aum-lista { grid-template-columns: repeat(2, 1fr); }
-  }
   @media (min-width: 900px) {
-    .aum-log { left: 18px; right: auto; top: 58px; bottom: 18px; width: 360px; height: auto; }
+    .aum-log { left: 18px; right: auto; top: 96px; bottom: 18px; width: 360px; height: auto; }
+    .aum-pasos { display: flex; }
+    .aum-baja { left: auto; right: 18px; transform: none; }
   }
   @media (min-width: 1040px) {
-    .aum-in { padding: 120px 4vw; }
-    .aum-lista { grid-template-columns: repeat(3, 1fr); }
-    .aum-tabs { margin: 40px 0 0; padding: 0; flex-wrap: wrap; }
-  }
-  @media (max-width: 719px) {
-    .aum-stage { height: 88vh; min-height: 640px; }
+    .aum-in { padding: 120px 4vw 48px; }
+    .aum-riel { padding: 0 4vw; }
   }
 </style>
 
@@ -147,21 +149,23 @@ const TIPO = { auto: 'Automatización', aprobacion: 'Aprobación', regla: 'Regla
   const TIPO: Record<Tipo, string> = { auto: 'Automatización', aprobacion: 'Aprobación', regla: 'Regla', aviso: 'Aviso' };
   const FIN: Record<Tipo, string> = { auto: '✓ Hecho en Sacs', aprobacion: '✓ Aprobado por dirección', regla: '⛔ Regla aplicada', aviso: '→ Avisado' };
   const GLIFOS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789$%#+=SACSAXO<>{}[]';
-  const COLOR: Record<Tipo, string> = { auto: '#6E9BFF', aprobacion: '#E8C84A', regla: '#FF6B6B', aviso: '#5FD3B5' };
+  const COLOR: Record<Tipo | 'fin', string> = { auto: '#9DB8FF', aprobacion: '#E8C84A', regla: '#FF7A7A', aviso: '#A68BF5', fin: '#4B7BE5' };
 
   document.querySelectorAll<HTMLElement>('.aum').forEach((sec) => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const flujos = JSON.parse(sec.querySelector('[data-flujos]')!.textContent || '[]') as Flujo[];
+    const fl = JSON.parse(sec.querySelector('[data-flujo]')!.textContent || 'null') as Flujo | null;
+    const riel = sec.querySelector<HTMLElement>('[data-riel]')!;
     const stage = sec.querySelector<HTMLElement>('[data-stage]')!;
     const canvas = stage.querySelector('canvas')!;
     const ctx = canvas.getContext('2d');
-    if (!ctx || !flujos.length) return;
+    if (!ctx || !fl) return;
     sec.classList.add('is-vivo');
+    const N = fl.etapas.length;
 
     const logEl = stage.querySelector<HTMLElement>('[data-log]')!;
-    const nombreEl = stage.querySelector<HTMLElement>('[data-nombre]')!;
     const pasoEl = stage.querySelector<HTMLElement>('[data-paso]')!;
-    const bPausa = stage.querySelector<HTMLElement>('[data-pausa]')!;
+    const bajaEl = stage.querySelector<HTMLElement>('[data-baja]')!;
+    const pasos = Array.from(stage.querySelectorAll<HTMLElement>('.aum-pasos li'));
     const axo = new Image(); axo.decoding = 'async';
     let axoListo = false;
     axo.onload = () => { axoListo = true; };
@@ -177,118 +181,125 @@ const TIPO = { auto: 'Automatización', aprobacion: 'Aprobación', regla: 'Regla
       ctx!.setTransform(dpr, 0, 0, dpr, 0, 0); lctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       fs = movil ? 14 : 16;
       gotas = Array.from({ length: Math.ceil(W / fs) }, () => Math.random() * -H / fs);
-      lctx.fillStyle = '#020407'; lctx.fillRect(0, 0, W, H);
+      lctx.fillStyle = '#02040A'; lctx.fillRect(0, 0, W, H);
     }
 
-    // estelas de velocidad (AXO vuela a la derecha: el mundo pasa a la izquierda)
     const estelas = Array.from({ length: 46 }, () => ({ x: Math.random(), y: Math.random(), v: 0.25 + Math.random() * 0.9, l: 40 + Math.random() * 160 }));
-    // chispas que suelta AXO al volar y las del impacto de los datos
     let chispas: { x: number; y: number; vx: number; vy: number; v: number; c: string }[] = [];
-    // los datos que vuelan hacia AXO
     let paquetes: { txt: string; x0: number; y0: number; cx: number; cy: number; t: number; d: number; listo: boolean }[] = [];
 
     // ── dónde está AXO y su pecho (el círculo de luz del traje, ~58 % · 54 % de la imagen)
     let t = 0, pulso = 0;
     function axoCaja() {
-      const aw = movil ? Math.min(W * 0.78, 420) : Math.min(W * 0.4, 540);
+      const aw = movil ? Math.min(W * 0.74, 400) : Math.min(W * 0.4, 540);
       const ah = aw * (679 / 960);
       const x = (movil ? W * 0.5 : Math.max(W * 0.62, 400 + aw / 2)) - aw / 2 + Math.sin(t * 0.6) * (movil ? 6 : 18);
-      const y = (movil ? H * 0.27 : H * 0.5) - ah / 2 + Math.sin(t * 1.4) * 10;
+      const y = (movil ? H * 0.3 : H * 0.54) - ah / 2 + Math.sin(t * 1.4) * 10;
       return { x, y, aw, ah, px: x + aw * 0.585, py: y + ah * 0.54 };
     }
 
-    // ── el guion: etapa → llegan los datos → AXO los absorbe → escribe la acción → espera / sigue
-    let flujo = 0, etapa = -1, fase: 'datos' | 'escribe' | 'espera' | 'fin' = 'datos', reloj = 0, pausa = false;
+    // ── el guion, manejado por el scroll: `meta` = etapa que pide el scroll (N = resultado); `hechas` = etapas cerradas
+    let meta = 0, hechas = 0, etapa = -1, fase: 'quieto' | 'datos' | 'escribe' | 'espera' | 'fin' = 'quieto', reloj = 0, rayo = 0;
+    let rayoTipo: Tipo | 'fin' = 'auto';
     let tarjeta: { el: HTMLElement; d: HTMLElement; txt: string; n: number; e: Etapa } | null = null;
-    let rayo = 0;
 
-    function setTabs() {
-      sec.querySelectorAll<HTMLElement>('.aum-tab').forEach((b, k) => b.setAttribute('aria-selected', k === flujo ? 'true' : 'false'));
-      nombreEl.textContent = flujos[flujo].nombre;
+    function marcaPasos() {
+      const k = fase === 'fin' ? N : Math.max(etapa, hechas);
+      pasos.forEach((li, i) => { li.classList.toggle('is-hecho', i < hechas); li.classList.toggle('is-on', i === k && i >= hechas); });
+      pasoEl.textContent = k >= N ? 'resultado' : `${String(k + 1).padStart(2, '0')}/${String(N).padStart(2, '0')} · ${fl!.etapas[k].area}`;
     }
-    function arranca(i: number) {
-      flujo = i; etapa = -1; paquetes = []; logEl.innerHTML = ''; setTabs();
-      siguiente();
-    }
-    function siguiente() {
-      etapa++;
-      const fl = flujos[flujo];
-      if (etapa >= fl.etapas.length) { fin(); return; }
-      pasoEl.textContent = `${String(etapa + 1).padStart(2, '0')}/${String(fl.etapas.length).padStart(2, '0')} · ${fl.etapas[etapa].area}`;
-      fase = 'datos'; reloj = 0;
+    function empieza(k: number) {
+      etapa = k; fase = 'datos'; reloj = 0;
       const a = axoCaja();
-      paquetes = fl.etapas[etapa].llega.map((txt, k) => {
-        // llegan de enfrente (la derecha, hacia donde vuela) y nunca cruzan la bitácora
-        const x0 = W + 30;
-        const y0 = movil ? H * (0.06 + Math.random() * 0.4) : H * (0.12 + Math.random() * 0.76);
-        return { txt, x0, y0, cx: movil ? W * 0.75 : W * 0.86, cy: movil ? a.py + (Math.random() - 0.5) * H * 0.2 : a.py + (Math.random() - 0.5) * H * 0.45, t: -k * 0.5, d: 1.7 + Math.random() * 0.3, listo: false };
-      });
+      // llegan de enfrente (la derecha, hacia donde vuela) y nunca cruzan la bitácora
+      paquetes = fl!.etapas[k].llega.map((txt, i) => ({
+        txt, x0: W + 30,
+        y0: movil ? H * (0.08 + Math.random() * 0.36) : H * (0.18 + Math.random() * 0.7),
+        cx: movil ? W * 0.75 : W * 0.86,
+        cy: movil ? a.py + (Math.random() - 0.5) * H * 0.2 : a.py + (Math.random() - 0.5) * H * 0.45,
+        t: -i * 0.45, d: 1.5 + Math.random() * 0.3, listo: false,
+      }));
+      marcaPasos();
     }
-    function nuevaTarjeta(e: Etapa) {
-      logEl.querySelectorAll('.aum-card').forEach((c, k, todas) => { if (k < todas.length - 3) c.remove(); else c.classList.add('is-vieja'); });
+    function nuevaTarjeta(e: Etapa, k: number) {
+      logEl.querySelectorAll('.aum-card').forEach((c, i, todas) => { if (i < todas.length - 3) c.remove(); else c.classList.add('is-vieja'); });
       const el = document.createElement('div');
-      el.className = `aum-card t-${e.tipo}`;
+      el.className = `aum-card t-${e.tipo}`; el.dataset.k = String(k);
       el.innerHTML = `<p class="aum-card-k"><span>AXO › ${e.area}</span><em>${TIPO[e.tipo]}</em></p><b></b><p class="aum-card-d"></p>`;
       el.querySelector('b')!.textContent = e.t;
       logEl.appendChild(el);
       tarjeta = { el, d: el.querySelector<HTMLElement>('.aum-card-d')!, txt: e.hace, n: 0, e };
-      rayo = 1;
+      rayo = 1; rayoTipo = e.tipo;
     }
-    function sello(e: Etapa, esperando: boolean) {
-      if (!tarjeta) return;
-      let s = tarjeta.el.querySelector<HTMLElement>('.aum-card-s');
-      if (!s) { s = document.createElement('p'); tarjeta.el.appendChild(s); }
+    function sello(el: HTMLElement, e: Etapa, esperando: boolean) {
+      let s = el.querySelector<HTMLElement>('.aum-card-s');
+      if (!s) { s = document.createElement('p'); el.appendChild(s); }
       s.className = 'aum-card-s' + (esperando ? ' is-espera' : e.tipo === 'aprobacion' || e.tipo === 'auto' ? ' is-ok' : '');
       s.innerHTML = esperando ? '<i></i>Esperando tu sí…' : FIN[e.tipo];
     }
+    // tarjeta ya completa (cuando el scroll brinca varias etapas de golpe)
+    function tarjetaLista(k: number) {
+      const e = fl!.etapas[k];
+      nuevaTarjeta(e, k);
+      tarjeta!.d.textContent = e.hace; tarjeta!.d.classList.add('is-listo');
+      sello(tarjeta!.el, e, false); tarjeta = null; rayo = 0;
+    }
     function fin() {
       fase = 'fin'; reloj = 0;
-      const fl = flujos[flujo];
-      pasoEl.textContent = 'flujo completo';
       logEl.querySelectorAll('.aum-card').forEach((c) => c.classList.add('is-vieja'));
       const el = document.createElement('div');
-      el.className = 'aum-card t-fin';
+      el.className = 'aum-card t-fin'; el.dataset.k = String(N);
       el.innerHTML = `<p class="aum-card-k"><span>AXO › resultado</span><em>Listo</em></p><b></b><p class="aum-card-d is-listo"></p>`;
-      el.querySelector('b')!.textContent = fl.nombre + ' · de punta a punta';
-      el.querySelector('.aum-card-d')!.textContent = fl.resultado;
-      if (fl.cifras) { const ul = document.createElement('ul'); ul.className = 'aum-cifras'; ul.innerHTML = fl.cifras.map(([n, l]) => `<li><b>${n}</b> ${l}</li>`).join(''); el.appendChild(ul); }
+      el.querySelector('b')!.textContent = fl!.nombre;
+      el.querySelector('.aum-card-d')!.textContent = fl!.resultado;
+      if (fl!.cifras) { const ul = document.createElement('ul'); ul.className = 'aum-cifras'; ul.innerHTML = fl!.cifras.map(([v, l]) => `<li><b>${v}</b> ${l}</li>`).join(''); el.appendChild(ul); }
       logEl.appendChild(el);
-      rayo = 1;
+      rayo = 1; rayoTipo = 'fin'; pulso = 1;
+      marcaPasos();
+    }
+    // el visitante subió: la bitácora regresa a la etapa que pide el scroll
+    // (se rearma con las últimas etapas ya cerradas: las más viejas se habían quitado de la bitácora)
+    function regresa(k: number) {
+      logEl.innerHTML = ''; paquetes = []; tarjeta = null; fase = 'quieto'; etapa = -1;
+      for (let i = Math.max(0, k - 3); i < k; i++) tarjetaLista(i);
+      logEl.querySelectorAll<HTMLElement>('.aum-card').forEach((c, i, todas) => { c.classList.toggle('is-vieja', i < todas.length - 1); c.style.animation = 'none'; });
+      hechas = k;
+      marcaPasos();
     }
 
     function avanza(dt: number) {
+      if (fase === 'fin' ? meta < N : (fase === 'quieto' ? meta < hechas : meta < etapa)) { regresa(meta); return; }
+      dt *= meta > hechas + 1 ? 3 : 1;                      // más rápido si el scroll va adelantado
       reloj += dt;
-      if (fase === 'datos') {
+      if (fase === 'quieto') {
+        if (hechas < N && meta >= hechas) {
+          if (meta > hechas + 1) { tarjetaLista(hechas); hechas++; marcaPasos(); return; }   // brinco largo: completa sin animar
+          empieza(hechas);
+        } else if (hechas >= N && meta >= N) fin();
+      } else if (fase === 'datos') {
         paquetes.forEach((p) => { p.t += dt; });
-        if (paquetes.length && paquetes.every((p) => p.listo)) { fase = 'escribe'; reloj = 0; nuevaTarjeta(flujos[flujo].etapas[etapa]); }
+        if (paquetes.length && paquetes.every((p) => p.listo)) { fase = 'escribe'; reloj = 0; nuevaTarjeta(fl!.etapas[etapa], etapa); }
       } else if (fase === 'escribe' && tarjeta) {
-        tarjeta.n = Math.min(tarjeta.txt.length, tarjeta.n + dt * 60);
+        tarjeta.n = Math.min(tarjeta.txt.length, tarjeta.n + dt * 70);
         tarjeta.d.textContent = tarjeta.txt.slice(0, Math.floor(tarjeta.n));
-        if (tarjeta.n >= tarjeta.txt.length) {
-          tarjeta.d.classList.add('is-listo');
-          fase = 'espera'; reloj = 0;
-          sello(tarjeta.e, tarjeta.e.tipo === 'aprobacion');
-        }
+        if (tarjeta.n >= tarjeta.txt.length) { tarjeta.d.classList.add('is-listo'); fase = 'espera'; reloj = 0; sello(tarjeta.el, tarjeta.e, tarjeta.e.tipo === 'aprobacion'); }
       } else if (fase === 'espera' && tarjeta) {
         const ap = tarjeta.e.tipo === 'aprobacion';
-        if (ap && reloj > 1.6 && tarjeta.el.querySelector('.is-espera')) { sello(tarjeta.e, false); pulso = 1; }
-        if (reloj > (ap ? 3.2 : 1.9)) siguiente();
-      } else if (fase === 'fin' && reloj > 7) {
-        arranca((flujo + 1) % flujos.length);
+        if (ap && reloj > 1.3 && tarjeta.el.querySelector('.is-espera')) { sello(tarjeta.el, tarjeta.e, false); pulso = 1; }
+        if (reloj > (ap ? 1.8 : 0.6)) { hechas = etapa + 1; etapa = -1; fase = 'quieto'; tarjeta = null; marcaPasos(); }
       }
     }
 
     function dibuja(dt: number) {
       const c = ctx!;
-      // 1 · lluvia de código
-      lctx.fillStyle = 'rgba(2, 4, 7, 0.085)'; lctx.fillRect(0, 0, W, H);
+      // 1 · lluvia de código en azules
+      lctx.fillStyle = 'rgba(2, 4, 10, 0.085)'; lctx.fillRect(0, 0, W, H);
       lctx.font = `600 ${fs - 2}px 'JetBrains Mono', ui-monospace, monospace`;
       for (let i = 0; i < gotas.length; i++) {
         const y = gotas[i] * fs;
         if (y > 0) {
-          const g = GLIFOS[(Math.random() * GLIFOS.length) | 0];
-          lctx.fillStyle = Math.random() < 0.06 ? '#E9FFF8' : i % 7 === 0 ? 'rgba(110,155,255,0.75)' : 'rgba(95,211,181,0.7)';
-          lctx.fillText(g, i * fs, y);
+          lctx.fillStyle = Math.random() < 0.06 ? '#F2F6FF' : i % 6 === 0 ? 'rgba(166,139,245,0.6)' : 'rgba(110,150,255,0.7)';
+          lctx.fillText(GLIFOS[(Math.random() * GLIFOS.length) | 0], i * fs, y);
         }
         gotas[i] += dt * (8 + (i * 7919 % 9));
         if (y > H && Math.random() > 0.975) gotas[i] = Math.random() * -12;
@@ -296,20 +307,20 @@ const TIPO = { auto: 'Automatización', aprobacion: 'Aprobación', regla: 'Regla
       c.clearRect(0, 0, W, H);
       c.globalAlpha = 0.5; c.drawImage(lluvia, 0, 0, W, H); c.globalAlpha = 1;
 
-      // 2 · velo para que AXO y los datos resalten
+      // 2 · velo
       const a = axoCaja();
       const v = c.createRadialGradient(a.px, a.py, 10, a.px, a.py, Math.max(W, H) * 0.6);
-      v.addColorStop(0, 'rgba(2,4,7,0.0)'); v.addColorStop(0.35, 'rgba(2,4,7,0.35)'); v.addColorStop(1, 'rgba(2,4,7,0.75)');
+      v.addColorStop(0, 'rgba(2,4,10,0)'); v.addColorStop(0.35, 'rgba(2,4,10,0.35)'); v.addColorStop(1, 'rgba(2,4,10,0.78)');
       c.fillStyle = v; c.fillRect(0, 0, W, H);
 
-      // 3 · estelas de velocidad
+      // 3 · estelas de velocidad (AXO vuela a la derecha: el mundo pasa a la izquierda)
       c.lineCap = 'round';
       estelas.forEach((s) => {
         s.x -= dt * s.v * (movil ? 0.25 : 0.45);
         if (s.x < -0.2) { s.x = 1.1; s.y = Math.random(); }
         const x = s.x * W, y = s.y * H;
         const g = c.createLinearGradient(x, y, x + s.l, y);
-        g.addColorStop(0, 'rgba(95,211,181,0.0)'); g.addColorStop(1, `rgba(140,230,210,${0.1 + s.v * 0.18})`);
+        g.addColorStop(0, 'rgba(110,150,255,0)'); g.addColorStop(1, `rgba(170,195,255,${0.1 + s.v * 0.18})`);
         c.strokeStyle = g; c.lineWidth = 1 + s.v; c.beginPath(); c.moveTo(x, y); c.lineTo(x + s.l, y); c.stroke();
       });
 
@@ -317,24 +328,24 @@ const TIPO = { auto: 'Automatización', aprobacion: 'Aprobación', regla: 'Regla
       pulso = Math.max(0, pulso - dt * 1.6);
       const r = a.aw * (0.42 + pulso * 0.12);
       const h = c.createRadialGradient(a.px, a.py, 4, a.px, a.py, r);
-      h.addColorStop(0, `rgba(110,155,255,${0.35 + pulso * 0.4})`); h.addColorStop(0.5, `rgba(95,211,181,${0.12 + pulso * 0.2})`); h.addColorStop(1, 'rgba(95,211,181,0)');
+      h.addColorStop(0, `rgba(75,123,229,${0.4 + pulso * 0.4})`); h.addColorStop(0.5, `rgba(166,139,245,${0.12 + pulso * 0.2})`); h.addColorStop(1, 'rgba(75,123,229,0)');
       c.fillStyle = h; c.beginPath(); c.arc(a.px, a.py, r, 0, Math.PI * 2); c.fill();
-      if (pulso > 0.02) { c.strokeStyle = `rgba(95,211,181,${pulso})`; c.lineWidth = 2; c.beginPath(); c.arc(a.px, a.py, a.aw * (0.12 + (1 - pulso) * 0.5), 0, Math.PI * 2); c.stroke(); }
+      if (pulso > 0.02) { c.strokeStyle = `rgba(157,184,255,${pulso})`; c.lineWidth = 2; c.beginPath(); c.arc(a.px, a.py, a.aw * (0.12 + (1 - pulso) * 0.5), 0, Math.PI * 2); c.stroke(); }
 
-      // 5 · chispas que deja al volar (por la cola y los pies) y las del impacto
-      if (dt > 0 && Math.random() < 0.7) chispas.push({ x: a.x + a.aw * (0.06 + Math.random() * 0.25), y: a.y + a.ah * (0.55 + Math.random() * 0.4), vx: -(60 + Math.random() * 120), vy: (Math.random() - 0.5) * 20, v: 1, c: Math.random() < 0.5 ? '#6E9BFF' : '#5FD3B5' });
+      // 5 · chispas que suelta al volar y las del impacto de los datos
+      if (dt > 0 && Math.random() < 0.7) chispas.push({ x: a.x + a.aw * (0.06 + Math.random() * 0.25), y: a.y + a.ah * (0.55 + Math.random() * 0.4), vx: -(60 + Math.random() * 120), vy: (Math.random() - 0.5) * 20, v: 1, c: Math.random() < 0.6 ? '#7FA2F0' : '#A68BF5' });
       chispas = chispas.filter((p) => { p.x += p.vx * dt; p.y += p.vy * dt; p.v -= dt * 1.1; if (p.v <= 0) return false; c.globalAlpha = p.v; c.fillStyle = p.c; c.fillRect(p.x, p.y, 2, 2); return true; });
       c.globalAlpha = 1;
 
       // 6 · AXO
       if (axoListo) {
         c.save(); c.translate(a.x + a.aw / 2, a.y + a.ah / 2); c.rotate(Math.sin(t * 0.9) * 0.035 - 0.02);
-        c.shadowColor = 'rgba(110,155,255,0.55)'; c.shadowBlur = 30;
+        c.shadowColor = 'rgba(75,123,229,0.6)'; c.shadowBlur = 30;
         c.drawImage(axo, -a.aw / 2, -a.ah / 2, a.aw, a.ah);
         c.restore();
       }
 
-      // 7 · los datos: entran cifrados y se descifran mientras vuelan hacia el pecho de AXO
+      // 7 · los datos: cifrados al entrar, se descifran mientras vuelan hacia el pecho de AXO
       c.font = `600 ${movil ? 12 : 13.5}px 'JetBrains Mono', ui-monospace, monospace`;
       c.textBaseline = 'middle';
       paquetes.forEach((p) => {
@@ -348,14 +359,14 @@ const TIPO = { auto: 'Automatización', aprobacion: 'Aprobación', regla: 'Regla
         c.save(); c.translate(x, y); c.scale(Math.max(0.15, esc), Math.max(0.15, esc));
         const w = c.measureText(txt).width;
         c.globalAlpha = Math.min(1, q * 4) * Math.max(0.2, esc);
-        c.fillStyle = 'rgba(2,10,10,0.78)'; c.strokeStyle = 'rgba(95,211,181,0.55)'; c.lineWidth = 1;
+        c.fillStyle = 'rgba(6,10,24,0.82)'; c.strokeStyle = 'rgba(110,150,255,0.6)'; c.lineWidth = 1;
         c.beginPath(); c.roundRect(-10, -14, w + 20, 28, 7); c.fill(); c.stroke();
-        c.shadowColor = '#5FD3B5'; c.shadowBlur = 10; c.fillStyle = revela >= 1 ? '#E9FFF8' : '#5FD3B5';
+        c.shadowColor = '#4B7BE5'; c.shadowBlur = 10; c.fillStyle = revela >= 1 ? '#F2F6FF' : '#9DB8FF';
         c.fillText(txt, 0, 1);
         c.restore();
         if (q >= 1) {
           p.listo = true; pulso = 1;
-          for (let k = 0; k < 14; k++) { const ang = Math.random() * Math.PI * 2, sp = 60 + Math.random() * 160; chispas.push({ x: a.px, y: a.py, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, v: 0.8, c: '#5FD3B5' }); }
+          for (let k = 0; k < 14; k++) { const ang = Math.random() * Math.PI * 2, sp = 60 + Math.random() * 160; chispas.push({ x: a.px, y: a.py, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, v: 0.8, c: '#9DB8FF' }); }
         }
       });
       c.globalAlpha = 1;
@@ -366,28 +377,36 @@ const TIPO = { auto: 'Automatización', aprobacion: 'Aprobación', regla: 'Regla
       if (rayo > 0 && ult) {
         const sr = stage.getBoundingClientRect(), cr = ult.getBoundingClientRect();
         const tx = movil ? cr.left - sr.left + cr.width / 2 : cr.right - sr.left, ty = movil ? cr.top - sr.top : cr.top - sr.top + cr.height / 2;
-        const tipo = flujos[flujo].etapas[Math.max(0, Math.min(etapa, flujos[flujo].etapas.length - 1))].tipo;
-        c.strokeStyle = fase === 'fin' ? '#5FD3B5' : COLOR[tipo]; c.globalAlpha = rayo; c.lineWidth = 2; c.shadowColor = c.strokeStyle as string; c.shadowBlur = 16;
+        c.strokeStyle = COLOR[rayoTipo]; c.globalAlpha = rayo; c.lineWidth = 2; c.shadowColor = COLOR[rayoTipo]; c.shadowBlur = 16;
         c.beginPath(); c.moveTo(a.px, a.py); c.quadraticCurveTo((a.px + tx) / 2, Math.min(a.py, ty) - 60, tx, ty); c.stroke();
         c.shadowBlur = 0; c.globalAlpha = 1;
       }
     }
 
-    // ── controles, tamaño y ciclo de dibujo (solo con la sección a la vista)
-    sec.querySelectorAll<HTMLElement>('.aum-tab').forEach((b) => b.addEventListener('click', () => arranca(Number(b.dataset.flujo))));
-    bPausa.addEventListener('click', () => { pausa = !pausa; bPausa.setAttribute('aria-pressed', String(pausa)); bPausa.textContent = pausa ? 'Seguir' : 'Pausa'; });
-    new ResizeObserver(tamano).observe(stage);
+    // ── el scroll decide la etapa: N+1 tramos (N etapas y el resultado)
+    function leeScroll() {
+      const r = riel.getBoundingClientRect();
+      const top = parseFloat(getComputedStyle(stage).top) || 0;
+      const total = riel.offsetHeight - stage.offsetHeight;
+      const p = total > 0 ? Math.min(1, Math.max(0, (top - r.top) / total)) : 0;
+      meta = Math.min(N, Math.floor(p * (N + 1)));
+      bajaEl.classList.toggle('is-fuera', meta >= N);
+    }
+    window.addEventListener('scroll', leeScroll, { passive: true });
+
+    new ResizeObserver(() => { tamano(); leeScroll(); }).observe(stage);
     let visible = false, iniciado = false, previo = 0;
     new IntersectionObserver((es) => {
       visible = es.some((e) => e.isIntersecting);
-      if (visible && !iniciado) { iniciado = true; axo.src = '/images/axo/axo-volando.webp'; tamano(); arranca(0); }
+      if (visible && !iniciado) { iniciado = true; axo.src = '/images/axo/axo-volando.webp'; tamano(); leeScroll(); marcaPasos(); }
     }, { rootMargin: '200px 0px' }).observe(stage);
     function cuadro(ms: number) {
       requestAnimationFrame(cuadro);
       const dt = Math.min(0.05, (ms - previo) / 1000 || 0); previo = ms;
       if (!visible || !iniciado) return;
-      if (!pausa) { t += dt; avanza(dt); }
-      dibuja(pausa ? 0 : dt);
+      t += dt;
+      avanza(dt);
+      dibuja(dt);
     }
     requestAnimationFrame(cuadro);
   });
