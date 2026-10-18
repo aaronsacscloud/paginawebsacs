@@ -9,6 +9,9 @@
  * vendida → lo que deja de pasar → preguntas → cierre.
  * Qué existe y qué no, y de dónde salen las pantallas: src/data/producto-reportes.ts.
  * Esta página estática le gana a src/pages/producto/[slug].astro para «reportes-y-analitica».
+ *
+ * 18-oct-2026: se quitaron RepRutinas, RepTablero y RepPrenda — el respaldo del VPS (a0d083c) subió la página
+ * pero NO esos tres componentes, y el build completo del sitio fallaba. Regresan cuando se suban los archivos.
  */
 import ProductLayout from '../../layouts/ProductLayout.astro';
 import ProductoHeroVideo from '../../components/producto/ProductoHeroVideo.astro';
