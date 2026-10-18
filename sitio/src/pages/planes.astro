@@ -312,7 +312,7 @@ const incluyeTodos = [
           <span>{x}</span>
         ))}
       </p>
-      <p class="incl-promesa">Sin costos ocultos <i aria-hidden="true">/</i> Sin letras chicas <i aria-hidden="true">/</i> Sin contratos de permanencia</p>
+      <p class="incl-promesa"><span>Sin costos ocultos</span> <i aria-hidden="true">/</i> <span>Sin letras chicas</span> <i aria-hidden="true">/</i> <span>Sin contratos de permanencia</span></p>
     </div>
   </div>
 </section>
@@ -2026,6 +2026,7 @@ const incluyeTodos = [
 .int-api-ico { width: 84px; height: 84px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.08); color: #8FB0FF; font-family: var(--font-mono, monospace); font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
 @media (max-width: 1024px) { .int-grid { grid-template-columns: repeat(2, 1fr); } }
 
+
 .reels-carrusel { position: relative; }
 .reels-nav {
   position: absolute;
@@ -2393,6 +2394,50 @@ const incluyeTodos = [
     transition: none !important;
   }
 }
+/* ═══ Teléfono (≤640 px): ajustes de la página de planes (QA 18-oct-2026) ═══ */
+@media (max-width: 640px) {
+  /* Botones y ligas con área de toque de al menos 44 px */
+  .currency-select { min-height: 44px; }
+  .plan-mas summary { min-height: 44px; display: flex; align-items: center; }
+  .reels-ver-todos a { display: inline-flex; align-items: center; min-height: 44px; }
+
+  /* Todos los planes incluyen: lista alineada a la izquierda, más fácil de leer */
+  .incl { text-align: left; padding-left: 4px; padding-right: 4px; }
+  .incl-t { text-align: center; }
+  .incl-lista { flex-direction: column; align-items: flex-start; gap: 10px; width: fit-content; margin: 0 auto; }
+  .incl-promesa { text-align: center; line-height: 1.7; }
+  .incl-promesa span { display: block; }
+  .incl-promesa i { display: none; }
+
+  /* Banner de AXO: una columna, AXO arriba y chico */
+  .axo-banner { grid-template-columns: 1fr; gap: var(--space-4); padding: var(--space-6) var(--space-5) var(--space-6); text-align: left; }
+  .axo-banner-fig { order: -1; margin: 0; }
+  .axo-banner-fig img { max-width: 150px; }
+  .axo-title { font-size: 2rem; }
+  .axo-limites { grid-template-columns: 1fr; }
+
+  /* Migración: las tres cifras en renglones, número a la izquierda */
+  .mig-datos { grid-template-columns: 1fr; gap: var(--space-3); }
+  .mig-dato { display: flex; align-items: center; gap: 16px; text-align: left; padding: 18px 20px; }
+  .mig-dato-num { font-size: 2rem; min-width: 128px; white-space: nowrap; }
+  .mig-dato-label { margin-top: 0; }
+  .mig-visual { border-radius: 18px; }
+
+  /* Carruseles: en el teléfono se desliza con el dedo; las flechas tapaban el texto */
+  .reels-nav { display: none; }
+
+  /* Integraciones: una columna, logo a la izquierda y texto a la derecha */
+  .int-grid { grid-template-columns: 1fr; gap: var(--space-3); }
+  .int-card { display: grid; grid-template-columns: 96px 1fr; column-gap: 16px; align-items: center; padding: 16px; }
+  .int-logo { grid-column: 1; grid-row: 1 / span 3; height: 72px; margin: 0; padding: 0 10px; }
+  .int-estado { position: static; grid-column: 2; grid-row: 1; justify-self: start; margin-bottom: 4px; }
+  .int-name { grid-column: 2; grid-row: 2; }
+  .int-desc { grid-column: 2; grid-row: 3; }
+  .int-card--api { display: flex; }
+  .int-card--api .int-name, .int-card--api .int-desc { grid-column: auto; grid-row: auto; }
+  .int-api-ico { width: 56px; height: 56px; font-size: 1.125rem; }
+}
+
 </style>
 
 <script>
