@@ -48,7 +48,8 @@ export interface Lista {
   folio: [string, string];
   titulo: string;
   bajada?: string;
-  estilo?: 'tarjetas' | 'numerada' | 'tablero';
+  /** horario: un día con AXO (tag = la hora, dato = el área) */
+  estilo?: 'tarjetas' | 'numerada' | 'tablero' | 'horario';
   items: { t: string; d: string; tag?: string; dato?: string; estado?: Estado }[];
   nota?: string;
   cta?: { t: string; href: string };
@@ -80,7 +81,35 @@ export interface Pronostico {
   total: string;
   notas: string[];
 }
-export type Seccion = Chat | Lista | Antes | Hub | Pronostico;
+/** Escalera de planes de AXO y sus habilidades (presentación «AXO · Planes y habilidades», oct-2026). */
+export interface Habilidades {
+  tipo: 'habilidades';
+  id: string;
+  folio: [string, string];
+  titulo: string;
+  bajada: string;
+  /** los peldaños: plan, capacidad y qué hace AXO en ese nivel */
+  niveles: { plan: string; x: string; t: string }[];
+  /** desde = nombre del plan en `niveles`; super = la súper habilidad exclusiva */
+  items: { n: string; t: string; d: string; puntos: string[]; desde: string; super?: boolean }[];
+  memoria: { t: string; d: string; puntos: string[] };
+}
+/** Planes y precios de AXO, con la comparativa de habilidades plan por plan. */
+export interface Planes {
+  tipo: 'planes';
+  id: string;
+  folio: [string, string];
+  titulo: string;
+  bajada: string;
+  /** precios en pesos, antes de IVA */
+  planes: { n: string; x: string; para: string; mes: number; anual: number; usuarios: string; base?: string; incluye: string[]; anualExtra?: string; badge?: string; destacado?: boolean }[];
+  /** v: un valor por plan, en el orden de `planes` (true = incluida, false = no, texto = se muestra tal cual) */
+  filas: { grupo: string; items: { t: string; d?: string; v: (boolean | string)[] }[] }[];
+  capacidad: string;
+  notas: string[];
+  cta: { t: string; href: string };
+}
+export type Seccion = Chat | Lista | Antes | Hub | Pronostico | Habilidades | Planes;
 
 export interface PaginaAuto {
   slug: string;
@@ -176,8 +205,30 @@ export const AUTOMATIZA: PaginaAuto[] = [
         ],
       },
       {
+        tipo: 'antes', id: 'axo-colaborador',
+        folio: ['04 · No es un chatbot', 'Tu nuevo compañero de equipo'],
+        titulo: 'No responde preguntas. Trabaja en tu empresa.',
+        antes: { k: 'Un chatbot', total: 'Espera', pasos: ['Espera a que le preguntes', 'Contesta con texto', 'Olvida la conversación', 'Atiende un tema a la vez', 'Funciona en horario'] },
+        despues: { k: 'AXO, colaborador digital', total: '24/7', pasos: ['Trabaja aunque no le hables: revisa tu operación, detecta lo que falta y actúa', 'Hace el trabajo dentro de Sacs: crea órdenes, mueve inventario, programa pagos', 'Aprende cómo trabajas y mejora tus procesos con el tiempo', 'Coordina compras, almacén, ventas, cobranza y finanzas', 'De noche concilia, calcula y te deja todo listo'] },
+      },
+      {
+        tipo: 'lista', id: 'axo-dia', tema: 'claro', estilo: 'horario',
+        folio: ['05 · Un día con AXO', 'Escenario ilustrativo'],
+        titulo: 'Tu tienda trabaja mientras tú vives.',
+        bajada: 'Así se ve un día normal cuando tus procesos corren con AXO. Tú solo apruebas lo importante, desde tu teléfono.',
+        items: [
+          { tag: '6:00 a. m.', dato: 'Cierre del día', t: 'Revisó el cierre de ayer', d: 'Encontró un faltante de $1,200 en una caja y le abrió la tarea a la gerente.' },
+          { tag: '7:30 a. m.', dato: 'Compras', t: 'Tu resumen en WhatsApp', d: 'Ventas, metas y 3 órdenes de compra. Las apruebas con un «sí» antes del café.' },
+          { tag: '10:00 a. m.', dato: 'Inventario', t: 'Recepción con una foto', d: 'En bodega fotografían la factura y la entrada queda registrada y validada.' },
+          { tag: '1:00 p. m.', dato: 'Ventas', t: 'Venta por WhatsApp', d: 'Una clienta pregunta por una prenda: AXO la aparta y le manda la liga de pago.' },
+          { tag: '6:00 p. m.', dato: 'Finanzas', t: 'Cobranza al día', d: '7 recordatorios enviados y 4 pagos recibidos, conciliados con el banco.' },
+          { tag: '11:00 p. m.', dato: 'Mientras duermes', t: 'Mañana ya está lista', d: 'Calculó el reabasto, preparó los traspasos y dejó tu resumen para el amanecer.' },
+        ],
+        nota: 'Tú decides. AXO hace el resto.',
+      },
+      {
         tipo: 'lista', id: 'axo-hace', tema: 'marfil', estilo: 'tarjetas',
-        folio: ['04 · Lo que hace hoy', 'En Sacs, en el celular y en WhatsApp'],
+        folio: ['06 · Lo que hace hoy', 'En Sacs, en el celular y en WhatsApp'],
         titulo: 'Un copiloto que ya trabaja.',
         items: [
           { t: 'Preguntas en tus palabras', d: 'Ventas, inventario, clientas y compras, con tarjetas, gráficas y fotos.', estado: 'hoy' },
@@ -191,11 +242,136 @@ export const AUTOMATIZA: PaginaAuto[] = [
         ],
       },
       {
+        tipo: 'habilidades', id: 'axo-habilidades',
+        folio: ['07 · Sus habilidades', '11 habilidades · memoria en todos'],
+        titulo: 'Le das habilidades. Se vuelve más fuerte.',
+        bajada: 'AXO funciona por módulos de habilidades. Cada plan le habilita habilidades nuevas: empieza entendiendo tu negocio, después lo opera y al final lo automatiza y lo mejora.',
+        niveles: [
+          { plan: 'Starter', x: '1x', t: 'Entiende tu negocio' },
+          { plan: 'Pro', x: '2x', t: 'Hace el trabajo' },
+          { plan: 'Super Power', x: '10x', t: 'Automatiza y mejora' },
+          { plan: 'Super Power 20x', x: '20x', t: 'Opera a escala' },
+          { plan: 'Corporativo 50x', x: '50x', t: 'Dirige la operación' },
+        ],
+        items: [
+          { n: '01', t: 'Analítica', desde: 'Starter', d: 'Tu analista de negocio. Cruza ventas, inventario, gastos y cobranza, y también lo que no está en Sacs: el Excel del banco, tus marketplaces o la hoja de tu contador.', puntos: ['Compara periodos, tiendas, vendedoras, canales y proveedores', 'Reportes a la medida, armados en minutos', 'Te dice qué hacer, no solo qué pasó'] },
+          { n: '02', t: 'Importación', desde: 'Starter', d: 'Tus datos en Sacs sin capturar uno solo. Le pasas el archivo como lo tengas y lo deja revisado y en su lugar.', puntos: ['Excel, CSV, la lista en PDF del proveedor o tu sistema anterior', 'Reconoce qué es código, precio, talla o existencia', 'Revisa duplicados y precios en cero antes de guardar'] },
+          { n: '03', t: 'Ejecución', desde: 'Pro', d: 'De responder a hacer el trabajo. Le pides algo como a alguien de tu equipo y lo deja hecho en Sacs.', puntos: ['Altas, precios, promociones, traspasos y ajustes', 'Con tus permisos y su bitácora', 'Lo delicado te lo pide aprobar'] },
+          { n: '04', t: 'Visión', desde: 'Pro', d: 'Le enseñas una foto y la convierte en trabajo: la compara con lo que hay en Sacs y registra el movimiento.', puntos: ['Facturas y remisiones contra la orden de compra', 'Fotos de producto y video del anaquel', 'Tickets y comprobantes, como gastos o pagos'] },
+          { n: '05', t: 'Automatizaciones', desde: 'Super Power', d: 'Le cuentas cómo quieres que funcione. AXO lo diseña como consultor y lo deja corriendo solo.', puntos: ['Te recomienda las mejores prácticas', 'Configura campos, reglas, aprobaciones y avisos', 'Lo prueba en simulación antes de activarlo'] },
+          { n: '06', t: 'Construcción', desde: 'Super Power', d: 'Sacs se adapta a tu negocio, no al revés. Le dices qué te falta y lo agrega en los módulos que ya usas.', puntos: ['Campos y formularios', 'Filtros, reportes y tableros', 'Validaciones que evitan errores'] },
+          { n: '07', t: 'Colaboración', desde: 'Super Power', d: 'Tu equipo y AXO en el mismo canal, también en WhatsApp.', puntos: ['Canales ilimitados por área, tienda o proyecto', 'Cada acuerdo queda anotado en Sacs', 'Pides, apruebas y consultas desde el teléfono'] },
+          { n: '08', t: 'Procedimientos empresariales', desde: 'Super Power', d: 'Descubre cómo se conectan tus áreas y te propone el procedimiento. Tu orquestador lo afina y Sacs lo vuelve regla.', puntos: ['Detecta lo que cada tienda resuelve distinto', 'Une ventas, almacén, compras, finanzas y contabilidad', 'Si alguien se salta un paso, Sacs no lo deja'] },
+          { n: '09', t: 'Capacitación y onboarding', desde: 'Super Power', d: 'Entrena a cada persona nueva con tus reglas y procedimientos hasta dejarla lista para operar.', puntos: ['Una ruta a la medida de cada puesto', 'Practica sin riesgo y presenta examen', 'Avisa a la encargada cuando está lista'] },
+          { n: '10', t: 'Voz', desde: 'Super Power 20x', d: 'AXO también hace llamadas: llama a clientas y proveedores, conversa y deja el resultado registrado en Sacs.', puntos: ['Cobranza, confirmaciones y seguimiento', 'Cada llamada transcrita', 'Se cobra por llamada completada'] },
+          { n: '50x', t: 'Centro de control operativo', desde: 'Corporativo 50x', super: true, d: 'Súper habilidad: AXO administra tu empresa de forma activa. Vigila cada área y cada tienda, decide dentro de las reglas que tú le das y coordina a tu equipo.', puntos: ['Ventas, inventario, compras, cobranza, tesorería y personal en tiempo real', 'Decide y actúa dentro de tu política de autonomía', 'Cada mañana, el parte ejecutivo para la dirección'] },
+        ],
+        memoria: {
+          t: 'Memoria de tu empresa',
+          d: 'Entre más lo usan, más sabe. AXO guarda lo que aprende de tu operación: entiende cómo trabaja tu equipo, recuerda tus reglas y cada mes automatiza más.',
+          puntos: ['Lo que usan: cada venta, compra y movimiento en Sacs', 'Lo que le comentan: conversaciones, canales y WhatsApp', 'Lo que revisan: aprobaciones, rechazos y correcciones', 'Tu orquestador puede revisar y corregir lo que aprendió'],
+        },
+      },
+      {
+        tipo: 'chat', id: 'axo-consultor', foto: 'rutinas-escena',
+        folio: ['08 · Automatizaciones', 'Lo platicas, AXO lo diseña'],
+        titulo: 'Tú lo platicas. AXO lo deja corriendo.',
+        pantalla: 'Tu chat con AXO', sub: 'Consultor de procesos',
+        pasos: [
+          { t: 'Lo platicas', d: 'Escribes el proceso con tus palabras, como se lo contarías a un consultor.' },
+          { t: 'AXO te asesora', d: 'Te pregunta lo que falta y te recomienda las mejores prácticas.' },
+          { t: 'Lo configura en Sacs', d: 'Etapas, aprobaciones, reglas y avisos, de la requisición a la póliza.' },
+          { t: 'Lo pruebas y lo activas', d: 'Primero con compras simuladas; después, en real.' },
+          { t: 'Y te avisa', d: 'Cuando algo se detiene, te pregunta qué hacer.' },
+        ],
+        msgs: [
+          { k: 0, tipo: 'yo', t: 'Quiero que las compras funcionen así: la tienda pide lo que le falta, se hace la orden, llega la mercancía, se le paga al proveedor y contabilidad lo registra.' },
+          { k: 1, tipo: 'axo', t: 'Perfecto. Antes de armarlo te recomiendo tres buenas prácticas: <b>aprobación por monto</b> (más de $50,000 lo autoriza dirección), <b>recepción contra la orden</b> (si llega con más de 2 % de diferencia, el pago se detiene) y <b>pagos en lote</b> martes y viernes. ¿Las incluimos?' },
+          { k: 2, tipo: 'yo', t: 'Sí. Y avísame por WhatsApp cuando algo se detenga.' },
+          { k: 2, tipo: 'kpis', items: [['Etapas', '6'], ['Aprobaciones', '4'], ['Automat.', '8']] },
+          { k: 2, tipo: 'accion', titulo: 'Proceso · Compras de punta a punta', filas: [['Etapas', 'Requisición → Contabilidad'], ['Aprueban', '$10,000 gerente · $50,000 dirección'], ['Tolerancia', '2 % detiene el pago'], ['Pagos', 'Martes y viernes'], ['Prueba', '3 compras simuladas ✓']], boton: 'Activar', confirma: 3 },
+          { k: 3, tipo: 'yo', t: 'Actívalo' },
+          { k: 3, tipo: 'listo', t: 'Proceso activo · 11 cambios en Sacs' },
+          { k: 4, tipo: 'canal', t: 'Días después · WhatsApp' },
+          { k: 4, tipo: 'alerta', titulo: 'OC-1088 detenida', t: 'Llegaron 46 de 50 piezas (8 % de diferencia). ¿Pagamos lo recibido o esperamos el resto?' },
+        ],
+      },
+      {
+        tipo: 'lista', id: 'axo-flujos', tema: 'marfil', estilo: 'tarjetas',
+        folio: ['09 · Flujos completos', 'De punta a punta'],
+        titulo: 'Procesos enteros que corren solos.',
+        bajada: 'Ejemplos de flujos que AXO configura a la medida de cada negocio. Tú defines qué pasa en automático y qué requiere tu aprobación.',
+        items: [
+          { tag: 'Cada noche', t: 'Reabasto automático', d: 'Revisa ventas y existencias de cada tienda, calcula lo que vas a necesitar según tendencia y temporada, arma las órdenes por proveedor y te las manda a WhatsApp. Nunca te quedas sin lo que más se vende.' },
+          { tag: 'Al llegar la mercancía', t: 'Recepción con una foto', d: 'Lee la factura o la remisión, la compara contra la orden, registra la entrada y marca faltantes o diferencias de precio. Recepciones en minutos, sin capturar.' },
+          { tag: 'Todos los días', t: 'Cobranza que se hace sola', d: 'Detecta saldos vencidos o por vencer, manda recordatorio por WhatsApp con liga de pago, registra el pago y lo concilia. Escala a tu equipo a quien no responde.' },
+          { tag: 'Al cerrar las cajas', t: 'Cierre del día', d: 'Revisa los cortes de cada caja, detecta diferencias, cancelaciones y descuentos fuera de lo normal, compara contra la meta y te manda el resumen antes de dormir.' },
+          { tag: 'Cuando escribe una clienta', t: 'Venta por WhatsApp', d: 'Revisa existencias en todas las tiendas, aparta la prenda, genera la liga de pago, avisa a la tienda para preparar el pedido y da seguimiento hasta la entrega.' },
+          { tag: 'Cada semana', t: 'Tu equipo en orden', d: 'Cruza la venta esperada con los horarios, sugiere los turnos, avisa de retardos y faltas, recuerda documentos por vencer y deja lista la prenómina.' },
+        ],
+      },
+      {
+        tipo: 'lista', id: 'axo-autonomia', tema: 'negro', estilo: 'tarjetas',
+        folio: ['10 · Cómo se gobierna', 'Política de autonomía'],
+        titulo: 'Tú pones las reglas. AXO opera dentro de ellas.',
+        bajada: 'Antes de encenderlo definimos contigo hasta dónde decide AXO solo, por área y por monto. La puedes cambiar cuando quieras.',
+        items: [
+          { tag: 'Nivel 1', t: 'Lo hace solo', d: 'Tareas de rutina con reglas claras: reabastecer lo que está bajo mínimo, traspasos entre tiendas, recordatorios de cobranza y conciliación bancaria diaria.' },
+          { tag: 'Nivel 2', t: 'Lo hace y te avisa', d: 'Decisiones con margen definido: ajustar precios dentro de un rango, reprogramar entregas, reasignar personal entre tiendas y dar seguimiento a tareas.' },
+          { tag: 'Nivel 3', t: 'Te pide aprobación', d: 'Lo que compromete dinero o personas: órdenes de compra arriba del monto, pagos a proveedores, cancelaciones grandes y cambios a tus procedimientos.' },
+        ],
+        nota: 'Todo queda en bitácora y se puede revertir.',
+      },
+      {
         tipo: 'antes', id: 'axo-antes',
-        folio: ['05 · Antes y después', 'Una pregunta de las 11 de la noche'],
+        folio: ['11 · Antes y después', 'Una pregunta de las 11 de la noche'],
         titulo: 'De tres pantallas a una pregunta.',
         antes: { k: 'Así era', total: '20 minutos', pasos: ['Abrir el reporte de ventas y filtrar por tienda', 'Cruzarlo con existencias, talla por talla', 'Buscar quién tiene apartado qué', 'Mandar mensajes al equipo para mover la mercancía'] },
         despues: { k: 'Con AXO', total: '30 segundos', pasos: ['Le preguntas en tus palabras o con tu voz', 'Te contesta con la cifra y las prendas', 'Te propone el traspaso y tú confirmas'] },
+      },
+      {
+        tipo: 'planes', id: 'axo-planes',
+        folio: ['12 · Planes', 'Precio de inauguración'],
+        titulo: 'Elige qué habilidades le das.',
+        bajada: 'Empieza por el plan que se parezca a tu operación de hoy. Tu asesor Sacs te ayuda a elegirlo y lo activa en tu cuenta: le pides a AXO desde el primer día.',
+        planes: [
+          { n: 'Starter', x: '1x', para: 'Para empresas que apenas empiezan a usar la IA.', mes: 1500, anual: 14400, usuarios: '1 usuario', incluye: ['Analítica · business intelligence y reportes', 'Importación · migración a cualquier módulo', 'Memoria'] },
+          { n: 'Pro', x: '2x', para: 'Para equipos que quieren que AXO también ejecute.', mes: 3000, anual: 28800, usuarios: 'Hasta 3 usuarios', base: 'Todo Starter, más', incluye: ['Ejecución · acciones en cualquier área', 'Visión · fotos, documentos y video', 'El doble de capacidad'] },
+          { n: 'Super Power', x: '10x', para: 'Para automatizar tu operación de punta a punta.', mes: 10500, anual: 100800, usuarios: 'Hasta 5 usuarios', base: 'Todo Pro, más', badge: 'El más elegido', destacado: true, incluye: ['Automatizaciones · consultor de procesos', 'Construcción · mejoras a tus módulos', 'Colaboración · canales ilimitados y WhatsApp', 'Procedimientos · sugiere y vuelve regla', 'Capacitación · onboarding con exámenes', '10 veces la capacidad'] },
+          { n: 'Super Power 20x', x: '20x', para: 'Todo Super Power, para operaciones intensivas.', mes: 19000, anual: 182400, usuarios: 'Hasta 5 usuarios', base: 'Todo Super Power, más', incluye: ['Voz · llamadas, con costo por llamada completada', '20 veces la capacidad'], anualExtra: 'Pagando el año: implementación incluida y 5 flujos de automatización con un orquestador certificado por Sacs.' },
+          { n: 'Corporativo 50x', x: '50x', para: 'AXO administra toda tu empresa y es tu centro de control operativo.', mes: 46000, anual: 441600, usuarios: 'Hasta 15 usuarios', base: 'Todo Super Power 20x, más', badge: 'Corporativos', incluye: ['Centro de control operativo · administra y coordina toda la empresa', '50 veces la capacidad'], anualExtra: 'Pagando el año: implementación incluida y 5 flujos de automatización con un orquestador certificado por Sacs.' },
+        ],
+        filas: [
+          { grupo: 'Capacidad y usuarios', items: [
+            { t: 'Capacidad', v: ['1x', '2x', '10x', '20x', '50x'] },
+            { t: 'Usuarios incluidos', v: ['1', 'Hasta 3', 'Hasta 5', 'Hasta 5', 'Hasta 15'] },
+            { t: 'Usuario extra', v: ['$1,500/mes', '$1,500/mes', '$1,500/mes', '$1,500/mes', '$1,500/mes'] },
+          ] },
+          { grupo: 'Habilidades de AXO', items: [
+            { t: 'Analítica', d: 'Business intelligence, reportes y datos externos', v: [true, true, true, true, true] },
+            { t: 'Importación', d: 'Carga y migración en cualquier módulo', v: [true, true, true, true, true] },
+            { t: 'Memoria', d: 'Aprende de tu operación con el uso', v: [true, true, true, true, true] },
+            { t: 'Ejecución', d: 'Acciones en cualquier área de Sacs', v: [false, true, true, true, true] },
+            { t: 'Visión', d: 'Lee fotos, documentos y video', v: [false, true, true, true, true] },
+            { t: 'Automatizaciones', d: 'Consultor de procesos y tareas programadas', v: [false, false, true, true, true] },
+            { t: 'Construcción', d: 'Campos, filtros, reportes y tableros en tus módulos', v: [false, false, true, true, true] },
+            { t: 'Colaboración', d: 'Canales ilimitados y AXO en WhatsApp', v: [false, false, true, true, true] },
+            { t: 'Procedimientos empresariales', d: 'AXO los sugiere, tu orquestador los vuelve regla', v: [false, false, true, true, true] },
+            { t: 'Capacitación y onboarding', d: 'Entrena, examina y avisa cuando está lista', v: [false, false, true, true, true] },
+            { t: 'Voz', d: 'Llamadas transcritas y registradas (costo por llamada completada)', v: [false, false, false, true, true] },
+            { t: 'Centro de control operativo', d: 'Súper habilidad: administra y coordina toda la empresa', v: [false, false, false, false, true] },
+          ] },
+          { grupo: 'Solo pagando el año', items: [
+            { t: 'Implementación incluida', v: [false, false, false, true, true] },
+            { t: '5 flujos de automatización', d: 'Con un orquestador certificado por Sacs', v: [false, false, false, true, true] },
+          ] },
+        ],
+        capacidad: 'Cada plan incluye una capacidad de uso de AXO: cuántas preguntas, reportes, acciones y automatizaciones puede resolver por ti. Starter es la base y los demás la multiplican. ¿Te quedas corto? Subes de plan en cualquier momento y la capacidad crece al instante.',
+        notas: [
+          'Precios en pesos mexicanos, más IVA (16 %). Pago anual: 20 % de descuento. Usuario extra: $1,500 al mes + IVA, en cualquier plan.',
+          'Son precios de inauguración de AXO y subirán en las próximas semanas. Si contratas ahora, conservas este precio en los próximos años.',
+        ],
+        cta: { t: 'Elige tu plan con un asesor', href: '/agendar/demo' },
       },
     ],
     faqs: [
@@ -204,7 +380,10 @@ export const AUTOMATIZA: PaginaAuto[] = [
       { question: '¿Puedo limitar quién usa AXO y qué puede pedirle?', answer: 'Sí. Hay un permiso «Usar AXO» por grupo de usuarios y una política por cuenta: quién puede pedir cada acción, cuál necesita aprobación de un administrador y topes de monto.' },
       { question: '¿Qué IA usa?', answer: 'El chat y las acciones corren con Claude, de Anthropic. La voz en tiempo real usa OpenAI y las fotos de producto, GPT Image.' },
       { question: '¿Funciona en el celular?', answer: 'Sí: en la app de Sacs para celular, con voz y foto, y también desde tu WhatsApp una vez que registras tu número.' },
-      { question: '¿Cuánto cuesta usarlo?', answer: 'AXO consume créditos de IA. En Configuración › Créditos de IA ves tu saldo y tu historial de consumo.' },
+      { question: '¿Cuánto cuesta usarlo?', answer: 'Depende de las habilidades que le des: AXO tiene cinco planes, desde Starter a $1,500 al mes + IVA hasta Corporativo 50x a $46,000 al mes + IVA. Pagando el año tienes 20 % de descuento. En Configuración › Créditos de IA ves tu saldo y tu historial de consumo.' },
+      { question: '¿Qué significa 1x, 2x, 10x?', answer: 'Es la capacidad de uso de AXO que incluye cada plan: cuántas preguntas, reportes, acciones y automatizaciones puede resolver por ti. Starter es la base y los demás la multiplican. Si te quedas corto, subes de plan en cualquier momento y la capacidad crece al instante.' },
+      { question: '¿Qué es el orquestador?', answer: 'La persona que dirige a AXO en tu empresa. Revisa los procedimientos que AXO sugiere, los ajusta a como quiere que se trabaje y, al aprobarlos, Sacs los aplica como regla. También puede revisar y corregir lo que AXO aprendió. En Super Power 20x y Corporativo 50x, pagando el año, incluye 5 flujos de automatización con un orquestador certificado por Sacs.' },
+      { question: '¿AXO recuerda cómo trabajo?', answer: 'Sí, en todos los planes. Aprende de lo que tu equipo usa, comenta y revisa en Sacs; recuerda tus reglas y procedimientos, y con el tiempo automatiza cada vez más.' },
     ],
   },
 

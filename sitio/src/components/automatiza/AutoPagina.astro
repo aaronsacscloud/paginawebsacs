@@ -1,7 +1,7 @@
 ---
 /**
  * Página completa de Automatiza (/producto/<slug>): portada, las secciones de la página (chat con AXO, listas,
- * antes y después, mapa de integraciones) en el orden de src/data/automatiza.ts, preguntas, el resto de Automatiza
+ * antes y después, mapa de integraciones, habilidades y planes de AXO) en el orden de src/data/automatiza.ts, preguntas, el resto de Automatiza
  * y el cierre. Usa ProductLayout para conservar el sub-menú de la sección.
  */
 import ProductLayout from '../../layouts/ProductLayout.astro';
@@ -11,6 +11,8 @@ import AutoLista from './AutoLista.astro';
 import AutoAntes from './AutoAntes.astro';
 import AutoHub from './AutoHub.astro';
 import AutoPronostico from './AutoPronostico.astro';
+import AutoHabilidades from './AutoHabilidades.astro';
+import AutoPlanes from './AutoPlanes.astro';
 import GiroFAQ from '../giros/GiroFAQ.astro';
 import FinalCTA from '../FinalCTA.astro';
 import StructuredData from '../StructuredData.astro';
@@ -40,6 +42,8 @@ const faqSchema = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEn
       : s.tipo === 'lista' ? <AutoLista lista={s} />
       : s.tipo === 'antes' ? <AutoAntes antes={s} />
       : s.tipo === 'pronostico' ? <AutoPronostico p={s} />
+      : s.tipo === 'habilidades' ? <AutoHabilidades h={s} />
+      : s.tipo === 'planes' ? <AutoPlanes p={s} />
       : <AutoHub hub={s} />
     ))}
   </div>

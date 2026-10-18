@@ -1,0 +1,145 @@
+---
+/**
+ * Planes y precios de AXO (/producto/axo-copiloto-ia, 18-oct-2026; sale de la presentación «AXO · Planes y
+ * habilidades»): las cinco tarjetas con su precio mensual y lo que cuesta pagando el año, la capacidad de cada plan
+ * en barras y la comparativa de habilidades plan por plan. Los precios vienen antes de IVA; aquí se calculan el
+ * equivalente mensual del pago anual y el ahorro, para que no se contradigan con el dato.
+ */
+import type { Planes } from '../../data/automatiza';
+interface Props { p: Planes }
+const { p } = Astro.props;
+const $ = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+const maxX = Math.max(...p.planes.map((pl) => parseFloat(pl.x)));
+---
+<section class="aup" id={p.id} aria-labelledby={`${p.id}-h`}>
+  <div class="aup-in">
+    <p class="aup-folio"><span>{p.folio[0]}</span><span>{p.folio[1]}</span></p>
+    <h2 class="aup-h" id={`${p.id}-h`}>{p.titulo}</h2>
+    <p class="aup-bajada">{p.bajada}</p>
+
+    <ul class="aup-grid">
+      {p.planes.map((pl, i) => (
+        <li class={`aup-card rv${pl.destacado ? ' aup-card--top' : ''}`} style={`--i:${i}`}>
+          {pl.badge && <span class="aup-badge">{pl.badge}</span>}
+          <p class="aup-nombre"><b>{pl.n}</b><span>{pl.x}</span></p>
+          <span class="aup-para">{pl.para}</span>
+          <p class="aup-precio"><b>{$(pl.mes)}</b><span>/mes + IVA</span></p>
+          <p class="aup-anual">Pagando el año: <b>{$(pl.anual)} + IVA</b><br />Equivale a {$(pl.anual / 12)}/mes · ahorras {$(pl.mes * 12 - pl.anual)}</p>
+          <p class="aup-usu">{pl.usuarios}</p>
+          {pl.base && <p class="aup-base">{pl.base}</p>}
+          <ul>{pl.incluye.map((x) => <li>{x}</li>)}</ul>
+          {pl.anualExtra && <p class="aup-extra">{pl.anualExtra}</p>}
+        </li>
+      ))}
+    </ul>
+
+    <div class="aup-cap">
+      <p>{p.capacidad}</p>
+      <ul aria-label="Capacidad de AXO por plan">
+        {p.planes.map((pl) => (
+          <li><span>{pl.n}</span><i style={`--w:${Math.max(3, (parseFloat(pl.x) / maxX) * 100).toFixed(1)}%`}></i><b>{pl.x}</b></li>
+        ))}
+      </ul>
+    </div>
+
+    <h3 class="aup-sub">Las habilidades, plan por plan.</h3>
+    <div class="aup-tw">
+      <table>
+        <thead>
+          <tr><th scope="col"><span class="sr">Habilidad</span></th>{p.planes.map((pl) => <th scope="col">{pl.n}</th>)}</tr>
+        </thead>
+        {p.filas.map((g) => (
+          <tbody>
+            <tr class="aup-g"><th scope="colgroup" colspan={p.planes.length + 1}>{g.grupo}</th></tr>
+            {g.items.map((f) => (
+              <tr>
+                <th scope="row"><b>{f.t}</b>{f.d && <span>{f.d}</span>}</th>
+                {f.v.map((v) => (
+                  <td>{v === true ? <span class="aup-si" aria-label="Incluida">✓</span> : v === false ? <span class="aup-no" aria-label="No incluida">—</span> : v}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        ))}
+      </table>
+    </div>
+
+    {p.notas.map((n) => <p class="aup-nota">{n}</p>)}
+    <a class="aup-cta" href={p.cta.href} data-evento="automatiza_planes">{p.cta.t} <span aria-hidden="true">→</span></a>
+  </div>
+</section>
+
+<style>
+  .aup { background: #fff; color: #141414; }
+  .aup-in { max-width: 1160px; margin: 0 auto; padding: 88px 20px; }
+  .aup-folio { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin: 0 0 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(20, 20, 20, 0.14); font: 600 11px/1.35 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; }
+  .aup-h { margin: 0; max-width: 16ch; font: 700 clamp(36px, 5.6vw, 76px)/0.96 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; text-wrap: balance; }
+  .aup-bajada { margin: 18px 0 0; max-width: 58ch; font: 400 17px/1.55 var(--font-body); color: rgba(20, 20, 20, 0.66); }
+
+  .aup-grid { list-style: none; margin: 44px 0 0; padding: 0; display: grid; gap: 12px; }
+  .aup-card { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 22px 20px; border-radius: 18px; background: #F6F4F0; border: 1px solid rgba(20, 20, 20, 0.1); }
+  .aup-card--top { background: #4B7BE5; color: #fff; border-color: #4B7BE5; box-shadow: 0 24px 60px rgba(75, 123, 229, 0.35); }
+  .aup-badge { position: absolute; top: -11px; left: 20px; padding: 5px 10px; border-radius: 99px; background: #141414; color: #fff; font: 700 10.5px/1 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; }
+  .aup-card--top .aup-badge { background: #E8C84A; color: #141414; }
+  .aup-nombre { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0; }
+  .aup-nombre b { font: 700 19px/1.15 var(--font-display); }
+  .aup-nombre span { font: 700 15px/1 var(--pd-clash, var(--font-display)); opacity: 0.6; }
+  .aup-para { min-height: 2.9em; font: 400 14px/1.45 var(--font-body); opacity: 0.75; }
+  .aup-precio { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; margin: 8px 0 0; }
+  .aup-precio span { white-space: nowrap; }
+  .aup-precio b { font: 700 clamp(28px, 2.6vw, 34px)/1 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; }
+  .aup-precio span { font: 500 13px/1 var(--font-body); opacity: 0.7; }
+  .aup-anual { margin: 4px 0 0; padding-bottom: 12px; border-bottom: 1px solid currentColor; border-color: rgba(20, 20, 20, 0.12); font: 400 12.5px/1.5 var(--font-body); opacity: 0.85; }
+  .aup-card--top .aup-anual { border-color: rgba(255, 255, 255, 0.3); }
+  .aup-usu { margin: 6px 0 0; font: 700 13px/1.3 var(--font-display); }
+  .aup-base { margin: 4px 0 0; font: 700 10.5px/1.3 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.6; }
+  .aup-card ul { list-style: none; margin: 0; padding: 0; }
+  .aup-card li { position: relative; padding: 6px 0 0 16px; font: 500 13.5px/1.4 var(--font-body); }
+  .aup-card li::before { content: '✓'; position: absolute; left: 0; top: 6px; font-size: 12px; color: #11734A; }
+  .aup-card--top li::before { color: #fff; }
+  .aup-extra { margin: auto 0 0; padding: 10px 12px; border-radius: 10px; background: rgba(232, 200, 74, 0.22); font: 500 12.5px/1.45 var(--font-body); }
+
+  .aup-cap { display: grid; gap: 20px; margin-top: 44px; padding: 26px 22px; border-radius: 18px; background: #F6F3EE; }
+  .aup-cap > p { margin: 0; max-width: 52ch; font: 400 16px/1.55 var(--font-body); color: rgba(20, 20, 20, 0.75); }
+  .aup-cap ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .aup-cap li { display: grid; grid-template-columns: 120px 1fr 40px; align-items: center; gap: 10px; font: 600 13px/1.2 var(--font-display); }
+  .aup-cap i { display: block; height: 10px; width: var(--w); border-radius: 99px; background: linear-gradient(90deg, #4B7BE5, #8C6BF0); }
+  .aup-cap b { font: 700 14px/1 var(--pd-clash, var(--font-display)); text-align: right; }
+
+  .aup-sub { margin: 64px 0 18px; font: 700 clamp(26px, 3vw, 38px)/1.05 var(--pd-clash, var(--font-display)); letter-spacing: -0.01em; }
+  .aup-tw { overflow-x: auto; border: 1px solid rgba(20, 20, 20, 0.12); border-radius: 16px; }
+  .aup-tw table { width: 100%; min-width: 760px; border-collapse: collapse; font: 400 14px/1.4 var(--font-body); }
+  .aup-tw thead th { padding: 14px 10px; background: #141414; color: #fff; font: 700 12.5px/1.2 var(--font-display); text-align: center; }
+  .aup-tw thead th:first-child { text-align: left; }
+  .aup-tw tbody th { padding: 12px 14px; text-align: left; font-weight: 400; }
+  .aup-tw tbody th b { display: block; font: 700 14.5px/1.3 var(--font-display); }
+  .aup-tw tbody th span { display: block; margin-top: 2px; font-size: 12.5px; color: rgba(20, 20, 20, 0.6); }
+  .aup-tw td { padding: 12px 10px; text-align: center; border-top: 1px solid rgba(20, 20, 20, 0.08); font: 600 13px/1.3 var(--font-display); }
+  .aup-tw tbody tr:not(.aup-g) th { border-top: 1px solid rgba(20, 20, 20, 0.08); }
+  .aup-tw td:nth-child(4) { background: rgba(75, 123, 229, 0.07); }
+  .aup-g th { padding: 18px 14px 8px; background: #F6F3EE; font: 700 11px/1.2 var(--font-display) !important; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(20, 20, 20, 0.6); }
+  .aup-si { color: #11734A; font-size: 16px; }
+  .aup-no { color: rgba(20, 20, 20, 0.3); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  .aup-nota { margin: 20px 0 0; max-width: 72ch; font: 500 14px/1.55 var(--font-body); color: rgba(20, 20, 20, 0.62); }
+  .aup-nota + .aup-nota { margin-top: 6px; }
+  .aup-cta { display: inline-flex; gap: 8px; margin-top: 30px; padding-bottom: 3px; border-bottom: 1.5px solid currentColor; color: #141414; font: 700 16px/1.2 var(--font-display); text-decoration: none; }
+  .aup-cta:hover { color: #141414; text-decoration: none; opacity: 0.8; }
+
+  :global(.js-rv) .aup .rv { opacity: 0; transform: translateY(16px); transition: opacity 0.6s ease calc(var(--i, 0) * 0.08s), transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) calc(var(--i, 0) * 0.08s); }
+  :global(.js-rv) .aup .rv:global(.is-on) { opacity: 1; transform: none; }
+  @media (min-width: 720px) {
+    .aup-grid { grid-template-columns: repeat(2, 1fr); row-gap: 22px; }
+    .aup-cap { grid-template-columns: 1fr 1fr; align-items: center; padding: 32px; }
+  }
+  @media (min-width: 1040px) {
+    .aup-in { padding: 120px 5vw; }
+    .aup-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (min-width: 1240px) {
+    .aup-grid { grid-template-columns: repeat(5, 1fr); gap: 10px; }
+    .aup-card { padding: 22px 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) { :global(.js-rv) .aup .rv { opacity: 1; transform: none; transition: none; } }
+</style>
