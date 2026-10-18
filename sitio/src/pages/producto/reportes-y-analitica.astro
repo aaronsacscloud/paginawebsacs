@@ -9,6 +9,9 @@
  * vendida → lo que deja de pasar → preguntas → cierre.
  * Qué existe y qué no, y de dónde salen las pantallas: src/data/producto-reportes.ts.
  * Esta página estática le gana a src/pages/producto/[slug].astro para «reportes-y-analitica».
+ *
+ * 18-oct-2026: se quitaron RepRutinas, RepTablero y RepPrenda — el respaldo del VPS (a0d083c) subió la página
+ * pero NO esos tres componentes, y el build completo del sitio fallaba. Regresan cuando se suban los archivos.
  */
 import ProductLayout from '../../layouts/ProductLayout.astro';
 import ProductoHeroVideo from '../../components/producto/ProductoHeroVideo.astro';
@@ -19,9 +22,6 @@ import RepArma from '../../components/producto/reportes/RepArma.astro';
 import RepTalla from '../../components/producto/reportes/RepTalla.astro';
 import RepAbc from '../../components/producto/reportes/RepAbc.astro';
 import RepLiquida from '../../components/producto/reportes/RepLiquida.astro';
-import RepRutinas from '../../components/producto/reportes/RepRutinas.astro';
-import RepTablero from '../../components/producto/reportes/RepTablero.astro';
-import RepPrenda from '../../components/producto/reportes/RepPrenda.astro';
 import GiroFAQ from '../../components/giros/GiroFAQ.astro';
 import FinalCTA from '../../components/FinalCTA.astro';
 import StructuredData from '../../components/StructuredData.astro';
@@ -47,9 +47,6 @@ const faqSchema = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEn
     <RepTalla />
     <RepAbc />
     <RepLiquida />
-    <RepRutinas />
-    <RepTablero />
-    <RepPrenda />
     <ExpLista id="rep-resuelve" tema="pd-fucsia" palabra="LO QUE RESUELVE" folio={RESUELVE.folio} titulo={RESUELVE.titulo} puntos={RESUELVE.puntos} />
   </div>
 
