@@ -30,7 +30,6 @@ export const plugins: Plugin[] = [
     href: '/plugins/staff',
     imagen: '/images/plugins/menu-staff.webp',
     alt: 'Una vendedora llega a la boutique y checa desde su celular',
-    nuevo: true,
   },
   {
     slug: 'axo',
