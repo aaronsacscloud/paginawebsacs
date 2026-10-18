@@ -1,7 +1,8 @@
 ---
 /**
  * Lista de una página de Automatiza en tres formas: tarjetas (capacidades con su estado), numerada (cómo se calcula,
- * cómo trabajamos) y tablero (las tarjetas del Tablero de moda, como se ven en la app). Los renglones entran al verse
+ * cómo trabajamos), tablero (las tarjetas del Tablero de moda, como se ven en la app) y horario (un día con AXO: la
+ * hora en `tag`, el área en `dato`). Los renglones entran al verse
  * (.rv, ver AutoPagina); sin JS se ven completos.
  */
 import type { Lista } from '../../data/automatiza';
@@ -57,6 +58,19 @@ const estilo = lista.estilo || 'tarjetas';
       </div>
     )}
 
+    {estilo === 'horario' && (
+      <ol class="aul-dia">
+        {lista.items.map((it, i) => (
+          <li class="rv" style={`--i:${i}`}>
+            <span class="aul-dia-h">{it.tag}</span>
+            {it.dato && <span class="aul-dia-a">{it.dato}</span>}
+            <b>{it.t}</b>
+            <span class="aul-dia-d">{it.d}</span>
+          </li>
+        ))}
+      </ol>
+    )}
+
     {lista.nota && <p class="aul-nota">{lista.nota}</p>}
     {lista.cta && <a class="aul-cta" href={lista.cta.href}>{lista.cta.t} <span aria-hidden="true">→</span></a>}
   </div>
@@ -103,6 +117,14 @@ const estilo = lista.estilo || 'tarjetas';
   .aul-tab em { font: 700 14px/1 var(--font-display); font-style: normal; color: #17181C; white-space: nowrap; }
   .aul-tab i { font: 700 12px/1 var(--font-display); font-style: normal; color: #2F5BEA; white-space: nowrap; }
   .aul-tab p { gap: 10px; }
+  .aul-dia { list-style: none; margin: 44px 0 0; padding: 0 0 0 22px; display: grid; gap: 0; border-left: 2px solid var(--l); }
+  .aul-dia li { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 0 0 28px; }
+  .aul-dia li::before { content: ''; position: absolute; left: -29px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: #4B7BE5; box-shadow: 0 0 0 4px var(--f); }
+  .aul-dia li:nth-child(n + 6)::before { background: #8C6BF0; }
+  .aul-dia-h { font: 700 clamp(20px, 1.9vw, 26px)/1 var(--pd-clash, var(--font-display)); letter-spacing: -0.01em; white-space: nowrap; }
+  .aul-dia-a { align-self: flex-start; margin-top: 6px; padding: 4px 9px; border-radius: 99px; background: var(--c); border: 1px solid var(--l); font: 700 10.5px/1 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--s); white-space: nowrap; }
+  .aul-dia b { margin-top: 6px; font: 700 18px/1.25 var(--font-display); }
+  .aul-dia-d { max-width: 40ch; font: 400 15px/1.5 var(--font-body); color: var(--s); }
   .aul-nota { margin: 28px 0 0; max-width: 62ch; font: 500 16px/1.55 var(--font-body); color: var(--s); }
   .aul-cta { display: inline-flex; gap: 8px; margin-top: 30px; padding-bottom: 3px; border-bottom: 1.5px solid currentColor; color: var(--t); font: 700 16px/1.2 var(--font-display); text-decoration: none; }
   .aul-cta:hover { color: var(--t); text-decoration: none; opacity: 0.8; }
@@ -121,6 +143,10 @@ const estilo = lista.estilo || 'tarjetas';
     .aul--tres.aul--tarjetas .aul-grid { grid-template-columns: repeat(3, 1fr); }
     .aul-tablero { padding: 24px; }
     .aul-tab-grid { grid-template-columns: repeat(4, 1fr); }
+    /* el día en una línea de tiempo horizontal */
+    .aul-dia { grid-template-columns: repeat(6, 1fr); gap: 18px; padding: 30px 0 0; border-left: 0; border-top: 2px solid var(--l); }
+    .aul-dia li { padding: 0; }
+    .aul-dia li::before { left: 0; top: -38px; }
   }
   @media (min-width: 1040px) and (max-width: 1279px) { .aul-tab-grid { grid-template-columns: repeat(2, 1fr); } }
   @media (prefers-reduced-motion: reduce) { :global(.js-rv) .aul .rv { opacity: 1; transform: none; transition: none; } }

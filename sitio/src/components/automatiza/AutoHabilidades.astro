@@ -1,0 +1,106 @@
+---
+/**
+ * Las habilidades de AXO por plan (/producto/axo-copiloto-ia, 18-oct-2026; sale de la presentación «AXO · Planes y
+ * habilidades»): arriba la escalera de planes (1x → 50x) y abajo una tarjeta por habilidad con el plan desde el que
+ * se incluye, en el color de su peldaño. La súper habilidad ocupa doble ancho y la memoria cierra a todo lo ancho.
+ * Las tarjetas entran al verse (.rv, ver AutoPagina); sin JS se ven completas.
+ */
+import type { Habilidades } from '../../data/automatiza';
+interface Props { h: Habilidades }
+const { h } = Astro.props;
+const COLOR = ['#6BB8A5', '#7FA2F0', '#A68BF5', '#E8C84A', '#FFFFFF'];
+const nivel = (plan: string) => Math.max(0, h.niveles.findIndex((n) => n.plan === plan));
+---
+<section class="auh" id={h.id} aria-labelledby={`${h.id}-h`}>
+  <div class="auh-in">
+    <p class="auh-folio"><span>{h.folio[0]}</span><span>{h.folio[1]}</span></p>
+    <h2 class="auh-h" id={`${h.id}-h`}>{h.titulo}</h2>
+    <p class="auh-bajada">{h.bajada}</p>
+
+    <ol class="auh-escalera" aria-label="Niveles de AXO por plan">
+      {h.niveles.map((n, i) => (
+        <li class="rv" style={`--i:${i};--c:${COLOR[i]};--h:${i}`}>
+          <span class="auh-x">{n.x}</span>
+          <b>{n.plan}</b>
+          <span>{n.t}</span>
+        </li>
+      ))}
+    </ol>
+
+    <ul class="auh-grid">
+      {h.items.map((it, i) => {
+        const k = nivel(it.desde);
+        return (
+          <li class={`auh-card rv${it.super ? ' auh-card--super' : ''}`} style={`--i:${i % 3};--c:${COLOR[k]}`}>
+            <p class="auh-card-top"><span class="auh-n">{it.n}</span><em>{it.super ? 'Solo en' : 'Desde'} {it.desde}</em></p>
+            <b>{it.t}</b>
+            <span class="auh-d">{it.d}</span>
+            <ul>{it.puntos.map((p) => <li>{p}</li>)}</ul>
+          </li>
+        );
+      })}
+    </ul>
+
+    <div class="auh-mem rv">
+      <div>
+        <p class="auh-card-top"><span class="auh-n">∞</span><em>En todos los planes</em></p>
+        <b>{h.memoria.t}</b>
+        <span class="auh-d">{h.memoria.d}</span>
+      </div>
+      <ol>{h.memoria.puntos.map((p, i) => <li><span>{String(i + 1).padStart(2, '0')}</span>{p}</li>)}</ol>
+    </div>
+  </div>
+</section>
+
+<style>
+  .auh { background: #0B0B0C; color: #fff; }
+  .auh-in { max-width: 1160px; margin: 0 auto; padding: 88px 20px; }
+  .auh-folio { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin: 0 0 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.18); font: 600 11px/1.35 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; }
+  .auh-h { margin: 0; max-width: 16ch; color: #fff; font: 700 clamp(36px, 5.6vw, 76px)/0.96 var(--pd-clash, var(--font-display)); letter-spacing: -0.02em; text-wrap: balance; }
+  .auh-bajada { margin: 18px 0 0; max-width: 58ch; font: 400 17px/1.55 var(--font-body); color: rgba(255, 255, 255, 0.72); }
+
+  /* la escalera: un peldaño por plan, cada uno más alto */
+  .auh-escalera { list-style: none; margin: 48px 0 0; padding: 0; display: grid; gap: 8px; }
+  .auh-escalera li { display: grid; grid-template-columns: 64px 1fr; grid-template-rows: auto auto; column-gap: 14px; padding: 14px 16px; border-radius: 14px; background: #17181B; border-left: 3px solid var(--c); }
+  .auh-x { grid-row: span 2; align-self: center; font: 700 26px/1 var(--pd-clash, var(--font-display)); color: var(--c); }
+  .auh-escalera b { font: 700 16px/1.2 var(--font-display); }
+  .auh-escalera li > span:last-child { font: 400 14px/1.4 var(--font-body); color: rgba(255, 255, 255, 0.65); }
+
+  .auh-grid { list-style: none; margin: 40px 0 0; padding: 0; display: grid; gap: 12px; }
+  .auh-card { display: flex; flex-direction: column; gap: 8px; padding: 20px 20px 22px; border-radius: 18px; background: #17181B; border: 1px solid rgba(255, 255, 255, 0.12); }
+  .auh-card-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 0 0 4px; }
+  .auh-n { font: 700 13px/1 var(--font-display); letter-spacing: 0.1em; color: var(--c, #fff); }
+  .auh-card-top em { padding: 5px 10px; border-radius: 99px; border: 1px solid var(--c, #fff); color: var(--c, #fff); font: 700 10.5px/1 var(--font-display); font-style: normal; letter-spacing: 0.04em; white-space: nowrap; }
+  .auh-card b, .auh-mem b { font: 700 20px/1.2 var(--font-display); }
+  .auh-d { font: 400 15px/1.5 var(--font-body); color: rgba(255, 255, 255, 0.72); }
+  .auh-card ul { list-style: none; margin: 6px 0 0; padding: 0; }
+  .auh-card ul li { position: relative; padding: 8px 0 0 18px; font: 500 14px/1.45 var(--font-body); color: rgba(255, 255, 255, 0.88); }
+  .auh-card ul li::before { content: ''; position: absolute; left: 0; top: 15px; width: 8px; height: 2px; border-radius: 2px; background: var(--c); }
+  .auh-card--super { background: linear-gradient(135deg, #2A1F55 0%, #17181B 70%); border-color: rgba(166, 139, 245, 0.45); }
+  .auh-card--super .auh-n { font: 700 34px/1 var(--pd-clash, var(--font-display)); color: #fff; }
+  .auh-card--super b { font-size: 26px; }
+
+  .auh-mem { display: grid; gap: 18px; margin-top: 12px; padding: 24px 22px; border-radius: 18px; background: #F6F3EE; color: #141414; --c: #141414; }
+  .auh-mem .auh-n { font: 700 30px/1 var(--pd-clash, var(--font-display)); }
+  .auh-mem .auh-d { display: block; margin-top: 8px; max-width: 46ch; color: rgba(20, 20, 20, 0.7); }
+  .auh-mem ol { list-style: none; margin: 0; padding: 0; }
+  .auh-mem ol li { display: grid; grid-template-columns: 34px 1fr; gap: 8px; padding: 11px 0; border-top: 1px solid rgba(20, 20, 20, 0.14); font: 500 15px/1.45 var(--font-body); }
+  .auh-mem ol span { font: 700 12px/1.6 var(--font-display); color: rgba(20, 20, 20, 0.5); }
+
+  :global(.js-rv) .auh .rv { opacity: 0; transform: translateY(16px); transition: opacity 0.6s ease calc(var(--i, 0) * 0.08s), transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) calc(var(--i, 0) * 0.08s); }
+  :global(.js-rv) .auh .rv:global(.is-on) { opacity: 1; transform: none; }
+  @media (min-width: 720px) {
+    .auh-grid { grid-template-columns: repeat(2, 1fr); }
+    .auh-card--super { grid-column: span 2; }
+    .auh-mem { grid-template-columns: 1fr 1fr; align-items: start; padding: 32px; }
+  }
+  @media (min-width: 1040px) {
+    .auh-in { padding: 120px 5vw; }
+    .auh-escalera { grid-template-columns: repeat(5, 1fr); align-items: end; gap: 10px; }
+    .auh-escalera li { display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; min-height: calc(130px + var(--h) * 34px); border-left: 0; border-top: 3px solid var(--c); padding: 18px; }
+    .auh-x { font-size: 34px; margin-bottom: auto; }
+    .auh-grid { grid-template-columns: repeat(3, 1fr); }
+    .auh-card--super { grid-column: span 2; }
+  }
+  @media (prefers-reduced-motion: reduce) { :global(.js-rv) .auh .rv { opacity: 1; transform: none; transition: none; } }
+</style>
