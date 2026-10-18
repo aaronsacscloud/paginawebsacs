@@ -1,0 +1,245 @@
+---
+/**
+ * Enterprise en /planes (18-oct-2026). Pedido del dueño: «hazlo más visual, se ve muy genérico, manéjalo algo más
+ * interactivo y más claro».
+ *
+ * Arriba la foto grande de una operación de muchas tiendas con el titular encima. Luego «Arma tu plan Enterprise»: el
+ * visitante elige cuántas tiendas y cuántos productos maneja y qué necesita, y la tarjeta de la derecha se arma sola
+ * con lo que eligió; el botón lleva esas respuestas a /contacto (?de=enterprise&…) para que ventas llegue sabiendo.
+ * Abajo lo que incluye, con foto, y cómo se trabaja. Solo lo que ya ofrecía la sección (ejecutivo SR, soporte
+ * prioritario, personalizaciones, apps custom, integraciones, API dedicada, SLA, descuento por volumen): sin cifras
+ * nuevas. Sin JS: las opciones por defecto marcadas y la tarjeta con ellas.
+ *
+ * Fotos: hoy son del sitio; scripts/generate-enterprise.mjs genera las propias con gpt-image-2 (cambiar FOTOS abajo).
+ */
+const FOTOS = {
+  hero: '/images/fashion-os/h16',
+  ejecutivo: '/images/automatiza/especialista',
+  medida: '/images/automatiza/api',
+  integra: '/images/fashion-os/paso-controla-ancha',
+  volumen: '/images/automatiza/agentes',
+};
+const src = (base: string, w: number) => (base.includes('fashion-os') ? `${base}-960.webp` : base.includes('automatiza') ? `${base}-${w > 1280 ? 1536 : 1280}.webp` : `${base}-${w}.webp`);
+
+const TIENDAS = ['20 a 50', '50 a 100', '100 a 300', 'Más de 300'];
+const PRODUCTOS = ['20 a 50 mil', '50 a 200 mil', 'Más de 200 mil'];
+const NECESITA = [
+  { id: 'medida', t: 'Desarrollos a medida', d: 'Pantallas y procesos hechos para tu forma de trabajar', on: true },
+  { id: 'apps', t: 'Apps custom', d: 'Para tu equipo de tienda, almacén o tus clientas' },
+  { id: 'integra', t: 'Integración con tus sistemas', d: 'Contabilidad, ERP, CEDIS, marketplaces', on: true },
+  { id: 'api', t: 'API dedicada', d: 'Tus sistemas hablan directo con Sacs' },
+  { id: 'sla', t: 'SLA garantizado', d: 'Tiempos de respuesta por escrito' },
+];
+const INCLUYE = [
+  { foto: FOTOS.ejecutivo, t: 'Ejecutivo SR dedicado', d: 'Una persona que conoce tu operación y da la cara por ella, con soporte prioritario.' },
+  { foto: FOTOS.medida, t: 'Personalizaciones y desarrollos', d: 'Sacs se ajusta a tus procesos: pantallas, reportes y apps a la medida.' },
+  { foto: FOTOS.integra, t: 'Integraciones custom', d: 'Conectamos Sacs con los sistemas que ya usas, con API dedicada.' },
+  { foto: FOTOS.volumen, t: 'Descuento por volumen', d: 'Entre más tiendas y licencias, mejor precio por cada una.' },
+];
+const PASOS = [
+  { t: 'Platicamos tu operación', d: 'Tiendas, CEDIS, canales y cómo trabaja hoy tu equipo.' },
+  { t: 'Diseñamos tu plan', d: 'Licencias, desarrollos e integraciones, con su precio.' },
+  { t: 'Lo construimos contigo', d: 'Configuración, desarrollos y conexión con tus sistemas.' },
+  { t: 'Arrancas acompañado', d: 'Tu ejecutivo SR sigue contigo después del arranque.' },
+];
+---
+<section class="ent" id="enterprise" aria-labelledby="ent-h">
+  <div class="ent-hero">
+    <img src={src(FOTOS.hero, 1536)} alt="La directora de una cadena de moda revisa la operación de su tienda principal con su equipo" width="1536" height="1024" loading="lazy" decoding="async" />
+    <div class="ent-hero-velo" aria-hidden="true"></div>
+    <div class="ent-hero-txt">
+      <p class="ent-k">Enterprise · más de 20 tiendas o más de 20,000 productos</p>
+      <h2 class="ent-h" id="ent-h">Tu operación es única. <span>Tu plan también.</span></h2>
+      <p class="ent-bajada">Diseñamos un plan a tu medida: personalizaciones, apps custom, integraciones dedicadas y todo lo necesario para crear una experiencia extraordinaria con Sacs.</p>
+      <a class="ent-hero-cta" href="#ent-arma">Arma tu plan <span aria-hidden="true">↓</span></a>
+    </div>
+  </div>
+
+  <div class="ent-in">
+    <div class="ent-arma" id="ent-arma" data-ent>
+      <div class="ent-preg">
+        <p class="ent-paso"><b>1</b>¿Cuántas tiendas tienes?</p>
+        <div class="ent-chips" role="radiogroup" aria-label="Tiendas">
+          {TIENDAS.map((o, i) => <button type="button" role="radio" class="ent-chip" data-grupo="tiendas" data-v={o} aria-checked={i === 1 ? 'true' : 'false'}>{o}</button>)}
+        </div>
+        <p class="ent-paso"><b>2</b>¿Cuántos productos manejas?</p>
+        <div class="ent-chips" role="radiogroup" aria-label="Productos">
+          {PRODUCTOS.map((o, i) => <button type="button" role="radio" class="ent-chip" data-grupo="productos" data-v={o} aria-checked={i === 1 ? 'true' : 'false'}>{o}</button>)}
+        </div>
+        <p class="ent-paso"><b>3</b>¿Qué necesitas?</p>
+        <div class="ent-necesita">
+          {NECESITA.map((n) => (
+            <button type="button" class="ent-op" data-op={n.id} aria-pressed={n.on ? 'true' : 'false'}>
+              <span class="ent-op-check" aria-hidden="true"></span>
+              <span><b>{n.t}</b><small>{n.d}</small></span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div class="ent-tarjeta" aria-live="polite">
+        <div class="ent-tarjeta-in">
+          <p class="ent-tarjeta-top"><span class="ent-logo">Sacs</span><em>Enterprise</em></p>
+          <p class="ent-tarjeta-k">Tu plan</p>
+          <div class="ent-cifras">
+            <div><b data-out="tiendas">{TIENDAS[1]}</b><span>tiendas</span></div>
+            <div><b data-out="productos">{PRODUCTOS[1]}</b><span>productos</span></div>
+          </div>
+          <ul class="ent-lleva" data-out="lleva">
+            <li class="is-fijo">Ejecutivo SR dedicado</li>
+            <li class="is-fijo">Soporte prioritario</li>
+            {NECESITA.map((n) => <li data-item={n.id} hidden={!n.on}>{n.t}</li>)}
+            <li class="is-fijo">Descuento por volumen en licencias</li>
+          </ul>
+          <p class="ent-precio"><span>Precio</span><b>A tu medida</b></p>
+          <a class="ent-cta" href="/contacto?de=enterprise" data-cta>Hablar con ventas con este plan <span aria-hidden="true">→</span></a>
+          <p class="ent-nota">Te contactamos con tu plan ya armado.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="ent-sub">Lo que incluye</h3>
+    <ul class="ent-incluye">
+      {INCLUYE.map((it) => (
+        <li>
+          <img src={src(it.foto, 960)} alt="" width="960" height="640" loading="lazy" decoding="async" />
+          <div><b>{it.t}</b><span>{it.d}</span></div>
+        </li>
+      ))}
+    </ul>
+
+    <h3 class="ent-sub">Cómo trabajamos</h3>
+    <ol class="ent-pasos">
+      {PASOS.map((p, i) => <li><span>{String(i + 1).padStart(2, '0')}</span><b>{p.t}</b><small>{p.d}</small></li>)}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .ent { background: #0B0B0C; color: #fff; }
+  .ent-hero { position: relative; min-height: 560px; display: flex; align-items: flex-end; overflow: hidden; }
+  .ent-hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 60% 40%; transform: scale(1.04); animation: ent-zoom 18s ease-out both; }
+  @keyframes ent-zoom { to { transform: scale(1); } }
+  .ent-hero-velo { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11, 11, 12, 0.15) 0%, rgba(11, 11, 12, 0.55) 45%, #0B0B0C 100%), linear-gradient(90deg, rgba(11, 11, 12, 0.75) 0%, transparent 70%); }
+  .ent-hero-txt { position: relative; max-width: 1200px; width: 100%; margin: 0 auto; padding: 120px 20px 56px; }
+  .ent-k { margin: 0 0 14px; font: 600 11.5px/1.4 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.7); }
+  .ent-h { margin: 0; max-width: 15ch; font: 700 clamp(40px, 6.4vw, 92px)/0.95 var(--pd-clash, var(--font-display)); letter-spacing: -0.025em; text-wrap: balance; color: #fff; }
+  .ent-h span { color: #7FA2F0; }
+  .ent-bajada { margin: 20px 0 0; max-width: 54ch; font: 400 17px/1.55 var(--font-body); color: rgba(255, 255, 255, 0.78); }
+  .ent-hero-cta { display: inline-flex; gap: 8px; margin-top: 28px; padding: 14px 22px; border-radius: 99px; background: #fff; color: #0B0B0C; font: 700 15px/1 var(--font-display); text-decoration: none; transition: transform 0.2s; }
+  .ent-hero-cta:hover { transform: translateY(-2px); color: #0B0B0C; text-decoration: none; }
+
+  .ent-in { max-width: 1200px; margin: 0 auto; padding: 24px 20px 96px; }
+  .ent-arma { display: grid; gap: 20px; }
+  .ent-preg { padding: 4px 0; }
+  .ent-paso { display: flex; align-items: center; gap: 10px; margin: 26px 0 12px; font: 700 18px/1.2 var(--font-display); }
+  .ent-paso:first-child { margin-top: 0; }
+  .ent-paso b { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #2F5BEA; font-size: 13px; }
+  .ent-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ent-chip { padding: 12px 16px; border-radius: 99px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.04); color: #fff; font: 700 14.5px/1 var(--font-display); cursor: pointer; transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s; }
+  .ent-chip:hover { border-color: rgba(255, 255, 255, 0.5); }
+  .ent-chip[aria-checked='true'] { background: #fff; color: #0B0B0C; border-color: #fff; transform: translateY(-1px); }
+  .ent-necesita { display: grid; gap: 8px; }
+  .ent-op { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.14); background: #141519; color: #fff; text-align: left; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+  .ent-op b { display: block; font: 700 15px/1.25 var(--font-display); }
+  .ent-op small { display: block; margin-top: 3px; font: 400 13px/1.4 var(--font-body); color: rgba(255, 255, 255, 0.6); }
+  .ent-op-check { flex: none; width: 20px; height: 20px; margin-top: 1px; border-radius: 6px; border: 1.5px solid rgba(255, 255, 255, 0.4); transition: background 0.2s, border-color 0.2s; }
+  .ent-op[aria-pressed='true'] { border-color: #2F5BEA; background: rgba(47, 91, 234, 0.14); }
+  .ent-op[aria-pressed='true'] .ent-op-check { background: #2F5BEA url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 10.5l3 3 7-7' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat; border-color: #2F5BEA; }
+  .ent-chip:focus-visible, .ent-op:focus-visible { outline: 2px solid #7FA2F0; outline-offset: 2px; }
+
+  .ent-tarjeta { position: relative; border-radius: 26px; padding: 1.5px; background: linear-gradient(140deg, #7FA2F0, #2F5BEA 40%, #8C6BF0 75%, #E8C84A); box-shadow: 0 40px 100px rgba(47, 91, 234, 0.28); }
+  .ent-tarjeta-in { height: 100%; padding: 26px 24px; border-radius: 25px; background: radial-gradient(120% 80% at 100% 0%, #1E2350 0%, #111219 60%); }
+  .ent-tarjeta-top { display: flex; justify-content: space-between; align-items: center; margin: 0; }
+  .ent-logo { font: 700 22px/1 var(--pd-clash, var(--font-display)); }
+  .ent-tarjeta-top em { padding: 6px 11px; border-radius: 99px; background: rgba(95, 211, 181, 0.14); color: #5FD3B5; font: 700 10.5px/1 var(--font-display); font-style: normal; letter-spacing: 0.14em; text-transform: uppercase; }
+  .ent-tarjeta-k { margin: 24px 0 8px; font: 600 11px/1 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5); }
+  .ent-cifras { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ent-cifras div { padding: 14px; border-radius: 16px; background: rgba(255, 255, 255, 0.06); }
+  .ent-cifras b { display: block; font: 700 clamp(20px, 2.2vw, 26px)/1.05 var(--pd-clash, var(--font-display)); letter-spacing: -0.01em; }
+  .ent-cifras span { display: block; margin-top: 4px; font: 500 12.5px/1 var(--font-body); color: rgba(255, 255, 255, 0.6); }
+  .ent-cifras b.is-cambio { animation: ent-pop 0.45s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  @keyframes ent-pop { from { opacity: 0; transform: translateY(8px); } }
+  .ent-lleva { list-style: none; margin: 18px 0 0; padding: 0; }
+  .ent-lleva li { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid rgba(255, 255, 255, 0.08); font: 500 14.5px/1.35 var(--font-body); animation: ent-pop 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .ent-lleva li[hidden] { display: none; }
+  .ent-lleva li::before { content: ''; flex: none; width: 8px; height: 8px; border-radius: 50%; background: #2F5BEA; box-shadow: 0 0 0 4px rgba(47, 91, 234, 0.2); }
+  .ent-lleva li.is-fijo::before { background: #5FD3B5; box-shadow: 0 0 0 4px rgba(95, 211, 181, 0.16); }
+  .ent-precio { display: flex; justify-content: space-between; align-items: baseline; margin: 18px 0 0; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.14); }
+  .ent-precio span { font: 500 13px/1 var(--font-body); color: rgba(255, 255, 255, 0.6); }
+  .ent-precio b { font: 700 26px/1 var(--pd-clash, var(--font-display)); background: linear-gradient(90deg, #7FA2F0, #A68BF5); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .ent-cta { display: flex; justify-content: center; gap: 8px; margin-top: 20px; padding: 16px; border-radius: 14px; background: #fff; color: #0B0B0C; font: 700 15.5px/1 var(--font-display); text-decoration: none; transition: transform 0.2s, box-shadow 0.2s; }
+  .ent-cta:hover { color: #0B0B0C; text-decoration: none; transform: translateY(-2px); box-shadow: 0 12px 30px rgba(255, 255, 255, 0.15); }
+  .ent-nota { margin: 10px 0 0; text-align: center; font: 400 12.5px/1.4 var(--font-body); color: rgba(255, 255, 255, 0.5); }
+
+  .ent-sub { margin: 80px 0 22px; font: 700 clamp(28px, 3.4vw, 44px)/1.05 var(--pd-clash, var(--font-display)); letter-spacing: -0.015em; color: #fff; }
+  .ent-incluye { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+  .ent-incluye li { position: relative; overflow: hidden; border-radius: 20px; min-height: 300px; display: flex; align-items: flex-end; isolation: isolate; }
+  .ent-incluye img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .ent-incluye li::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, transparent 30%, rgba(11, 11, 12, 0.92) 100%); }
+  .ent-incluye li:hover img { transform: scale(1.06); }
+  .ent-incluye div { padding: 20px; }
+  .ent-incluye b { display: block; font: 700 20px/1.2 var(--font-display); }
+  .ent-incluye span { display: block; margin-top: 6px; font: 400 14px/1.5 var(--font-body); color: rgba(255, 255, 255, 0.8); }
+
+  .ent-pasos { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border-top: 1px solid rgba(255, 255, 255, 0.16); }
+  .ent-pasos li { display: grid; grid-template-columns: 44px 1fr; gap: 4px 12px; padding: 18px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+  .ent-pasos span { grid-row: span 2; font: 700 14px/1.4 var(--font-display); color: #7FA2F0; }
+  .ent-pasos b { font: 700 18px/1.25 var(--font-display); }
+  .ent-pasos small { font: 400 14px/1.5 var(--font-body); color: rgba(255, 255, 255, 0.65); }
+
+  @media (min-width: 720px) {
+    .ent-hero { min-height: 640px; }
+    .ent-necesita { grid-template-columns: 1fr 1fr; }
+    .ent-incluye { grid-template-columns: repeat(2, 1fr); }
+    .ent-pasos { grid-template-columns: repeat(2, 1fr); column-gap: 32px; }
+  }
+  @media (min-width: 1040px) {
+    .ent-hero { min-height: 720px; }
+    .ent-hero-txt { padding: 160px 4vw 72px; }
+    .ent-in { padding: 32px 4vw 120px; }
+    .ent-arma { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 48px; align-items: start; }
+    .ent-tarjeta { position: sticky; top: 110px; }
+    .ent-incluye { grid-template-columns: repeat(4, 1fr); }
+    .ent-incluye li { min-height: 380px; }
+    .ent-pasos { grid-template-columns: repeat(4, 1fr); border-top: 0; column-gap: 20px; }
+    .ent-pasos li { grid-template-columns: 1fr; border-bottom: 0; border-top: 2px solid rgba(255, 255, 255, 0.16); padding-top: 16px; }
+    .ent-pasos span { grid-row: auto; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ent-hero img, .ent-cifras b.is-cambio, .ent-lleva li { animation: none; }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-ent]').forEach((raiz) => {
+    const cta = raiz.querySelector<HTMLAnchorElement>('[data-cta]')!;
+    const elegido = (g: string) => raiz.querySelector<HTMLElement>(`.ent-chip[data-grupo="${g}"][aria-checked="true"]`)?.dataset.v || '';
+    const ops = () => Array.from(raiz.querySelectorAll<HTMLElement>('.ent-op[aria-pressed="true"]')).map((b) => b.dataset.op!);
+
+    function pinta(cambio?: string) {
+      (['tiendas', 'productos'] as const).forEach((g) => {
+        const out = raiz.querySelector<HTMLElement>(`[data-out="${g}"]`)!;
+        const v = elegido(g);
+        if (out.textContent !== v) { out.textContent = v; if (cambio === g) { out.classList.remove('is-cambio'); void out.offsetWidth; out.classList.add('is-cambio'); } }
+      });
+      const activos = ops();
+      raiz.querySelectorAll<HTMLElement>('[data-item]').forEach((li) => { li.hidden = activos.indexOf(li.dataset.item!) === -1; });
+      const q = new URLSearchParams({ de: 'enterprise', tiendas: elegido('tiendas'), productos: elegido('productos') });
+      if (activos.length) q.set('necesita', activos.join(','));
+      cta.href = `/contacto?${q.toString()}`;
+    }
+
+    raiz.querySelectorAll<HTMLElement>('.ent-chip').forEach((b) => b.addEventListener('click', () => {
+      const g = b.dataset.grupo!;
+      raiz.querySelectorAll<HTMLElement>(`.ent-chip[data-grupo="${g}"]`).forEach((x) => x.setAttribute('aria-checked', String(x === b)));
+      pinta(g);
+    }));
+    raiz.querySelectorAll<HTMLElement>('.ent-op').forEach((b) => b.addEventListener('click', () => {
+      b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'));
+      pinta();
+    }));
+    cta.addEventListener('click', () => { try { (window as any).sacsPH?.('planes_enterprise_cta', { tiendas: elegido('tiendas'), productos: elegido('productos'), necesita: ops().join(',') }); } catch (e) { /* sin medición */ } });
+    pinta();
+  });
+</script>
