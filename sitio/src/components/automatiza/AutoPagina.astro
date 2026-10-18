@@ -13,6 +13,8 @@ import AutoHub from './AutoHub.astro';
 import AutoPronostico from './AutoPronostico.astro';
 import AutoHabilidades from './AutoHabilidades.astro';
 import AutoPlanes from './AutoPlanes.astro';
+import AutoFlujos3D from './AutoFlujos3D.astro';
+import { plugins } from '../../data/plugins';
 import GiroFAQ from '../giros/GiroFAQ.astro';
 import FinalCTA from '../FinalCTA.astro';
 import StructuredData from '../StructuredData.astro';
@@ -23,6 +25,9 @@ interface Props { slug: string }
 const { slug } = Astro.props;
 const pg = autoPorSlug(slug);
 const otras = AUTOMATIZA.filter((p) => p.slug !== slug);
+// AXO es un plugin (18-oct-2026, dueño: «esto no es parte de Automatiza, es el plugin de AXO»): sin la barra de
+// Automatiza y, al final, los demás plugins en lugar de «Más de Automatiza».
+const otrosPlugins = plugins.filter((p) => p.href !== `/producto/${slug}`);
 const primera = pg.secciones[0]?.id || 'faq';
 const faqSchema = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: pg.faqs.map((p) => ({ '@type': 'Question', name: p.question, acceptedAnswer: { '@type': 'Answer', text: p.answer } })) };
 ---
@@ -33,10 +38,11 @@ const faqSchema = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEn
   currentPillar="automatiza"
   preloadImage={`/images/automatiza/${pg.hero.foto}-vertical-1024.webp`}
   image={`/images/automatiza/${pg.hero.foto}-og.jpg`}
+  plugin={pg.plugin ? 'AXO' : undefined}
 >
   <StructuredData data={faqSchema} />
   <div class="pd exp auto" data-auto={slug}>
-    <AutoHero n={pg.n} etiqueta={pg.hero.etiqueta} titulo={pg.hero.titulo} bajada={pg.hero.bajada} foto={pg.hero.foto} alt={pg.hero.alt} ancla={primera} aviso={pg.hero.aviso} foco={pg.hero.foco} />
+    <AutoHero n={pg.n} etiqueta={pg.hero.etiqueta} titulo={pg.hero.titulo} bajada={pg.hero.bajada} foto={pg.hero.foto} alt={pg.hero.alt} ancla={primera} aviso={pg.hero.aviso} foco={pg.hero.foco} seccion={pg.plugin ? 'Plugin de Sacs' : undefined} />
     {pg.secciones.map((s) => (
       s.tipo === 'chat' ? <AutoChat chat={s} />
       : s.tipo === 'lista' ? <AutoLista lista={s} />
@@ -44,28 +50,47 @@ const faqSchema = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEn
       : s.tipo === 'pronostico' ? <AutoPronostico p={s} />
       : s.tipo === 'habilidades' ? <AutoHabilidades h={s} />
       : s.tipo === 'planes' ? <AutoPlanes p={s} />
+      : s.tipo === 'flujos3d' ? <AutoFlujos3D f={s} />
       : <AutoHub hub={s} />
     ))}
   </div>
 
   <GiroFAQ title={`Preguntas frecuentes · ${pg.nombre}`} faqs={pg.faqs} />
 
-  <section class="auo" aria-labelledby="auo-h">
-    <div class="auo-in">
-      <p class="auo-folio"><span>Automatiza</span><span>La IA que trabaja contigo</span></p>
-      <h2 class="auo-h" id="auo-h">Más de Automatiza.</h2>
-      <ul class="auo-grid">
-        {otras.map((o) => (
-          <li><a href={`/producto/${o.slug}`} data-evento="automatiza_cruce">
-            <img src={`/images/automatiza/${o.hero.foto}-1280.webp`} alt="" width="1280" height="853" loading="lazy" decoding="async" />
-            <span class="auo-n">{o.n}</span>
-            <b>{o.nombre}</b>
-            <span class="auo-t">{o.hero.titulo}</span>
-          </a></li>
-        ))}
-      </ul>
-    </div>
-  </section>
+  {pg.plugin ? (
+    <section class="auo" aria-labelledby="auo-h">
+      <div class="auo-in">
+        <p class="auo-folio"><span>Plugins</span><span>Extiende tu Sacs</span></p>
+        <h2 class="auo-h" id="auo-h">Más plugins.</h2>
+        <ul class="auo-grid">
+          {otrosPlugins.map((o) => (
+            <li><a href={o.href} data-evento="automatiza_cruce">
+              <img src={o.imagen} alt="" width="360" height="440" loading="lazy" decoding="async" />
+              <b>{o.nombre}</b>
+              <span class="auo-t">{o.bajada}</span>
+            </a></li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  ) : (
+    <section class="auo" aria-labelledby="auo-h">
+      <div class="auo-in">
+        <p class="auo-folio"><span>Automatiza</span><span>La IA que trabaja contigo</span></p>
+        <h2 class="auo-h" id="auo-h">Más de Automatiza.</h2>
+        <ul class="auo-grid">
+          {otras.map((o) => (
+            <li><a href={`/producto/${o.slug}`} data-evento="automatiza_cruce">
+              <img src={`/images/automatiza/${o.hero.foto}-1280.webp`} alt="" width="1280" height="853" loading="lazy" decoding="async" />
+              <span class="auo-n">{o.n}</span>
+              <b>{o.nombre}</b>
+              <span class="auo-t">{o.hero.titulo}</span>
+            </a></li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )}
   <FinalCTA />
 </ProductLayout>
 

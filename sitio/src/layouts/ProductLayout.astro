@@ -4,7 +4,7 @@ import ProductSubnav from '../components/ProductSubnav.astro';
 import { getFeatureBySlug, type PillarId } from '../data/product';
 import { pageContent } from '../data/product-pages';
 import { SITIO, PRODUCTO_ID } from '../data/entidad';
-import { breadcrumbProducto } from '../lib/breadcrumb';
+import { breadcrumbProducto, breadcrumbList } from '../lib/breadcrumb';
 
 interface Props {
   title: string;
@@ -17,9 +17,11 @@ interface Props {
   preloadSizes?: string;
   /** Imagen OG propia (si no, la de siempre). */
   image?: string;
+  /** Página de un plugin (AXO): sin la barra de la sección y con migas Inicio › Plugins › nombre. */
+  plugin?: string;
 }
 
-const { title, description, currentSlug, currentPillar, noindex, preloadImage, preloadSrcset, preloadSizes, image } = Astro.props;
+const { title, description, currentSlug, currentPillar, noindex, preloadImage, preloadSrcset, preloadSizes, image, plugin } = Astro.props;
 
 // Antes esta plantilla no emitía NADA propio: las 28 páginas de función (más
 // las de soluciones, que la reutilizan) solo llevaban el Organization +
@@ -52,10 +54,11 @@ const softwareSchema = feature
     }
   : null;
 
-const productStructuredData = [softwareSchema, breadcrumbProducto(currentSlug)].filter(Boolean);
+const migas = plugin ? breadcrumbList([{ name: 'Inicio', url: `${SITIO}/` }, { name: 'Plugins' }, { name: plugin }]) : breadcrumbProducto(currentSlug);
+const productStructuredData = [softwareSchema, migas].filter(Boolean);
 ---
 
 <BaseLayout title={title} description={description} image={image} noindex={noindex} preloadImage={preloadImage} preloadSrcset={preloadSrcset} preloadSizes={preloadSizes} structuredData={productStructuredData}>
-  <ProductSubnav currentSlug={currentSlug} currentPillar={currentPillar} />
+  {!plugin && <ProductSubnav currentSlug={currentSlug} currentPillar={currentPillar} />}
   <slot />
 </BaseLayout>
