@@ -410,11 +410,14 @@ const incluidos = [
       <div class="mig-dato"><span class="mig-dato-num">$0</span><span class="mig-dato-label">la migración va incluida</span></div>
     </div>
 
-    <ul class="mig-que">
-      {['Inventario por tienda', 'Modelos con tallas y colores', 'Precios', 'Historial de ventas', 'Clientes', 'Apartados vivos', 'Pedidos', 'Proveedores'].map((x) => (
-        <li>{x}</li>
-      ))}
-    </ul>
+    <div class="mig-que-wrap">
+      <p class="mig-que-t">Lo que nos traemos</p>
+      <ol class="mig-que">
+        {['Inventario por tienda', 'Modelos con tallas y colores', 'Precios', 'Historial de ventas', 'Clientes', 'Apartados vivos', 'Pedidos', 'Proveedores'].map((x, i) => (
+          <li><span class="mig-que-n">{String(i + 1).padStart(2, '0')}</span>{x}</li>
+        ))}
+      </ol>
+    </div>
 
     <p class="mig-riesgo"><b>Sin riesgo:</b> prueba 7 días gratis, sin tarjeta. Si no te convence, cancelas con un clic.</p>
   </div>
@@ -2308,9 +2311,12 @@ const incluidos = [
 .mig-dato { background: var(--color-bg-secondary); border-radius: 20px; padding: 24px; text-align: center; }
 .mig-dato-num { display: block; font-family: var(--font-display); font-size: clamp(2.25rem, 4vw, 3.25rem); font-weight: 800; line-height: 1; letter-spacing: -0.04em; color: var(--color-primary); }
 .mig-dato-label { display: block; margin-top: 8px; font-size: 0.9375rem; font-weight: 600; color: var(--color-text-primary); }
-.mig-que { list-style: none; padding: 0; margin: var(--space-6) auto 0; max-width: 1120px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-.mig-que li { display: inline-flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--color-border-light); border-radius: var(--radius-full); padding: 9px 16px; font-size: 0.9375rem; font-weight: 600; color: var(--color-text-primary); }
-.mig-que li::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--color-primary); }
+.mig-que-wrap { max-width: 1120px; margin: var(--space-10) auto 0; }
+.mig-que-t { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-text-tertiary); margin: 0 0 var(--space-4); }
+.mig-que { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); column-gap: var(--space-6); }
+.mig-que li { display: flex; align-items: baseline; gap: 12px; padding: 16px 0 18px; border-top: 1px solid rgba(0, 0, 0, 0.14); font-family: var(--font-display); font-size: 1.125rem; font-weight: 700; line-height: 1.25; color: var(--color-text-primary); }
+.mig-que-n { font-family: var(--font-body); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; color: var(--color-primary); }
+@media (max-width: 1024px) { .mig-que { grid-template-columns: repeat(2, 1fr); } }
 .mig-riesgo { text-align: center; margin: var(--space-6) 0 0; font-size: 0.9375rem; color: var(--color-text-secondary); }
 .mig-riesgo b { color: var(--color-text-primary); }
 
