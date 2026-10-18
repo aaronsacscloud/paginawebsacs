@@ -146,7 +146,7 @@ export const seccionesNovias: SuiteSeccion[] = [
     bullets: [
       'Muestras marcadas como muestra, aparte del pedido de cada cliente',
       'El pedido con su fecha de llegada, amarrada a la fecha del evento',
-      'El pedido que va tarde contra su boda se ve en rojo — y el aviso llega solo desde Automatiza',
+      'El pedido que va tarde contra su boda se ve en rojo, para que actúes a tiempo',
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Corte sirena · pedidos vivos</p>

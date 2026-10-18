@@ -327,7 +327,7 @@ export const businessSectors: BusinessSector[] = [
       { label: 'Apartado con fecha de evento', description: 'El anticipo aparta el vestido y la boda queda adentro del apartado. Todo se cuenta hacia atrás desde esa fecha.' , viz: 'calendario' },
       { label: 'Abonos largos con recordatorio', description: 'El plan cierra dos semanas antes del evento y cada abono se registra en segundos, con recordatorios.' , viz: 'abonos' },
       { label: 'Muestras marcadas', description: 'El piso vive de muestras por talla, marcadas como muestra y fuera de la tienda en línea. Lo de ella se pide.' , viz: 'etiqueta' },
-      { label: 'Pedido contra la fecha', description: 'El sobre pedido con su llegada amarrada a la boda — y el que va tarde se ve en rojo (el aviso solo, desde Automatiza).' , viz: 'calendario' },
+      { label: 'Pedido contra la fecha', description: 'El sobre pedido con su llegada amarrada a la boda — y el que va tarde se ve en rojo.' , viz: 'calendario' },
       { label: 'Taller por etapas', description: 'Primera prueba, ajuste, prueba final, plancha y entrega: órdenes de servicio con tus etapas y tus fechas.' , viz: 'taller' },
       { label: 'La semana con fechas', description: 'Cada prueba y cada entrega con su fecha y su responsable. Lo del sábado se revisa desde el lunes.' , viz: 'calendario' },
       { label: 'La familia que vuelve', description: 'XV, graduación, boda: el perfil guarda tallas, compras y eventos de cada familia.' , viz: 'perfil' },
@@ -808,20 +808,8 @@ export const navLinks: NavLink[] = [
           { label: 'Marketplaces', href: '/producto/marketplaces' },
         ],
       },
-      {
-        verb: 'Automatiza',
-        description: 'La IA que trabaja contigo: pregunta, vigila y prepara el trabajo',
-        href: '/producto/axo-copiloto-ia',
-        items: [
-          { label: 'AXO · Copiloto IA', href: '/producto/axo-copiloto-ia' },
-          { label: 'Rutinas y automatizaciones', href: '/producto/workflows' },
-          { label: 'Alertas de quiebre y estancados', href: '/producto/alertas-inteligentes' },
-          { label: 'Forecast de demanda', href: '/producto/reportes-predictivos' },
-          { label: 'Orquestador de agentes', href: '/producto/orquestador-de-agentes' },
-          { label: 'Integraciones', href: '/producto/api-e-integraciones' },
-          { label: 'Especialista IA dedicado', href: '/producto/especialista-ia' },
-        ],
-      },
+      // 18-oct-2026 (dueño): «Automatiza» sale del menú y del pie — ya no se vende (su plan se retiró de /planes).
+      // En su lugar, el mega-menú da más peso a los Plugins (src/data/plugins.ts), que incluyen AXO y el MCP.
     ],
   },
   // 2-oct-2026 (dueño): «Planeación de demanda» en el menú principal: es lo que buscan las marcas grandes.

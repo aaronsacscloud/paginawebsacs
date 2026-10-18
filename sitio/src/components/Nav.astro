@@ -91,7 +91,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
 
           {link.pillars && (
             <div class="mega-dropdown">
-              <div class="mega-dropdown-inner container">
+              <div class="mega-dropdown-inner container mega-plat">
                 <div class="mega-pillars">
                   {link.pillars.map((pillar, pi) => (
                     <div class={`mega-pillar mega-pillar--${pi}`}>
@@ -112,17 +112,19 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
                     </div>
                   ))}
                 </div>
-                <!-- Plugins (3-oct-2026): lo que se le agrega a Sacs desde «Extiende tu Sacs». Las fotos se piden al abrir el panel. -->
+                <!-- Plugins (18-oct-2026): ocupan el lugar de «Automatiza», en grande y con foto, para darles peso.
+                     Las fotos se piden al abrir el panel (data-src). -->
                 <div class="mega-plugins">
                   <p class="mega-plugins-k"><span>Plugins</span>Extiende tu Sacs</p>
                   <div class="mega-plugins-cards">
                     {plugins.map((p) => (
                       <a href={getLocalizedUrl(p.href, locale)} class="mega-plugin">
-                        <img data-src={p.imagen} alt="" width="360" height="440" decoding="async" />
-                        <span class="mega-plugin-txt">
-                          <span class="mega-plugin-t">{p.nombre}{p.nuevo && <em>Nuevo</em>}</span>
-                          <span class="mega-plugin-d">{p.bajada}</span>
+                        <span class="mega-plugin-foto">
+                          <img data-src={p.imagen} alt="" width="360" height="440" decoding="async" />
+                          {p.nuevo && <em>Nuevo</em>}
                         </span>
+                        <span class="mega-plugin-t">{p.nombre}</span>
+                        <span class="mega-plugin-d">{p.bajada}</span>
                       </a>
                     ))}
                   </div>
@@ -664,7 +666,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   /* ─── 4-column pillars ─── */
   .mega-pillars {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 0;
   }
 
@@ -763,19 +765,19 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   .mega-pillar-link:hover { border-left-color: var(--color-text-tertiary, #b0b0b0); }
 
   /* ─── Plugins (3-oct-2026): una fila de tarjetas alineada con las 4 columnas de arriba ─── */
-  .mega-plugins { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 18px; padding-top: 18px; border-top: 1px solid rgba(0, 0, 0, 0.06); }
-  .mega-plugins-k { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 10px; margin: 0 0 12px; font: 500 0.8125rem/1 var(--font-body, 'Plus Jakarta Sans', sans-serif); color: var(--color-text-tertiary, #9ca3af); }
+  /* Plataforma: 3 pilares a la izquierda y los plugins, grandes y con foto, a la derecha (18-oct-2026). */
+  .mega-plat { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 32px; align-items: start; }
+  .mega-plugins { padding-left: 32px; border-left: 1px solid rgba(0, 0, 0, 0.06); }
+  .mega-plugins-k { display: flex; align-items: baseline; gap: 10px; margin: 0 0 14px; font: 500 0.8125rem/1 var(--font-body, 'Plus Jakarta Sans', sans-serif); color: var(--color-text-tertiary, #9ca3af); }
   .mega-plugins-k span { font: 800 0.9375rem/1 var(--font-display, 'Sora', sans-serif); letter-spacing: -0.01em; color: var(--color-text-primary, #1a1a2e); }
-  .mega-plugins-cards { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
-  .mega-plugin { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 10px 28px 10px 0; border-right: 1px solid rgba(0, 0, 0, 0.06); text-decoration: none; transition: opacity 0.2s ease; }
-  .mega-plugin + .mega-plugin { padding-left: 28px; }
-  .mega-plugin:last-child { border-right: none; padding-right: 0; }
-  .mega-plugin:hover { text-decoration: none; opacity: 0.85; }
-  .mega-plugin img { flex: none; width: 56px; height: 68px; border-radius: 10px; object-fit: cover; background: #EEEDEA; transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
-  .mega-plugin:hover img { transform: scale(1.04); }
-  .mega-plugin-txt { display: grid; gap: 4px; min-width: 0; }
-  .mega-plugin-t { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font: 700 0.875rem/1.2 var(--font-display, 'Sora', sans-serif); color: var(--color-text-primary, #1a1a2e); }
-  .mega-plugin-t em { padding: 3px 7px; border-radius: 99px; background: #E0457B; color: #fff; font: 700 0.625rem/1 var(--font-display, 'Sora', sans-serif); font-style: normal; letter-spacing: 0.04em; text-transform: uppercase; }
+  .mega-plugins-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 18px; }
+  .mega-plugin { display: grid; gap: 4px; min-width: 0; text-decoration: none; transition: opacity 0.2s ease; }
+  .mega-plugin-foto { position: relative; display: block; aspect-ratio: 16 / 10; border-radius: 12px; overflow: hidden; background: #EEEDEA; margin-bottom: 6px; }
+  .mega-plugin-foto img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+  .mega-plugin:hover .mega-plugin-foto img { transform: scale(1.05); }
+  .mega-plugin-foto em { position: absolute; top: 8px; left: 8px; padding: 4px 8px; border-radius: 99px; background: #E0457B; color: #fff; font: 700 0.625rem/1 var(--font-display, 'Sora', sans-serif); font-style: normal; letter-spacing: 0.04em; text-transform: uppercase; }
+  .mega-plugin-t { font: 700 0.875rem/1.25 var(--font-display, 'Sora', sans-serif); color: var(--color-text-primary, #1a1a2e); }
+  .mega-plugin:hover .mega-plugin-t { color: var(--color-primary, #2563EB); }
   .mega-plugin-d { font-size: 0.75rem; line-height: 1.4; color: var(--color-text-secondary, #4A4A4A); }
   .mega-plugin:focus-visible { outline: 2px solid var(--color-text-primary, #1a1a2e); outline-offset: 3px; border-radius: 10px; }
 

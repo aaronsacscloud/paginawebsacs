@@ -73,7 +73,7 @@ export const plans: Plan[] = [
     ],
     services: [
       '1 sucursal',
-      'Soporte 9 AM–5 PM · chat SACS y WhatsApp',
+      'Soporte 24/7 · chat SACS y WhatsApp',
       'Tickets resueltos en 30–90 min',
     ],
   },
@@ -98,7 +98,7 @@ export const plans: Plan[] = [
     services: [
       'Multi-sucursal',
       'Reunión de introducción',
-      'Soporte 9 AM–5 PM · chat SACS y WhatsApp',
+      'Soporte 24/7 · chat SACS y WhatsApp',
       'Tickets resueltos en 30–90 min',
       'Migración gratis (3 días)',
     ],
@@ -125,7 +125,7 @@ export const plans: Plan[] = [
     services: [
       'Multi-sucursal',
       'Reunión mensual',
-      'Soporte 9 AM–5 PM · chat SACS y WhatsApp',
+      'Soporte 24/7 · chat SACS y WhatsApp',
       'Tickets resueltos en 15–30 min',
       'Migración gratis (1 día)',
     ],
@@ -175,64 +175,6 @@ export const plans: Plan[] = [
 
 /** Los planes que se venden hoy (los que pinta la página de precios). */
 export const planesPublicos: Plan[] = plans.filter((p) => !p.retirado);
-
-// ─── AXO · planes de IA (complementan el plan; se contratan por CUENTA, no por sucursal) ───
-// Fuente: «AXO · Planes y Habilidades 2026» (precio de inauguración). Pesos mexicanos + IVA.
-// Pago anual: 20 % de descuento. Usuario extra: $1,500/mes + IVA en cualquier plan.
-
-export interface PlanAxo {
-  id: string;
-  name: string;
-  multiplicador: string;
-  description: string;
-  mensual: number;
-  anual: number;
-  usuarios: string;
-  heredaDe?: string;
-  habilidades: string[];
-  anualIncluye?: string[];
-  badge?: string;
-  estilo?: 'destacado' | 'oro';
-}
-
-export const AXO_USUARIO_EXTRA_MXN = 1500;
-
-export const planesAxo: PlanAxo[] = [
-  {
-    id: 'starter', name: 'Starter', multiplicador: '1x',
-    description: 'Para empresas que apenas empiezan a usar la IA.',
-    mensual: 1500, anual: 14400, usuarios: '1 usuario',
-    habilidades: ['Analítica: business intelligence y reportes', 'Importación: migración a cualquier módulo', 'Memoria: aprende de tu operación'],
-  },
-  {
-    id: 'pro', name: 'Pro', multiplicador: '2x',
-    description: 'Para equipos que quieren que AXO también ejecute.',
-    mensual: 3000, anual: 28800, usuarios: 'Hasta 3 usuarios', heredaDe: 'Starter',
-    habilidades: ['Ejecución: acciones en cualquier área', 'Visión: fotos, documentos y video', 'El doble de capacidad'],
-  },
-  {
-    id: 'super-power', name: 'Super Power', multiplicador: '10x',
-    description: 'Para automatizar tu operación de punta a punta.',
-    mensual: 10500, anual: 100800, usuarios: 'Hasta 5 usuarios', heredaDe: 'Pro',
-    badge: 'El más elegido', estilo: 'destacado',
-    habilidades: ['Automatizaciones: consultor de procesos', 'Construcción: mejora tus módulos', 'Colaboración: canales ilimitados y WhatsApp', 'Procedimientos: sugiere y vuelve regla', 'Capacitación: onboarding con exámenes'],
-  },
-  {
-    id: 'super-power-20x', name: 'Super Power 20x', multiplicador: '20x',
-    description: 'Todo Super Power, para operaciones intensivas.',
-    mensual: 19000, anual: 182400, usuarios: 'Hasta 5 usuarios', heredaDe: 'Super Power',
-    habilidades: ['Voz: llamadas transcritas y registradas (costo por llamada completada)', '20 veces la capacidad'],
-    anualIncluye: ['Implementación incluida', '5 flujos de automatización con un orquestador certificado por SACS'],
-  },
-  {
-    id: 'corporativo-50x', name: 'Corporativo 50x', multiplicador: '50x',
-    description: 'AXO administra toda tu empresa y es tu centro de control operativo.',
-    mensual: 46000, anual: 441600, usuarios: 'Hasta 15 usuarios', heredaDe: 'Super Power 20x',
-    badge: 'Corporativos', estilo: 'oro',
-    habilidades: ['Centro de control operativo: administra y coordina toda la empresa', '50 veces la capacidad'],
-    anualIncluye: ['Implementación incluida', '5 flujos de automatización con un orquestador certificado por SACS'],
-  },
-];
 
 // ─── Universal Features (all plans) ───
 
@@ -503,6 +445,6 @@ export const pricingFaqs: FAQ[] = [
   },
   {
     question: '¿El soporte tiene costo adicional?',
-    answer: 'No. Todos los planes incluyen soporte por chat de SACS y WhatsApp sin costo adicional. Vende y Controla atienden de 9 AM a 5 PM con resolución de tickets en 30–90 min, y Fideliza y Multiplica, en 15–30 min.',
+    answer: 'No. Todos los planes incluyen soporte por chat de SACS y WhatsApp sin costo adicional. La atención es 24/7 en todos los planes; los tickets se resuelven en 30–90 min en Vende y Controla, y en 15–30 min en Fideliza.',
   },
 ];
