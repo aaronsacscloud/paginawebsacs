@@ -88,6 +88,36 @@ const casosCarrusel = [
     img: '/images/mits-poncho.webp', alt: 'Mujer con el poncho «Mexico Is The Shit»', pos: 'center 30%',
     stats: [{ num: '7', label: 'colecciones' }, { num: '100%', label: 'hecho en México' }] },
 ];
+
+// Plugins del carrusel (fotos de la misma serie que usan las páginas de cada plugin).
+const plugins = [
+  { href: '/producto/api-e-integraciones', kicker: 'Conector de datos', name: 'Opera Sacs desde tu IA',
+    desc: 'Conecta tu cuenta a ChatGPT, Claude, Grok o Muse y pídele en tus palabras: qué talla se acaba, cuánto vendió la colección, que arme el traspaso.',
+    chips: ['ChatGPT', 'Claude', 'Grok', 'Muse'], img: '/images/axo-copiloto-ia-hero.webp', alt: 'Encargada de boutique consultando Sacs desde su tableta', pos: 'center 35%' },
+  { href: '/plugins/administracion', kicker: 'Finanzas', name: 'Administración', plan: 'Desde el plan Controla',
+    desc: 'Bancos, cuentas por pagar y flujo de caja en el mismo sistema donde vendes. Le tomas foto al recibo y el gasto se captura solo.',
+    img: '/images/plugins/administracion/portada-1536.webp', alt: 'Dueña de boutique revisando las finanzas en su laptop', pos: 'center 40%' },
+  { href: '/contacto', kicker: 'Equipo', name: 'Nómina', plan: 'Desde el plan Controla',
+    desc: 'Nómina completa con IMSS, ISR y recibos timbrados, ligada a la asistencia y a las comisiones de cada venta.',
+    img: '/images/plugins/staff/kiosco-1536.webp', alt: 'Vendedor checando su entrada en el kiosco de la tienda', pos: 'center 35%' },
+  { href: '/contacto', kicker: 'Equipo', name: 'Staff',
+    desc: 'Turnos y horarios por sucursal, cambios de turno desde el punto de venta y control de asistencia.',
+    img: '/images/plugins/staff/equipo-1280.webp', alt: 'Equipo de una boutique organizando el turno', pos: 'center 40%' },
+  { href: '/contacto', kicker: 'Clientes', name: 'Marketing Suite',
+    desc: 'Campañas por correo y WhatsApp a los clientes correctos, con segmentos y flujos que se mandan solos.',
+    img: '/images/plugins/carrusel/marketing.webp', alt: 'Clienta recibiendo una campaña por WhatsApp en la calle', pos: 'center 50%' },
+];
+
+// Integraciones: «lista» = ya existe en sacs_api (Shopify, WooCommerce, Tienda Nube). Las demás, «Próximamente».
+const integraciones = [
+  { name: 'Shopify', logo: '/images/integraciones/shopify.svg', lista: true, alto: 52, desc: 'Inventario, pedidos y clientes sincronizados en tiempo real.' },
+  { name: 'WooCommerce', logo: '/images/integraciones/woocommerce.svg', lista: true, alto: 34, desc: 'Tu tienda en WordPress con stock y precios al día.' },
+  { name: 'Tienda Nube', logo: '/images/integraciones/tiendanube.svg', lista: true, alto: 30, desc: 'Productos, pedidos y clientes conectados con tus sucursales.' },
+  { name: 'Mercado Libre', logo: '/images/integraciones/mercadolibre.webp', lista: false, alto: 44, desc: 'Publica tu catálogo y descuenta el stock con cada venta.' },
+  { name: 'Amazon', logo: '/images/integraciones/amazon.svg', lista: false, alto: 34, desc: 'Tu inventario disponible en el marketplace más grande.' },
+  { name: 'Liverpool', logo: '/images/integraciones/liverpool.svg', lista: false, alto: 38, desc: 'Vende en el marketplace de Liverpool sin capturar dos veces.' },
+  { name: 'SHEIN', logo: '/images/integraciones/shein.svg', lista: false, alto: 24, desc: 'Lleva tu marca a millones de compradoras de moda.' },
+];
 ---
 
 <BaseLayout
@@ -468,118 +498,62 @@ const casosCarrusel = [
   </div>
 </section>
 
-<!-- ═══ SECTION: Add-ons ═══ -->
-<section class="addons-section">
+<!-- ═══ SECTION: Plugins (carrusel) — 18-oct-2026: el dueño pidió fotos grandes y una explicación breve ═══ -->
+<section class="addons-section plg-section">
   <div class="container">
     <h2 class="addons-title">Súmale lo que tu giro necesita</h2>
-    <p class="addons-subtitle">Módulos opcionales que le suman funciones a tu plan. Los que piden un plan base lo dicen en su tarjeta. ¿Vendes en Shopify o WooCommerce? Mira las <a href="#integraciones">integraciones e-commerce</a>.</p>
+    <p class="addons-subtitle">Plugins que le agregan superpoderes a tu plan. Los que piden un plan base lo dicen en su tarjeta.</p>
+  </div>
 
-    <div class="addons-grid">
-      <div class="addon-card addon-card--ia">
-        <div class="addon-card-content">
-          <span class="addon-ia-kicker">Conector de datos de Sacs</span>
-          <h3 class="addon-plugin-name">Opera todo Sacs desde ChatGPT, Claude, Grok o Muse</h3>
-          <p class="addon-desc">Conectas tu cuenta de Sacs a la plataforma de IA que ya usas y le preguntas y le pides en lenguaje natural: qué talla se está acabando en Polanco, cuánto vendió la colección esta semana, que arme el traspaso o la orden de compra. Tus datos, en tu asistente, con permisos por usuario.</p>
-          <div class="addon-ia-plataformas" role="group" aria-label="Plataformas compatibles">
-            <span>ChatGPT</span><span>Claude</span><span>Grok</span><span>Muse</span>
-          </div>
-          <ul class="addon-points addon-points--2col">
-            <li>Consulta ventas, inventario y clientes en tiempo real</li>
-            <li>Crea traspasos, órdenes de compra y apartados desde el chat</li>
-            <li>Reportes y análisis sobre tus datos, sin exportar nada</li>
-            <li>Permisos por usuario y bitácora de todo lo que la IA hace</li>
-          </ul>
-          <a class="addon-btn" href="/producto/api-e-integraciones">Ver más</a>
-        </div>
-      </div>
-      <div class="addon-card">
-        <div class="addon-card-content">
-          <h3 class="addon-plugin-name">Administración</h3>
-          <p class="addon-plan">Desde el plan Controla</p>
-          <p class="addon-desc">Las finanzas de la marca en el mismo sistema donde vendes: bancos, cuentas por pagar y flujo de caja sin hojas de cálculo.</p>
-          <ul class="addon-points">
-            <li>Gastos con IA: le tomas foto al recibo y se captura solo</li>
-            <li>Cuentas por pagar, corrida de pagos y antigüedad de saldos</li>
-            <li>Bancos y cajas con proyección a 30 días y conciliación con IA</li>
-          </ul>
-          <a class="addon-btn" href="/plugins/administracion">Ver más</a>
-        </div>
-      </div>
-      <div class="addon-card">
-        <div class="addon-card-content">
-          <h3 class="addon-plugin-name">Nómina</h3>
-          <p class="addon-plan">Desde el plan Controla</p>
-          <p class="addon-desc">Tu equipo de tienda, taller y oficina con su nómina completa, ligada a la asistencia y a las comisiones por venta.</p>
-          <ul class="addon-points">
-            <li>Cálculo de nómina, IMSS e ISR y timbrado de recibos (CFDI)</li>
-            <li>Asistencia, turnos, vacaciones e incidencias por sucursal</li>
-            <li>Comisiones por venta y por talla directo del punto de venta</li>
-          </ul>
-          <a class="addon-btn" href="/contacto">Ver más</a>
-        </div>
-      </div>
-      <div class="addon-card addon-card--light">
-        <div class="addon-card-content">
-          <h3 class="addon-plugin-name">Staff</h3>
-          <p class="addon-desc">Gestión de empleados, horarios, cambios de turno y control de asistencia.</p>
-          <ul class="addon-points">
-            <li>Turnos y horarios por sucursal</li>
-            <li>Cambios de turno desde el POS</li>
-            <li>Control de asistencia integrado</li>
-          </ul>
-          <a class="addon-btn" href="/contacto">Ver más</a>
-        </div>
-      </div>
-      <div class="addon-card addon-card--light">
-        <div class="addon-card-content">
-          <h3 class="addon-plugin-name">Marketing Suite</h3>
-          <p class="addon-desc">Campañas por correo y WhatsApp, segmentación y automatización de marketing.</p>
-          <ul class="addon-points">
-            <li>Campañas de email y WhatsApp</li>
-            <li>Segmentación inteligente de clientes</li>
-            <li>Automatización de flujos de marketing</li>
-          </ul>
-          <a class="addon-btn" href="/contacto">Ver más</a>
-        </div>
+  <div class="reels-carrusel" data-carrusel>
+    <button type="button" class="reels-nav reels-nav--prev" aria-label="Plugin anterior" data-dir="-1">‹</button>
+    <div class="reels-track-wrapper" data-carrusel-pista>
+      <div class="reels-track plg-track">
+        {plugins.map((pl) => (
+          <a href={pl.href} class="plg-card">
+            <div class="plg-foto">
+              <img src={pl.img} alt={pl.alt} loading="lazy" width="1024" height="640" style={pl.pos ? `object-position:${pl.pos}` : undefined} />
+              {pl.plan && <span class="plg-plan">{pl.plan}</span>}
+            </div>
+            <div class="plg-info">
+              <span class="plg-kicker">{pl.kicker}</span>
+              <h3 class="plg-name">{pl.name}</h3>
+              <p class="plg-desc">{pl.desc}</p>
+              {pl.chips && (
+                <div class="plg-chips">{pl.chips.map((c) => <span>{c}</span>)}</div>
+              )}
+              <span class="plg-mas">Ver más →</span>
+            </div>
+          </a>
+        ))}
       </div>
     </div>
+    <button type="button" class="reels-nav reels-nav--next" aria-label="Plugin siguiente" data-dir="1">›</button>
   </div>
 </section>
 
-<!-- ═══ Integraciones e-commerce (29-sep-2026): el dueño pidió separarlas de los módulos. Un módulo le suma
-     funciones a Sacs; una integración conecta Sacs con la tienda en línea donde ya vendes. ═══ -->
-<section class="addons-section integraciones-section" id="integraciones">
+<!-- ═══ Integraciones (18-oct-2026): logos de cada canal; las que aún no existen en sacs_api van como «Próximamente» ═══ -->
+<section class="addons-section int-section" id="integraciones">
   <div class="container">
-    <h2 class="addons-title">Conecta tu tienda en línea</h2>
-    <p class="addons-subtitle">Integraciones con tu e-commerce. Si ya vendes en Shopify o WooCommerce, Sacs se sincroniza con tu tienda: un solo inventario para tus sucursales y tu sitio.</p>
+    <span class="int-eyebrow">Integraciones</span>
+    <h2 class="addons-title">Vende en todos lados, con un solo inventario</h2>
+    <p class="addons-subtitle">Conecta Sacs con tu tienda en línea y los marketplaces donde ya vendes: el stock de tus sucursales y de cada canal se mueve junto.</p>
 
-    <div class="addons-grid">
-      <div class="addon-card addon-card--int">
-        <div class="addon-card-content">
-          <span class="addon-int-kicker">Integración e-commerce</span>
-          <h3 class="addon-plugin-name">Shopify</h3>
-          <p class="addon-desc">Sincroniza inventario, pedidos y clientes entre tus tiendas físicas y Shopify en tiempo real.</p>
-          <ul class="addon-points">
-            <li>Inventario sincronizado en tiempo real</li>
-            <li>Pedidos unificados en un solo lugar</li>
-            <li>Clientes conectados entre canales</li>
-          </ul>
-          <a class="addon-btn" href="/contacto">Ver más</a>
+    <div class="int-grid">
+      {integraciones.map((it) => (
+        <div class:list={['int-card', !it.lista && 'int-card--pronto']}>
+          <span class:list={['int-estado', it.lista ? 'int-estado--ok' : 'int-estado--pronto']}>{it.lista ? 'Disponible' : 'Próximamente'}</span>
+          <div class="int-logo"><img src={it.logo} alt={it.name} loading="lazy" style={`max-height:${it.alto || 44}px`} /></div>
+          <h3 class="int-name">{it.name}</h3>
+          <p class="int-desc">{it.desc}</p>
         </div>
-      </div>
-      <div class="addon-card addon-card--int">
-        <div class="addon-card-content">
-          <span class="addon-int-kicker">Integración e-commerce</span>
-          <h3 class="addon-plugin-name">WooCommerce</h3>
-          <p class="addon-desc">Conecta tu tienda en WordPress con Sacs. Stock, precios y pedidos sincronizados.</p>
-          <ul class="addon-points">
-            <li>Stock actualizado automáticamente</li>
-            <li>Precios sincronizados en ambas tiendas</li>
-            <li>Pedidos importados sin intervención</li>
-          </ul>
-          <a class="addon-btn" href="/contacto">Ver más</a>
-        </div>
-      </div>
+      ))}
+      <a href="/producto/api-e-integraciones" class="int-card int-card--api">
+        <span class="int-api-ico" aria-hidden="true">{'</>'}</span>
+        <h3 class="int-name">¿Vendes en otro canal?</h3>
+        <p class="int-desc">API abierta y conector con más de 600 apps. Platícanos dónde vendes.</p>
+        <span class="plg-mas">Ver API e integraciones →</span>
+      </a>
     </div>
   </div>
 </section>
@@ -737,9 +711,9 @@ const casosCarrusel = [
       <h2 class="reels-title">Negocios que ya crecen con <span class="reels-title-logo">Sacs</span></h2>
       <p class="reels-subtitle">1 sucursal o 100 — el mismo sistema. Empieza con lo que necesitas hoy y crece sin cambiar de plataforma.</p>
     </div>
-    <div class="reels-carrusel">
-      <button type="button" class="reels-nav reels-nav--prev" aria-label="Caso anterior" data-reels-dir="-1">‹</button>
-      <div class="reels-track-wrapper" id="reels-casos">
+    <div class="reels-carrusel" data-carrusel>
+      <button type="button" class="reels-nav reels-nav--prev" aria-label="Caso anterior" data-dir="-1">‹</button>
+      <div class="reels-track-wrapper" data-carrusel-pista>
         <div class="reels-track">
           {casosCarrusel.map((c, i) => (
             <a href={c.href} class="reel-card reel-card--highlight" style={`--reel-idx:${i}`}>
@@ -769,7 +743,7 @@ const casosCarrusel = [
           ))}
         </div>
       </div>
-      <button type="button" class="reels-nav reels-nav--next" aria-label="Caso siguiente" data-reels-dir="1">›</button>
+      <button type="button" class="reels-nav reels-nav--next" aria-label="Caso siguiente" data-dir="1">›</button>
     </div>
     <p class="reels-ver-todos"><a href="/casos-de-exito">Ver todos los casos de éxito →</a></p>
 
@@ -2945,6 +2919,89 @@ const casosCarrusel = [
   max-width: 560px;
   line-height: 1.5;
 }
+/* ═══ Plugins en carrusel ═══ */
+.plg-section .addons-subtitle { max-width: 640px; margin-left: auto; margin-right: auto; }
+.plg-section .reels-carrusel { margin-top: var(--space-8); }
+.plg-card {
+  flex-shrink: 0;
+  width: clamp(320px, 46vw, 640px);
+  scroll-snap-align: center;
+  border-radius: 24px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--color-border-light);
+  box-shadow: 0 6px 30px rgba(15, 23, 42, 0.08);
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease;
+}
+.plg-card:hover { transform: translateY(-6px); box-shadow: 0 22px 60px rgba(15, 23, 42, 0.16); text-decoration: none; }
+.plg-foto { position: relative; aspect-ratio: 16 / 10; overflow: hidden; }
+.plg-foto img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
+.plg-card:hover .plg-foto img { transform: scale(1.05); }
+.plg-plan {
+  position: absolute; top: 16px; left: 16px;
+  font-size: 0.75rem; font-weight: 700;
+  background: rgba(255,255,255,0.92); color: var(--color-primary-texto);
+  border-radius: var(--radius-full); padding: 6px 12px;
+  backdrop-filter: blur(6px);
+}
+.plg-info { padding: 22px 26px 26px; display: flex; flex-direction: column; flex: 1; }
+.plg-kicker { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-primary-texto); }
+.plg-name { font-family: var(--font-display); font-size: clamp(1.375rem, 2.2vw, 1.75rem); line-height: 1.15; margin: 6px 0 8px; color: var(--color-text-primary); }
+.plg-desc { font-size: 0.9375rem; line-height: 1.55; color: var(--color-text-secondary); margin: 0; }
+.plg-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.plg-chips span { font-size: 0.8125rem; font-weight: 700; padding: 6px 12px; border-radius: var(--radius-full); background: var(--color-bg-secondary); color: var(--color-text-primary); }
+.plg-mas { margin-top: auto; padding-top: 16px; font-size: 0.875rem; font-weight: 700; color: var(--color-primary-texto); }
+
+/* ═══ Integraciones con logos ═══ */
+.int-section {
+  background:
+    radial-gradient(circle at 10% 0%, rgba(142, 180, 230, 0.22), transparent 40%),
+    radial-gradient(circle at 95% 100%, rgba(232, 200, 74, 0.18), transparent 45%),
+    var(--color-bg-card, #fff);
+  text-align: center;
+}
+.int-eyebrow { display: inline-block; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-primary-texto); margin-bottom: var(--space-3); }
+.int-section .addons-subtitle { max-width: 640px; margin-left: auto; margin-right: auto; line-height: 1.6; }
+.int-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  margin-top: var(--space-10);
+  text-align: left;
+}
+.int-card {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--color-border-light);
+  border-radius: 20px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+  text-decoration: none;
+  color: inherit;
+}
+.int-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(15, 23, 42, 0.10); text-decoration: none; }
+.int-logo { height: 84px; display: flex; align-items: center; justify-content: center; border-radius: 14px; background: var(--color-bg-secondary); margin-bottom: 16px; padding: 0 16px; }
+.int-logo img { max-width: 100%; width: auto; height: auto; display: block; }
+.int-card--pronto .int-logo img { filter: saturate(0.85); }
+.int-name { font-size: 1.0625rem; margin: 0 0 4px; color: var(--color-text-primary); }
+.int-desc { font-size: 0.875rem; line-height: 1.5; color: var(--color-text-secondary); margin: 0; }
+.int-estado { position: absolute; top: 12px; right: 12px; font-size: 0.6875rem; font-weight: 700; border-radius: var(--radius-full); padding: 4px 10px; z-index: 1; }
+.int-estado--ok { background: #dcfce7; color: #166534; }
+.int-estado--pronto { background: #fef3c7; color: #92400e; }
+.int-card--api { background: linear-gradient(135deg, #0E0D0C 0%, #15203a 100%); border-color: transparent; }
+.int-card--api .int-name { color: #fff; margin-top: 8px; }
+.int-card--api .int-desc { color: rgba(255,255,255,0.7); }
+.int-card--api .plg-mas { color: #8FB0FF; }
+.int-api-ico { width: 84px; height: 84px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.08); color: #8FB0FF; font-family: var(--font-mono, monospace); font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+@media (max-width: 1024px) { .int-grid { grid-template-columns: repeat(2, 1fr); } }
+
 .reels-carrusel { position: relative; }
 .reels-nav {
   position: absolute;
@@ -3392,29 +3449,29 @@ const casosCarrusel = [
 </style>
 
 <script>
-  // Carrusel de casos: flechas que recorren las tarjetas (el scroll-snap las centra).
-  (() => {
-    const wrap = document.getElementById('reels-casos');
+  // Carruseles (casos y plugins): flechas que recorren las tarjetas (el scroll-snap las centra).
+  document.querySelectorAll('[data-carrusel]').forEach((caja) => {
+    const wrap = caja.querySelector('[data-carrusel-pista]');
     if (!wrap) return;
-    const btns = document.querySelectorAll('[data-reels-dir]');
+    const btns = caja.querySelectorAll('[data-dir]');
     const paso = () => {
-      const card = wrap.querySelector('.reel-card');
+      const card = wrap.querySelector('.reel-card, .plg-card');
       return card ? card.getBoundingClientRect().width + 24 : 400;
     };
     const actualizar = () => {
       const max = wrap.scrollWidth - wrap.clientWidth - 4;
       btns.forEach((b) => {
-        const dir = Number(b.getAttribute('data-reels-dir'));
+        const dir = Number(b.getAttribute('data-dir'));
         b.toggleAttribute('disabled', dir < 0 ? wrap.scrollLeft <= 4 : wrap.scrollLeft >= max);
       });
     };
     btns.forEach((b) => b.addEventListener('click', () => {
-      wrap.scrollBy({ left: Number(b.getAttribute('data-reels-dir')) * paso(), behavior: 'smooth' });
+      wrap.scrollBy({ left: Number(b.getAttribute('data-dir')) * paso(), behavior: 'smooth' });
     }));
     wrap.addEventListener('scroll', actualizar, { passive: true });
     window.addEventListener('resize', actualizar);
     actualizar();
-  })();
+  });
 </script>
 
 <script>
