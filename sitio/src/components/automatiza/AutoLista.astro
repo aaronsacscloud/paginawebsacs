@@ -11,12 +11,13 @@ const { lista } = Astro.props;
 const ESTADO = { hoy: 'Ya en Sacs', tu: 'Lo activas tú', servicio: 'Con tu especialista' } as const;
 const estilo = lista.estilo || 'tarjetas';
 ---
-<section class={`aul aul--${lista.tema} aul--${estilo}${lista.items.length % 3 === 0 && lista.items.length % 4 !== 0 ? ' aul--tres' : ''}`} id={lista.id} aria-labelledby={`${lista.id}-h`}>
+<section class={`aul aul--${lista.tema} aul--${estilo}${lista.items.length % 3 === 0 && lista.items.length % 4 !== 0 ? ' aul--tres' : ''}${estilo === 'tarjetas' && lista.items.length > 4 ? ' aul--desliza' : ''}`} id={lista.id} aria-labelledby={`${lista.id}-h`}>
   <div class="aul-in">
     <p class="aul-folio"><span>{lista.folio[0]}</span><span>{lista.folio[1]}</span></p>
     <h2 class="aul-h" id={`${lista.id}-h`}>{lista.titulo}</h2>
     {lista.bajada && <p class="aul-bajada">{lista.bajada}</p>}
 
+    {estilo === 'tarjetas' && lista.items.length > 4 && <p class="aul-desliza" aria-hidden="true">Desliza para ver las {lista.items.length} <span>→</span></p>}
     {estilo === 'tarjetas' && (
       <ul class="aul-grid">
         {lista.items.map((it, i) => (
@@ -125,8 +126,20 @@ const estilo = lista.estilo || 'tarjetas';
   .aul-dia-a { align-self: flex-start; margin-top: 6px; padding: 4px 9px; border-radius: 99px; background: var(--c); border: 1px solid var(--l); font: 700 10.5px/1 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--s); white-space: nowrap; }
   .aul-dia b { margin-top: 6px; font: 700 18px/1.25 var(--font-display); }
   .aul-dia-d { max-width: 40ch; font: 400 15px/1.5 var(--font-body); color: var(--s); }
+  .aul-desliza { display: none; }
+  /* teléfono: más de 4 tarjetas van en carrusel; las etiquetas chicas suben a 11.5 px */
+  @media (max-width: 719px) {
+    .aul--desliza .aul-desliza { display: flex; align-items: center; gap: 6px; margin: 32px 0 0; font: 600 12.5px/1 var(--font-display); color: var(--s); }
+    .aul-desliza span { animation: aul-desliza 1.4s ease-in-out infinite; }
+    .aul--desliza .aul-grid { display: flex; gap: 12px; margin: 14px -20px 0; padding: 0 20px 6px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 20px; overscroll-behavior-x: contain; scrollbar-width: none; }
+    .aul--desliza .aul-grid::-webkit-scrollbar { display: none; }
+    .aul--desliza .aul-card { flex: 0 0 80%; scroll-snap-align: start; }
+    .aul-estado, .aul-tag, .aul-dia-a { font-size: 11.5px; }
+  }
+  @keyframes aul-desliza { 50% { transform: translateX(4px); } }
   .aul-nota { margin: 28px 0 0; max-width: 62ch; font: 500 16px/1.55 var(--font-body); color: var(--s); }
-  .aul-cta { display: inline-flex; gap: 8px; margin-top: 30px; padding-bottom: 3px; border-bottom: 1.5px solid currentColor; color: var(--t); font: 700 16px/1.2 var(--font-display); text-decoration: none; }
+  .aul-cta { position: relative; display: inline-flex; gap: 8px; margin-top: 30px; padding-bottom: 3px; border-bottom: 1.5px solid currentColor; color: var(--t); font: 700 16px/1.2 var(--font-display); text-decoration: none; }
+  .aul-cta::before { content: ''; position: absolute; inset: -12px -6px; }   /* área táctil de 44 px */
   .aul-cta:hover { color: var(--t); text-decoration: none; opacity: 0.8; }
   /* entran al verse */
   :global(.js-rv) .aul .rv { opacity: 0; transform: translateY(16px); transition: opacity 0.6s ease calc(var(--i, 0) * 0.08s), transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) calc(var(--i, 0) * 0.08s); }

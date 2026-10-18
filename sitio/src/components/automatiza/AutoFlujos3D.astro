@@ -70,7 +70,7 @@ const TIPO = { auto: 'Automatización', aprobacion: 'Aprobación', regla: 'Regla
 
   /* el riel: 70 vh por etapa; adentro, la escena pegada */
   .aum-riel { display: none; position: relative; max-width: 1240px; margin: 0 auto; padding: 0 20px; height: calc(var(--n) * 70vh + 100vh); }
-  .aum-stage { position: sticky; top: 72px; height: calc(100vh - 92px); min-height: 520px; border-radius: 22px; overflow: hidden; background: #02040A; border: 1px solid rgba(157, 184, 255, 0.18); box-shadow: inset 0 0 140px rgba(75, 123, 229, 0.12); }
+  .aum-stage { position: sticky; top: 72px; height: calc(100vh - 92px); height: calc(100svh - 92px); min-height: 520px; border-radius: 22px; overflow: hidden; background: #02040A; border: 1px solid rgba(157, 184, 255, 0.18); box-shadow: inset 0 0 140px rgba(75, 123, 229, 0.12); }
   .aum-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
   .aum-top { position: absolute; top: 14px; left: 16px; right: 16px; }
@@ -131,6 +131,14 @@ const TIPO = { auto: 'Automatización', aprobacion: 'Aprobación', regla: 'Regla
   .aum.is-vivo .aum-riel { display: block; }
   .aum.is-vivo .aum-lista { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
+  /* teléfono: la barra del sitio se esconde al bajar, así que la escena usa casi toda la pantalla; svh para que no
+     brinque cuando aparece o se va la barra del navegador */
+  @media (max-width: 899px) {
+    .aum-riel { height: calc(var(--n) * 60vh + 100vh); height: calc(var(--n) * 60svh + 100svh); padding: 0 12px; }
+    .aum-stage { top: 10px; height: calc(100vh - 20px); height: calc(100svh - 20px); border-radius: 18px; }
+    :global(.aum-card-k), :global(.aum-card-s) { font-size: 11.5px; }
+    .aum-flujo li em, .aum-live { font-size: 11.5px; }
+  }
   @media (min-width: 900px) {
     .aum-log { left: 18px; right: auto; top: 96px; bottom: 18px; width: 360px; height: auto; }
     .aum-pasos { display: flex; }
