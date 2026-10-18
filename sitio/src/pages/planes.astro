@@ -2,7 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FAQAccordion from '../components/FAQAccordion.astro';
 import FinalCTA from '../components/FinalCTA.astro';
-import { planesPublicos as plans, universalFeatures, comparisonCategories, pricingFaqs } from '../data/plans';
+import { planesPublicos as plans, comparisonCategories, pricingFaqs } from '../data/plans';
 import { PRODUCTO_ID, SITIO } from '../data/entidad';
 
 const checkIcon = `<svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M4 9.5l3.5 3.5L14 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -122,6 +122,25 @@ const integraciones = [
   { name: 'Amazon', logo: '/images/integraciones/amazon.svg', lista: false, alto: 34, desc: 'Tu inventario disponible en el marketplace más grande.' },
   { name: 'Liverpool', logo: '/images/integraciones/liverpool.svg', lista: false, alto: 38, desc: 'Vende en el marketplace de Liverpool sin capturar dos veces.' },
   { name: 'SHEIN', logo: '/images/integraciones/shein.svg', lista: false, alto: 24, desc: 'Lleva tu marca a millones de compradoras de moda.' },
+];
+
+// «Incluido en todos los planes», versión gráfica. Mismo contenido que `universalFeatures`
+// (data/plans.ts, que sigue usando /en/pricing), agrupado: lo ilimitado en grande y lo demás con icono.
+const ilimitados = [
+  { num: '∞', label: 'Usuarios' },
+  { num: '∞', label: 'Dispositivos' },
+  { num: '∞', label: 'Modelos, tallas y colores' },
+  { num: '∞', label: 'Fotos de tus prendas' },
+  { num: '3', label: 'Cajas cobrando a la vez', nota: 'y si necesitas más, no se cobra por caja' },
+];
+const ico = (d) => `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const incluidos = [
+  { t: 'Punto de venta', d: 'Cobra en tienda, con y sin internet.', icon: ico('<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>') },
+  { t: 'Tienda en línea', d: 'Tu catálogo a la venta las 24 horas.', icon: ico('<path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v11h16V9"/><path d="M3 9h18"/><path d="M9 20v-6h6v6"/>') },
+  { t: 'Facebook, Instagram y TikTok Shop', d: 'Vende en redes con el mismo inventario.', icon: ico('<path d="M7 17l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2z"/><path d="M8 9h8M8 13h5"/>') },
+  { t: 'Google, ChatGPT y Gemini', d: 'Tus prendas aparecen cuando alguien las busca.', icon: ico('<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>') },
+  { t: 'Soporte 24/7', d: 'Por chat de Sacs y WhatsApp, a cualquier hora.', icon: ico('<path d="M4 14v-3a8 8 0 0 1 16 0v3"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/>') },
+  { t: 'Actualizaciones cada mes', d: 'Funciones nuevas sin pagar de más.', icon: ico('<path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/>') },
 ];
 ---
 
@@ -371,6 +390,36 @@ const integraciones = [
   </div>
 </section>
 
+<!-- ═══ SECTION: Migración (18-oct-2026: punto a favor debajo de AXO; el dueño fijó «en 24 horas») ═══ -->
+<section class="mig-section" id="migracion">
+  <div class="container">
+    <div class="mig-head">
+      <span class="uni-eyebrow">Migración incluida</span>
+      <h2 class="mig-title">Nos traemos todo tu sistema anterior a Sacs.<br /><span>En 24 horas.</span></h2>
+      <p class="mig-sub">Sean 1,000 o 1 millón de datos. Inventario, ventas, clientes, todo. Tú no capturas nada y no pierdes un día de venta.</p>
+    </div>
+
+    <div class="mig-visual">
+      <img src="/images/migracion-sacs.webp" alt="Los datos del sistema anterior (inventario, ventas, clientes, pedidos y etiquetas) viajando hacia Sacs" width="1536" height="1024" loading="lazy" decoding="async" />
+      <span class="mig-logo" aria-hidden="true">Sacs</span>
+    </div>
+
+    <div class="mig-datos">
+      <div class="mig-dato"><span class="mig-dato-num">1K – 1M</span><span class="mig-dato-label">datos, sin importar cuántos</span></div>
+      <div class="mig-dato"><span class="mig-dato-num">24 h</span><span class="mig-dato-label">y ya estás vendiendo con Sacs</span></div>
+      <div class="mig-dato"><span class="mig-dato-num">$0</span><span class="mig-dato-label">la migración va incluida</span></div>
+    </div>
+
+    <ul class="mig-que">
+      {['Inventario por tienda', 'Modelos con tallas y colores', 'Precios', 'Historial de ventas', 'Clientes', 'Apartados vivos', 'Pedidos', 'Proveedores'].map((x) => (
+        <li>{x}</li>
+      ))}
+    </ul>
+
+    <p class="mig-riesgo"><b>Sin riesgo:</b> prueba 7 días gratis, sin tarjeta. Si no te convence, cancelas con un clic.</p>
+  </div>
+</section>
+
 <!-- ═══ SECTION: Social Proof ═══ -->
 <section class="social-proof-section">
   <div class="container social-proof-inner">
@@ -397,64 +446,48 @@ const integraciones = [
 <!-- ═══ SECTION: Enterprise (18-oct-2026: interactiva, ver components/planes/PlanesEnterprise.astro) ═══ -->
 <PlanesEnterprise />
 
-<!-- ═══ SECTION 3: Universal Features ═══ -->
+<!-- ═══ SECTION 3: Incluido en todos los planes (18-oct-2026: gráfico y en grande, «sin letras chicas») ═══ -->
 <section class="universal-section">
   <div class="container">
-    <h2 class="universal-title">Incluido en todos los planes</h2>
-    <div class="universal-grid">
-      {universalFeatures.map((feature) => (
-        <div class="universal-item">
-          <span class="universal-check" set:html={checkIcon} />
-          <span>{feature}</span>
+    <div class="uni-head">
+      <span class="uni-eyebrow">Incluido en todos los planes</span>
+      <h2 class="uni-title">Elijas el plan que elijas,<br /><span>esto ya viene incluido.</span></h2>
+      <p class="uni-sub">Pagas tu plan y ya. No cobramos por usuario, por caja, por dispositivo ni por foto.</p>
+    </div>
+
+    <div class="uni-promesas" role="list">
+      <div class="uni-promesa" role="listitem"><span class="uni-promesa-num">$0</span><span>costos ocultos</span></div>
+      <div class="uni-promesa" role="listitem"><span class="uni-promesa-num">0</span><span>letras chicas</span></div>
+      <div class="uni-promesa" role="listitem"><span class="uni-promesa-num">0</span><span>contratos de permanencia</span></div>
+    </div>
+
+    <div class="uni-ilimitados">
+      {ilimitados.map((x, i) => (
+        <div class="uni-ili">
+          <span class="uni-ili-n">N.º {String(i + 1).padStart(2, '0')}</span>
+          <span class="uni-ili-num">{x.num}</span>
+          <span class="uni-ili-label">{x.label}</span>
+          {x.nota && <span class="uni-ili-nota">{x.nota}</span>}
         </div>
       ))}
     </div>
+
+    <div class="uni-grid">
+      {incluidos.map((x) => (
+        <div class="uni-card">
+          <span class="uni-ico" aria-hidden="true" set:html={x.icon} />
+          <div>
+            <h3 class="uni-card-t">{x.t}</h3>
+            <p class="uni-card-d">{x.d}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+
     <p class="universal-pronto">
-      <b>Lo marcado «pronto»</b> es la ruta de temporada que estamos construyendo con marcas de moda mexicanas.
+      <b>Lo marcado «pronto»</b> en los planes es la ruta de temporada que estamos construyendo con marcas de moda mexicanas.
       Cuando salga, entra en tu plan sin costo extra.
     </p>
-  </div>
-</section>
-
-<!-- ═══ SECTION: Migration ═══ -->
-<section class="migration-section">
-  <div class="container migration-grid">
-    <div class="migration-content">
-      <h2 class="migration-title">Nosotros cargamos tu catálogo por ti</h2>
-      <p class="migration-desc">Tus modelos con sus tallas y colores, tu cartera de clientes, los apartados vivos, los pedidos, tus proveedores y el historial de venta. Tú no capturas nada, y no pierdes un día de venta.</p>
-      <div class="migration-steps">
-        <div class="migration-step">
-          <span class="migration-step-num">1</span>
-          <div>
-            <span class="migration-step-title">Nos das acceso a tu información</span>
-            <span class="migration-step-desc">Excel, CSV o conexión directa a tu sistema actual. Nosotros nos encargamos del formato.</span>
-          </div>
-        </div>
-        <div class="migration-step">
-          <span class="migration-step-num">2</span>
-          <div>
-            <span class="migration-step-title">Cargamos todo en 1-3 días</span>
-            <span class="migration-step-desc">Cada modelo con su matriz de tallas y colores, sus precios, tus clientes, los apartados, los pedidos, tus proveedores y el historial de venta. Tú solo validas.</span>
-          </div>
-        </div>
-        <div class="migration-step">
-          <span class="migration-step-num">3</span>
-          <div>
-            <span class="migration-step-title">Vendes desde el día 1</span>
-            <span class="migration-step-desc">Capacitación incluida. Tu ejecutivo dedicado te acompaña en cada paso.</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="migration-guarantee">
-      <div class="migration-guarantee-card">
-        <span class="migration-guarantee-icon">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M16 2C8.27 2 2 8.27 2 16s6.27 14 14 14 14-6.27 14-14S23.73 2 16 2z" stroke="var(--color-secondary)" stroke-width="2"/><path d="M10 16l4 4 8-8" stroke="var(--color-secondary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </span>
-        <h3 class="migration-guarantee-title">Sin riesgo</h3>
-        <p class="migration-guarantee-desc">Prueba 7 días gratis. Sin tarjeta. Si no te convence, cancelas con un clic. Sin llamadas, sin retención, sin letra chiquita.</p>
-      </div>
-    </div>
   </div>
 </section>
 
@@ -1533,65 +1566,41 @@ const integraciones = [
 }
 
 /* ═══════════════════════════════════════
-   UNIVERSAL FEATURES
+   INCLUIDO EN TODOS LOS PLANES (gráfico, misma colorimetría del home:
+   fondo crema, tarjetas blancas, negro grueso y un solo azul de acento)
    ═══════════════════════════════════════ */
-.universal-section {
-  background: var(--color-bg-secondary);
-  padding: var(--space-16) 0;
-}
+.universal-section { background: var(--color-bg-secondary); padding: var(--space-16) 0; }
+@media (min-width: 768px) { .universal-section { padding: var(--space-24) 0; } }
+.uni-head { text-align: center; max-width: 820px; margin: 0 auto; }
+.uni-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-primary-texto); }
+.uni-eyebrow::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--color-primary); }
+.uni-title { font-family: var(--font-display); font-size: clamp(2.25rem, 4.6vw, 3.75rem); font-weight: 800; line-height: 1.02; letter-spacing: -0.035em; color: var(--color-text-primary); margin: var(--space-4) 0 var(--space-4); }
+.uni-title span { color: var(--color-primary); }
+.uni-sub { font-size: clamp(1rem, 1.6vw, 1.1875rem); line-height: 1.55; color: var(--color-text-secondary); margin: 0; }
 
-@media (min-width: 768px) {
-  .universal-section { padding: var(--space-20) 0; }
-}
+.uni-promesas { display: flex; justify-content: center; flex-wrap: wrap; gap: var(--space-3); margin: var(--space-8) 0 var(--space-12); }
+.uni-promesa { display: inline-flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--color-border-light); border-radius: var(--radius-full); padding: 8px 20px 8px 8px; font-weight: 600; color: var(--color-text-primary); }
+.uni-promesa-num { display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 38px; padding: 0 8px; border-radius: var(--radius-full); background: var(--color-text-primary); color: #fff; font-family: var(--font-display); font-weight: 800; font-size: 1rem; }
 
-.universal-title {
-  font-family: var(--font-display);
-  font-size: clamp(1.25rem, 2vw, 1.5rem);
-  font-weight: 700;
-  color: var(--color-text-primary);
-  text-align: center;
-  margin: 0 0 var(--space-10);
-  letter-spacing: -0.02em;
-}
+.uni-ilimitados { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--space-4); }
+.uni-ili { background: #fff; border: 1px solid var(--color-border-light); border-radius: 20px; padding: 26px 22px 24px; display: flex; flex-direction: column; min-height: 190px; }
+.uni-ili-n { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-text-tertiary); }
+.uni-ili-num { font-family: var(--font-display); font-size: clamp(3.25rem, 5vw, 4.5rem); font-weight: 800; line-height: 1; letter-spacing: -0.04em; color: var(--color-primary); margin: auto 0 10px; }
+.uni-ili-label { font-family: var(--font-display); font-size: 1.125rem; font-weight: 700; line-height: 1.2; color: var(--color-text-primary); }
+.uni-ili-nota { margin-top: 4px; font-size: 0.8125rem; line-height: 1.4; color: var(--color-text-secondary); }
 
-.universal-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-4) var(--space-3);
-  max-width: 900px;
-  margin: 0 auto;
-}
+.uni-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); margin-top: var(--space-4); }
+.uni-card { display: flex; gap: var(--space-4); align-items: flex-start; background: #fff; border: 1px solid var(--color-border-light); border-radius: 20px; padding: 22px; }
+.uni-ico { flex-shrink: 0; width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: var(--color-bg-secondary); color: var(--color-primary-texto); }
+.uni-card-t { font-family: var(--font-display); font-size: 1.125rem; font-weight: 700; margin: 2px 0 4px; color: var(--color-text-primary); }
+.uni-card-d { font-size: 0.9375rem; line-height: 1.5; color: var(--color-text-secondary); margin: 0; }
 
-@media (min-width: 768px) {
-  .universal-pronto {
-    max-width: 760px;
-    margin: 28px auto 0;
-    text-align: center;
-    font-size: 14px;
-    line-height: 1.6;
-    color: var(--color-text-secondary, #4A4A4A);
-  }
-  .universal-pronto b { color: var(--color-text-primary, #1A1A1A); font-weight: 700; }
+.universal-pronto { max-width: 760px; margin: var(--space-8) auto 0; text-align: center; font-size: 14px; line-height: 1.6; color: var(--color-text-secondary, #4A4A4A); }
+.universal-pronto b { color: var(--color-text-primary, #1A1A1A); font-weight: 700; }
 
-  .universal-grid { grid-template-columns: repeat(3, 1fr); gap: var(--space-5) var(--space-6); }
-}
-
-@media (min-width: 1024px) {
-  .universal-grid { grid-template-columns: repeat(4, 1fr); }
-}
-
-.universal-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-}
-
-.universal-check {
-  flex-shrink: 0;
-  color: var(--color-secondary-texto);
+@media (max-width: 1024px) {
+  .uni-ilimitados { grid-template-columns: repeat(3, 1fr); }
+  .uni-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* ═══════════════════════════════════════
@@ -2411,115 +2420,26 @@ const integraciones = [
 }
 
 /* ═══════════════════════════════════════
-   MIGRATION
+   MIGRACIÓN (misma colorimetría del home)
    ═══════════════════════════════════════ */
-.migration-section {
-  padding: var(--space-16) 0;
-  background: var(--color-bg-primary);
-}
-
-@media (min-width: 768px) { .migration-section { padding: var(--space-20) 0; } }
-@media (min-width: 1024px) { .migration-section { padding: var(--space-24) 0; } }
-
-.migration-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-10);
-}
-
-@media (min-width: 768px) {
-  .migration-grid { grid-template-columns: 1fr 1fr; gap: var(--space-12); align-items: center; }
-}
-
-.migration-title {
-  font-family: var(--font-display);
-  font-size: clamp(1.75rem, 3vw, 2.5rem);
-  font-weight: 800;
-  color: var(--color-text-primary);
-  letter-spacing: -0.03em;
-  margin: 0 0 var(--space-4);
-}
-
-.migration-desc {
-  font-size: 1rem;
-  color: var(--color-text-secondary);
-  line-height: 1.6;
-  margin: 0 0 var(--space-8);
-}
-
-.migration-steps {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-}
-
-.migration-step {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-4);
-}
-
-.migration-step-num {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--color-primary-btn, #4470D8);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-size: 0.875rem;
-  font-weight: 800;
-  flex-shrink: 0;
-}
-
-.migration-step-title {
-  display: block;
-  font-family: var(--font-display);
-  font-size: 0.9375rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.migration-step-desc {
-  display: block;
-  font-size: 0.8125rem;
-  color: var(--color-text-tertiary);
-  margin-top: 2px;
-}
-
-.migration-guarantee-card {
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-xl);
-  padding: var(--space-8);
-  text-align: center;
-}
-
-.migration-guarantee-icon {
-  display: flex;
-  justify-content: center;
-  margin-bottom: var(--space-4);
-}
-
-.migration-guarantee-title {
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--color-text-primary);
-  margin: 0 0 var(--space-3);
-}
-
-.migration-guarantee-desc {
-  font-size: 0.9375rem;
-  color: var(--color-text-secondary);
-  line-height: 1.6;
-  margin: 0;
-  max-width: 480px;
-  margin-left: auto;
-  margin-right: auto;
-}
+.mig-section { background: var(--color-bg-primary); padding: var(--space-16) 0; }
+@media (min-width: 768px) { .mig-section { padding: var(--space-24) 0; } }
+.mig-head { text-align: center; max-width: 860px; margin: 0 auto; }
+.mig-title { font-family: var(--font-display); font-size: clamp(2.25rem, 4.4vw, 3.5rem); font-weight: 800; line-height: 1.04; letter-spacing: -0.035em; color: var(--color-text-primary); margin: var(--space-4) 0 var(--space-4); }
+.mig-title span { color: var(--color-primary); }
+.mig-sub { font-size: clamp(1rem, 1.6vw, 1.1875rem); line-height: 1.55; color: var(--color-text-secondary); margin: 0 auto; max-width: 680px; }
+.mig-visual { position: relative; margin: var(--space-10) auto 0; max-width: 1120px; border-radius: 28px; overflow: hidden; background: #F5F3EE; container-type: inline-size; }
+.mig-visual img { display: block; width: 100%; height: auto; }
+.mig-logo { position: absolute; left: 80.2%; top: 46.4%; transform: translate(-50%, -50%); font-family: 'Clash Display', var(--font-display); font-weight: 700; font-size: 6.4cqw; line-height: 1; letter-spacing: -0.01em; color: var(--color-text-primary); }
+.mig-datos { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); max-width: 1120px; margin: var(--space-6) auto 0; }
+.mig-dato { background: var(--color-bg-secondary); border-radius: 20px; padding: 24px; text-align: center; }
+.mig-dato-num { display: block; font-family: var(--font-display); font-size: clamp(2.25rem, 4vw, 3.25rem); font-weight: 800; line-height: 1; letter-spacing: -0.04em; color: var(--color-primary); }
+.mig-dato-label { display: block; margin-top: 8px; font-size: 0.9375rem; font-weight: 600; color: var(--color-text-primary); }
+.mig-que { list-style: none; padding: 0; margin: var(--space-6) auto 0; max-width: 1120px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.mig-que li { display: inline-flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--color-border-light); border-radius: var(--radius-full); padding: 9px 16px; font-size: 0.9375rem; font-weight: 600; color: var(--color-text-primary); }
+.mig-que li::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--color-primary); }
+.mig-riesgo { text-align: center; margin: var(--space-6) 0 0; font-size: 0.9375rem; color: var(--color-text-secondary); }
+.mig-riesgo b { color: var(--color-text-primary); }
 
 /* ═══════════════════════════════════════
    FAQ (pricing-specific, reusing pattern)

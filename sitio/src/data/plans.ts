@@ -100,7 +100,7 @@ export const plans: Plan[] = [
       'Reunión de introducción',
       'Soporte 24/7 · chat SACS y WhatsApp',
       'Tickets resueltos en 30–90 min',
-      'Migración gratis (3 días)',
+      'Migración gratis en 24 horas',
     ],
   },
   {
@@ -127,7 +127,7 @@ export const plans: Plan[] = [
       'Reunión mensual',
       'Soporte 24/7 · chat SACS y WhatsApp',
       'Tickets resueltos en 15–30 min',
-      'Migración gratis (1 día)',
+      'Migración gratis en 24 horas',
     ],
   },
   {
@@ -183,7 +183,7 @@ export const universalFeatures: string[] = [
   'Tienda en línea',
   'Vende en Facebook, Instagram y TikTok Shop',
   'Tus prendas aparecen en Google, ChatGPT y Gemini',
-  'Soporte por chat SACS y WhatsApp',
+  'Soporte 24/7 por chat SACS y WhatsApp',
   'Dispositivos ilimitados',
   'Usuarios ilimitados',
   'Modelos ilimitados, con todas sus tallas y colores',
