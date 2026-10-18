@@ -13,7 +13,7 @@ PLANES DISPONIBLES (cada plan incluye todo lo del plan anterior):
    - POS online y offline, tienda en línea básica, cotizaciones, pedidos, apartados
    - Ventas a crédito, listas de precios, Facebook/Instagram/WhatsApp/TikTok
    - Productos con variantes, kits, control básico de inventario
-   - 20 folios de facturación, 1 sucursal, soporte 9 AM–5 PM con tickets en 30–90 min
+   - 20 folios de facturación, 1 sucursal, soporte 24/7 con tickets en 30–90 min
 
 2. CONTROLA ($1,215 MXN/mes, $790/mes pagando anual) — Para marcas con varias sucursales.
    - Todo de Vende +
@@ -30,7 +30,7 @@ PLANES DISPONIBLES (cada plan incluye todo lo del plan anterior):
    - Notificaciones automáticas por WhatsApp, promociones avanzadas
    - Portal de clientes, autofacturación, eCommerce avanzado
    - 3 créditos de Addons incluidos
-   - Soporte 9 AM–5 PM con tickets en 15–30 min, migración en 1 día
+   - Soporte 24/7 con tickets en 15–30 min, migración en 1 día
 
 4. AUTOMATIZA ($3,780 MXN/mes, $2,457/mes pagando anual) — Operación en piloto automático con IA.
    - Todo de Fideliza +

@@ -73,7 +73,7 @@ export const plans: Plan[] = [
     ],
     services: [
       '1 sucursal',
-      'Soporte 9 AM–5 PM · chat SACS y WhatsApp',
+      'Soporte 24/7 · chat SACS y WhatsApp',
       'Tickets resueltos en 30–90 min',
     ],
   },
@@ -98,7 +98,7 @@ export const plans: Plan[] = [
     services: [
       'Multi-sucursal',
       'Reunión de introducción',
-      'Soporte 9 AM–5 PM · chat SACS y WhatsApp',
+      'Soporte 24/7 · chat SACS y WhatsApp',
       'Tickets resueltos en 30–90 min',
       'Migración gratis (3 días)',
     ],
@@ -125,7 +125,7 @@ export const plans: Plan[] = [
     services: [
       'Multi-sucursal',
       'Reunión mensual',
-      'Soporte 9 AM–5 PM · chat SACS y WhatsApp',
+      'Soporte 24/7 · chat SACS y WhatsApp',
       'Tickets resueltos en 15–30 min',
       'Migración gratis (1 día)',
     ],
@@ -445,6 +445,6 @@ export const pricingFaqs: FAQ[] = [
   },
   {
     question: '¿El soporte tiene costo adicional?',
-    answer: 'No. Todos los planes incluyen soporte por chat de SACS y WhatsApp sin costo adicional. Vende y Controla atienden de 9 AM a 5 PM con resolución de tickets en 30–90 min, y Fideliza y Multiplica, en 15–30 min.',
+    answer: 'No. Todos los planes incluyen soporte por chat de SACS y WhatsApp sin costo adicional. La atención es 24/7 en todos los planes; los tickets se resuelven en 30–90 min en Vende y Controla, y en 15–30 min en Fideliza.',
   },
 ];

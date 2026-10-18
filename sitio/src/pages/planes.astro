@@ -69,6 +69,25 @@ function partirFunciones(features: Bloque[], maxBloques = 3, maxPorBloque = 3) {
   });
   return { visibles, ocultas, nOcultas };
 }
+
+// Casos del carrusel: los mismos que hoy tiene /casos-de-exito (con sus datos de ahí).
+const casosCarrusel = [
+  { href: '/casos-de-exito/liveshow', brand: 'Live Shows Merchandising', tag: 'Moda · Merch oficial', color: 'rgba(236,72,153,0.92)',
+    img: '/images/ls-guts-fans.webp', alt: 'Fan con la sudadera oficial del GUTS World Tour frente a la pared de playeras',
+    stats: [{ num: '100+', label: 'puntos de venta a la vez' }, { num: '8', label: 'países con oficina' }] },
+  { href: '/casos-de-exito#sthela', brand: 'Sthela & Co.', tag: 'Moda femenina · Mayorista', color: 'rgba(168,85,247,0.92)',
+    img: '/videos/sthela-vestido-loop-poster.webp', alt: 'Vestido de noche de la colección de Sthela & Co.', pos: 'center 30%',
+    stats: [{ num: '2', label: 'boutiques propias en Jalisco' }, { num: 'Intermoda', label: 'fabricante y mayorista' }] },
+  { href: '/casos-de-exito/vende-tu-closet', brand: 'Vende Tu Clóset', tag: 'Lujo pre-loved · Consignación', color: 'rgba(22,163,74,0.92)',
+    img: '/images/vtc-espejo.webp', alt: 'Clienta con vestido rojo frente al espejo de Vende Tu Clóset', pos: 'center 30%',
+    stats: [{ num: '4', label: 'ciudades' }, { num: '100%', label: 'piezas autenticadas' }] },
+  { href: '/casos-de-exito/las-alazanas', brand: 'Talabartería Las Alazanas', tag: 'Ropa vaquera · Talabartería', color: 'rgba(180,83,9,0.92)',
+    img: '/images/alazanas-sombreros.webp', alt: 'Pared de sombreros de paja y fieltro en Las Alazanas', pos: 'center 40%',
+    stats: [{ num: '4', label: 'sucursales' }, { num: 'Taller', label: 'propio, hecho a mano' }] },
+  { href: '/casos-de-exito/mits', brand: 'Mexico Is The Shit', tag: 'Moda mexicana · Hecho en México', color: 'rgba(251,146,60,0.92)',
+    img: '/images/mits-poncho.webp', alt: 'Mujer con el poncho «Mexico Is The Shit»', pos: 'center 30%',
+    stats: [{ num: '7', label: 'colecciones' }, { num: '100%', label: 'hecho en México' }] },
+];
 ---
 
 <BaseLayout
@@ -718,70 +737,37 @@ function partirFunciones(features: Bloque[], maxBloques = 3, maxPorBloque = 3) {
       <h2 class="reels-title">Negocios que ya crecen con <span class="reels-title-logo">Sacs</span></h2>
       <p class="reels-subtitle">1 sucursal o 100 — el mismo sistema. Empieza con lo que necesitas hoy y crece sin cambiar de plataforma.</p>
     </div>
-    <div class="reels-track-wrapper">
-      <div class="reels-track">
-        <a href="/casos-de-exito/la-bella-pandita" class="reel-card reel-card--highlight" style="--reel-idx:0">
-          <div class="reel-hl-photo">
-            <img src="/images/case-bella-pandita.webp" alt="La Bella Pandita — 42 sucursales con Sacs" loading="lazy" width="600" height="450" />
-          </div>
-          <div class="reel-hl-info">
-            <span class="reel-tag" style="background:rgba(108,92,231,0.9);">Novedades | Moda y hogar</span>
-            <h3 class="reel-brand" style="margin-top:8px;">La Bella Pandita</h3>
-            <div class="reel-hl-stats">
-              <div class="reel-hl-stat">
-                <span class="reel-hl-stat-num">42</span>
-                <span class="reel-hl-stat-label">sucursales</span>
+    <div class="reels-carrusel">
+      <button type="button" class="reels-nav reels-nav--prev" aria-label="Caso anterior" data-reels-dir="-1">‹</button>
+      <div class="reels-track-wrapper" id="reels-casos">
+        <div class="reels-track">
+          {casosCarrusel.map((c, i) => (
+            <a href={c.href} class="reel-card reel-card--highlight" style={`--reel-idx:${i}`}>
+              <div class="reel-hl-photo">
+                <img src={c.img} alt={c.alt} loading="lazy" width="600" height="450" style={c.pos ? `object-position:${c.pos}` : undefined} />
               </div>
-              <div class="reel-hl-stat-divider"></div>
-              <div class="reel-hl-stat">
-                <span class="reel-hl-stat-num">+1M</span>
-                <span class="reel-hl-stat-label">transacciones</span>
+              <div class="reel-hl-info">
+                <span class="reel-tag" style={`background:${c.color};`}>{c.tag}</span>
+                <h3 class="reel-brand" style="margin-top:8px;">{c.brand}</h3>
+                <div class="reel-hl-stats">
+                  <div class="reel-hl-stat">
+                    <span class="reel-hl-stat-num">{c.stats[0].num}</span>
+                    <span class="reel-hl-stat-label">{c.stats[0].label}</span>
+                  </div>
+                  <div class="reel-hl-stat-divider"></div>
+                  <div class="reel-hl-stat">
+                    <span class="reel-hl-stat-num">{c.stats[1].num}</span>
+                    <span class="reel-hl-stat-label">{c.stats[1].label}</span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        </a>
-        <a href="/casos-de-exito/liveshow" class="reel-card reel-card--highlight" style="--reel-idx:1">
-          <div class="reel-hl-photo">
-            <img src="/images/case-liveshow.webp" alt="Liveshow Merchandising — conciertos con Sacs" loading="lazy" width="600" height="450" />
-          </div>
-          <div class="reel-hl-info">
-            <span class="reel-tag" style="background:rgba(232,67,147,0.9);">Merchandising</span>
-            <h3 class="reel-brand" style="margin-top:8px;">Liveshow Merchandising</h3>
-            <div class="reel-hl-stats">
-              <div class="reel-hl-stat">
-                <span class="reel-hl-stat-num">+1,500</span>
-                <span class="reel-hl-stat-label">puntos de venta</span>
-              </div>
-              <div class="reel-hl-stat-divider"></div>
-              <div class="reel-hl-stat">
-                <span class="reel-hl-stat-num">5</span>
-                <span class="reel-hl-stat-label">canales de venta</span>
-              </div>
-            </div>
-          </div>
-        </a>
-        <a href="/casos-de-exito/casa-maca" class="reel-card reel-card--highlight" style="--reel-idx:2">
-          <div class="reel-hl-photo">
-            <img src="/images/case-casa-maca.webp" alt="Casa Maca — moda consciente con Sacs" loading="lazy" width="600" height="450" />
-          </div>
-          <div class="reel-hl-info">
-            <span class="reel-tag" style="background:rgba(253,203,110,0.9); color:#1A1A1A;">Moda Consciente</span>
-            <h3 class="reel-brand" style="margin-top:8px;">Casa Maca</h3>
-            <div class="reel-hl-stats">
-              <div class="reel-hl-stat">
-                <span class="reel-hl-stat-num">2</span>
-                <span class="reel-hl-stat-label">sucursales</span>
-              </div>
-              <div class="reel-hl-stat-divider"></div>
-              <div class="reel-hl-stat">
-                <span class="reel-hl-stat-num">3</span>
-                <span class="reel-hl-stat-label">canales digitales</span>
-              </div>
-            </div>
-          </div>
-        </a>
+            </a>
+          ))}
+        </div>
       </div>
+      <button type="button" class="reels-nav reels-nav--next" aria-label="Caso siguiente" data-reels-dir="1">›</button>
     </div>
+    <p class="reels-ver-todos"><a href="/casos-de-exito">Ver todos los casos de éxito →</a></p>
 
     <!-- Trust badges -->
     <div class="trust-badges">
@@ -2955,6 +2941,34 @@ function partirFunciones(features: Bloque[], maxBloques = 3, maxPorBloque = 3) {
   max-width: 560px;
   line-height: 1.5;
 }
+.reels-carrusel { position: relative; }
+.reels-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border-light);
+  background: rgba(255,255,255,0.95);
+  box-shadow: var(--shadow-sm);
+  font-size: 1.75rem;
+  line-height: 1;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 4px;
+}
+.reels-nav:hover { background: #fff; }
+.reels-nav[disabled] { opacity: 0.35; cursor: default; }
+.reels-nav--prev { left: clamp(8px, 3vw, 40px); }
+.reels-nav--next { right: clamp(8px, 3vw, 40px); }
+.reels-ver-todos { text-align: center; margin: var(--space-4) 0 0; }
+.reels-ver-todos a { font-weight: 600; color: var(--color-primary-texto); text-decoration: none; }
+.reels-ver-todos a:hover { text-decoration: underline; }
 .reels-track-wrapper {
   overflow-x: auto;
   overflow-y: hidden;
@@ -3370,6 +3384,32 @@ function partirFunciones(features: Bloque[], maxBloques = 3, maxPorBloque = 3) {
   }
 }
 </style>
+
+<script>
+  // Carrusel de casos: flechas que recorren las tarjetas (el scroll-snap las centra).
+  (() => {
+    const wrap = document.getElementById('reels-casos');
+    if (!wrap) return;
+    const btns = document.querySelectorAll('[data-reels-dir]');
+    const paso = () => {
+      const card = wrap.querySelector('.reel-card');
+      return card ? card.getBoundingClientRect().width + 24 : 400;
+    };
+    const actualizar = () => {
+      const max = wrap.scrollWidth - wrap.clientWidth - 4;
+      btns.forEach((b) => {
+        const dir = Number(b.getAttribute('data-reels-dir'));
+        b.toggleAttribute('disabled', dir < 0 ? wrap.scrollLeft <= 4 : wrap.scrollLeft >= max);
+      });
+    };
+    btns.forEach((b) => b.addEventListener('click', () => {
+      wrap.scrollBy({ left: Number(b.getAttribute('data-reels-dir')) * paso(), behavior: 'smooth' });
+    }));
+    wrap.addEventListener('scroll', actualizar, { passive: true });
+    window.addEventListener('resize', actualizar);
+    actualizar();
+  })();
+</script>
 
 <script>
   // TikTok: user viewed pricing page
