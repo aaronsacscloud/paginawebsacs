@@ -109,6 +109,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
                           </a>
                         ))}
                       </div>
+                      <a href={getLocalizedUrl(pillar.href, locale)} class="mega-pillar-more">Ver más <span aria-hidden="true">→</span></a>
                     </div>
                   ))}
                 </div>
@@ -664,16 +665,41 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   }
 
   /* ─── 4-column pillars ─── */
+  /* Las 3 columnas terminan igual (18-oct-2026, dueño): encabezado, lista y «Ver más» van en tres filas compartidas
+     (subgrid), así la raya del encabezado y el «Ver más» quedan a la misma altura aunque una lista sea más larga. */
   .mega-pillars {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto 1fr auto;
     gap: 0;
   }
 
   .mega-pillar {
+    display: grid;
+    grid-row: span 3;
+    grid-template-rows: subgrid;
     padding: 0 28px;
     border-right: 1px solid rgba(0, 0, 0, 0.06);
   }
+
+  .mega-pillar-more {
+    align-self: end;
+    justify-self: start;
+    display: inline-flex;
+    gap: 6px;
+    margin-top: 14px;
+    padding: 9px 0 0;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+    text-decoration: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    width: 100%;
+    transition: gap 0.2s ease, color 0.2s ease;
+  }
+
+  .mega-pillar-more:hover { gap: 10px; color: #2F5BEA; text-decoration: none; }
 
   .mega-pillar:first-child {
     padding-left: 0;
