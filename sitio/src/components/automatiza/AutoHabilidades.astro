@@ -27,6 +27,7 @@ const nivel = (plan: string) => Math.max(0, h.niveles.findIndex((n) => n.plan ==
       ))}
     </ol>
 
+    <p class="auh-desliza" aria-hidden="true">Desliza para ver las {h.items.length} habilidades <span>→</span></p>
     <ul class="auh-grid">
       {h.items.map((it, i) => {
         const k = nivel(it.desde);
@@ -87,6 +88,17 @@ const nivel = (plan: string) => Math.max(0, h.niveles.findIndex((n) => n.plan ==
   .auh-mem ol li { display: grid; grid-template-columns: 34px 1fr; gap: 8px; padding: 11px 0; border-top: 1px solid rgba(20, 20, 20, 0.14); font: 500 15px/1.45 var(--font-body); }
   .auh-mem ol span { font: 700 12px/1.6 var(--font-display); color: rgba(20, 20, 20, 0.5); }
 
+  .auh-desliza { display: none; }
+  /* teléfono: las 11 habilidades en un carrusel que se desliza (antes eran ~5,000 px de tarjetas en columna) */
+  @media (max-width: 719px) {
+    .auh-desliza { display: flex; align-items: center; gap: 6px; margin: 36px 0 0; font: 600 12.5px/1 var(--font-display); color: rgba(255, 255, 255, 0.6); }
+    .auh-desliza span { animation: auh-desliza 1.4s ease-in-out infinite; }
+    .auh-grid { display: flex; gap: 12px; margin: 14px -20px 0; padding: 0 20px 6px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 20px; overscroll-behavior-x: contain; scrollbar-width: none; }
+    .auh-grid::-webkit-scrollbar { display: none; }
+    .auh-grid > li { flex: 0 0 84%; scroll-snap-align: start; }
+    .auh-card-top em { font-size: 11.5px; }
+  }
+  @keyframes auh-desliza { 50% { transform: translateX(4px); } }
   :global(.js-rv) .auh .rv { opacity: 0; transform: translateY(16px); transition: opacity 0.6s ease calc(var(--i, 0) * 0.08s), transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) calc(var(--i, 0) * 0.08s); }
   :global(.js-rv) .auh .rv:global(.is-on) { opacity: 1; transform: none; }
   @media (min-width: 720px) {
