@@ -19,7 +19,8 @@ import EnHeader from '../../components/en/EnHeader.astro';
 import EnFooter from '../../components/en/EnFooter.astro';
 import EnClose from '../../components/en/EnClose.astro';
 import { SITIO, PRODUCTO_ID } from '../../data/entidad';
-import { plans, universalFeatures } from '../../data/plans';
+// planesPublicos: without retired plans (Automate was retired on 2026-10-18).
+import { planesPublicos as plans, universalFeatures } from '../../data/plans';
 import { breadcrumbList } from '../../lib/breadcrumb';
 
 const planNames: Record<string, { name: string; blurb: string; highlights: string[] }> = {
@@ -88,7 +89,7 @@ const faqs = [
   },
   {
     q: 'Is support included, or is it extra?',
-    a: 'Included on every plan, by chat and WhatsApp, at no extra cost. Sell and Control answer 9 AM–5 PM CT with tickets resolved in 30–90 minutes; Retain & Grow resolves in 15–30 minutes; Automate includes 24/7 support and a dedicated AI specialist.',
+    a: 'Included on every plan, by chat and WhatsApp, at no extra cost. Sell and Control answer 9 AM–5 PM CT with tickets resolved in 30–90 minutes; and Retain & Grow resolves in 15–30 minutes.',
   },
 ];
 
@@ -97,7 +98,7 @@ const softwareSchema = {
   '@type': 'Product',
   '@id': `${SITIO}/en/pricing#producto`,
   name: 'Sacs',
-  description: 'Fashion retail software: size and color inventory, point of sale, online store, and wholesale — plans from Sell to Automate.',
+  description: 'Fashion retail software: size and color inventory, point of sale, online store, and wholesale — plans from Sell to Retain & Grow.',
   isPartOf: { '@id': PRODUCTO_ID },
   inLanguage: 'en-US',
   offers: {
@@ -216,7 +217,7 @@ const structuredData = [softwareSchema, faqSchema, breadcrumb];
     .en-hero { padding: clamp(56px, 9vw, 100px) 0 clamp(48px, 7vw, 80px); background: var(--color-bg-secondary); text-align: center; }
 
     .en-plans { padding: clamp(56px, 8vw, 100px) 0; background: #fff; }
-    .en-plans-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; align-items: stretch; }
+    .en-plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 1120px; margin: 0 auto; gap: 16px; align-items: stretch; }
     .en-plan-card { position: relative; display: flex; flex-direction: column; padding: 26px 22px; border: 1.5px solid var(--color-border-light); border-radius: 16px; background: var(--color-bg-card); }
     .en-plan-card--highlight { border-color: var(--color-primary-texto); box-shadow: 0 16px 40px rgba(0,0,0,0.08); }
     .en-plan-badge { position: absolute; top: -12px; left: 22px; background: var(--color-primary-btn, #4470D8); color: #fff; font-size: 0.6875rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.04em; }

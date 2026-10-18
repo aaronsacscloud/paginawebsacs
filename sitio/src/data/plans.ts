@@ -27,6 +27,12 @@ export interface Plan {
   services: string[];
   /** Bloque destacado arriba de las funciones del plan (p. ej. el MCP de Sacscloud en Automatiza). */
   destacado?: { kicker: string; titulo: string; texto: string; plataformas: string[] };
+  /**
+   * Plan que ya NO se vende (18-oct-2026, dueño: «ya no tendremos más este plan»). Sigue en
+   * `plans` porque el CRM, las cotizaciones y la renovación lo leen para los clientes que ya
+   * lo tienen; las páginas públicas usan `planesPublicos`, que lo deja fuera.
+   */
+  retirado?: boolean;
 }
 
 export interface ComparisonFeature {
@@ -127,6 +133,7 @@ export const plans: Plan[] = [
   {
     id: 'automatiza',
     name: 'Automatiza',
+    retirado: true,
     description: 'La IA mueve las tallas entre tus tiendas y te dice qué comprar la próxima temporada.',
     monthly: { mxn: 3780, usd: 190, eur: 175, brl: 985, cop: 794000, ars: 170000, clp: 180000, pen: 720, gbp: 150 },
     annual: { mxn: 2457, usd: 125, eur: 115, brl: 640, cop: 516000, ars: 111000, clp: 117000, pen: 470, gbp: 98 },
@@ -163,6 +170,67 @@ export const plans: Plan[] = [
       'Migración gratis',
       'Acceso anticipado a nuevas funciones IA',
     ],
+  },
+];
+
+/** Los planes que se venden hoy (los que pinta la página de precios). */
+export const planesPublicos: Plan[] = plans.filter((p) => !p.retirado);
+
+// ─── AXO · planes de IA (complementan el plan; se contratan por CUENTA, no por sucursal) ───
+// Fuente: «AXO · Planes y Habilidades 2026» (precio de inauguración). Pesos mexicanos + IVA.
+// Pago anual: 20 % de descuento. Usuario extra: $1,500/mes + IVA en cualquier plan.
+
+export interface PlanAxo {
+  id: string;
+  name: string;
+  multiplicador: string;
+  description: string;
+  mensual: number;
+  anual: number;
+  usuarios: string;
+  heredaDe?: string;
+  habilidades: string[];
+  anualIncluye?: string[];
+  badge?: string;
+  estilo?: 'destacado' | 'oro';
+}
+
+export const AXO_USUARIO_EXTRA_MXN = 1500;
+
+export const planesAxo: PlanAxo[] = [
+  {
+    id: 'starter', name: 'Starter', multiplicador: '1x',
+    description: 'Para empresas que apenas empiezan a usar la IA.',
+    mensual: 1500, anual: 14400, usuarios: '1 usuario',
+    habilidades: ['Analítica: business intelligence y reportes', 'Importación: migración a cualquier módulo', 'Memoria: aprende de tu operación'],
+  },
+  {
+    id: 'pro', name: 'Pro', multiplicador: '2x',
+    description: 'Para equipos que quieren que AXO también ejecute.',
+    mensual: 3000, anual: 28800, usuarios: 'Hasta 3 usuarios', heredaDe: 'Starter',
+    habilidades: ['Ejecución: acciones en cualquier área', 'Visión: fotos, documentos y video', 'El doble de capacidad'],
+  },
+  {
+    id: 'super-power', name: 'Super Power', multiplicador: '10x',
+    description: 'Para automatizar tu operación de punta a punta.',
+    mensual: 10500, anual: 100800, usuarios: 'Hasta 5 usuarios', heredaDe: 'Pro',
+    badge: 'El más elegido', estilo: 'destacado',
+    habilidades: ['Automatizaciones: consultor de procesos', 'Construcción: mejora tus módulos', 'Colaboración: canales ilimitados y WhatsApp', 'Procedimientos: sugiere y vuelve regla', 'Capacitación: onboarding con exámenes'],
+  },
+  {
+    id: 'super-power-20x', name: 'Super Power 20x', multiplicador: '20x',
+    description: 'Todo Super Power, para operaciones intensivas.',
+    mensual: 19000, anual: 182400, usuarios: 'Hasta 5 usuarios', heredaDe: 'Super Power',
+    habilidades: ['Voz: llamadas transcritas y registradas (costo por llamada completada)', '20 veces la capacidad'],
+    anualIncluye: ['Implementación incluida', '5 flujos de automatización con un orquestador certificado por SACS'],
+  },
+  {
+    id: 'corporativo-50x', name: 'Corporativo 50x', multiplicador: '50x',
+    description: 'AXO administra toda tu empresa y es tu centro de control operativo.',
+    mensual: 46000, anual: 441600, usuarios: 'Hasta 15 usuarios', heredaDe: 'Super Power 20x',
+    badge: 'Corporativos', estilo: 'oro',
+    habilidades: ['Centro de control operativo: administra y coordina toda la empresa', '50 veces la capacidad'],
+    anualIncluye: ['Implementación incluida', '5 flujos de automatización con un orquestador certificado por SACS'],
   },
 ];
 
@@ -435,6 +503,6 @@ export const pricingFaqs: FAQ[] = [
   },
   {
     question: '¿El soporte tiene costo adicional?',
-    answer: 'No. Todos los planes incluyen soporte por chat de SACS y WhatsApp sin costo adicional. Vende y Controla atienden de 9 AM a 5 PM con resolución de tickets en 30–90 min; Fideliza y Multiplica, en 15–30 min; y Automatiza incluye soporte 24/7. Automatiza además incluye un especialista IA dedicado.',
+    answer: 'No. Todos los planes incluyen soporte por chat de SACS y WhatsApp sin costo adicional. Vende y Controla atienden de 9 AM a 5 PM con resolución de tickets en 30–90 min, y Fideliza y Multiplica, en 15–30 min.',
   },
 ];
