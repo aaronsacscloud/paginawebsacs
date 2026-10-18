@@ -119,7 +119,8 @@ export interface Flujos3D {
     nombre: string;
     cuando: string;
     resultado: string;
-    etapas: { t: string; area: string; hace: string; tipo: TipoEtapa }[];
+    /** llega: los datos que le entran a AXO en esa etapa (líneas cortas, tipo consola) */
+    etapas: { t: string; area: string; hace: string; tipo: TipoEtapa; llega: string[] }[];
     cifras?: [string, string][];
   }[];
 }
@@ -315,76 +316,76 @@ export const AUTOMATIZA: PaginaAuto[] = [
       },
       {
         tipo: 'flujos3d', id: 'axo-flujos',
-        folio: ['09 · Flujos completos', 'De punta a punta, en 3D'],
-        titulo: 'Mira un proceso entero correr solo.',
-        bajada: 'Cada puerta es una etapa de tu operación. El pedido las cruza de inicio a fin mientras AXO, al centro, hace el trabajo, pide tu aprobación donde hace falta y avisa a quien corresponde. Elige un flujo y míralo pasar.',
+        folio: ['09 · Flujos completos', 'En vivo, de punta a punta'],
+        titulo: 'AXO vuela por tus datos.',
+        bajada: 'Los datos de tu operación le llegan a AXO en cuanto pasan: los lee, decide y deja cada acción hecha, pide tu aprobación donde hace falta o avisa a quien corresponde. Elige un flujo y míralo trabajar.',
         flujos: [
           {
             id: 'compras', nombre: 'Compras de punta a punta', cuando: 'Cuando algo se agota',
             resultado: 'Tú solo lo platicaste. AXO lo convirtió en este proceso y lo dejó configurado en Sacs.',
             cifras: [['21', 'variables'], ['8', 'automatizaciones'], ['4', 'aprobaciones'], ['4', 'avisos']],
             etapas: [
-              { t: 'Requisición', area: 'Tienda', tipo: 'auto', hace: 'La existencia bajó del mínimo: AXO crea la requisición sola y sugiere la cantidad con las ventas de 8 semanas.' },
-              { t: 'Orden de compra', area: 'Compras', tipo: 'aprobacion', hace: 'Agrupa las requisiciones por proveedor con su último precio. Si pasa de $50,000, la aprueba dirección.' },
-              { t: 'Recepción', area: 'Almacén', tipo: 'regla', hace: 'Lee la foto de la factura y la compara con la orden. Si la diferencia pasa del 2 %, el pago se detiene.' },
-              { t: 'Cuentas por pagar', area: 'Administración', tipo: 'auto', hace: 'Valida el CFDI y cruza orden, recepción y factura. Contraloría solo revisa si hay diferencias.' },
-              { t: 'Tesorería', area: 'Finanzas', tipo: 'aprobacion', hace: 'Arma los pagos en lote martes y viernes, por vencimiento. Dirección autoriza el lote desde WhatsApp.' },
-              { t: 'Contabilidad', area: 'Contador', tipo: 'aviso', hace: 'Genera la póliza de egreso, concilia con el estado de cuenta y le manda al proveedor su comprobante.' },
+              { t: 'Requisición', area: 'Tienda', tipo: 'auto', hace: 'La existencia bajó del mínimo: AXO crea la requisición sola y sugiere la cantidad con las ventas de 8 semanas.', llega: ['inventario.sur · jean recto M · 2 pzs', 'mínimo · 6 pzs', 'ventas 8 sem · 31 pzs'] },
+              { t: 'Orden de compra', area: 'Compras', tipo: 'aprobacion', hace: 'Agrupa las requisiciones por proveedor con su último precio. Si pasa de $50,000, la aprueba dirección.', llega: ['requisiciones · 9 abiertas', 'proveedor · Textiles del Norte', 'total OC · $58,400'] },
+              { t: 'Recepción', area: 'Almacén', tipo: 'regla', hace: 'Lee la foto de la factura y la compara con la orden. Si la diferencia pasa del 2 %, el pago se detiene.', llega: ['foto factura A-8812 · leída', 'llegaron · 46 de 50 pzs', 'diferencia · 8 %'] },
+              { t: 'Cuentas por pagar', area: 'Administración', tipo: 'auto', hace: 'Valida el CFDI y cruza orden, recepción y factura. Contraloría solo revisa si hay diferencias.', llega: ['CFDI · válido SAT', 'orden ⇄ recepción ⇄ factura', 'vence · en 30 días'] },
+              { t: 'Tesorería', area: 'Finanzas', tipo: 'aprobacion', hace: 'Arma los pagos en lote martes y viernes, por vencimiento. Dirección autoriza el lote desde WhatsApp.', llega: ['banco · saldo $412,000', 'lote martes · 6 pagos', 'mínimo de caja · ok'] },
+              { t: 'Contabilidad', area: 'Contador', tipo: 'aviso', hace: 'Genera la póliza de egreso, concilia con el estado de cuenta y le manda al proveedor su comprobante.', llega: ['pagos · 6 aplicados', 'estado de cuenta · conciliado', 'póliza de egreso · lista'] },
             ],
           },
           {
             id: 'reabasto', nombre: 'Reabasto automático', cuando: 'Cada noche',
             resultado: 'Nunca te quedas sin lo que más se vende.',
             etapas: [
-              { t: 'Revisa', area: 'Inventario', tipo: 'auto', hace: 'Revisa las ventas y las existencias de cada tienda, talla por talla.' },
-              { t: 'Calcula', area: 'Planeación', tipo: 'auto', hace: 'Calcula lo que vas a necesitar según la tendencia y la temporada.' },
-              { t: 'Arma las órdenes', area: 'Compras', tipo: 'auto', hace: 'Arma las órdenes de compra por proveedor.' },
-              { t: 'Tu sí', area: 'Dirección', tipo: 'aprobacion', hace: 'Te las manda a WhatsApp y las apruebas con un mensaje.' },
-              { t: 'Al proveedor', area: 'Proveedores', tipo: 'aviso', hace: 'Las envía al proveedor y agenda la recepción.' },
+              { t: 'Revisa', area: 'Inventario', tipo: 'auto', hace: 'Revisa las ventas y las existencias de cada tienda, talla por talla.', llega: ['23:00 · cierre de las 3 tiendas', 'existencias · 1,284 modelos', 'ventas de hoy · 412 pzs'] },
+              { t: 'Calcula', area: 'Planeación', tipo: 'auto', hace: 'Calcula lo que vas a necesitar según la tendencia y la temporada.', llega: ['tendencia 8 sem · +12 %', 'temporada · otoño', 'faltan · 38 modelos'] },
+              { t: 'Arma las órdenes', area: 'Compras', tipo: 'auto', hace: 'Arma las órdenes de compra por proveedor.', llega: ['proveedores · 4', 'OC armadas · 4', 'total · $186,300'] },
+              { t: 'Tu sí', area: 'Dirección', tipo: 'aprobacion', hace: 'Te las manda a WhatsApp y las apruebas con un mensaje.', llega: ['WhatsApp · dirección', 'respuesta · «sí»', 'aprobadas · 4 de 4'] },
+              { t: 'Al proveedor', area: 'Proveedores', tipo: 'aviso', hace: 'Las envía al proveedor y agenda la recepción.', llega: ['correo + WhatsApp · enviados', 'recepción · jueves 10:00', 'almacén · avisado'] },
             ],
           },
           {
             id: 'whatsapp', nombre: 'Venta por WhatsApp', cuando: 'Cuando escribe una clienta',
             resultado: 'Vendes a cualquier hora, sin perder clientas.',
             etapas: [
-              { t: 'Pregunta', area: 'Inbox', tipo: 'aviso', hace: 'Una clienta pregunta por una prenda en el Inbox.' },
-              { t: 'Existencias', area: 'Inventario', tipo: 'auto', hace: 'AXO revisa existencias en todas las tiendas, en su talla y color.' },
-              { t: 'Aparta y cobra', area: 'Ventas', tipo: 'auto', hace: 'Aparta la prenda y le manda la liga de pago.' },
-              { t: 'Prepara', area: 'Tienda', tipo: 'aviso', hace: 'Avisa a la tienda para preparar el pedido.' },
-              { t: 'Entrega', area: 'Logística', tipo: 'auto', hace: 'Da seguimiento hasta que la prenda llega a sus manos.' },
+              { t: 'Pregunta', area: 'Inbox', tipo: 'aviso', hace: 'Una clienta pregunta por una prenda en el Inbox.', llega: ['whatsapp · Sofía Medina', '«¿tienen el blazer de lino en M?»', 'clienta frecuente · 9 compras'] },
+              { t: 'Existencias', area: 'Inventario', tipo: 'auto', hace: 'AXO revisa existencias en todas las tiendas, en su talla y color.', llega: ['blazer lino ivory · M', 'Polanco · 0 · Centro · 2', 'en línea · 1'] },
+              { t: 'Aparta y cobra', area: 'Ventas', tipo: 'auto', hace: 'Aparta la prenda y le manda la liga de pago.', llega: ['apartado AP-1044 · creado', 'liga de pago · $2,890', 'pagado · tarjeta'] },
+              { t: 'Prepara', area: 'Tienda', tipo: 'aviso', hace: 'Avisa a la tienda para preparar el pedido.', llega: ['tienda Centro · avisada', 'pedido · por empacar', 'guía · generada'] },
+              { t: 'Entrega', area: 'Logística', tipo: 'auto', hace: 'Da seguimiento hasta que la prenda llega a sus manos.', llega: ['paquetería · en camino', 'entrega · mañana 13:00', 'clienta · avisada'] },
             ],
           },
           {
             id: 'cobranza', nombre: 'Cobranza que se hace sola', cuando: 'Todos los días',
             resultado: 'Cobras antes y sin perseguir a nadie.',
             etapas: [
-              { t: 'Detecta', area: 'Cuentas por cobrar', tipo: 'auto', hace: 'Detecta saldos vencidos o por vencer.' },
-              { t: 'Recuerda', area: 'Clientas', tipo: 'aviso', hace: 'Manda el recordatorio por WhatsApp con su liga de pago.' },
-              { t: 'Concilia', area: 'Tesorería', tipo: 'auto', hace: 'Registra el pago y lo concilia con el banco.' },
-              { t: 'Escala', area: 'Equipo', tipo: 'regla', hace: 'A quien no responde, se lo pasa a tu equipo.' },
-              { t: 'Te reporta', area: 'Dirección', tipo: 'aviso', hace: 'Te reporta lo cobrado y lo pendiente.' },
+              { t: 'Detecta', area: 'Cuentas por cobrar', tipo: 'auto', hace: 'Detecta saldos vencidos o por vencer.', llega: ['saldos vencidos · 7', 'por vencer esta semana · 4', 'total · $48,600'] },
+              { t: 'Recuerda', area: 'Clientas', tipo: 'aviso', hace: 'Manda el recordatorio por WhatsApp con su liga de pago.', llega: ['recordatorios · 11 enviados', 'liga de pago · incluida', 'leídos · 9'] },
+              { t: 'Concilia', area: 'Tesorería', tipo: 'auto', hace: 'Registra el pago y lo concilia con el banco.', llega: ['pagos recibidos · 4', 'banco · conciliado', 'por cobrar · $31,200'] },
+              { t: 'Escala', area: 'Equipo', tipo: 'regla', hace: 'A quien no responde, se lo pasa a tu equipo.', llega: ['sin respuesta · 3 clientas', '+5 días vencidas', 'asignado a · cobranza'] },
+              { t: 'Te reporta', area: 'Dirección', tipo: 'aviso', hace: 'Te reporta lo cobrado y lo pendiente.', llega: ['cobrado hoy · $17,400', 'pendiente · $31,200', 'resumen · enviado'] },
             ],
           },
           {
             id: 'devoluciones', nombre: 'Devoluciones', cuando: 'Procedimiento empresarial',
             resultado: 'Cinco áreas, un solo camino. Si alguien se salta un paso, Sacs no lo deja.',
             etapas: [
-              { t: 'Registra', area: 'Punto de venta', tipo: 'auto', hace: 'Ventas registra la devolución con su motivo y su foto.' },
-              { t: 'Revisa', area: 'Almacén', tipo: 'regla', hace: 'Reingresa la prenda o la manda a merma. Más de $5,000: aprueba la gerente.' },
-              { t: 'Reclama', area: 'Compras', tipo: 'auto', hace: 'Si es defecto, abre el reclamo al proveedor.' },
-              { t: 'Reembolsa', area: 'Tesorería', tipo: 'aprobacion', hace: 'Reembolsa en máximo 48 horas; 24 para clientas frecuentes.' },
-              { t: 'Nota de crédito', area: 'Contabilidad', tipo: 'aviso', hace: 'Registra la nota de crédito y le avisa a la clienta por WhatsApp.' },
+              { t: 'Registra', area: 'Punto de venta', tipo: 'auto', hace: 'Ventas registra la devolución con su motivo y su foto.', llega: ['devolución · ticket 4821', 'motivo · defecto de costura', 'foto · adjunta'] },
+              { t: 'Revisa', area: 'Almacén', tipo: 'regla', hace: 'Reingresa la prenda o la manda a merma. Más de $5,000: aprueba la gerente.', llega: ['prenda · no vendible', 'monto · $1,290', 'destino · merma'] },
+              { t: 'Reclama', area: 'Compras', tipo: 'auto', hace: 'Si es defecto, abre el reclamo al proveedor.', llega: ['proveedor · Textiles del Norte', 'reclamo · RC-212 abierto', 'evidencia · foto'] },
+              { t: 'Reembolsa', area: 'Tesorería', tipo: 'aprobacion', hace: 'Reembolsa en máximo 48 horas; 24 para clientas frecuentes.', llega: ['clienta frecuente · sí', 'plazo · 24 h', 'reembolso · $1,290'] },
+              { t: 'Nota de crédito', area: 'Contabilidad', tipo: 'aviso', hace: 'Registra la nota de crédito y le avisa a la clienta por WhatsApp.', llega: ['nota de crédito · NC-88', 'WhatsApp · clienta avisada', 'devolución · cerrada'] },
             ],
           },
           {
             id: 'cierre', nombre: 'Cierre del día', cuando: 'Al cerrar las cajas',
             resultado: 'Sabes cómo cerraste sin abrir un reporte.',
             etapas: [
-              { t: 'Cortes', area: 'Cajas', tipo: 'auto', hace: 'Revisa los cortes de cada caja y cada tienda.' },
-              { t: 'Diferencias', area: 'Contraloría', tipo: 'regla', hace: 'Detecta diferencias, cancelaciones y descuentos fuera de lo normal.' },
-              { t: 'Meta', area: 'Ventas', tipo: 'auto', hace: 'Compara la venta contra la meta del día.' },
-              { t: 'Tarea', area: 'Gerencia', tipo: 'aviso', hace: 'Si hay un faltante, le abre la tarea a la gerente.' },
-              { t: 'Tu resumen', area: 'Dirección', tipo: 'aviso', hace: 'Te manda el resumen antes de dormir.' },
+              { t: 'Cortes', area: 'Cajas', tipo: 'auto', hace: 'Revisa los cortes de cada caja y cada tienda.', llega: ['cortes · 7 cajas', 'cerradas · 7 de 7', 'venta del día · $142,800'] },
+              { t: 'Diferencias', area: 'Contraloría', tipo: 'regla', hace: 'Detecta diferencias, cancelaciones y descuentos fuera de lo normal.', llega: ['caja 3 · faltan $1,200', 'cancelaciones · 12 en caja 5', 'descuento fuera de lo normal · 1'] },
+              { t: 'Meta', area: 'Ventas', tipo: 'auto', hace: 'Compara la venta contra la meta del día.', llega: ['meta del día · $150,000', 'real · $142,800', 'avance · 95 %'] },
+              { t: 'Tarea', area: 'Gerencia', tipo: 'aviso', hace: 'Si hay un faltante, le abre la tarea a la gerente.', llega: ['tarea · revisar caja 3', 'asignada a · gerente Centro', 'vence · mañana 10:00'] },
+              { t: 'Tu resumen', area: 'Dirección', tipo: 'aviso', hace: 'Te manda el resumen antes de dormir.', llega: ['resumen · listo', 'WhatsApp · 22:40', 'pendientes · 2'] },
             ],
           },
         ],
