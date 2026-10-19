@@ -57,7 +57,7 @@ export const prerender = true;
     }
     textarea { resize: vertical; min-height: 64px; }
     input:focus, select:focus, textarea:focus { outline: 2px solid var(--v); outline-offset: 0; border-color: var(--v); }
-    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1.5px solid var(--v); background: #fff; color: var(--vt); font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1.5px solid var(--v); background: #fff; color: var(--vt); font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; }
     .btn:hover { background: var(--va); }
     .btn.pri { background: var(--v); color: #fff; }
     .btn.pri:hover { background: #7C6BF0; }
@@ -113,11 +113,39 @@ export const prerender = true;
     .sug .tp { font-size: .6875rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--azt); background: var(--aza); border-radius: 5px; padding: 2px 6px; white-space: nowrap; margin-top: 2px; }
     .sug .tx { flex: 1; font-size: .875rem; }
     .sug.usada { opacity: .5; }
-    .hall { border: 1px solid #e6e5ee; border-radius: 10px; padding: 10px 12px; margin-top: 10px; background: #fff; display: grid; gap: 8px; grid-template-columns: 170px 1fr 1fr 120px 140px 44px; align-items: start; }
-    .hall-cab { display: grid; grid-template-columns: 170px 1fr 1fr 120px 140px 44px; gap: 8px; padding: 0 12px; font-size: .6875rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--tx3); margin-top: 6px; }
+    .hall { border: 1px solid #e6e5ee; border-radius: 10px; padding: 10px 12px; margin-top: 10px; background: #fff; }
+    .hrow { display: grid; gap: 8px 10px; align-items: end; }
+    .hrow.a { grid-template-columns: 170px 1fr 1fr; align-items: start; }
+    .hrow.b { grid-template-columns: repeat(4, minmax(0, 1fr)) auto; margin-top: 8px; }
     .hall textarea { min-height: 44px; }
     .hall .x { min-height: 44px; width: 44px; padding: 0; }
-    .hall .lbl { display: none; }
+    .hall .lbl, .lbl { display: block; font-size: .6875rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--tx3); margin-bottom: 3px; }
+    .hall .acc { display: flex; gap: 6px; }
+    .ctrl { display: flex; gap: 6px; align-items: center; }
+    .ta { position: relative; }
+    .ta textarea { padding-right: 46px; }
+    .mic { position: absolute; right: 6px; top: 6px; width: 34px; height: 34px; border-radius: 8px; border: 1px solid #e3e1ee; background: #fff; color: var(--vt); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+    .mic.on { background: var(--rja); color: var(--rjt); border-color: #f0c4bd; animation: latido 1.2s infinite; }
+    @keyframes latido { 50% { opacity: .55; } }
+    .sin-voz .mic { display: none; }
+    .sin-voz .ta textarea { padding-right: 11px; }
+    .nrs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .nr { border: 1px solid var(--vb); background: #fff; color: var(--vt); border-radius: 999px; padding: 5px 10px; font-size: .75rem; font-weight: 700; cursor: pointer; }
+    .fotos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .fotos:empty { display: none; }
+    .foto { position: relative; width: 84px; height: 84px; border-radius: 9px; overflow: hidden; border: 1px solid var(--ln); background: #f3f3f6; }
+    .foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .foto button { position: absolute; top: 3px; right: 3px; width: 24px; height: 24px; border-radius: 50%; border: 0; background: rgba(29,27,46,.7); color: #fff; font-size: 12px; cursor: pointer; }
+    .foto.subiendo { display: flex; align-items: center; justify-content: center; font-size: .6875rem; color: var(--tx3); }
+    body.pend .pt.hecho, body.pend .sec.completa { display: none; }
+    .btn.on { background: var(--v); color: #fff; }
+    body.ro .solo-consultor { display: none !important; }
+    .modal-fondo { position: fixed; inset: 0; background: rgba(29,27,46,.45); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .modal { background: #fff; border-radius: 14px; max-width: 560px; width: 100%; padding: 20px; max-height: 90vh; overflow: auto; }
+    .modal .liga { font-size: .8125rem; background: #f6f5fb; border-radius: 8px; padding: 9px 10px; word-break: break-all; margin: 8px 0; }
+    .hist { list-style: none; padding: 0; margin: 8px 0 0; max-height: 360px; overflow: auto; }
+    .hist li { display: grid; grid-template-columns: 128px 1fr; gap: 10px; padding: 7px 0; border-top: 1px solid #f1f1f4; font-size: .8125rem; }
+    .hist li span { color: var(--tx3); }
     .vacio { color: var(--tx3); font-size: .875rem; padding: 6px 0; }
     .acciones { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
     .resumen-t { width: 100%; border-collapse: collapse; font-size: .875rem; margin-top: 8px; }
@@ -171,18 +199,17 @@ export const prerender = true;
     .filtro-res .pill.on { background: var(--v); border-color: var(--v); color: #fff; }
     @media (max-width: 900px) {
       .kpis { grid-template-columns: repeat(2, 1fr); }
-      .hall-cab { display: none; }
-      .hall { grid-template-columns: 1fr 1fr; }
-      .hall .ancho { grid-column: 1 / -1; }
-      .hall .lbl { display: block; font-size: .6875rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--tx3); margin-bottom: 3px; }
-      .hall .x { width: auto; grid-column: 1 / -1; }
+      .hrow.a { grid-template-columns: 1fr; }
+      .hrow.b { grid-template-columns: 1fr 1fr; }
+      .hall .acc { grid-column: 1 / -1; }
     }
     @media (max-width: 560px) {
       .pt { grid-template-columns: 1fr; }
+      .ctrl { flex-wrap: wrap; }
       .seg { width: 100%; } .seg button { flex: 1; min-width: 0; }
     }
     @media print {
-      .no-print, .barra, .nav, .sug, .acciones, .hall .x { display: none !important; }
+      .no-print, .barra, .nav, .sug, .acciones, .hall .x, .mic, .nrs, .solo-consultor, .modal-fondo { display: none !important; }
       body { background: #fff; font-size: 12px; }
       * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .sec.cerrada .cuerpo { display: block; }
@@ -194,7 +221,7 @@ export const prerender = true;
 <body>
   <div class="cinta"></div>
 
-  <!-- Pantalla de inicio: sin ?s en la liga -->
+  <!-- Pantalla de inicio: sin ?s ni ?c en la liga -->
   <div id="inicio" class="wrap oculto">
     <div class="inicio">
       <div class="firma"><span class="marca">Sacscloud</span> · Checklist de entrega</div>
@@ -224,8 +251,10 @@ export const prerender = true;
     <div class="barra no-print">
       <div class="in">
         <span class="estado" id="estado"><span class="punto"></span><span id="estadoTxt">Cargando…</span></span>
-        <button class="btn peq" id="btnLiga">Copiar liga</button>
-        <button class="btn peq" id="btnCsv">Exportar a Excel</button>
+        <button class="btn peq ter solo-consultor" id="btnPend">Solo pendientes</button>
+        <button class="btn peq solo-consultor" id="btnEnviar">Enviar al cliente</button>
+        <button class="btn peq solo-consultor" id="btnLiga">Mi liga</button>
+        <button class="btn peq" id="btnCsv">Excel</button>
         <button class="btn peq ter" id="btnPdf">Imprimir / PDF</button>
       </div>
       <nav class="nav" id="nav"></nav>
@@ -234,7 +263,7 @@ export const prerender = true;
     <div class="wrap">
       <div class="firma"><span class="marca">Sacscloud</span> · Checklist de entrega</div>
       <h1>Suite de Consignación</h1>
-      <p class="sub">Se elige un proceso y se recorre con el cliente etapa por etapa. En cada punto se marca <b>Correcto</b>, <b>Falla</b> o <b>No aplica</b>; las mejoras, reglas y fallas se anotan en la tabla de cada etapa. Todo se guarda solo.</p>
+      <p class="sub" id="intro"></p>
 
       <div class="card ancla">
         <h2>Datos de la sesión</h2>
@@ -257,7 +286,7 @@ export const prerender = true;
       <div id="mapa"></div>
       <div id="secciones"></div>
 
-      <div class="card no-print" style="text-align:center">
+      <div class="card no-print solo-consultor" style="text-align:center">
         <p class="sub" style="margin-bottom:8px" id="otraTxt"></p>
         <button class="btn" id="btnOtra"></button>
       </div>
@@ -268,40 +297,72 @@ export const prerender = true;
         <div class="filtro-res no-print" id="filtroRes"></div>
         <div id="resumen"></div>
         <h3>Acuerdos de la sesión</h3>
-        <textarea data-cierre="acuerdos" placeholder="Lo que quedó decidido y los siguientes pasos"></textarea>
+        <div class="ta"><textarea data-cierre="acuerdos" placeholder="Lo que quedó decidido y los siguientes pasos"></textarea><button type="button" class="mic solo-consultor" title="Dictar"></button></div>
         <div id="firmaCierre"></div>
         <div class="grid" style="margin-top:12px">
           <label class="f">Consultor Sacscloud que valida<input type="text" data-cierre="firmaSacs" /></label>
         </div>
       </div>
+
+      <div class="card" id="historial">
+        <h2>Historial de cambios</h2>
+        <p class="sub" style="margin-top:4px">Quién marcó, anotó o firmó qué, y cuándo.</p>
+        <ul class="hist" id="hist"></ul>
+      </div>
     </div>
   </div>
 
   <div class="toast" id="toast"></div>
+  <input type="file" id="fotoInput" accept="image/*" hidden />
 
   <script is:inline define:vars={{ GUIA }}>
   (function () {
     const ID_GUIA = 'consignacion-suite';
     const API = '/api/entrega/sesion';
+    const API_FOTO = '/api/entrega/foto';
     const LS = 'entrega:' + ID_GUIA + ':';
     const PRIOS = ['Alta', 'Media', 'Baja'];
     const DECIS = ['Pendiente', 'Aprobado', 'Descartado', 'Hecho'];
+    const RESPS = ['Sacscloud', 'Cliente', 'Ambos'];
+    const NOTAS_RAPIDAS = ['Probado con venta real', 'Funciona, pero confunde', 'No lo usa', 'Lo quiere distinto', 'Revisar con el dueño', 'Pendiente de datos del cliente'];
+    const RES = { ok: 'Correcto', falla: 'Falla', na: 'No aplica', '': 'Sin revisar' };
+    const ICO_MIC = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
     const $ = (s, r) => (r || document).querySelector(s);
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const sel = id => '#s-' + CSS.escape(id);
 
-    let codigo = null, S = null, timer = null, guardando = false, pendiente = false, reintento = null, filtroRes = '';
+    // ROL: el consultor entra con ?s= (edita todo); el cliente con ?c= (solo lee y firma).
+    let ROL = 'consultor', codigo = null, cc = null;
+    let S = null, F = {}, actualizado = '', timer = null, guardando = false, pendiente = false, reintento = null, filtroRes = '';
+    const esCliente = () => ROL === 'cliente';
 
-    function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('on'), 2600); }
+    function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('on'), 2800); }
     function nuevoCodigo() { const a = new Uint8Array(12); crypto.getRandomValues(a); return Array.from(a, b => (b % 36).toString(36)).join('') + Date.now().toString(36).slice(-4); }
-    function vacio(cliente) { return { meta: { cliente: cliente || '', cuenta: '', fecha: new Date().toISOString().slice(0, 10), consultor: '', responsable: '', ambiente: '' }, sec: {}, extras: [], cierre: { acuerdos: '', firmaCliente: '', firmaSacs: '' }, cerradas: {}, cap: GUIA.capitulos[0].id, _ts: Date.now() }; }
+    function vacio(cliente) { return { meta: { cliente: cliente || '', cuenta: '', fecha: new Date().toISOString().slice(0, 10), consultor: '', responsable: '', ambiente: '' }, sec: {}, extras: [], cierre: { acuerdos: '', firmaSacs: '' }, cerradas: {}, cap: GUIA.capitulos[0].id, log: [], _ts: Date.now() }; }
     function capDe(id) { return GUIA.capitulos.find(c => c.id === id) || GUIA.capitulos[0]; }
     function secsDe(cap) { return cap.secciones.concat((S.extras || []).filter(x => x.cap === cap.id)); }
     function capActual() { return capDe(S.cap); }
     function est(id) { if (!S.sec[id]) S.sec[id] = { puntos: {}, extra: [], hall: [], usadas: {} }; return S.sec[id]; }
+    function secPorId(id) { for (const c of GUIA.capitulos) { const s = secsDe(c).find(x => x.id === id); if (s) return { cap: c, s }; } return null; }
+    function corto(t, n) { t = String(t || ''); return t.length > (n || 60) ? t.slice(0, (n || 60) - 1) + '…' : t; }
+
+    // ── Historial ─────────────────────────────────────────────────────────
+    function quien() { return esCliente() ? 'Cliente' : (S.meta.consultor || 'Consultor'); }
+    function logEv(texto) {
+      if (esCliente()) return;
+      S.log = S.log || []; S.log.push({ t: new Date().toISOString(), q: quien(), a: texto });
+      if (S.log.length > 600) S.log = S.log.slice(-600);
+    }
+    function fechaCorta(iso) { try { return new Date(iso).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (e) { return iso; } }
+    function pintarHist() {
+      const ev = (S.log || []).map(x => ({ t: x.t, q: x.q, a: x.a }));
+      Object.keys(F).forEach(id => { const f = F[id]; const r = id === '__cierre' ? { s: { nombre: 'Cierre de la sesión' } } : secPorId(id); ev.push({ t: f.at, q: f.nombre + (f.desde === 'cliente' ? ' (desde su liga)' : ''), a: 'Firmó de enterado y aceptado · ' + (r ? r.s.nombre : id) }); });
+      ev.sort((a, b) => (a.t < b.t ? 1 : -1));
+      $('#hist').innerHTML = ev.length ? ev.slice(0, 300).map(x => '<li><span>' + esc(fechaCorta(x.t)) + '</span><div><b>' + esc(x.q) + '</b> · ' + esc(x.a) + '</div></li>').join('') : '<li><span></span><div class="vacio">Sin movimientos todavía.</div></li>';
+    }
 
     // ── Guardado: dispositivo siempre, servidor con espera de 1 s ───────────
-    function local() { try { localStorage.setItem(LS + codigo, JSON.stringify(S)); } catch (e) {} }
+    function local() { if (esCliente()) return; try { localStorage.setItem(LS + codigo, JSON.stringify(S)); } catch (e) {} }
     function recordar() {
       try {
         const r = JSON.parse(localStorage.getItem(LS + 'recientes') || '[]').filter(x => x.c !== codigo);
@@ -311,30 +372,21 @@ export const prerender = true;
     }
     function estado(cls, txt) { $('#estado').className = 'estado ' + cls; $('#estadoTxt').textContent = txt; }
     function cambio() {
+      if (esCliente()) return;
       S._ts = Date.now(); S._sinc = false; local();
       estado('sav', 'Cambios sin guardar…');
       clearTimeout(timer); timer = setTimeout(subir, 1000);
-      pintarResumen();
-      avisosFirma();
-    }
-    // Si algo cambia en una etapa ya firmada, se avisa en el momento.
-    function avisosFirma() {
-      if (!S) return;
-      secsDe(capActual()).forEach(s => {
-        const e = S.sec[s.id]; if (!e || !e.firma) return;
-        const a = document.querySelector(sel(s.id) + ' [data-aviso]'); if (a) a.classList.toggle('oculto', e.firma.h === huella(e));
-      });
-      const f = S.cierre && S.cierre.firma; const ac = document.querySelector('#firmaCierre [data-aviso]');
-      if (f && ac) ac.classList.toggle('oculto', f.h === huellaTodo());
+      pintarResumen(); avisosFirma(); pintarHist();
     }
     async function subir() {
+      if (esCliente()) return;
       if (guardando) { pendiente = true; return; }
       guardando = true; pendiente = false; estado('sav', 'Guardando…');
       try {
         const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ codigo, guia: ID_GUIA, cliente: S.meta.cliente, data: S }) });
         const j = await r.json().catch(() => ({}));
         if (!r.ok || !j.ok) throw new Error(j.error || 'Error ' + r.status);
-        S._sinc = true; local(); recordar();
+        S._sinc = true; cc = j.codigo_cliente || cc; actualizado = j.updated_at || actualizado; local(); recordar();
         estado('ok', 'Guardado ' + new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }));
         clearTimeout(reintento);
       } catch (e) {
@@ -349,27 +401,71 @@ export const prerender = true;
 
     // ── Arranque ───────────────────────────────────────────────────────────
     async function arrancar() {
+      if (!(window.SpeechRecognition || window.webkitSpeechRecognition)) document.body.classList.add('sin-voz');
       const q = new URLSearchParams(location.search);
       codigo = (q.get('s') || '').toLowerCase();
+      const qc = (q.get('c') || '').toLowerCase();
+      if (/^[a-z0-9]{12,40}$/.test(qc) && !/^[a-z0-9]{12,40}$/.test(codigo)) return arrancarCliente(qc);
       if (!/^[a-z0-9]{12,40}$/.test(codigo)) return pantallaInicio();
       $('#app').classList.remove('oculto');
+      $('#intro').innerHTML = 'Se elige un proceso y se recorre con el cliente etapa por etapa. En cada punto se marca <b>Correcto</b>, <b>Falla</b> o <b>No aplica</b>; las mejoras, reglas y fallas se anotan en la tabla de cada etapa y el cliente firma de enterado al final de cada una. Todo se guarda solo.';
       let loc = null; try { loc = JSON.parse(localStorage.getItem(LS + codigo) || 'null'); } catch (e) {}
-      let srv = null, red = true;
+      let fila = null, red = true;
       try {
         const r = await fetch(API + '?s=' + codigo, { cache: 'no-store' });
         const j = await r.json(); if (!j.ok) throw new Error(j.error);
-        srv = j.sesion && j.sesion.data;
+        fila = j.sesion;
       } catch (e) { red = false; }
+      const srv = fila && fila.data;
+      if (fila) { F = fila.firmas || {}; cc = fila.codigo_cliente || null; actualizado = fila.updated_at || ''; }
       // Gana el servidor, salvo que este dispositivo tenga cambios que no alcanzó a subir.
-      if (loc && !loc._sinc && (!srv || (loc._ts || 0) > (srv._ts || 0))) { S = loc; normalizar(); pintar(); subir(); return; }
-      S = srv || loc || vacio('');
-      normalizar(); pintar();
-      if (!red) estado('err', 'Sin conexión: trabajando en este dispositivo');
-      else if (!srv) subir();
-      else { S._sinc = true; local(); recordar(); estado('ok', 'Sesión cargada'); }
+      if (loc && !loc._sinc && (!srv || (loc._ts || 0) > (srv._ts || 0))) { S = loc; normalizar(); pintar(); subir(); }
+      else {
+        S = srv || loc || vacio('');
+        normalizar(); pintar();
+        if (!red) estado('err', 'Sin conexión: trabajando en este dispositivo');
+        else if (!srv) subir();
+        else { S._sinc = true; local(); recordar(); estado('ok', 'Sesión cargada'); }
+      }
+      setInterval(refrescar, 20000);
     }
+
+    async function arrancarCliente(c) {
+      ROL = 'cliente'; cc = c; document.body.classList.add('ro');
+      $('#app').classList.remove('oculto');
+      $('#intro').innerHTML = 'Aquí está lo que se revisó contigo en la entrega de la Suite de Consignación. Al final de cada etapa puedes <b>firmar de enterado y aceptado</b>.';
+      try {
+        const r = await fetch(API + '?c=' + c, { cache: 'no-store' });
+        const j = await r.json(); if (!j.ok) throw new Error(j.error);
+        S = j.sesion.data || vacio(''); F = j.sesion.firmas || {}; actualizado = j.sesion.updated_at || '';
+        normalizar(); pintar(); estado('ok', 'Vista del cliente');
+        setInterval(refrescar, 20000);
+      } catch (e) {
+        document.querySelector('#app .wrap').innerHTML = '<div class="card"><h2>Esta liga no está disponible</h2><p class="sub">Pide al consultor que te la vuelva a enviar.</p></div>';
+      }
+    }
+
+    // Cada 20 s: firmas nuevas (el cliente pudo firmar desde su teléfono) y,
+    // en la vista del cliente, lo que el consultor siga anotando.
+    function ocupado() { return !!document.querySelector('[data-pad].con') || [...document.querySelectorAll('[data-fnom]')].some(i => i.value) || (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)); }
+    async function refrescar() {
+      if (document.hidden) return;
+      try {
+        const r = await fetch(API + (esCliente() ? '?c=' + cc : '?s=' + codigo), { cache: 'no-store' });
+        const j = await r.json(); if (!j.ok || !j.sesion) return;
+        const nuevas = JSON.stringify(j.sesion.firmas || {}) !== JSON.stringify(F);
+        const cambiaData = esCliente() && j.sesion.updated_at !== actualizado;
+        if (!nuevas && !cambiaData) return;
+        if (ocupado()) return;
+        F = j.sesion.firmas || {};
+        if (cambiaData) { const cap = S.cap; S = j.sesion.data; S.cap = cap; actualizado = j.sesion.updated_at; normalizar(); }
+        pintar();
+        if (nuevas && !esCliente()) toast('Hay firmas nuevas del cliente');
+      } catch (e) {}
+    }
+
     function normalizar() {
-      S.sec = S.sec || {}; S.extras = S.extras || []; S.cerradas = S.cerradas || {}; S.cierre = S.cierre || {};
+      S.sec = S.sec || {}; S.extras = S.extras || []; S.cerradas = S.cerradas || {}; S.cierre = S.cierre || {}; S.log = S.log || [];
       if (!GUIA.capitulos.some(c => c.id === S.cap)) S.cap = GUIA.capitulos[0].id;
       const pc = (new URLSearchParams(location.search)).get('p');
       if (pc && GUIA.capitulos.some(c => c.id === pc)) S.cap = pc;
@@ -393,10 +489,10 @@ export const prerender = true;
 
     // ── Conteos ────────────────────────────────────────────────────────────
     function conteo(s) {
-      const e = est(s.id); const tot = s.puntos.length + e.extra.length; let hechos = 0, fallas = 0;
-      s.puntos.forEach((_, i) => { const p = e.puntos[i]; if (p && p.e) { hechos++; if (p.e === 'falla') fallas++; } });
-      e.extra.forEach(p => { if (p.e) { hechos++; if (p.e === 'falla') fallas++; } });
-      return { tot, hechos, fallas, hall: e.hall.length, firm: e.firma ? 1 : 0 };
+      const e = est(s.id); const tot = s.puntos.length + e.extra.length; let hechos = 0, fallas = 0, ok = 0;
+      s.puntos.forEach((_, i) => { const p = e.puntos[i]; if (p && p.e) { hechos++; if (p.e === 'falla') fallas++; else ok++; } });
+      e.extra.forEach(p => { if (p.e) { hechos++; if (p.e === 'falla') fallas++; else ok++; } });
+      return { tot, hechos, fallas, ok, hall: e.hall.length, firm: F[s.id] ? 1 : 0 };
     }
     function conteoCap(cap) {
       const t = { tot: 0, hechos: 0, fallas: 0, hall: 0, firm: 0, secs: 0 };
@@ -410,12 +506,17 @@ export const prerender = true;
       document.querySelectorAll('[data-cierre]').forEach(el => { el.value = S.cierre[el.dataset.cierre] || ''; el.oninput = () => { S.cierre[el.dataset.cierre] = el.value; cambio(); }; });
       pintarCap();
       pintarFirmaCierre();
+      pintarHist();
+      bloquear(document);
     }
-    function huellaTodo() { const t = JSON.stringify([S.sec && Object.keys(S.sec).map(k => [S.sec[k].puntos, S.sec[k].extra, S.sec[k].hall]), S.cierre.acuerdos]); let h = 5381; for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
-    function pintarFirmaCierre() {
-      const f = S.cierre.firma;
-      $('#firmaCierre').innerHTML = htmlFirma('Firma del cliente · cierre de la sesión', LEY_CIERRE, f, f && f.h !== huellaTodo());
-      enlazarFirma($('#firmaCierre [data-firma]'), () => S.cierre.firma, v => { S.cierre.firma = v; }, huellaTodo, pintarFirmaCierre);
+
+    // Vista del cliente: todo se ve, nada se edita salvo la firma.
+    function bloquear(root) {
+      if (!esCliente()) return;
+      root.querySelectorAll('input, textarea, select, button').forEach(el => {
+        if (el.closest('[data-firma]') || el.closest('.barra') || el.closest('.caps') || el.closest('.filtro-res') || el.closest('[data-tog]')) return;
+        if (el.tagName === 'BUTTON') { if (!el.closest('.seg')) return; el.disabled = true; } else { el.disabled = true; }
+      });
     }
 
     function pintarCap() {
@@ -429,6 +530,7 @@ export const prerender = true;
       $('#otraTxt').textContent = esRep ? '¿El cliente usa una pantalla o reporte que no está en la lista?' : '¿Hay una etapa de su operación que no está en la lista?';
       $('#btnOtra').textContent = esRep ? 'Agregar pantalla o reporte' : 'Agregar etapa';
       pintarResumen();
+      bloquear($('#secciones'));
     }
 
     // Mapa del proceso: rejilla de 5 columnas; cada caja salta a su etapa.
@@ -467,9 +569,14 @@ export const prerender = true;
 
     function irACap(id) {
       if (S.cap === id) return;
-      S.cap = id; pintarCap(); cambio();
+      S.cap = id; pintarCap(); if (!esCliente()) cambio(); else pintarResumen();
       const el = $('#capCab'); window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 110, behavior: 'smooth' });
     }
+
+    // ── Piezas de UI reutilizables ─────────────────────────────────────────
+    function htmlTxt(attr, valor, ph) { return '<div class="ta"><textarea ' + attr + ' placeholder="' + esc(ph || '') + '">' + esc(valor) + '</textarea><button type="button" class="mic solo-consultor" title="Dictar">' + ICO_MIC + '</button></div>'; }
+    function htmlFotos(arr) { return (arr || []).map((u, k) => '<div class="foto"><a href="' + esc(u) + '" target="_blank" rel="noopener"><img src="' + esc(u) + '" alt="Foto ' + (k + 1) + '" loading="lazy" /></a><button type="button" class="solo-consultor" data-quitafoto="' + k + '" title="Quitar">✕</button></div>').join(''); }
+    function opts(list, v, ph) { return (ph ? '<option value="">' + ph + '</option>' : '') + list.map(o => '<option' + (o === v ? ' selected' : '') + '>' + esc(o) + '</option>').join(''); }
 
     function htmlSec(cap, s, i) {
       const e = est(s.id); const c = conteo(s); const cerrada = S.cerradas[s.id];
@@ -479,57 +586,216 @@ export const prerender = true;
       const sug = (s.sugerencias || []).map((g, k) => '<div class="sug' + (e.usadas[k] ? ' usada' : '') + '"><span class="tp">' + esc(g.tipo) + '</span><span class="tx">' + esc(g.texto) + '</span><button class="btn peq" data-sug="' + k + '"' + (e.usadas[k] ? ' disabled' : '') + '>' + (e.usadas[k] ? 'En la tabla' : 'Agregar') + '</button></div>').join('');
       const esRep = cap.id === 'rep';
       const num = s.clave ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5 9-10"/></svg>' : (secsDe(cap).filter(x => !x.clave).indexOf(s) + 1);
-      return '<section class="card sec' + (s.clave ? ' clave' : '') + (cerrada ? ' cerrada' : '') + '" id="s-' + esc(s.id) + '">'
+      const f = F[s.id];
+      return '<section class="card sec' + (s.clave ? ' clave' : '') + (cerrada ? ' cerrada' : '') + (c.tot && c.hechos === c.tot && !c.fallas ? ' completa' : '') + '" id="s-' + esc(s.id) + '">'
         + '<div class="sec-cab" data-tog><div class="num">' + num + '</div><div class="t"><h2>' + esc(s.nombre) + '</h2>'
         + (s.donde ? '<div class="meta"><b>Dónde:</b> ' + esc(s.donde) + '</div>' : '')
         + (s.para ? '<div class="meta"><b>' + (esRep ? 'Para qué sirve:' : 'Qué pasa:') + '</b> ' + esc(s.para) + '</div>' : '')
-        + '</div>' + (e.firma ? '<span class="fir">Firmada</span>' : '') + '<span class="prog' + (c.tot && c.hechos === c.tot ? ' done' : '') + '" data-prog>' + c.hechos + '/' + c.tot + '</span>'
+        + '</div>' + (f ? '<span class="fir">Firmada</span>' : '') + '<span class="prog' + (c.tot && c.hechos === c.tot ? ' done' : '') + '" data-prog>' + c.hechos + '/' + c.tot + '</span>'
         + '<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>'
         + '<div class="cuerpo">'
         + (s.nota ? '<div class="nota-calc">' + esc(s.nota) + '</div>' : '')
         + (hoy || fil ? '<h3>Lo que muestra hoy</h3><div class="chips">' + hoy + fil + '</div>' : '')
         + (s.editable ? '<h3>' + (esRep ? 'Pantalla' : 'Etapa') + '</h3><div class="grid"><label class="f">Nombre<input type="text" data-ren value="' + esc(s.nombre) + '" /></label><label class="f">Dónde está<input type="text" data-donde value="' + esc(s.donde || '') + '" /></label></div>' : '')
         + '<h3>' + (s.clave ? 'Pruebas de punta a punta' : 'Puntos a validar') + '</h3><div>' + (pts || '<div class="vacio">Agrega los puntos que se van a revisar.</div>') + '</div>'
-        + '<div class="acciones no-print"><button class="btn peq ter" data-addpt>Agregar punto a validar</button></div>'
-        + (sug ? '<h3>Sugerencias para revisar con el cliente</h3>' + sug : '')
+        + '<div class="acciones no-print solo-consultor"><button class="btn peq ter" data-addpt>Agregar punto a validar</button></div>'
+        + (sug ? '<div class="solo-consultor"><h3>Sugerencias para revisar con el cliente</h3>' + sug + '</div>' : '')
         + '<h3>' + (esRep ? 'Lo que le falta (campo, dato, filtro…)' : 'Hallazgos: mejoras, reglas y fallas') + '</h3>'
-        + '<div class="hall-cab"><span>Tipo</span><span>' + esc(cap.cols.a) + '</span><span>' + esc(cap.cols.b) + '</span><span>Prioridad</span><span>Decisión</span><span></span></div>'
         + '<div>' + (e.hall.length ? e.hall.map((h, k) => htmlHall(cap, h, k)).join('') : '<div class="vacio">Sin anotaciones.</div>') + '</div>'
-        + '<div class="acciones no-print"><button class="btn peq" data-addh>' + (esRep ? 'Agregar faltante' : 'Agregar hallazgo') + '</button>' + (s.editable ? '<button class="btn peq del" data-delsec>Quitar</button>' : '') + '</div>'
-        + htmlFirma('Firma del cliente · enterado y aceptado', LEY_ETAPA, e.firma, e.firma && e.firma.h !== huella(e))
+        + '<div class="acciones no-print solo-consultor"><button class="btn peq" data-addh>' + (esRep ? 'Agregar faltante' : 'Agregar hallazgo') + '</button>' + (s.editable ? '<button class="btn peq del" data-delsec>Quitar</button>' : '') + '</div>'
+        + htmlFirma('Firma del cliente · enterado y aceptado', LEY_ETAPA, f, f && f.h !== huella(e))
         + '</div></section>';
     }
 
+    function htmlPunto(key, t, p, extra) {
+      const b = (v, l) => '<button class="' + v + (p.e === v ? ' on' : '') + '" data-e="' + v + '">' + l + '</button>';
+      const abierta = p.e === 'falla' || !!p.n || (p.fotos && p.fotos.length);
+      return '<div class="pt' + (abierta ? ' con-nota' : '') + (p.e === 'ok' || p.e === 'na' ? ' hecho' : '') + '" data-pt="' + key + '"><div class="txt">' + (extra ? '<input type="text" data-ptt value="' + esc(t) + '" placeholder="Qué se valida" />' : esc(t)) + '</div>'
+        + '<div class="ctrl"><div class="seg">' + b('ok', 'Correcto') + b('falla', 'Falla') + b('na', 'No aplica') + '</div><button class="btn peq ter solo-consultor" data-abrirnota title="Nota o foto">Nota</button></div>'
+        + '<div class="nota">' + htmlTxt('data-nota', p.n || '', 'Qué se vio / comentario del cliente')
+        + '<div class="nrs solo-consultor">' + NOTAS_RAPIDAS.map(x => '<button type="button" class="nr" data-nr="' + esc(x) + '">' + esc(x) + '</button>').join('') + '</div>'
+        + '<div class="fotos" data-fotos>' + htmlFotos(p.fotos) + '</div>'
+        + '<div class="acciones solo-consultor"><button type="button" class="btn peq ter" data-addfoto>Agregar foto</button>'
+        + (p.e === 'falla' ? (p.hz ? '<button type="button" class="btn peq" disabled>Ya está en hallazgos</button>' : '<button type="button" class="btn peq" data-ahz>Pasar a hallazgos</button>') : '')
+        + '</div></div></div>';
+    }
+
+    function htmlHall(cap, h, k) {
+      return '<div class="hall" data-h="' + k + '">'
+        + '<div class="hrow a"><div><span class="lbl">Tipo</span><select data-hf="tipo">' + opts(cap.tipos, h.tipo, 'Tipo…') + '</select></div>'
+        + '<div><span class="lbl">' + esc(cap.cols.a) + '</span>' + htmlTxt('data-hf="que"', h.que, '') + '</div>'
+        + '<div><span class="lbl">' + esc(cap.cols.b) + '</span>' + htmlTxt('data-hf="uso"', h.uso, '') + '</div></div>'
+        + '<div class="hrow b"><div><span class="lbl">Prioridad</span><select data-hf="prio">' + opts(PRIOS, h.prio, '—') + '</select></div>'
+        + '<div><span class="lbl">Decisión</span><select data-hf="deci">' + opts(DECIS, h.deci || 'Pendiente') + '</select></div>'
+        + '<div><span class="lbl">Responsable</span><select data-hf="resp">' + opts(RESPS, h.resp, '—') + '</select></div>'
+        + '<div><span class="lbl">Fecha compromiso</span><input type="date" data-hf="fecha" value="' + esc(h.fecha || '') + '" /></div>'
+        + '<div class="acc solo-consultor"><button type="button" class="btn peq ter" data-addfoto title="Agregar foto">Foto</button><button class="btn peq del x" data-delh title="Quitar">✕</button></div></div>'
+        + '<div class="fotos" data-fotos>' + htmlFotos(h.fotos) + '</div></div>';
+    }
+
+    function repintarSec(cap, s) {
+      const el = $(sel(s.id)); if (!el) return; const i = secsDe(cap).indexOf(s);
+      const tmp = document.createElement('div'); tmp.innerHTML = htmlSec(cap, s, i); el.replaceWith(tmp.firstChild); enlazar(cap, s); bloquear($(sel(s.id)));
+    }
+
+    // ── Dictado por voz (Web Speech API; si no hay, el botón no aparece) ───
+    let rec = null, recBtn = null;
+    function dictar(btn) {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) return;
+      const ta = btn.parentNode.querySelector('textarea');
+      if (rec) { const igual = recBtn === btn; rec.stop(); if (igual) return; }
+      rec = new SR(); rec.lang = 'es-MX'; rec.continuous = true; rec.interimResults = false; recBtn = btn; btn.classList.add('on');
+      rec.onresult = ev => {
+        let t = ''; for (let i = ev.resultIndex; i < ev.results.length; i++) if (ev.results[i].isFinal) t += ev.results[i][0].transcript;
+        if (!t) return; t = t.trim(); t = t.charAt(0).toUpperCase() + t.slice(1);
+        ta.value = (ta.value ? ta.value.replace(/\s+$/, '') + ' ' : '') + t; ta.dispatchEvent(new Event('input'));
+      };
+      rec.onerror = ev => { if (ev.error === 'not-allowed') toast('Permite el micrófono para dictar.'); };
+      rec.onend = () => { btn.classList.remove('on'); if (recBtn === btn) { rec = null; recBtn = null; } };
+      try { rec.start(); toast('Dictando… toca otra vez para terminar'); } catch (e) { btn.classList.remove('on'); rec = null; }
+    }
+    document.addEventListener('click', ev => { const m = ev.target.closest('.mic'); if (m) { ev.preventDefault(); dictar(m); } });
+    document.querySelectorAll('.mic').forEach(m => { if (!m.innerHTML) m.innerHTML = ICO_MIC; });
+
+    // ── Fotos: se comprimen en la tableta y se suben a Storage ────────────
+    let fotoDestino = null;
+    $('#fotoInput').onchange = ev => { const f = ev.target.files && ev.target.files[0]; ev.target.value = ''; if (f && fotoDestino) subirFoto(f, fotoDestino); };
+    function pedirFoto(destino) { fotoDestino = destino; $('#fotoInput').click(); }
+    function comprimir(file) {
+      return new Promise(res => {
+        const img = new Image(); const url = URL.createObjectURL(file);
+        img.onload = () => {
+          const k = Math.min(1, 1600 / Math.max(img.width, img.height)); const c = document.createElement('canvas');
+          c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          URL.revokeObjectURL(url); c.toBlob(b => res(b || file), 'image/jpeg', 0.78);
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); res(file); };
+        img.src = url;
+      });
+    }
+    async function subirFoto(file, d) {
+      if (!navigator.onLine) return toast('Sin conexión: la foto se sube cuando vuelva la señal.');
+      const caja = d.caja(); if (caja) caja.insertAdjacentHTML('beforeend', '<div class="foto subiendo">Subiendo…</div>');
+      try {
+        const blob = await comprimir(file);
+        const fd = new FormData(); fd.append('codigo', codigo); fd.append('file', new File([blob], 'foto.jpg', { type: blob.type || 'image/jpeg' }));
+        const r = await fetch(API_FOTO, { method: 'POST', body: fd }); const j = await r.json().catch(() => ({}));
+        if (!r.ok || !j.ok) throw new Error(j.error || 'No se pudo subir');
+        const arr = d.arr(); arr.push(j.url); logEv('Agregó una foto · ' + d.donde); d.listo(); cambio();
+      } catch (e) { toast(e.message || 'No se pudo subir la foto'); const s = caja && caja.querySelector('.subiendo'); if (s) s.remove(); }
+    }
+    function enlazarFotos(cont, getArr, donde, listo) {
+      const caja = () => cont.querySelector('[data-fotos]');
+      const add = cont.querySelector('[data-addfoto]');
+      const destino = { caja, arr: getArr, donde, listo };
+      if (add) add.onclick = () => pedirFoto(destino);
+      cont.querySelectorAll('[data-quitafoto]').forEach(b => b.onclick = () => { const a = getArr(); a.splice(+b.dataset.quitafoto, 1); logEv('Quitó una foto · ' + donde); listo(); cambio(); });
+      // Pegar una captura directo en la nota también la sube.
+      cont.querySelectorAll('textarea').forEach(ta => ta.addEventListener('paste', ev => {
+        const it = [...((ev.clipboardData && ev.clipboardData.items) || [])].find(x => x.type && x.type.indexOf('image/') === 0);
+        if (it) { ev.preventDefault(); subirFoto(it.getAsFile(), destino); }
+      }));
+    }
+
+    function enlazar(cap, s) {
+      const el = $(sel(s.id)); const e = est(s.id);
+      el.querySelector('[data-tog]').onclick = ev => { if (ev.target.closest('input,button,select,textarea')) return; S.cerradas[s.id] = !S.cerradas[s.id]; el.classList.toggle('cerrada'); if (!esCliente()) cambio(); };
+      el.querySelectorAll('[data-pt]').forEach(row => {
+        const key = row.dataset.pt; const extra = key[0] === 'x'; const k = +key.slice(1);
+        const obj = () => extra ? e.extra[k] : (e.puntos[k] = e.puntos[k] || {});
+        const texto = () => extra ? (e.extra[k].t || 'Punto agregado') : s.puntos[k];
+        row.querySelectorAll('[data-e]').forEach(b => b.onclick = () => {
+          const p = obj(); p.e = p.e === b.dataset.e ? '' : b.dataset.e;
+          logEv(s.nombre + ' · «' + corto(texto()) + '» → ' + RES[p.e || '']);
+          repintarSec(cap, s); prog(s); cambio();
+          if (p.e === 'falla') { const t = $(sel(s.id) + ' [data-pt="' + key + '"] [data-nota]'); if (t) t.focus(); }
+        });
+        const nb = row.querySelector('[data-abrirnota]'); if (nb) nb.onclick = () => { row.classList.toggle('con-nota'); if (row.classList.contains('con-nota')) row.querySelector('[data-nota]').focus(); };
+        row.querySelector('[data-nota]').oninput = ev => { obj().n = ev.target.value; cambio(); };
+        row.querySelectorAll('[data-nr]').forEach(b => b.onclick = () => { const p = obj(); p.n = (p.n ? p.n.replace(/\s+$/, '') + ' · ' : '') + b.dataset.nr; row.querySelector('[data-nota]').value = p.n; cambio(); });
+        const tt = row.querySelector('[data-ptt]'); if (tt) tt.oninput = ev => { obj().t = ev.target.value; cambio(); };
+        enlazarFotos(row.querySelector('.nota'), () => { const p = obj(); p.fotos = p.fotos || []; return p.fotos; }, s.nombre, () => repintarSec(cap, s));
+        const ahz = row.querySelector('[data-ahz]');
+        if (ahz) ahz.onclick = () => {
+          const p = obj(); p.hz = true;
+          e.hall.push({ tipo: cap.id === 'rep' ? '' : 'Bug', que: corto(texto(), 200) + (p.n ? ' — ' + p.n : ''), uso: '', prio: '', deci: 'Pendiente', resp: '', fecha: '', fotos: (p.fotos || []).slice() });
+          logEv(s.nombre + ' · pasó a hallazgos «' + corto(texto()) + '»'); repintarSec(cap, s); cambio(); toast('Pasado a hallazgos: ponle prioridad y responsable');
+        };
+      });
+      const addpt = el.querySelector('[data-addpt]');
+      if (addpt) addpt.onclick = () => { e.extra.push({ t: '', e: '', n: '' }); logEv(s.nombre + ' · agregó un punto a validar'); repintarSec(cap, s); cambio(); const ins = document.querySelectorAll(sel(s.id) + ' [data-ptt]'); if (ins.length) ins[ins.length - 1].focus(); };
+      el.querySelectorAll('[data-sug]').forEach(b => b.onclick = () => {
+        const k = +b.dataset.sug; const g = s.sugerencias[k]; e.usadas[k] = true;
+        e.hall.push({ tipo: g.tipo, que: g.texto, uso: '', prio: '', deci: 'Pendiente', resp: '', fecha: '', fotos: [] });
+        logEv(s.nombre + ' · agregó «' + corto(g.texto) + '»'); repintarSec(cap, s); cambio(); toast('Agregado a la tabla');
+      });
+      el.querySelectorAll('[data-h]').forEach(row => {
+        const k = +row.dataset.h;
+        row.querySelectorAll('[data-hf]').forEach(f => {
+          const ev = (f.tagName === 'SELECT' || f.type === 'date') ? 'onchange' : 'oninput';
+          f[ev] = () => {
+            const ant = e.hall[k][f.dataset.hf]; e.hall[k][f.dataset.hf] = f.value;
+            if (f.dataset.hf === 'deci' || f.dataset.hf === 'prio' || f.dataset.hf === 'resp') logEv(s.nombre + ' · «' + corto(e.hall[k].que, 40) + '»: ' + f.dataset.hf.replace('deci', 'decisión').replace('prio', 'prioridad').replace('resp', 'responsable') + ' ' + (ant || '—') + ' → ' + (f.value || '—'));
+            cambio();
+          };
+        });
+        enlazarFotos(row, () => { const h = e.hall[k]; h.fotos = h.fotos || []; return h.fotos; }, s.nombre, () => repintarSec(cap, s));
+        row.querySelector('[data-delh]').onclick = () => { logEv(s.nombre + ' · quitó «' + corto(e.hall[k].que, 40) + '»'); e.hall.splice(k, 1); repintarSec(cap, s); cambio(); toast('Quitado'); };
+      });
+      const addh = el.querySelector('[data-addh]');
+      if (addh) addh.onclick = () => { e.hall.push({ tipo: '', que: '', uso: '', prio: '', deci: 'Pendiente', resp: '', fecha: '', fotos: [] }); logEv(s.nombre + ' · agregó un hallazgo'); repintarSec(cap, s); cambio(); const t = document.querySelectorAll(sel(s.id) + ' [data-hf="que"]'); if (t.length) t[t.length - 1].focus(); };
+      enlazarFirma(el.querySelector('[data-firma]'), s.id, () => huella(e), () => { repintarSec(cap, s); pintarResumen(); pintarHist(); });
+      const ren = el.querySelector('[data-ren]'); if (ren) ren.oninput = () => { s.nombre = ren.value; el.querySelector('h2').textContent = ren.value; cambio(); };
+      const don = el.querySelector('[data-donde]'); if (don) don.oninput = () => { s.donde = don.value; cambio(); };
+      const del = el.querySelector('[data-delsec]');
+      if (del) del.onclick = () => {
+        if (del.dataset.arm !== '1') { del.dataset.arm = '1'; del.textContent = '¿Seguro? Sí, quitar'; setTimeout(() => { del.dataset.arm = ''; del.textContent = 'Quitar'; }, 3500); return; }
+        logEv('Quitó la etapa «' + s.nombre + '»'); S.extras = S.extras.filter(x => x !== s); delete S.sec[s.id]; pintarCap(); cambio();
+      };
+    }
+
+    function prog(s) {
+      const c = conteo(s); const box = $(sel(s.id)); if (!box) return; const el = box.querySelector('[data-prog]');
+      el.textContent = c.hechos + '/' + c.tot; el.classList.toggle('done', c.tot > 0 && c.hechos === c.tot);
+      box.classList.toggle('completa', c.tot > 0 && c.hechos === c.tot && !c.fallas);
+    }
+
     // ── Firma de enterado y aceptado ───────────────────────────────────────
-    // El trazo se guarda como trayectoria SVG (unos cuantos KB), no como
-    // imagen. La huella dice si la etapa cambió después de firmarla.
+    // El trazo se guarda como trayectoria SVG (unos cuantos KB). Las firmas
+    // viven aparte (F) y solo las escribe la acción «firmar» del servidor.
+    // La huella dice si la etapa cambió después de firmarla.
     const LEY_ETAPA = 'Revisé esta etapa con el consultor. Estoy enterado y de acuerdo con lo validado y con los hallazgos anotados.';
     const LEY_CIERRE = 'Revisé con el consultor los procesos de esta sesión. Estoy enterado y de acuerdo con lo validado, los hallazgos y los acuerdos anotados.';
-    function huella(e) {
-      const t = JSON.stringify([e.puntos, e.extra, e.hall]); let h = 5381;
-      for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0;
-      return (h >>> 0).toString(36);
-    }
+    function hashTxt(t) { let h = 5381; for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
+    function huella(e) { return hashTxt(JSON.stringify([e.puntos, e.extra, e.hall])); }
+    function huellaTodo() { return hashTxt(JSON.stringify([Object.keys(S.sec).sort().map(k => [S.sec[k].puntos, S.sec[k].extra, S.sec[k].hall]), S.cierre.acuerdos || ''])); }
     function fechaFirma(iso) { try { return new Date(iso).toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) { return iso; } }
-    function htmlFirma(titulo, ley, f, cambio) {
+    function htmlFirma(titulo, ley, f, cambioTras) {
       if (f) return '<div class="firma-box" data-firma><h4>' + esc(titulo) + '</h4><div class="firmado">'
         + '<svg viewBox="0 0 600 150" preserveAspectRatio="xMidYMid meet"><path d="' + esc(f.d) + '" fill="none" stroke="#1d1b2e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-        + '<div class="q"><b>' + esc(f.nombre) + '</b>' + (f.puesto ? ' · ' + esc(f.puesto) : '') + '<br>Enterado y aceptado · ' + esc(fechaFirma(f.at)) + '</div>'
-        + '<button class="btn peq del no-print" data-quitarfirma style="margin-left:auto">Quitar firma</button></div>'
-        + '<div class="aviso-cambio' + (cambio ? '' : ' oculto') + '" data-aviso>⚠️ Hubo cambios después de la firma. Revísenlos con el cliente y vuelvan a firmar si hace falta.</div></div>';
-      return '<div class="firma-box no-print-vacia" data-firma><h4>' + esc(titulo) + '</h4><p class="ley">' + esc(ley) + '</p>'
+        + '<div class="q"><b>' + esc(f.nombre) + '</b>' + (f.puesto ? ' · ' + esc(f.puesto) : '') + '<br>Enterado y aceptado · ' + esc(fechaFirma(f.at)) + (f.desde === 'cliente' ? ' · desde su liga' : '') + '</div>'
+        + '<button class="btn peq del no-print solo-consultor" data-quitarfirma style="margin-left:auto">Quitar firma</button></div>'
+        + '<div class="aviso-cambio' + (cambioTras ? '' : ' oculto') + '" data-aviso>⚠️ Hubo cambios después de la firma. Revísenlos con el cliente y vuelvan a firmar si hace falta.</div></div>';
+      return '<div class="firma-box" data-firma><h4>' + esc(titulo) + '</h4><p class="ley">' + esc(ley) + '</p>'
         + '<div class="grid"><label class="f">Nombre de quien firma<input type="text" data-fnom autocomplete="off" /></label><label class="f">Puesto<input type="text" data-fpue autocomplete="off" /></label></div>'
         + '<div class="pad" data-pad style="margin-top:10px"><svg viewBox="0 0 600 150" preserveAspectRatio="none"><path d="" fill="none" stroke="#1d1b2e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ph">Firma aquí con el dedo o el lápiz</span></div>'
         + '<label class="chk"><input type="checkbox" data-facepto /><span>Enterado y aceptado.</span></label>'
         + '<div class="acciones"><button class="btn peq ter" data-flimpiar>Borrar trazo</button><button class="btn pri" data-ffirmar disabled>Firmar</button></div></div>';
     }
-    function enlazarFirma(box, get, set, huellaFn, repinta) {
+    async function guardarFirma(id, firma) {
+      const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ accion: 'firmar', id, firma }, esCliente() ? { cc } : { codigo })) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j.ok) throw new Error(j.error || 'No se pudo guardar la firma.');
+      F = j.firmas || {};
+    }
+    function enlazarFirma(box, id, huellaFn, repinta) {
       if (!box) return;
       const quitar = box.querySelector('[data-quitarfirma]');
       if (quitar) {
-        quitar.onclick = () => {
+        quitar.onclick = async () => {
           if (quitar.dataset.arm !== '1') { quitar.dataset.arm = '1'; quitar.textContent = '¿Seguro? Sí, quitar'; setTimeout(() => { quitar.dataset.arm = ''; quitar.textContent = 'Quitar firma'; }, 3500); return; }
-          set(null); repinta(); cambio(); toast('Firma quitada');
+          try { await guardarFirma(id, null); logEv('Quitó la firma · ' + (id === '__cierre' ? 'Cierre' : (secPorId(id) || { s: { nombre: id } }).s.nombre)); repinta(); cambio(); toast('Firma quitada'); }
+          catch (e) { toast(e.message); }
         };
         return;
       }
@@ -543,93 +809,51 @@ export const prerender = true;
       pad.onpointerup = pad.onpointercancel = () => { trazando = false; listo(); };
       box.querySelector('[data-flimpiar]').onclick = () => { d = ''; path.setAttribute('d', ''); pad.classList.remove('con'); listo(); };
       nom.oninput = listo; acepto.onchange = listo;
-      btn.onclick = () => {
-        set({ nombre: nom.value.trim().slice(0, 120), puesto: pue.value.trim().slice(0, 80), d: d, at: new Date().toISOString(), h: huellaFn ? huellaFn() : '' });
-        repinta(); cambio(); toast('Firmado: enterado y aceptado');
+      btn.onclick = async () => {
+        btn.disabled = true; btn.textContent = 'Firmando…';
+        try {
+          await guardarFirma(id, { nombre: nom.value.trim(), puesto: pue.value.trim(), d, h: huellaFn ? huellaFn() : '' });
+          repinta(); pintarResumen(); toast('Firmado: enterado y aceptado');
+        } catch (e) { btn.disabled = false; btn.textContent = 'Firmar'; toast(e.message); }
       };
     }
-
-    function htmlPunto(key, t, p, extra) {
-      const b = (v, l) => '<button class="' + v + (p.e === v ? ' on' : '') + '" data-e="' + v + '">' + l + '</button>';
-      return '<div class="pt' + (p.e === 'falla' || p.n ? ' con-nota' : '') + '" data-pt="' + key + '"><div class="txt">' + (extra ? '<input type="text" data-ptt value="' + esc(t) + '" placeholder="Qué se valida" />' : esc(t)) + '</div>'
-        + '<div class="seg">' + b('ok', 'Correcto') + b('falla', 'Falla') + b('na', 'No aplica') + '</div>'
-        + '<div class="nota"><textarea data-nota placeholder="Qué se vio / comentario del cliente">' + esc(p.n || '') + '</textarea></div></div>';
+    function pintarFirmaCierre() {
+      const f = F.__cierre;
+      $('#firmaCierre').innerHTML = htmlFirma('Firma del cliente · cierre de la sesión', LEY_CIERRE, f, f && f.h !== huellaTodo());
+      enlazarFirma($('#firmaCierre [data-firma]'), '__cierre', huellaTodo, () => { pintarFirmaCierre(); pintarHist(); });
     }
-
-    function opts(list, v, ph) { return (ph ? '<option value="">' + ph + '</option>' : '') + list.map(o => '<option' + (o === v ? ' selected' : '') + '>' + esc(o) + '</option>').join(''); }
-    function htmlHall(cap, h, k) {
-      return '<div class="hall" data-h="' + k + '">'
-        + '<div><span class="lbl">Tipo</span><select data-hf="tipo">' + opts(cap.tipos, h.tipo, 'Tipo…') + '</select></div>'
-        + '<div class="ancho"><span class="lbl">' + esc(cap.cols.a) + '</span><textarea data-hf="que">' + esc(h.que) + '</textarea></div>'
-        + '<div class="ancho"><span class="lbl">' + esc(cap.cols.b) + '</span><textarea data-hf="uso">' + esc(h.uso) + '</textarea></div>'
-        + '<div><span class="lbl">Prioridad</span><select data-hf="prio">' + opts(PRIOS, h.prio, '—') + '</select></div>'
-        + '<div><span class="lbl">Decisión</span><select data-hf="deci">' + opts(DECIS, h.deci || 'Pendiente') + '</select></div>'
-        + '<button class="btn peq del x" data-delh title="Quitar">✕</button></div>';
-    }
-
-    function repintarSec(cap, s) {
-      const el = $(sel(s.id)); const i = secsDe(cap).indexOf(s);
-      const tmp = document.createElement('div'); tmp.innerHTML = htmlSec(cap, s, i); el.replaceWith(tmp.firstChild); enlazar(cap, s);
-    }
-
-    function enlazar(cap, s) {
-      const el = $(sel(s.id)); const e = est(s.id);
-      el.querySelector('[data-tog]').onclick = ev => { if (ev.target.closest('input,button,select,textarea')) return; S.cerradas[s.id] = !S.cerradas[s.id]; el.classList.toggle('cerrada'); cambio(); };
-      el.querySelectorAll('[data-pt]').forEach(row => {
-        const key = row.dataset.pt; const extra = key[0] === 'x'; const k = +key.slice(1);
-        const obj = () => extra ? e.extra[k] : (e.puntos[k] = e.puntos[k] || {});
-        row.querySelectorAll('[data-e]').forEach(b => b.onclick = () => {
-          const p = obj(); p.e = p.e === b.dataset.e ? '' : b.dataset.e;
-          row.querySelectorAll('[data-e]').forEach(x => x.classList.toggle('on', x.dataset.e === p.e));
-          row.classList.toggle('con-nota', p.e === 'falla' || !!p.n);
-          if (p.e === 'falla') row.querySelector('[data-nota]').focus();
-          prog(s); cambio();
-        });
-        row.querySelector('[data-nota]').oninput = ev => { obj().n = ev.target.value; cambio(); };
-        const tt = row.querySelector('[data-ptt]'); if (tt) tt.oninput = ev => { obj().t = ev.target.value; cambio(); };
+    // Si algo cambia en una etapa ya firmada, se avisa en el momento.
+    function avisosFirma() {
+      if (!S) return;
+      secsDe(capActual()).forEach(s => {
+        const e = S.sec[s.id]; if (!e || !F[s.id]) return;
+        const a = document.querySelector(sel(s.id) + ' [data-aviso]'); if (a) a.classList.toggle('oculto', F[s.id].h === huella(e));
       });
-      el.querySelector('[data-addpt]').onclick = () => { e.extra.push({ t: '', e: '', n: '' }); repintarSec(cap, s); cambio(); const ins = document.querySelectorAll(sel(s.id) + ' [data-ptt]'); if (ins.length) ins[ins.length - 1].focus(); };
-      el.querySelectorAll('[data-sug]').forEach(b => b.onclick = () => {
-        const k = +b.dataset.sug; const g = s.sugerencias[k]; e.usadas[k] = true;
-        e.hall.push({ tipo: g.tipo, que: g.texto, uso: '', prio: '', deci: 'Pendiente' }); repintarSec(cap, s); cambio(); toast('Agregado a la tabla');
-      });
-      el.querySelectorAll('[data-h]').forEach(row => {
-        const k = +row.dataset.h;
-        row.querySelectorAll('[data-hf]').forEach(f => { const ev = f.tagName === 'SELECT' ? 'onchange' : 'oninput'; f[ev] = () => { e.hall[k][f.dataset.hf] = f.value; cambio(); }; });
-        row.querySelector('[data-delh]').onclick = () => { e.hall.splice(k, 1); repintarSec(cap, s); cambio(); toast('Quitado'); };
-      });
-      el.querySelector('[data-addh]').onclick = () => { e.hall.push({ tipo: '', que: '', uso: '', prio: '', deci: 'Pendiente' }); repintarSec(cap, s); cambio(); const t = document.querySelectorAll(sel(s.id) + ' [data-hf="que"]'); if (t.length) t[t.length - 1].focus(); };
-      enlazarFirma(el.querySelector('[data-firma]'), () => e.firma, v => { e.firma = v; }, () => huella(e), () => { repintarSec(cap, s); pintarResumen(); });
-      const ren = el.querySelector('[data-ren]'); if (ren) ren.oninput = () => { s.nombre = ren.value; el.querySelector('h2').textContent = ren.value; cambio(); };
-      const don = el.querySelector('[data-donde]'); if (don) don.oninput = () => { s.donde = don.value; cambio(); };
-      const del = el.querySelector('[data-delsec]');
-      if (del) del.onclick = () => {
-        if (del.dataset.arm !== '1') { del.dataset.arm = '1'; del.textContent = '¿Seguro? Sí, quitar'; setTimeout(() => { del.dataset.arm = ''; del.textContent = 'Quitar'; }, 3500); return; }
-        S.extras = S.extras.filter(x => x !== s); delete S.sec[s.id]; pintarCap(); cambio();
-      };
+      const ac = document.querySelector('#firmaCierre [data-aviso]');
+      if (F.__cierre && ac) ac.classList.toggle('oculto', F.__cierre.h === huellaTodo());
     }
 
-    function prog(s) {
-      const c = conteo(s); const el = $(sel(s.id) + ' [data-prog]');
-      el.textContent = c.hechos + '/' + c.tot; el.classList.toggle('done', c.tot > 0 && c.hechos === c.tot);
-    }
-
+    // ── Resumen ────────────────────────────────────────────────────────────
     function todosHall() {
       const out = [];
       GUIA.capitulos.forEach((cap, i) => secsDe(cap).forEach(s => est(s.id).hall.forEach(h => out.push(Object.assign({ cap: cap.id, proceso: (cap.id === 'rep' ? '' : (i + 1) + '. ') + cap.nombre, pantalla: s.nombre }, h)))));
       const o = { Alta: 0, Media: 1, Baja: 2, '': 3 };
       return out.sort((a, b) => (o[a.prio || ''] - o[b.prio || '']));
     }
-
-    function pintarResumen() {
+    function totales() {
       let tot = 0, hechos = 0, fallas = 0, firm = 0, nsec = 0;
       GUIA.capitulos.forEach(cap => { const c = conteoCap(cap); tot += c.tot; hechos += c.hechos; fallas += c.fallas; firm += c.firm; nsec += c.secs; });
-      const H = todosHall(); const altas = H.filter(h => h.prio === 'Alta').length;
+      const H = todosHall();
+      return { tot, hechos, fallas, firm, nsec, H, altas: H.filter(h => h.prio === 'Alta').length };
+    }
+
+    function pintarResumen() {
+      const T = totales(); const H = T.H;
       $('#kpis').innerHTML =
-        '<div class="kpi"><span class="l">Avance total</span><span class="c">' + (tot ? Math.round(hechos * 100 / tot) : 0) + '%</span><span class="s">' + hechos + ' de ' + tot + ' puntos revisados</span></div>'
-        + '<div class="kpi ve"><span class="l">Etapas firmadas</span><span class="c">' + firm + '/' + nsec + '</span><span class="s">enterado y aceptado</span></div>'
-        + '<div class="kpi rj"><span class="l">Con falla</span><span class="c">' + fallas + '</span><span class="s">puntos que no pasaron</span></div>'
-        + '<div class="kpi am"><span class="l">Hallazgos anotados</span><span class="c">' + H.length + '</span><span class="s">' + altas + ' de prioridad alta</span></div>';
+        '<div class="kpi"><span class="l">Avance total</span><span class="c">' + (T.tot ? Math.round(T.hechos * 100 / T.tot) : 0) + '%</span><span class="s">' + T.hechos + ' de ' + T.tot + ' puntos revisados</span></div>'
+        + '<div class="kpi ve"><span class="l">Etapas firmadas</span><span class="c">' + T.firm + '/' + T.nsec + '</span><span class="s">enterado y aceptado</span></div>'
+        + '<div class="kpi rj"><span class="l">Con falla</span><span class="c">' + T.fallas + '</span><span class="s">puntos que no pasaron</span></div>'
+        + '<div class="kpi am"><span class="l">Hallazgos anotados</span><span class="c">' + H.length + '</span><span class="s">' + T.altas + ' de prioridad alta</span></div>';
       $('#caps').innerHTML = GUIA.capitulos.map((cap, i) => {
         const c = conteoCap(cap); const pct = c.tot ? Math.round(c.hechos * 100 / c.tot) : 0;
         return '<button class="cap' + (cap.id === S.cap ? ' on' : '') + (c.tot && c.hechos === c.tot ? ' done' : '') + '" data-cap="' + esc(cap.id) + '">'
@@ -646,32 +870,39 @@ export const prerender = true;
       });
       $('#filtroRes').innerHTML = '<button class="pill' + (!filtroRes ? ' on' : '') + '" data-fr="">Todos</button>' + GUIA.capitulos.map((c, i) => '<button class="pill' + (filtroRes === c.id ? ' on' : '') + '" data-fr="' + esc(c.id) + '">' + (c.id === 'rep' ? 'Reportes' : 'Proceso ' + (i + 1)) + '</button>').join('');
       $('#filtroRes').querySelectorAll('[data-fr]').forEach(b => b.onclick = () => { filtroRes = b.dataset.fr; pintarResumen(); });
-      const F = filtroRes ? H.filter(h => h.cap === filtroRes) : H;
-      $('#resumen').innerHTML = F.length
-        ? '<table class="resumen-t"><thead><tr><th>Prioridad</th><th>Proceso · etapa</th><th>Tipo</th><th>Hallazgo</th><th>Propuesta / para qué</th><th>Decisión</th></tr></thead><tbody>'
-          + F.map(h => '<tr><td>' + (h.prio ? '<span class="tag ' + esc(h.prio) + '">' + esc(h.prio) + '</span>' : '—') + '</td><td class="pr">' + esc(h.proceso) + '<br>' + esc(h.pantalla) + '</td><td>' + esc(h.tipo || '—') + '</td><td>' + esc(h.que) + '</td><td>' + esc(h.uso) + '</td><td>' + esc(h.deci || 'Pendiente') + '</td></tr>').join('')
+      const Fh = filtroRes ? H.filter(h => h.cap === filtroRes) : H;
+      $('#resumen').innerHTML = Fh.length
+        ? '<table class="resumen-t"><thead><tr><th>Prioridad</th><th>Proceso · etapa</th><th>Tipo</th><th>Hallazgo</th><th>Propuesta / para qué</th><th>Responsable</th><th>Compromiso</th><th>Decisión</th></tr></thead><tbody>'
+          + Fh.map(h => '<tr><td>' + (h.prio ? '<span class="tag ' + esc(h.prio) + '">' + esc(h.prio) + '</span>' : '—') + '</td><td class="pr">' + esc(h.proceso) + '<br>' + esc(h.pantalla) + '</td><td>' + esc(h.tipo || '—') + '</td><td>' + esc(h.que) + (h.fotos && h.fotos.length ? ' <span class="pr">(' + h.fotos.length + ' foto' + (h.fotos.length > 1 ? 's' : '') + ')</span>' : '') + '</td><td>' + esc(h.uso) + '</td><td>' + esc(h.resp || '—') + '</td><td>' + esc(h.fecha || '—') + '</td><td>' + esc(h.deci || 'Pendiente') + '</td></tr>').join('')
           + '</tbody></table>'
         : '<div class="vacio">Todavía no hay anotaciones.</div>';
     }
 
-    // ── Botones de la barra ────────────────────────────────────────────────
+    // ── Barra ──────────────────────────────────────────────────────────────
+    function ligaCliente() { return cc ? location.origin + location.pathname + '?c=' + cc : ''; }
     $('#btnLiga').onclick = async () => {
       const url = location.origin + location.pathname + '?s=' + codigo;
-      try { await navigator.clipboard.writeText(url); toast('Liga copiada'); } catch (e) { toast(url); }
+      try { await navigator.clipboard.writeText(url); toast('Tu liga de consultor está copiada (no la compartas con el cliente)'); } catch (e) { toast(url); }
     };
-    $('#btnPdf').onclick = () => { document.querySelectorAll('.sec.cerrada').forEach(x => x.classList.remove('cerrada')); setTimeout(() => window.print(), 100); };
+    $('#btnPend').onclick = () => {
+      const on = document.body.classList.toggle('pend'); $('#btnPend').classList.toggle('on', on);
+      toast(on ? 'Solo se ven los puntos sin revisar y las fallas' : 'Se ven todos los puntos');
+    };
+    $('#btnPdf').onclick = () => {
+      document.body.classList.remove('pend'); $('#btnPend').classList.remove('on');
+      document.querySelectorAll('.sec.cerrada').forEach(x => x.classList.remove('cerrada')); setTimeout(() => window.print(), 100);
+    };
     $('#btnCsv').onclick = () => {
       const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-      const filas = [['Proceso', 'Etapa / pantalla', 'Renglón', 'Tipo', 'Punto / hallazgo', 'Resultado', 'Nota / propuesta', 'Prioridad', 'Decisión']];
-      const R = { ok: 'Correcto', falla: 'Falla', na: 'No aplica', '': 'Sin revisar' };
+      const filas = [['Proceso', 'Etapa / pantalla', 'Renglón', 'Tipo', 'Punto / hallazgo', 'Resultado', 'Nota / propuesta', 'Prioridad', 'Responsable', 'Fecha compromiso', 'Decisión', 'Fotos']];
       GUIA.capitulos.forEach((cap, i) => {
         const pn = (cap.id === 'rep' ? '' : (i + 1) + '. ') + cap.nombre;
         secsDe(cap).forEach(s => {
           const e = est(s.id);
-          s.puntos.forEach((t, k) => { const p = e.puntos[k] || {}; filas.push([pn, s.nombre, 'Punto a validar', '', t, R[p.e || ''], p.n || '', '', '']); });
-          e.extra.forEach(p => filas.push([pn, s.nombre, 'Punto a validar', '', p.t, R[p.e || ''], p.n || '', '', '']));
-          e.hall.forEach(h => filas.push([pn, s.nombre, 'Hallazgo', h.tipo, h.que, '', h.uso, h.prio, h.deci || 'Pendiente']));
-          if (e.firma) filas.push([pn, s.nombre, 'Firma', '', e.firma.nombre + (e.firma.puesto ? ' · ' + e.firma.puesto : ''), 'Enterado y aceptado', fechaFirma(e.firma.at) + (e.firma.h !== huella(e) ? ' · con cambios después de la firma' : ''), '', '']);
+          s.puntos.forEach((t, k) => { const p = e.puntos[k] || {}; filas.push([pn, s.nombre, 'Punto a validar', '', t, RES[p.e || ''], p.n || '', '', '', '', '', (p.fotos || []).join(' ')]); });
+          e.extra.forEach(p => filas.push([pn, s.nombre, 'Punto a validar', '', p.t, RES[p.e || ''], p.n || '', '', '', '', '', (p.fotos || []).join(' ')]));
+          e.hall.forEach(h => filas.push([pn, s.nombre, 'Hallazgo', h.tipo, h.que, '', h.uso, h.prio, h.resp || '', h.fecha || '', h.deci || 'Pendiente', (h.fotos || []).join(' ')]));
+          const f = F[s.id]; if (f) filas.push([pn, s.nombre, 'Firma', '', f.nombre + (f.puesto ? ' · ' + f.puesto : ''), 'Enterado y aceptado', fechaFirma(f.at) + (f.h !== huella(e) ? ' · con cambios después de la firma' : ''), '', '', '', '', '']);
         });
       });
       const csv = '﻿' + filas.map(f => f.map(q).join(',')).join('\r\n');
@@ -679,10 +910,37 @@ export const prerender = true;
       a.download = 'checklist-consignacion-' + (S.meta.cliente || 'cliente').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-') + '-' + (S.meta.fecha || '') + '.csv';
       a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     };
+
+    // Enviar al cliente: su liga (solo lectura + firma) con el resumen, por
+    // WhatsApp o correo. El PDF sale de esa misma liga con «Imprimir / PDF».
+    $('#btnEnviar').onclick = async () => {
+      if (!cc) { await subir(); }
+      if (!cc) return toast('Sin conexión: guarda la sesión y vuelve a intentar.');
+      const T = totales(); const url = ligaCliente();
+      const nombre = S.meta.responsable ? S.meta.responsable.split(' ')[0] : '';
+      const fecha = S.meta.fecha ? new Date(S.meta.fecha + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }) : 'hoy';
+      const txt = 'Hola' + (nombre ? ' ' + nombre : '') + ', te comparto el resumen de la revisión de la Suite de Consignación del ' + fecha + ': '
+        + T.hechos + ' puntos revisados, ' + T.fallas + ' con falla y ' + T.H.length + ' hallazgos anotados (' + T.altas + ' de prioridad alta). '
+        + 'Aquí puedes ver el detalle, descargarlo en PDF y firmar de enterado cada etapa: ' + url;
+      const lista = T.H.slice(0, 20).map(h => '• [' + (h.prio || 'Sin prioridad') + '] ' + h.pantalla + ': ' + corto(h.que, 120) + (h.resp ? ' (responsable: ' + h.resp + (h.fecha ? ', ' + h.fecha : '') + ')' : '')).join('\n');
+      const cuerpo = txt + '\n\nHallazgos principales:\n' + (lista || '• Sin hallazgos') + (S.cierre.acuerdos ? '\n\nAcuerdos:\n' + S.cierre.acuerdos : '') + '\n\nSacscloud';
+      const m = document.createElement('div'); m.className = 'modal-fondo';
+      m.innerHTML = '<div class="modal"><h2>Enviar al cliente</h2><p class="sub" style="margin-top:4px">El cliente recibe su propia liga: ve todo lo revisado, lo descarga en PDF y firma de enterado. No puede editar nada.</p>'
+        + '<div class="liga">' + esc(url) + '</div>'
+        + '<div class="acciones"><a class="btn pri" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(txt) + '">WhatsApp</a>'
+        + '<a class="btn" href="mailto:?subject=' + encodeURIComponent('Revisión de la Suite de Consignación · ' + (S.meta.cliente || '') + ' · ' + fecha) + '&body=' + encodeURIComponent(cuerpo) + '">Correo</a>'
+        + '<button class="btn" data-copiar>Copiar liga</button><a class="btn ter" target="_blank" rel="noopener" href="' + esc(url) + '">Ver como cliente</a></div>'
+        + '<div class="acciones"><button class="btn ter" data-cerrar>Cerrar</button></div></div>';
+      document.body.appendChild(m);
+      m.onclick = ev => { if (ev.target === m || ev.target.closest('[data-cerrar]')) m.remove(); };
+      m.querySelector('[data-copiar]').onclick = async () => { try { await navigator.clipboard.writeText(url); toast('Liga del cliente copiada'); } catch (e) { toast(url); } };
+      logEv('Preparó el envío del resumen al cliente'); cambio();
+    };
+
     $('#btnOtra').onclick = () => {
       const cap = capActual(); const esRep = cap.id === 'rep';
       const s = { id: 'x' + Date.now().toString(36), cap: cap.id, nombre: esRep ? 'Pantalla o reporte nuevo' : 'Etapa nueva', donde: '', para: '', puntos: [], sugerencias: [], editable: true };
-      S.extras.push(s); pintarCap(); cambio();
+      S.extras.push(s); logEv('Agregó una ' + (esRep ? 'pantalla' : 'etapa') + ' al proceso «' + cap.nombre + '»'); pintarCap(); cambio();
       const el = $(sel(s.id)); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); const r = el.querySelector('[data-ren]'); if (r) { r.focus(); r.select(); }
     };
 

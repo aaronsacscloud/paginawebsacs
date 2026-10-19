@@ -15,3 +15,12 @@ create table if not exists public.entregas_checklist (
 create index if not exists entregas_checklist_guia_idx on public.entregas_checklist (guia, updated_at desc);
 -- Solo el servidor (service key) la toca: RLS encendido y sin políticas.
 alter table public.entregas_checklist enable row level security;
+
+-- (19-oct-2026, segunda parte) Vista del cliente y firmas.
+-- codigo_cliente: liga de SOLO LECTURA para el cliente (puede firmar, no editar).
+-- firmas: las firmas de «enterado y aceptado» viven aparte de `data` para que
+-- el guardado automático del consultor nunca pise una firma que el cliente
+-- acaba de hacer desde su teléfono. Solo las escribe la acción «firmar».
+alter table public.entregas_checklist
+  add column if not exists codigo_cliente text unique check (codigo_cliente ~ '^[a-z0-9]{12,40}$'),
+  add column if not exists firmas jsonb not null default '{}'::jsonb;
