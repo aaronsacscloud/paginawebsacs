@@ -70,11 +70,10 @@ export const prerender = true;
     .estado { font-size: .8125rem; color: var(--tx2); display: inline-flex; align-items: center; gap: 6px; margin-right: auto; }
     .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--tx3); }
     .estado.ok .punto { background: var(--ve); } .estado.err .punto { background: var(--am); } .estado.sav .punto { background: var(--v); }
-    .nav { display: flex; gap: 6px; overflow-x: auto; padding: 4px 16px 10px; max-width: 1120px; margin: 0 auto; scrollbar-width: none; }
-    .nav::-webkit-scrollbar { display: none; }
+    .nav { display: flex; gap: 10px; align-items: center; padding: 4px 16px 10px; max-width: 1120px; margin: 0 auto; }
+    .nav select { flex: 1; max-width: 640px; font-weight: 700; color: var(--vt); border-color: var(--vb); background: #fff; }
+    .nav-prog { font-size: .8125rem; font-weight: 800; color: var(--vt); background: var(--va); border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
     .pill { white-space: nowrap; border: 1px solid var(--ln); background: #fff; border-radius: 999px; padding: 7px 12px; font-size: .8125rem; font-weight: 600; color: var(--tx2); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
-    .pill .n { font-size: .6875rem; background: var(--va); color: var(--vt); border-radius: 999px; padding: 1px 7px; font-weight: 800; }
-    .pill.done { border-color: #bfe8d6; } .pill.done .n { background: var(--vea); color: var(--vet); }
     .kpis { display: grid; gap: 10px; grid-template-columns: repeat(4, 1fr); margin-top: 14px; }
     .kpi { background: #fff; border: 1px solid var(--ln); border-left: 3px solid var(--v); border-radius: 10px; padding: 13px 15px; display: flex; flex-direction: column; }
     .kpi .l { font-size: .625rem; text-transform: uppercase; letter-spacing: .08em; color: #999; font-weight: 800; }
@@ -862,12 +861,33 @@ export const prerender = true;
       }).join('');
       $('#caps').querySelectorAll('[data-cap]').forEach(b => b.onclick = () => irACap(b.dataset.cap));
       const cap = capActual();
-      $('#nav').innerHTML = '<button class="pill" data-ir="__caps">Procesos</button>' + (cap.diagrama ? '<button class="pill" data-ir="__mapa">Mapa</button>' : '') + secsDe(cap).map(s => { const c = conteo(s); const n = secsDe(cap).filter(x => !x.clave).indexOf(s) + 1; return '<button class="pill' + (c.tot && c.hechos === c.tot ? ' done' : '') + '" data-ir="' + esc(s.id) + '">' + (s.clave ? 'Puntos clave' : n + '. ' + esc(s.nombre.replace(/^Etapa \d+ · /, ''))) + ' <span class="n">' + c.hechos + '/' + c.tot + '</span></button>'; }).join('') + '<button class="pill" data-ir="__cierre">Resumen y cierre</button>';
-      $('#nav').querySelectorAll('[data-ir]').forEach(b => b.onclick = () => {
-        const id = b.dataset.ir; const el = id === '__cierre' ? $('#cierre') : id === '__caps' ? $('#caps') : id === '__mapa' ? $('#mapa') : $(sel(id));
-        if (id[0] !== '_' && S.cerradas[id]) { S.cerradas[id] = false; el.classList.remove('cerrada'); }
-        window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 110, behavior: 'smooth' });
+      // Navegación: un solo selector (no satura la barra). Cada proceso con
+      // su %, y debajo sus etapas con su avance; elegir otra etapa cambia de
+      // proceso y lleva directo a ella.
+      const pct = (a, b) => (b ? Math.round(a * 100 / b) : 0) + '%';
+      let o = '<option value="">Ir a…</option><option value="__caps">Procesos (inicio)</option>';
+      GUIA.capitulos.forEach((cp, i) => {
+        const cc2 = conteoCap(cp);
+        o += '<optgroup label="' + esc((cp.id === 'rep' ? 'Revisión · ' : 'Proceso ' + (i + 1) + ' · ') + cp.nombre + ' — ' + pct(cc2.hechos, cc2.tot) + (cc2.firm ? ' · ' + cc2.firm + '/' + cc2.secs + ' firmadas' : '')) + '">';
+        if (cp.diagrama) o += '<option value="' + esc(cp.id) + '|__mapa">Mapa del proceso</option>';
+        secsDe(cp).forEach(sx => {
+          const c = conteo(sx); const n = secsDe(cp).filter(x => !x.clave).indexOf(sx) + 1;
+          o += '<option value="' + esc(cp.id) + '|' + esc(sx.id) + '">' + (sx.clave ? 'Puntos clave' : n + '. ' + esc(sx.nombre.replace(/^Etapa \d+ · /, ''))) + ' — ' + pct(c.hechos, c.tot) + (F[sx.id] ? ' · firmada' : '') + '</option>';
+        });
+        o += '</optgroup>';
       });
+      o += '<option value="__cierre">Resumen y cierre</option>';
+      const cTot = conteoCap(cap);
+      $('#nav').innerHTML = '<select id="irA" aria-label="Ir a una etapa">' + o + '</select><span class="nav-prog">' + esc((cap.id === 'rep' ? 'Revisión' : 'Proceso ' + (GUIA.capitulos.indexOf(cap) + 1)) + ' · ' + pct(cTot.hechos, cTot.tot)) + '</span>';
+      $('#irA').onchange = ev => {
+        const v = ev.target.value; ev.target.value = ''; if (!v) return;
+        let id = v;
+        if (v.indexOf('|') > 0) { const pr = v.split('|'); if (pr[0] !== S.cap) { S.cap = pr[0]; pintarCap(); if (!esCliente()) cambio(); } id = pr[1]; }
+        const el = id === '__cierre' ? $('#cierre') : id === '__caps' ? $('#caps') : id === '__mapa' ? $('#mapa') : $(sel(id));
+        if (!el) return;
+        if (id[0] !== '_' && S.cerradas[id]) { S.cerradas[id] = false; el.classList.remove('cerrada'); }
+        setTimeout(() => window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 110, behavior: 'smooth' }), 30);
+      };
       $('#filtroRes').innerHTML = '<button class="pill' + (!filtroRes ? ' on' : '') + '" data-fr="">Todos</button>' + GUIA.capitulos.map((c, i) => '<button class="pill' + (filtroRes === c.id ? ' on' : '') + '" data-fr="' + esc(c.id) + '">' + (c.id === 'rep' ? 'Reportes' : 'Proceso ' + (i + 1)) + '</button>').join('');
       $('#filtroRes').querySelectorAll('[data-fr]').forEach(b => b.onclick = () => { filtroRes = b.dataset.fr; pintarResumen(); });
       const Fh = filtroRes ? H.filter(h => h.cap === filtroRes) : H;
