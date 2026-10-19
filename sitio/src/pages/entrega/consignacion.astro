@@ -152,6 +152,21 @@ export const prerender = true;
     .mapa .lec { margin-top: 10px; font-size: .875rem; color: var(--tx2); }
     .sec.clave { border: 1.5px solid var(--vb); }
     .sec.clave .num { background: var(--v); color: #fff; }
+    .firma-box { margin-top: 18px; border: 1px solid var(--vb); border-radius: 12px; padding: 14px; background: #fcfbff; }
+    .firma-box h4 { margin: 0 0 4px; font-size: .9375rem; font-weight: 800; }
+    .firma-box .ley { font-size: .8125rem; color: var(--tx2); margin: 0 0 10px; }
+    .pad { position: relative; border: 1.5px dashed #c9c6d8; border-radius: 10px; background: #fff; touch-action: none; height: 150px; }
+    .pad svg { width: 100%; height: 100%; display: block; }
+    .pad .ph { position: absolute; left: 12px; bottom: 10px; font-size: .75rem; color: var(--tx3); pointer-events: none; }
+    .pad.con .ph { display: none; }
+    .firma-box .chk { display: flex; gap: 10px; align-items: flex-start; font-size: .875rem; margin-top: 10px; }
+    .firma-box .chk input { width: 22px; height: 22px; flex: 0 0 auto; accent-color: #9B8CFA; }
+    .firmado { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+    .firmado svg { width: 220px; height: 55px; border-bottom: 1px solid #c9c6d8; }
+    .firmado .q { font-size: .8125rem; color: var(--tx2); }
+    .firmado .q b { color: var(--vet); }
+    .aviso-cambio { margin-top: 10px; font-size: .8125rem; background: var(--ama); color: var(--amt); border-radius: 8px; padding: 8px 10px; }
+    .sec-cab .fir { font-size: .6875rem; font-weight: 800; color: var(--vet); background: var(--vea); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
     .filtro-res { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
     .filtro-res .pill.on { background: var(--v); border-color: var(--v); color: #fff; }
     @media (max-width: 900px) {
@@ -254,9 +269,9 @@ export const prerender = true;
         <div id="resumen"></div>
         <h3>Acuerdos de la sesión</h3>
         <textarea data-cierre="acuerdos" placeholder="Lo que quedó decidido y los siguientes pasos"></textarea>
+        <div id="firmaCierre"></div>
         <div class="grid" style="margin-top:12px">
-          <label class="f">Valida por el cliente (nombre)<input type="text" data-cierre="firmaCliente" /></label>
-          <label class="f">Valida por Sacscloud (nombre)<input type="text" data-cierre="firmaSacs" /></label>
+          <label class="f">Consultor Sacscloud que valida<input type="text" data-cierre="firmaSacs" /></label>
         </div>
       </div>
     </div>
@@ -300,6 +315,17 @@ export const prerender = true;
       estado('sav', 'Cambios sin guardar…');
       clearTimeout(timer); timer = setTimeout(subir, 1000);
       pintarResumen();
+      avisosFirma();
+    }
+    // Si algo cambia en una etapa ya firmada, se avisa en el momento.
+    function avisosFirma() {
+      if (!S) return;
+      secsDe(capActual()).forEach(s => {
+        const e = S.sec[s.id]; if (!e || !e.firma) return;
+        const a = document.querySelector(sel(s.id) + ' [data-aviso]'); if (a) a.classList.toggle('oculto', e.firma.h === huella(e));
+      });
+      const f = S.cierre && S.cierre.firma; const ac = document.querySelector('#firmaCierre [data-aviso]');
+      if (f && ac) ac.classList.toggle('oculto', f.h === huellaTodo());
     }
     async function subir() {
       if (guardando) { pendiente = true; return; }
@@ -370,11 +396,11 @@ export const prerender = true;
       const e = est(s.id); const tot = s.puntos.length + e.extra.length; let hechos = 0, fallas = 0;
       s.puntos.forEach((_, i) => { const p = e.puntos[i]; if (p && p.e) { hechos++; if (p.e === 'falla') fallas++; } });
       e.extra.forEach(p => { if (p.e) { hechos++; if (p.e === 'falla') fallas++; } });
-      return { tot, hechos, fallas, hall: e.hall.length };
+      return { tot, hechos, fallas, hall: e.hall.length, firm: e.firma ? 1 : 0 };
     }
     function conteoCap(cap) {
-      const t = { tot: 0, hechos: 0, fallas: 0, hall: 0 };
-      secsDe(cap).forEach(s => { const c = conteo(s); t.tot += c.tot; t.hechos += c.hechos; t.fallas += c.fallas; t.hall += c.hall; });
+      const t = { tot: 0, hechos: 0, fallas: 0, hall: 0, firm: 0, secs: 0 };
+      secsDe(cap).forEach(s => { const c = conteo(s); t.tot += c.tot; t.hechos += c.hechos; t.fallas += c.fallas; t.hall += c.hall; t.firm += c.firm; t.secs++; });
       return t;
     }
 
@@ -383,6 +409,13 @@ export const prerender = true;
       document.querySelectorAll('[data-meta]').forEach(el => { el.value = S.meta[el.dataset.meta] || ''; el.oninput = () => { S.meta[el.dataset.meta] = el.value; cambio(); }; });
       document.querySelectorAll('[data-cierre]').forEach(el => { el.value = S.cierre[el.dataset.cierre] || ''; el.oninput = () => { S.cierre[el.dataset.cierre] = el.value; cambio(); }; });
       pintarCap();
+      pintarFirmaCierre();
+    }
+    function huellaTodo() { const t = JSON.stringify([S.sec && Object.keys(S.sec).map(k => [S.sec[k].puntos, S.sec[k].extra, S.sec[k].hall]), S.cierre.acuerdos]); let h = 5381; for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
+    function pintarFirmaCierre() {
+      const f = S.cierre.firma;
+      $('#firmaCierre').innerHTML = htmlFirma('Firma del cliente · cierre de la sesión', LEY_CIERRE, f, f && f.h !== huellaTodo());
+      enlazarFirma($('#firmaCierre [data-firma]'), () => S.cierre.firma, v => { S.cierre.firma = v; }, huellaTodo, pintarFirmaCierre);
     }
 
     function pintarCap() {
@@ -450,7 +483,7 @@ export const prerender = true;
         + '<div class="sec-cab" data-tog><div class="num">' + num + '</div><div class="t"><h2>' + esc(s.nombre) + '</h2>'
         + (s.donde ? '<div class="meta"><b>Dónde:</b> ' + esc(s.donde) + '</div>' : '')
         + (s.para ? '<div class="meta"><b>' + (esRep ? 'Para qué sirve:' : 'Qué pasa:') + '</b> ' + esc(s.para) + '</div>' : '')
-        + '</div><span class="prog' + (c.tot && c.hechos === c.tot ? ' done' : '') + '" data-prog>' + c.hechos + '/' + c.tot + '</span>'
+        + '</div>' + (e.firma ? '<span class="fir">Firmada</span>' : '') + '<span class="prog' + (c.tot && c.hechos === c.tot ? ' done' : '') + '" data-prog>' + c.hechos + '/' + c.tot + '</span>'
         + '<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>'
         + '<div class="cuerpo">'
         + (s.nota ? '<div class="nota-calc">' + esc(s.nota) + '</div>' : '')
@@ -463,7 +496,57 @@ export const prerender = true;
         + '<div class="hall-cab"><span>Tipo</span><span>' + esc(cap.cols.a) + '</span><span>' + esc(cap.cols.b) + '</span><span>Prioridad</span><span>Decisión</span><span></span></div>'
         + '<div>' + (e.hall.length ? e.hall.map((h, k) => htmlHall(cap, h, k)).join('') : '<div class="vacio">Sin anotaciones.</div>') + '</div>'
         + '<div class="acciones no-print"><button class="btn peq" data-addh>' + (esRep ? 'Agregar faltante' : 'Agregar hallazgo') + '</button>' + (s.editable ? '<button class="btn peq del" data-delsec>Quitar</button>' : '') + '</div>'
+        + htmlFirma('Firma del cliente · enterado y aceptado', LEY_ETAPA, e.firma, e.firma && e.firma.h !== huella(e))
         + '</div></section>';
+    }
+
+    // ── Firma de enterado y aceptado ───────────────────────────────────────
+    // El trazo se guarda como trayectoria SVG (unos cuantos KB), no como
+    // imagen. La huella dice si la etapa cambió después de firmarla.
+    const LEY_ETAPA = 'Revisé esta etapa con el consultor. Estoy enterado y de acuerdo con lo validado y con los hallazgos anotados.';
+    const LEY_CIERRE = 'Revisé con el consultor los procesos de esta sesión. Estoy enterado y de acuerdo con lo validado, los hallazgos y los acuerdos anotados.';
+    function huella(e) {
+      const t = JSON.stringify([e.puntos, e.extra, e.hall]); let h = 5381;
+      for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0;
+      return (h >>> 0).toString(36);
+    }
+    function fechaFirma(iso) { try { return new Date(iso).toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) { return iso; } }
+    function htmlFirma(titulo, ley, f, cambio) {
+      if (f) return '<div class="firma-box" data-firma><h4>' + esc(titulo) + '</h4><div class="firmado">'
+        + '<svg viewBox="0 0 600 150" preserveAspectRatio="xMidYMid meet"><path d="' + esc(f.d) + '" fill="none" stroke="#1d1b2e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+        + '<div class="q"><b>' + esc(f.nombre) + '</b>' + (f.puesto ? ' · ' + esc(f.puesto) : '') + '<br>Enterado y aceptado · ' + esc(fechaFirma(f.at)) + '</div>'
+        + '<button class="btn peq del no-print" data-quitarfirma style="margin-left:auto">Quitar firma</button></div>'
+        + '<div class="aviso-cambio' + (cambio ? '' : ' oculto') + '" data-aviso>⚠️ Hubo cambios después de la firma. Revísenlos con el cliente y vuelvan a firmar si hace falta.</div></div>';
+      return '<div class="firma-box no-print-vacia" data-firma><h4>' + esc(titulo) + '</h4><p class="ley">' + esc(ley) + '</p>'
+        + '<div class="grid"><label class="f">Nombre de quien firma<input type="text" data-fnom autocomplete="off" /></label><label class="f">Puesto<input type="text" data-fpue autocomplete="off" /></label></div>'
+        + '<div class="pad" data-pad style="margin-top:10px"><svg viewBox="0 0 600 150" preserveAspectRatio="none"><path d="" fill="none" stroke="#1d1b2e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ph">Firma aquí con el dedo o el lápiz</span></div>'
+        + '<label class="chk"><input type="checkbox" data-facepto /><span>Enterado y aceptado.</span></label>'
+        + '<div class="acciones"><button class="btn peq ter" data-flimpiar>Borrar trazo</button><button class="btn pri" data-ffirmar disabled>Firmar</button></div></div>';
+    }
+    function enlazarFirma(box, get, set, huellaFn, repinta) {
+      if (!box) return;
+      const quitar = box.querySelector('[data-quitarfirma]');
+      if (quitar) {
+        quitar.onclick = () => {
+          if (quitar.dataset.arm !== '1') { quitar.dataset.arm = '1'; quitar.textContent = '¿Seguro? Sí, quitar'; setTimeout(() => { quitar.dataset.arm = ''; quitar.textContent = 'Quitar firma'; }, 3500); return; }
+          set(null); repinta(); cambio(); toast('Firma quitada');
+        };
+        return;
+      }
+      const pad = box.querySelector('[data-pad]'), svg = pad.querySelector('svg'), path = svg.querySelector('path');
+      const nom = box.querySelector('[data-fnom]'), pue = box.querySelector('[data-fpue]'), acepto = box.querySelector('[data-facepto]'), btn = box.querySelector('[data-ffirmar]');
+      let d = '', trazando = false;
+      const listo = () => { btn.disabled = !(d.length > 20 && nom.value.trim().length >= 3 && acepto.checked); };
+      const pt = ev => { const r = svg.getBoundingClientRect(); return Math.round((ev.clientX - r.left) * 600 / r.width) + ' ' + Math.round((ev.clientY - r.top) * 150 / r.height); };
+      pad.onpointerdown = ev => { ev.preventDefault(); trazando = true; pad.setPointerCapture(ev.pointerId); d += 'M' + pt(ev); path.setAttribute('d', d); pad.classList.add('con'); };
+      pad.onpointermove = ev => { if (!trazando || d.length > 30000) return; d += 'L' + pt(ev); path.setAttribute('d', d); };
+      pad.onpointerup = pad.onpointercancel = () => { trazando = false; listo(); };
+      box.querySelector('[data-flimpiar]').onclick = () => { d = ''; path.setAttribute('d', ''); pad.classList.remove('con'); listo(); };
+      nom.oninput = listo; acepto.onchange = listo;
+      btn.onclick = () => {
+        set({ nombre: nom.value.trim().slice(0, 120), puesto: pue.value.trim().slice(0, 80), d: d, at: new Date().toISOString(), h: huellaFn ? huellaFn() : '' });
+        repinta(); cambio(); toast('Firmado: enterado y aceptado');
+      };
     }
 
     function htmlPunto(key, t, p, extra) {
@@ -516,6 +599,7 @@ export const prerender = true;
         row.querySelector('[data-delh]').onclick = () => { e.hall.splice(k, 1); repintarSec(cap, s); cambio(); toast('Quitado'); };
       });
       el.querySelector('[data-addh]').onclick = () => { e.hall.push({ tipo: '', que: '', uso: '', prio: '', deci: 'Pendiente' }); repintarSec(cap, s); cambio(); const t = document.querySelectorAll(sel(s.id) + ' [data-hf="que"]'); if (t.length) t[t.length - 1].focus(); };
+      enlazarFirma(el.querySelector('[data-firma]'), () => e.firma, v => { e.firma = v; }, () => huella(e), () => { repintarSec(cap, s); pintarResumen(); });
       const ren = el.querySelector('[data-ren]'); if (ren) ren.oninput = () => { s.nombre = ren.value; el.querySelector('h2').textContent = ren.value; cambio(); };
       const don = el.querySelector('[data-donde]'); if (don) don.oninput = () => { s.donde = don.value; cambio(); };
       const del = el.querySelector('[data-delsec]');
@@ -538,19 +622,19 @@ export const prerender = true;
     }
 
     function pintarResumen() {
-      let tot = 0, hechos = 0, fallas = 0;
-      GUIA.capitulos.forEach(cap => { const c = conteoCap(cap); tot += c.tot; hechos += c.hechos; fallas += c.fallas; });
+      let tot = 0, hechos = 0, fallas = 0, firm = 0, nsec = 0;
+      GUIA.capitulos.forEach(cap => { const c = conteoCap(cap); tot += c.tot; hechos += c.hechos; fallas += c.fallas; firm += c.firm; nsec += c.secs; });
       const H = todosHall(); const altas = H.filter(h => h.prio === 'Alta').length;
       $('#kpis').innerHTML =
         '<div class="kpi"><span class="l">Avance total</span><span class="c">' + (tot ? Math.round(hechos * 100 / tot) : 0) + '%</span><span class="s">' + hechos + ' de ' + tot + ' puntos revisados</span></div>'
-        + '<div class="kpi ve"><span class="l">Correctos</span><span class="c">' + (hechos - fallas) + '</span><span class="s">incluye los que no aplican</span></div>'
+        + '<div class="kpi ve"><span class="l">Etapas firmadas</span><span class="c">' + firm + '/' + nsec + '</span><span class="s">enterado y aceptado</span></div>'
         + '<div class="kpi rj"><span class="l">Con falla</span><span class="c">' + fallas + '</span><span class="s">puntos que no pasaron</span></div>'
         + '<div class="kpi am"><span class="l">Hallazgos anotados</span><span class="c">' + H.length + '</span><span class="s">' + altas + ' de prioridad alta</span></div>';
       $('#caps').innerHTML = GUIA.capitulos.map((cap, i) => {
         const c = conteoCap(cap); const pct = c.tot ? Math.round(c.hechos * 100 / c.tot) : 0;
         return '<button class="cap' + (cap.id === S.cap ? ' on' : '') + (c.tot && c.hechos === c.tot ? ' done' : '') + '" data-cap="' + esc(cap.id) + '">'
           + '<span class="k">' + (cap.id === 'rep' ? 'Revisión' : 'Proceso ' + (i + 1)) + '</span><span class="nm">' + esc(cap.nombre) + '</span>'
-          + '<span class="pie"><span class="bar"><i style="width:' + pct + '%"></i></span>' + c.hechos + '/' + c.tot + (c.hall ? ' · ' + c.hall + ' anot.' : '') + '</span></button>';
+          + '<span class="pie"><span class="bar"><i style="width:' + pct + '%"></i></span>' + c.hechos + '/' + c.tot + (c.firm ? ' · ' + c.firm + '/' + c.secs + ' firm.' : '') + (c.hall ? ' · ' + c.hall + ' anot.' : '') + '</span></button>';
       }).join('');
       $('#caps').querySelectorAll('[data-cap]').forEach(b => b.onclick = () => irACap(b.dataset.cap));
       const cap = capActual();
@@ -587,6 +671,7 @@ export const prerender = true;
           s.puntos.forEach((t, k) => { const p = e.puntos[k] || {}; filas.push([pn, s.nombre, 'Punto a validar', '', t, R[p.e || ''], p.n || '', '', '']); });
           e.extra.forEach(p => filas.push([pn, s.nombre, 'Punto a validar', '', p.t, R[p.e || ''], p.n || '', '', '']));
           e.hall.forEach(h => filas.push([pn, s.nombre, 'Hallazgo', h.tipo, h.que, '', h.uso, h.prio, h.deci || 'Pendiente']));
+          if (e.firma) filas.push([pn, s.nombre, 'Firma', '', e.firma.nombre + (e.firma.puesto ? ' · ' + e.firma.puesto : ''), 'Enterado y aceptado', fechaFirma(e.firma.at) + (e.firma.h !== huella(e) ? ' · con cambios después de la firma' : ''), '', '']);
         });
       });
       const csv = '﻿' + filas.map(f => f.map(q).join(',')).join('\r\n');
