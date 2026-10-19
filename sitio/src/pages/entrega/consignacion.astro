@@ -146,6 +146,12 @@ export const prerender = true;
     .cap-cab h2 { font-size: 1.35rem; }
     .nota-calc { margin-top: 8px; font-size: .875rem; background: var(--aza); color: #24467f; border-radius: 9px; padding: 9px 11px; }
     .resumen-t td.pr { color: var(--tx2); font-size: .8125rem; }
+    .mapa svg { width: 100%; height: auto; display: block; margin-top: 6px; }
+    .mapa .nd { cursor: pointer; }
+    .mapa .nd:hover rect { fill: #EEECFE; }
+    .mapa .lec { margin-top: 10px; font-size: .875rem; color: var(--tx2); }
+    .sec.clave { border: 1.5px solid var(--vb); }
+    .sec.clave .num { background: var(--v); color: #fff; }
     .filtro-res { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
     .filtro-res .pill.on { background: var(--v); border-color: var(--v); color: #fff; }
     @media (max-width: 900px) {
@@ -233,6 +239,7 @@ export const prerender = true;
       <div class="caps no-print" id="caps"></div>
 
       <div class="cap-cab" id="capCab"></div>
+      <div id="mapa"></div>
       <div id="secciones"></div>
 
       <div class="card no-print" style="text-align:center">
@@ -382,11 +389,47 @@ export const prerender = true;
       const cap = capActual(); const i = GUIA.capitulos.indexOf(cap);
       const esRep = cap.id === 'rep';
       $('#capCab').innerHTML = '<span class="firma">' + (esRep ? 'Revisión' : 'Proceso ' + (i + 1)) + '</span><h2>' + esc(cap.nombre) + '</h2><p class="sub" style="flex-basis:100%">' + esc(cap.resumen) + '</p>';
+      $('#mapa').innerHTML = cap.diagrama ? htmlMapa(cap.diagrama) : '';
+      $('#mapa').querySelectorAll('[data-go]').forEach(g => g.onclick = () => irASec(g.dataset.go));
       $('#secciones').innerHTML = secsDe(cap).map((s, k) => htmlSec(cap, s, k)).join('');
       secsDe(cap).forEach(s => enlazar(cap, s));
       $('#otraTxt').textContent = esRep ? '¿El cliente usa una pantalla o reporte que no está en la lista?' : '¿Hay una etapa de su operación que no está en la lista?';
       $('#btnOtra').textContent = esRep ? 'Agregar pantalla o reporte' : 'Agregar etapa';
       pintarResumen();
+    }
+
+    // Mapa del proceso: rejilla de 5 columnas; cada caja salta a su etapa.
+    function htmlMapa(d) {
+      const W = 128, H = 52, X = c => 92 + c * 144, Y = r => 84 + r * 130;
+      const N = {}; d.nodos.forEach(n => { N[n.id] = n; });
+      const filas = Math.max.apply(null, d.nodos.map(n => n.r)) + 1;
+      const alto = Y(filas - 1) + H / 2 + 24;
+      const lineas = [], etiquetas = [];
+      d.flechas.forEach(f => {
+        const a = N[f.de], b = N[f.a]; if (!a || !b) return;
+        const ax = X(a.c) + (f.dx || 0), ay = Y(a.r), bx = X(b.c), by = Y(b.r);
+        let p, lx, ly, anc = 'start';
+        if (a.r === b.r) { const dir = b.c > a.c ? 1 : -1; p = 'M' + (X(a.c) + dir * W / 2) + ' ' + ay + 'H' + (bx - dir * W / 2); lx = (X(a.c) + bx) / 2; ly = ay - H / 2 - 8; anc = 'middle'; }
+        else if (a.c === b.c || ax === bx) { p = 'M' + ax + ' ' + (ay + H / 2) + 'V' + (by - H / 2); ly = by - H / 2 - 12; if (ax > 600) { lx = ax - 8; anc = 'end'; } else { lx = ax + 8; } }
+        else { const mid = ay + H / 2 + 39; p = 'M' + ax + ' ' + (ay + H / 2) + 'V' + mid + 'H' + bx + 'V' + (by - H / 2); lx = bx + 8; ly = mid - 8; }
+        lineas.push('<path d="' + p + '" marker-end="url(#mapa-flecha)"/>');
+        if (f.et) etiquetas.push('<text x="' + lx + '" y="' + ly + '" text-anchor="' + anc + '" font-size="11.5" fill="#5f5d72">' + esc(f.et) + '</text>');
+      });
+      const cajas = d.nodos.map(n => '<g class="nd" data-go="' + esc(n.sec) + '" role="button" tabindex="0"><rect x="' + (X(n.c) - W / 2) + '" y="' + (Y(n.r) - H / 2) + '" width="' + W + '" height="' + H + '" rx="8" fill="' + (n.fin ? 'rgba(155,140,250,.14)' : '#fff') + '" stroke="' + (n.fin ? '#9B8CFA' : '#c9c6d8') + '" stroke-width="' + (n.fin ? 2 : 1.25) + '"/>'
+        + '<text x="' + X(n.c) + '" y="' + (Y(n.r) - 3) + '" text-anchor="middle" font-size="13" font-weight="700" fill="#1d1b2e">' + esc(n.t) + '</text>'
+        + '<text x="' + X(n.c) + '" y="' + (Y(n.r) + 15) + '" text-anchor="middle" font-size="11" fill="#5f5d72">' + esc(n.s) + '</text></g>').join('');
+      return '<section class="card mapa"><h2>Mapa del proceso</h2>'
+        + '<svg viewBox="0 0 760 ' + alto + '" role="img" aria-label="' + esc(d.titulo) + '" font-family="DM Sans, system-ui, sans-serif">'
+        + '<defs><marker id="mapa-flecha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b5b2c6"/></marker></defs>'
+        + '<text x="28" y="30" font-size="15" font-weight="700" fill="#5B4BD6">' + esc(d.titulo) + '</text>'
+        + '<g fill="none" stroke="#b5b2c6" stroke-width="1.25">' + lineas.join('') + '</g>' + etiquetas.join('') + cajas + '</svg>'
+        + '<p class="lec">' + esc(d.lectura) + ' Toca una caja para ir a su etapa.</p></section>';
+    }
+
+    function irASec(id) {
+      const el = $(sel(id)); if (!el) return;
+      if (S.cerradas[id]) { S.cerradas[id] = false; el.classList.remove('cerrada'); }
+      window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 110, behavior: 'smooth' });
     }
 
     function irACap(id) {
@@ -402,8 +445,9 @@ export const prerender = true;
       const pts = s.puntos.map((t, k) => htmlPunto('b' + k, t, e.puntos[k] || {}, false)).join('') + e.extra.map((p, k) => htmlPunto('x' + k, p.t, p, true)).join('');
       const sug = (s.sugerencias || []).map((g, k) => '<div class="sug' + (e.usadas[k] ? ' usada' : '') + '"><span class="tp">' + esc(g.tipo) + '</span><span class="tx">' + esc(g.texto) + '</span><button class="btn peq" data-sug="' + k + '"' + (e.usadas[k] ? ' disabled' : '') + '>' + (e.usadas[k] ? 'En la tabla' : 'Agregar') + '</button></div>').join('');
       const esRep = cap.id === 'rep';
-      return '<section class="card sec' + (cerrada ? ' cerrada' : '') + '" id="s-' + esc(s.id) + '">'
-        + '<div class="sec-cab" data-tog><div class="num">' + (i + 1) + '</div><div class="t"><h2>' + esc(s.nombre) + '</h2>'
+      const num = s.clave ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5 9-10"/></svg>' : (secsDe(cap).filter(x => !x.clave).indexOf(s) + 1);
+      return '<section class="card sec' + (s.clave ? ' clave' : '') + (cerrada ? ' cerrada' : '') + '" id="s-' + esc(s.id) + '">'
+        + '<div class="sec-cab" data-tog><div class="num">' + num + '</div><div class="t"><h2>' + esc(s.nombre) + '</h2>'
         + (s.donde ? '<div class="meta"><b>Dónde:</b> ' + esc(s.donde) + '</div>' : '')
         + (s.para ? '<div class="meta"><b>' + (esRep ? 'Para qué sirve:' : 'Qué pasa:') + '</b> ' + esc(s.para) + '</div>' : '')
         + '</div><span class="prog' + (c.tot && c.hechos === c.tot ? ' done' : '') + '" data-prog>' + c.hechos + '/' + c.tot + '</span>'
@@ -412,7 +456,7 @@ export const prerender = true;
         + (s.nota ? '<div class="nota-calc">' + esc(s.nota) + '</div>' : '')
         + (hoy || fil ? '<h3>Lo que muestra hoy</h3><div class="chips">' + hoy + fil + '</div>' : '')
         + (s.editable ? '<h3>' + (esRep ? 'Pantalla' : 'Etapa') + '</h3><div class="grid"><label class="f">Nombre<input type="text" data-ren value="' + esc(s.nombre) + '" /></label><label class="f">Dónde está<input type="text" data-donde value="' + esc(s.donde || '') + '" /></label></div>' : '')
-        + '<h3>Puntos a validar</h3><div>' + (pts || '<div class="vacio">Agrega los puntos que se van a revisar.</div>') + '</div>'
+        + '<h3>' + (s.clave ? 'Pruebas de punta a punta' : 'Puntos a validar') + '</h3><div>' + (pts || '<div class="vacio">Agrega los puntos que se van a revisar.</div>') + '</div>'
         + '<div class="acciones no-print"><button class="btn peq ter" data-addpt>Agregar punto a validar</button></div>'
         + (sug ? '<h3>Sugerencias para revisar con el cliente</h3>' + sug : '')
         + '<h3>' + (esRep ? 'Lo que le falta (campo, dato, filtro…)' : 'Hallazgos: mejoras, reglas y fallas') + '</h3>'
@@ -510,9 +554,9 @@ export const prerender = true;
       }).join('');
       $('#caps').querySelectorAll('[data-cap]').forEach(b => b.onclick = () => irACap(b.dataset.cap));
       const cap = capActual();
-      $('#nav').innerHTML = '<button class="pill" data-ir="__caps">Procesos</button>' + secsDe(cap).map((s, i) => { const c = conteo(s); return '<button class="pill' + (c.tot && c.hechos === c.tot ? ' done' : '') + '" data-ir="' + esc(s.id) + '">' + (i + 1) + '. ' + esc(s.nombre.replace(/^Etapa \d+ · /, '')) + ' <span class="n">' + c.hechos + '/' + c.tot + '</span></button>'; }).join('') + '<button class="pill" data-ir="__cierre">Resumen y cierre</button>';
+      $('#nav').innerHTML = '<button class="pill" data-ir="__caps">Procesos</button>' + (cap.diagrama ? '<button class="pill" data-ir="__mapa">Mapa</button>' : '') + secsDe(cap).map(s => { const c = conteo(s); const n = secsDe(cap).filter(x => !x.clave).indexOf(s) + 1; return '<button class="pill' + (c.tot && c.hechos === c.tot ? ' done' : '') + '" data-ir="' + esc(s.id) + '">' + (s.clave ? 'Puntos clave' : n + '. ' + esc(s.nombre.replace(/^Etapa \d+ · /, ''))) + ' <span class="n">' + c.hechos + '/' + c.tot + '</span></button>'; }).join('') + '<button class="pill" data-ir="__cierre">Resumen y cierre</button>';
       $('#nav').querySelectorAll('[data-ir]').forEach(b => b.onclick = () => {
-        const id = b.dataset.ir; const el = id === '__cierre' ? $('#cierre') : id === '__caps' ? $('#caps') : $(sel(id));
+        const id = b.dataset.ir; const el = id === '__cierre' ? $('#cierre') : id === '__caps' ? $('#caps') : id === '__mapa' ? $('#mapa') : $(sel(id));
         if (id[0] !== '_' && S.cerradas[id]) { S.cerradas[id] = false; el.classList.remove('cerrada'); }
         window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 110, behavior: 'smooth' });
       });
