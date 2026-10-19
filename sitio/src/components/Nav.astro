@@ -121,7 +121,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
                     {plugins.map((p) => (
                       <a href={getLocalizedUrl(p.href, locale)} class="mega-plugin">
                         <span class="mega-plugin-foto">
-                          <img data-src={p.imagen} alt="" width="360" height="440" decoding="async" />
+                          <img data-src={p.imagenAncha} alt="" width="800" height="500" decoding="async" />
                           {p.nuevo && <em>Nuevo</em>}
                         </span>
                         <span class="mega-plugin-t">{p.nombre}</span>

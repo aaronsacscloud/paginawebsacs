@@ -16,8 +16,10 @@ export interface Plugin {
   /** Una línea: qué le agrega a tu Sacs. */
   bajada: string;
   href: string;
-  /** Miniatura vertical 360×440 para el menú. */
+  /** Miniatura vertical 360×440 para el menú del teléfono. */
   imagen: string;
+  /** Foto horizontal 800×500 para el menú de escritorio y «Más plugins» (la vertical ahí perdía las caras). */
+  imagenAncha: string;
   alt: string;
   nuevo?: boolean;
 }
@@ -29,6 +31,7 @@ export const plugins: Plugin[] = [
     bajada: 'Checador, horarios, vacaciones y expedientes de tu equipo.',
     href: '/plugins/staff',
     imagen: '/images/plugins/menu-staff.webp',
+    imagenAncha: '/images/plugins/menu-staff-ancha.webp',
     alt: 'Una vendedora llega a la boutique y checa desde su celular',
   },
   {
@@ -37,6 +40,7 @@ export const plugins: Plugin[] = [
     bajada: 'Le preguntas en lenguaje natural y te arma reportes y tareas.',
     href: '/producto/axo-copiloto-ia',
     imagen: '/images/plugins/menu-axo.webp',
+    imagenAncha: '/images/plugins/menu-axo-ancha.webp',
     alt: 'La dueña de una tienda de ropa consulta a AXO en su tablet',
   },
   {
@@ -45,6 +49,7 @@ export const plugins: Plugin[] = [
     bajada: 'Todo tu Sacs dentro de Claude, ChatGPT y otros asistentes.',
     href: '/mcp',
     imagen: '/images/plugins/menu-mcp.webp',
+    imagenAncha: '/images/plugins/menu-mcp-ancha.webp',
     alt: 'Una mujer de traje azul camina frente a una boutique mientras habla con su asistente en el celular',
   },
   {
@@ -53,6 +58,7 @@ export const plugins: Plugin[] = [
     bajada: 'Gastos, bancos, pagos a proveedores y flujo de efectivo al día.',
     href: '/plugins/administracion',
     imagen: '/images/plugins/menu-administracion.webp',
+    imagenAncha: '/images/plugins/menu-administracion-ancha.webp',
     alt: 'La dueña de una boutique revisa un recibo junto a su laptop',
   },
 ];
