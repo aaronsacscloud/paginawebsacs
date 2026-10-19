@@ -627,84 +627,8 @@ export const GUIA = {
         }
       ]
     },
-    {
-      id: 'p6',
-      nombre: 'Importación de consignatarios',
-      resumen: 'Cargar de golpe a los consignatarios que el cliente ya tiene, sin mandarles mensajes por error.',
-      tipos: TIPOS_FLUJO, cols: COLS_FLUJO,
-      diagrama: {
-        titulo: 'Primero se apagan los avisos; luego se pega la lista y se revisan duplicados',
-        lectura: 'La importación usa el mismo alta del asistente: valida campos, detecta duplicados por correo o teléfono y asigna folio. Si los avisos de registro siguen encendidos, cada importado recibe un mensaje.',
-        nodos: [
-          { id: 'a', c: 0, r: 0, t: 'Apagar avisos', s: 'de registro', sec: 'p6-preparar' },
-          { id: 'b', c: 1, r: 0, t: 'Pegar lista', s: 'nombre, correo, tel.', sec: 'p6-importar' },
-          { id: 'c', c: 2, r: 0, t: 'Validación', s: 'campos y folio', sec: 'p6-importar' },
-          { id: 'd', c: 3, r: 0, t: 'Resultado', s: 'creados y errores', sec: 'p6-resultado', fin: true },
-          { id: 'e', c: 2, r: 1, t: 'Duplicados', s: 'folio existente', sec: 'p6-resultado' },
-          { id: 'f', c: 4, r: 0, t: 'Piezas', s: 'carga aparte', sec: 'p6-piezas' }
-        ],
-        flechas: [
-          { de: 'a', a: 'b' }, { de: 'b', a: 'c' }, { de: 'c', a: 'd' }, { de: 'd', a: 'f' },
-          { de: 'c', a: 'e', et: 'ya existe' }
-        ]
-      },
-      secciones: [
-        {
-          id: 'p6-clave', clave: true,
-          nombre: 'Puntos clave del proceso',
-          para: 'Se prueba con una lista corta (5 a 10 consignatarios) que incluya uno repetido.',
-          puntos: [
-            'Antes de importar, los avisos de registro están apagados.',
-            'Los consignatarios importados aparecen con su folio y datos correctos.',
-            'Un consignatario repetido se detecta y no se duplica.',
-            'Está definido cómo se cargan las piezas que los consignatarios ya tienen en la tienda.'
-          ]
-        },
-        {
-          id: 'p6-preparar',
-          nombre: 'Etapa 1 · Antes de importar',
-          donde: 'Consignación › Configuración (avisos y campos obligatorios del alta)',
-          para: 'La importación manda el aviso de registro a cada importado por WhatsApp o correo, y aplica los campos obligatorios del alta: si se exigen dirección o identificación, todas las filas fallan.',
-          puntos: [
-            'Los avisos de registro están apagados durante la importación.',
-            'Los campos obligatorios del alta permiten importar solo nombre, correo y teléfono.',
-            'La lista del cliente está limpia (un consignatario por renglón, sin encabezados raros).'
-          ]
-        },
-        {
-          id: 'p6-importar',
-          nombre: 'Etapa 2 · Pegar la lista e importar',
-          donde: 'Consignación › Importar («Pega tus consignatarios»)',
-          para: 'Se pega una lista con formato nombre, correo, teléfono (coma, punto y coma o tabulador), hasta 1,000 renglones. Cada uno pasa por la misma validación del alta y recibe folio CONS-.',
-          puntos: [
-            'La lista pegada desde Excel se reconoce bien.',
-            'Los importados quedan con folio CONS- y estado «en proceso».',
-            'Se acordó si el cliente necesita una plantilla descargable o importar desde Excel.'
-          ]
-        },
-        {
-          id: 'p6-resultado',
-          nombre: 'Etapa 3 · Resultado y duplicados',
-          donde: 'Pantalla de resultado: Creados, Duplicados, Con error, Total',
-          para: 'Los duplicados se detectan por correo o cualquier teléfono y se muestra el folio existente. Las filas con error dicen por qué.',
-          puntos: [
-            'Los conteos coinciden con la lista importada.',
-            'Cada duplicado muestra el folio del consignatario que ya existe.',
-            'Cada error explica qué falta para corregirlo.'
-          ]
-        },
-        {
-          id: 'p6-piezas',
-          nombre: 'Etapa 4 · Piezas que ya están en la tienda',
-          donde: 'No hay pantalla: se cargan con apoyo del equipo de Sacscloud',
-          para: 'La pantalla de importación solo carga consignatarios. Las piezas existentes se cargan con un proceso de migración que hace el equipo de Sacscloud, sin mandar avisos.',
-          puntos: [
-            'Se acordó con el cliente cómo y cuándo se cargan sus piezas actuales.',
-            'Las piezas cargadas quedan ligadas a su consignatario, con precio y comisión correctos.'
-          ]
-        }
-      ]
-    },
+    // La importación de consignatarios (antes «p6») queda fuera de la entrega
+    // por decisión del cliente (19-oct-2026). Sus ids no se reutilizan.
     {
       id: 'p7',
       nombre: 'Dinámicas: lives y promociones',
