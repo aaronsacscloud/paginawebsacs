@@ -13,7 +13,7 @@ import { supabase } from '../../../lib/supabase';
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 const CODIGO = /^[a-z0-9]{12,40}$/;
-const GUIAS = new Set(['consignacion-dashboard-reportes']);
+const GUIAS = new Set(['consignacion-suite', 'consignacion-dashboard-reportes']);
 const MAX_BYTES = 600_000;
 
 export const GET: APIRoute = async ({ url }) => {
