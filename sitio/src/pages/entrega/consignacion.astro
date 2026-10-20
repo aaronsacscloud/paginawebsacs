@@ -250,6 +250,9 @@ export const prerender = true;
     .pitch { margin-top: 18px; border: 1px solid #cfe0ff; background: var(--aza); border-radius: 12px; padding: 16px 18px; font-size: 1rem; line-height: 1.6; }
     .pitch .lbl { color: var(--azh); margin-bottom: 6px; }
     .ritmo { margin-top: 18px; border: 1px solid var(--ln); border-radius: 12px; padding: 14px 16px; background: var(--bg2); font-size: .9375rem; color: var(--tx2); }
+    .seg.modo button { min-width: 0; min-height: 34px; padding: 0 14px; }
+    .seg.modo button.on { background: var(--tx); color: #fff; }
+    .modo-cab { display: inline-flex; gap: 6px; align-items: center; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--azh); background: var(--aza); border-radius: 99px; padding: 3px 10px; }
     .procs { border: 1px solid var(--ln); border-radius: 12px; overflow: hidden; }
     .prow { display: grid; grid-template-columns: 40px 1fr 200px 20px; gap: 16px; align-items: center; width: 100%; text-align: left; background: #fff; border: 0; border-top: 1px solid var(--ln); padding: 16px 18px; cursor: pointer; }
     .prow:first-child { border-top: 0; }
@@ -365,6 +368,7 @@ export const prerender = true;
     <header class="top">
       <div class="in">
         <span class="marca">Sacscloud <i>· Checklist de entrega · Suite de Consignación</i></span>
+        <div class="seg modo" id="modo" role="tablist" aria-label="Sesión"><button data-modo="dueno">Dueño</button><button data-modo="equipo">Equipo</button></div>
         <span class="estado" id="estado"><span class="punto"></span><span id="estadoTxt">Cargando…</span></span>
         <button class="btn peq solo-orq oculto" id="btnPend">Solo pendientes</button>
         <button class="btn peq pri solo-orq" id="btnEnviar">Enviar al cliente</button>
@@ -394,7 +398,7 @@ export const prerender = true;
         </div>
         <label class="interruptor solo-orq" title="Oculta los puntos opcionales para una sesión más corta"><input type="checkbox" id="chkCorta" /> Sesión corta: solo lo esencial</label>
       </div>
-      <h3 style="margin-top:28px">Procesos, en el orden en que vive una pieza</h3>
+      <h3 style="margin-top:28px" id="titProcs">Procesos, en el orden en que vive una pieza</h3>
       <div class="procs" id="caps"></div>
       <div class="grid solo-orq" style="margin-top:20px; max-width:480px">
         <label class="f">Quién revisa por parte del cliente (opcional)<input type="text" data-meta="responsable" placeholder="Nombre" /></label>
@@ -461,7 +465,7 @@ export const prerender = true;
     function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('on'), 2800); }
     function nuevoCodigo() { const a = new Uint8Array(12); crypto.getRandomValues(a); return Array.from(a, b => (b % 36).toString(36)).join('') + Date.now().toString(36).slice(-4); }
     function hoyLocal() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
-    function vacio() { return { meta: { cliente: FIJOS.cliente, cuenta: FIJOS.cuenta, fecha: hoyLocal(), consultor: FIJOS.consultor, responsable: '', ambiente: FIJOS.ambiente }, caso: {}, sec: {}, extras: [], procNota: {}, cierre: { acuerdos: '', firmaSacs: FIJOS.consultor }, corta: false, log: [], _ts: Date.now() }; }
+    function vacio() { return { meta: { cliente: FIJOS.cliente, cuenta: FIJOS.cuenta, fecha: hoyLocal(), consultor: FIJOS.consultor, responsable: '', ambiente: FIJOS.ambiente }, caso: {}, sec: {}, extras: [], procNota: {}, cierre: { acuerdos: '', firmaSacs: FIJOS.consultor }, corta: false, vista: 'dueno', log: [], _ts: Date.now() }; }
     function capDe(id) { return GUIA.capitulos.find(c => c.id === id) || GUIA.capitulos[0]; }
     function secsDe(cap) { return cap.secciones.concat((S.extras || []).filter(x => x.cap === cap.id)); }
     function est(id) {
@@ -474,7 +478,12 @@ export const prerender = true;
     function corto(t, n) { t = String(t || ''); return t.length > (n || 60) ? t.slice(0, (n || 60) - 1) + '…' : t; }
     function numCap(cap) { return GUIA.capitulos.indexOf(cap); }
     function etiquetaCap(cap) { return cap.id === 'rep' ? 'Revisión final' : numCap(cap) === 0 ? 'Preparación' : 'Proceso ' + numCap(cap); }
-    function numSec(cap, s) { return secsDe(cap).indexOf(s) + 1; }
+    // Sesión con el DUEÑO (visión y reglas) o con el EQUIPO (detalle en pantalla).
+    const esDueno = () => S.vista === 'dueno';
+    function secsModo(cap, modo) { const d = (modo || S.vista) === 'dueno'; return secsDe(cap).filter(s => !!s.dueno === d); }
+    function secDueno(cap) { return secsDe(cap).find(s => s.dueno); }
+    function firmaId(cap, modo) { return cap.id + ((modo || S.vista) === 'dueno' ? '-d' : '-e'); }
+    function numSec(cap, s) { return secsModo(cap).indexOf(s) + 1; }
     function pct(a, b) { return (b ? Math.round(a * 100 / b) : 0) + '%'; }
     function demos(s) { return s.demostrar || []; }
     function txtPunto(s, e, key) { if (key[0] === 'x') { const p = e.extra[+key.slice(1)]; return (p && p.t) || 'Punto agregado'; } const p = demos(s)[+key.slice(1)]; return p ? p.h + ' → ' + p.d : ''; }
@@ -492,7 +501,7 @@ export const prerender = true;
     function pintarHist() {
       if (ruta.v !== 'cierre') return;
       const ev = (S.log || []).map(x => ({ t: x.t, q: x.q, a: x.a }));
-      Object.keys(F).forEach(id => { const f = F[id]; const nm = id === '__cierre' ? 'Cierre de la sesión' : (GUIA.capitulos.some(c => c.id === id) ? etiquetaCap(capDe(id)) + ' · ' + capDe(id).nombre : id); ev.push({ t: f.at, q: f.nombre + (f.desde === 'cliente' ? ' (desde su liga)' : ''), a: 'Firmó de enterado y aceptado · ' + nm }); });
+      Object.keys(F).forEach(id => { const f = F[id]; const base = id.replace(/-[de]$/, ''); const nm = id === '__cierre' ? 'Cierre de la sesión' : (GUIA.capitulos.some(c => c.id === base) ? etiquetaCap(capDe(base)) + ' · ' + capDe(base).nombre + (/-d$/.test(id) ? ' (dueño)' : /-e$/.test(id) ? ' (equipo)' : '') : id); ev.push({ t: f.at, q: f.nombre + (f.desde === 'cliente' ? ' (desde su liga)' : ''), a: 'Firmó de enterado y aceptado · ' + nm }); });
       ev.sort((a, b) => (a.t < b.t ? 1 : -1));
       $('#hist').innerHTML = ev.length ? ev.slice(0, 300).map(x => '<li><span>' + esc(fechaCorta(x.t)) + '</span><div><b>' + esc(x.q) + '</b> · ' + esc(x.a) + '</div></li>').join('') : '<li><span></span><div class="vacio">Sin movimientos todavía.</div></li>';
     }
@@ -545,7 +554,7 @@ export const prerender = true;
       if (/^[a-z0-9]{12,40}$/.test(qc) && !/^[a-z0-9]{12,40}$/.test(codigo)) return arrancarCliente(qc);
       if (!/^[a-z0-9]{12,40}$/.test(codigo)) return pantallaInicio();
       $('#app').classList.remove('oculto');
-      $('#intro').textContent = 'Se empieza con el arranque (cuenta de Agustín, suite instalada y el pitch al cliente) y luego se recorre un flujo estándar completo, proceso por proceso y en orden, con un mismo caso de prueba. En cada etapa se demuestra, se deciden las reglas del cliente y se anotan dudas y mejoras. Al día siguiente se revisa lo anotado y se pule el proceso; cuando queda como lo necesitan, el cliente lo firma y se pasa al siguiente.';
+      $('#intro').textContent = 'Cada proceso se ve en dos sesiones. Con el DUEÑO: la visión del proceso, los resultados y las reglas del negocio. Con el EQUIPO: el detalle en pantalla, con un caso de prueba. Cambia de sesión arriba (Dueño | Equipo). Lo que salga se anota; al día siguiente se revisa y se pule, y cuando queda se firma y se pasa al siguiente proceso.';
       let loc = null; try { loc = JSON.parse(localStorage.getItem(LS + codigo) || 'null'); } catch (e) {}
       let fila = null, red = true;
       try {
@@ -603,6 +612,7 @@ export const prerender = true;
       Object.keys(FIJOS).forEach(k => { S.meta[k] = FIJOS[k]; });
       if (!S.meta.fecha) S.meta.fecha = hoyLocal();
       if (!S.cierre.firmaSacs) S.cierre.firmaSacs = FIJOS.consultor;
+      if (S.vista !== 'equipo') S.vista = 'dueno';
       document.body.classList.toggle('corta', !!S.corta);
     }
 
@@ -624,7 +634,11 @@ export const prerender = true;
 
     // ── Rutas ──────────────────────────────────────────────────────────────
     // Cada proceso: [mapa] + etapas + cierre del proceso (resumen, «¿qué cambiarías?» y firma).
-    function listaPasos(cap) { return (cap.diagrama ? ['__mapa'] : []).concat(secsDe(cap).map(s => s.id)).concat(['__fin']); }
+    function listaPasos(cap) {
+      const sd = secDueno(cap);
+      const reglas = !esDueno() && sd && (sd.decidir || []).length ? ['__reglas'] : [];
+      return (cap.diagrama ? ['__mapa'] : []).concat(reglas, secsModo(cap).map(s => s.id), ['__fin']);
+    }
     function leerRuta() {
       const h = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
       if (h[0] === 'p' && GUIA.capitulos.some(c => c.id === h[1])) {
@@ -647,6 +661,7 @@ export const prerender = true;
       $('#btnPend').classList.toggle('oculto', ruta.v !== 'proc');
       document.querySelectorAll('[data-meta]').forEach(el => { el.value = S.meta[el.dataset.meta] || ''; el.oninput = () => { S.meta[el.dataset.meta] = el.value; cambio(); }; });
       document.querySelectorAll('[data-cierre]').forEach(el => { el.value = S.cierre[el.dataset.cierre] || ''; el.oninput = () => { S.cierre[el.dataset.cierre] = el.value; cambio(); }; });
+      document.querySelectorAll('#modo [data-modo]').forEach(b => b.classList.toggle('on', b.dataset.modo === S.vista));
       if (ruta.v === 'inicio') pintarInicio();
       else if (ruta.v === 'proc') pintarProceso();
       else pintarCierre();
@@ -656,7 +671,8 @@ export const prerender = true;
 
     function nombrePaso(cap, id) {
       if (id === '__mapa') return 'Mapa del proceso';
-      if (id === '__fin') return 'Cierre del proceso';
+      if (id === '__fin') return esDueno() ? 'Cierre con el dueño' : 'Cierre con el equipo';
+      if (id === '__reglas') return 'Lo que decidió el dueño';
       const s = secsDe(cap).find(x => x.id === id); return s ? numSec(cap, s) + '. ' + s.nombre : id;
     }
     function pintarMigas() {
@@ -673,7 +689,7 @@ export const prerender = true;
     // Vista del cliente: todo se ve, nada se edita salvo la firma.
     function bloquear(root) {
       if (!esCliente()) return;
-      root.querySelectorAll('input, textarea, select, .seg button').forEach(el => { if (!el.closest('[data-firma]') && el.id !== 'selPasos') el.disabled = true; });
+      root.querySelectorAll('input, textarea, select, .seg button').forEach(el => { if (!el.closest('[data-firma]') && !el.closest('#modo') && el.id !== 'selPasos') el.disabled = true; });
     }
 
     // ── Conteos ────────────────────────────────────────────────────────────
@@ -687,8 +703,8 @@ export const prerender = true;
     }
     function conteoCap(cap) {
       const t = { tot: 0, hechos: 0, fallas: 0, hall: 0, dec: 0, decOk: 0, dudas: 0 };
-      secsDe(cap).forEach(s => { const c = conteo(s); Object.keys(t).forEach(k => { t[k] += c[k]; }); });
-      t.firm = F[cap.id] ? 1 : 0;
+      secsModo(cap).forEach(s => { const c = conteo(s); Object.keys(t).forEach(k => { t[k] += c[k]; }); });
+      t.firm = F[firmaId(cap)] ? 1 : 0;
       return t;
     }
     function totales() {
@@ -710,6 +726,7 @@ export const prerender = true;
         + '<div class="kpi"><span class="l">Procesos firmados</span><span class="c">' + T.firm + '<span style="font-size:1rem;color:var(--tx3)"> / ' + T.procs + '</span></span><span class="s">' + T.hall + ' mejoras y hallazgos</span></div>';
       $('#casoMini').innerHTML = CASO.slice(0, 6).map(c => '<span class="' + (S.caso[c.k] ? '' : 'vacio-c') + '">' + esc(c.l.split(' · ')[0]) + ': <b>' + esc(S.caso[c.k] || 'por anotar') + '</b></span>').join('')
         + '<a class="btn peq" data-ir="#/p/p0/p0-caso" style="min-height:30px">Editar</a>';
+      $('#titProcs').textContent = (esDueno() ? 'Sesión con el dueño' : 'Sesión con el equipo') + ' · procesos en el orden en que vive una pieza';
       $('#chkCorta').checked = !!S.corta;
       $('#chkCorta').onchange = ev => { S.corta = ev.target.checked; document.body.classList.toggle('corta', S.corta); logEv(S.corta ? 'Activó la sesión corta (solo lo esencial)' : 'Volvió a la sesión completa'); cambio(); pintarInicio(); };
       $('#caps').innerHTML = GUIA.capitulos.map(cap => {
@@ -738,12 +755,13 @@ export const prerender = true;
         const on = ruta.paso === id ? ' on' : '';
         const href = '#/p/' + cap.id + '/' + encodeURIComponent(id);
         if (id === '__mapa') return '<button class="paso' + on + '" data-ir="' + href + '"><span class="ic"></span><span class="tx">Mapa del proceso<span class="mt">Cómo funciona de punta a punta</span></span></button>';
-        if (id === '__fin') return '<button class="paso' + on + '" data-ir="' + href + '"><span class="ic' + (F[cap.id] ? ' ok' : '') + '">' + (F[cap.id] ? ICO_OK : '') + '</span><span class="tx">Cierre del proceso<span class="mt">' + (F[cap.id] ? 'Firmado' : '¿Qué cambiarías? y firma') + '</span></span></button>';
+        if (id === '__reglas') return '<button class="paso' + on + '" data-ir="' + href + '"><span class="ic"></span><span class="tx">Lo que decidió el dueño<span class="mt">Reglas que aplican al equipo</span></span></button>';
+        if (id === '__fin') { const fz = F[firmaId(cap)]; return '<button class="paso' + on + '" data-ir="' + href + '"><span class="ic' + (fz ? ' ok' : '') + '">' + (fz ? ICO_OK : '') + '</span><span class="tx">' + esc(nombrePaso(cap, id)) + '<span class="mt">' + (fz ? 'Firmado' : '¿Qué cambiarías? y firma') + '</span></span></button>'; }
         const s = secsDe(cap).find(x => x.id === id); const c = conteo(s); const e = estadoPaso(s);
         return '<button class="paso' + on + '" data-ir="' + href + '"><span class="ic ' + e + '">' + (e === 'ok' ? ICO_OK : '') + '</span><span class="tx">' + esc(numSec(cap, s) + '. ' + s.nombre)
           + '<span class="mt">' + (s.caso ? 'Datos del caso' : (c.tot ? c.hechos + '/' + c.tot : '') + (c.dec ? (c.tot ? ' · ' : '') + c.decOk + '/' + c.dec + ' decisiones' : '') + (c.fallas ? ' · ' + c.fallas + ' con falla' : '') + (c.dudas ? ' · ' + c.dudas + ' dudas' : '')) + '</span></span></button>';
       }).join('');
-      $('#pasos').innerHTML = '<div class="tit">' + esc(etiquetaCap(cap)) + '<b>' + esc(cap.nombre) + '</b></div><div class="bar"><i style="width:' + pct(ct.hechos, ct.tot) + '"></i></div>' + items
+      $('#pasos').innerHTML = '<div class="tit"><span class="modo-cab">' + (esDueno() ? 'Sesión con el dueño' : 'Sesión con el equipo') + '</span><br>' + esc(etiquetaCap(cap)) + '<b>' + esc(cap.nombre) + '</b></div><div class="bar"><i style="width:' + pct(ct.hechos, ct.tot) + '"></i></div>' + items
         + '<div class="solo-orq" style="padding:8px 10px"><button class="btn peq" id="btnOtra" style="width:100%">Agregar etapa</button></div>';
       $('#selPasos').innerHTML = listaPasos(cap).map(id => '<option value="' + esc(id) + '"' + (ruta.paso === id ? ' selected' : '') + '>' + esc(nombrePaso(cap, id)) + '</option>').join('');
       $('#selPasos').onchange = ev => ir('#/p/' + cap.id + '/' + encodeURIComponent(ev.target.value));
@@ -757,6 +775,8 @@ export const prerender = true;
       if (ruta.paso === '__mapa') {
         $('#foco').innerHTML = '<div class="foco-cab"><span class="k">' + esc(etiquetaCap(cap)) + '</span><h1>' + esc(cap.nombre) + '</h1><p class="sub">' + esc(cap.resumen) + '</p></div>' + htmlMapa(cap.diagrama);
         $('#foco').querySelectorAll('[data-go]').forEach(g => g.onclick = () => ir('#/p/' + cap.id + '/' + encodeURIComponent(g.dataset.go)));
+      } else if (ruta.paso === '__reglas') {
+        $('#foco').innerHTML = htmlReglas(cap);
       } else if (ruta.paso === '__fin') {
         $('#foco').innerHTML = htmlFin(cap); enlazarFin(cap);
       } else {
@@ -815,7 +835,7 @@ export const prerender = true;
       const pts = demos(s).map((p, k) => e.ocultos[k] ? '' : htmlPunto('b' + k, p, e.puntos[k] || {})).join('') + e.extra.map((p, k) => htmlPunto('x' + k, p, p)).join('');
       const hoy = (s.hoy || []).map(x => '<span class="chip">' + esc(x) + '</span>').join('');
       let h = '<article class="sec' + (imprimir ? ' imp-sec' : '') + '"' + (imprimir ? '' : ' id="s-' + esc(s.id) + '"') + '>'
-        + '<div class="foco-cab"><span class="k">' + esc(etiquetaCap(cap)) + ' · Etapa ' + numSec(cap, s) + '</span>'
+        + '<div class="foco-cab"><span class="k">' + esc(etiquetaCap(cap)) + ' · ' + (s.dueno ? 'Sesión con el dueño' : 'Etapa ' + numSec(cap, s) + ' · sesión con el equipo') + '</span>'
         + '<h1>' + esc(s.nombre) + '</h1>'
         + (s.caso ? '' : '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">' + (c.tot ? '<span class="etiqueta">' + c.hechos + ' de ' + c.tot + ' demostrados</span>' : '') + (c.dec ? '<span class="etiqueta">' + c.decOk + ' de ' + c.dec + ' decisiones</span>' : '') + (c.fallas ? '<span class="etiqueta" style="background:var(--rja);color:var(--rjt)">' + c.fallas + ' con falla</span>' : '') + (c.dudas ? '<span class="etiqueta" style="background:var(--ama);color:var(--amt)">' + c.dudas + ' dudas abiertas</span>' : '') + '</div>')
         + '<div class="foco-meta">' + (s.donde ? '<div><b>Dónde:</b> ' + esc(s.donde) + '</div>' : '') + (s.para ? '<div><b>Qué pasa:</b> ' + esc(s.para) + '</div>' : '') + '</div>'
@@ -1042,37 +1062,48 @@ export const prerender = true;
     }
 
     function agregarEtapa(cap) {
-      const s = { id: 'x' + Date.now().toString(36), cap: cap.id, nombre: 'Etapa nueva', donde: '', para: '', demostrar: [], decidir: [], noHace: [], editable: true };
+      const s = { id: 'x' + Date.now().toString(36), cap: cap.id, dueno: esDueno(), nombre: esDueno() ? 'Tema nuevo con el dueño' : 'Etapa nueva', donde: '', para: '', demostrar: [], decidir: [], noHace: [], editable: true };
       S.extras.push(s); logEv('Agregó una etapa al proceso «' + cap.nombre + '»'); cambio();
       ir('#/p/' + cap.id + '/' + s.id);
       setTimeout(() => { const r = $('[data-ren]'); if (r) { r.focus(); r.select(); } }, 50);
     }
 
-    // ── Cierre de cada proceso: resumen, «¿qué cambiarías?» y firma ────────
-    function htmlFin(cap, imprimir) {
-      const c = conteoCap(cap);
-      const dudas = secsDe(cap).flatMap(s => est(s.id).dudas.filter(d => !d.ok).map(d => d.q)).filter(Boolean);
-      const decs = secsDe(cap).flatMap(s => (s.decidir || []).map((q, k) => ({ q, r: est(s.id).dec[k] }))).filter(x => (x.r || '').trim());
-      return '<div class="' + (imprimir ? 'imp-sec' : '') + '"><div class="foco-cab"><span class="k">' + esc(etiquetaCap(cap)) + '</span><h1>Cierre del proceso</h1><p class="sub">' + esc(cap.nombre) + '</p></div>'
+    // En la sesión con el equipo: las reglas que ya decidió el dueño (solo lectura).
+    function htmlReglas(cap) {
+      const sd = secDueno(cap); const e = est(sd.id);
+      return '<div class="foco-cab"><span class="k">' + esc(etiquetaCap(cap)) + ' · sesión con el equipo</span><h1>Lo que decidió el dueño</h1><p class="sub">Las reglas de este proceso que el equipo debe conocer antes de verlo en pantalla. Si alguna no cuadra con la operación, se anota como duda o mejora en la etapa.</p></div>'
+        + '<div class="lista-cierre" style="margin-top:20px">' + sd.decidir.map((q, k) => '<div class="li"><span>' + esc(q) + '</span><b>' + ((e.dec[k] || '').trim() ? esc(e.dec[k]) : '<span class="w">Pendiente con el dueño</span>') + '</b></div>').join('') + '</div>';
+    }
+
+    // ── Cierre de cada proceso (por sesión): resumen, «¿qué cambiarías?» y firma
+    function htmlFin(cap, imprimir, modo) {
+      modo = modo || S.vista; const dn = modo === 'dueno';
+      const secs = secsModo(cap, modo);
+      const c = { tot: 0, hechos: 0, fallas: 0, dec: 0, decOk: 0, dudas: 0 }; secs.forEach(s => { const x = conteo(s); Object.keys(c).forEach(k => { c[k] += x[k]; }); });
+      const dudas = secs.flatMap(s => est(s.id).dudas.filter(d => !d.ok).map(d => d.q)).filter(Boolean);
+      const decs = secs.flatMap(s => (s.decidir || []).map((q, k) => ({ q, r: est(s.id).dec[k] }))).filter(x => (x.r || '').trim());
+      const nk = cap.id + (dn ? '-d' : '-e'); const fz = F[nk];
+      return '<div class="' + (imprimir ? 'imp-sec' : '') + '"><div class="foco-cab"><span class="k">' + esc(etiquetaCap(cap)) + ' · ' + esc(cap.nombre) + '</span><h1>' + (dn ? 'Cierre con el dueño' : 'Cierre con el equipo') + '</h1></div>'
         + '<div class="fin-res"><div><span>Demostrado</span><b>' + c.hechos + '/' + c.tot + '</b></div><div><span>Con falla</span><b style="color:var(--rjt)">' + c.fallas + '</b></div><div><span>Decisiones</span><b>' + c.decOk + '/' + c.dec + '</b></div><div><span>Dudas abiertas</span><b>' + c.dudas + '</b></div></div>'
         + (decs.length ? '<h3>Lo que decidió el cliente</h3><div class="lista-cierre">' + decs.map(x => '<div class="li"><span>' + esc(x.q) + '</span><b>' + esc(x.r) + '</b></div>').join('') + '</div>' : '')
         + (dudas.length ? '<h3>Dudas abiertas</h3><div class="lista-cierre">' + dudas.map(q => '<div class="li"><span>' + esc(q) + '</span></div>').join('') + '</div>' : '')
         + '<div class="ritmo"><b>Cómo se cierra un proceso:</b> lo que salió hoy se revisa al día siguiente y se pule hasta que quede como lo necesitan. Cuando ya quedó, el cliente firma de enterado y se pasa al siguiente proceso.</div>'
-        + '<h3>¿Qué cambiarías de este flujo?</h3>' + htmlTxt('data-procnota', S.procNota[cap.id] || '', 'Lo que el cliente cambiaría o necesita distinto en este proceso')
-        + htmlFirma('Firma del cliente · ' + cap.nombre, LEY_PROC, F[cap.id], F[cap.id] && F[cap.id].h !== huellaCap(cap)) + '</div>';
+        + '<h3>¿Qué cambiarías de este flujo?</h3>' + htmlTxt('data-procnota', S.procNota[nk] || '', dn ? 'Lo que el dueño cambiaría o necesita distinto' : 'Lo que el equipo cambiaría o necesita distinto')
+        + htmlFirma(dn ? 'Firma del dueño · ' + cap.nombre : 'Firma del responsable del equipo · ' + cap.nombre, dn ? LEY_PROC : LEY_EQUIPO, fz, fz && fz.h !== huellaCap(cap, modo)) + '</div>';
     }
     function enlazarFin(cap) {
-      const t = $('#foco [data-procnota]'); if (t) { t.oninput = () => { S.procNota[cap.id] = t.value; cambio(); }; }
-      enlazarFirma($('#foco [data-firma]'), cap.id, () => huellaCap(cap), () => { $('#foco').innerHTML = htmlFin(cap); enlazarFin(cap); bloquear($('#foco')); pintarPasos(); });
+      const t = $('#foco [data-procnota]'); if (t) { t.oninput = () => { S.procNota[firmaId(cap)] = t.value; cambio(); }; }
+      enlazarFirma($('#foco [data-firma]'), firmaId(cap), () => huellaCap(cap), () => { $('#foco').innerHTML = htmlFin(cap); enlazarFin(cap); bloquear($('#foco')); pintarPasos(); });
     }
 
     // ── Firma de enterado y aceptado ───────────────────────────────────────
-    const LEY_PROC = 'Revisamos y pulimos este proceso con el orquestador. Queda como lo necesitamos y estoy de acuerdo con lo demostrado, nuestras decisiones y lo anotado.';
+    const LEY_PROC = 'Revisamos y pulimos este proceso con el orquestador. Queda como lo necesitamos y estoy de acuerdo con lo demostrado, las reglas que decidí y lo anotado.';
+    const LEY_EQUIPO = 'Revisamos y pulimos este proceso en pantalla con el orquestador. Funciona como lo trabajamos y estoy de acuerdo con lo demostrado y lo anotado.';
     const LEY_CIERRE = 'Revisé con el orquestador los procesos de esta sesión. Estoy enterado y de acuerdo con lo demostrado, las decisiones, las mejoras y los acuerdos anotados.';
     function hashTxt(t) { let h = 5381; for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
     function huellaSec(e) { return [e.puntos, e.extra, e.hall, e.ocultos, e.dec, e.dudas]; }
-    function huellaCap(cap) { return hashTxt(JSON.stringify([secsDe(cap).map(s => huellaSec(est(s.id))), S.procNota[cap.id] || ''])); }
-    function huellaTodo() { return hashTxt(JSON.stringify([GUIA.capitulos.map(c => huellaCap(c)), S.cierre.acuerdos || ''])); }
+    function huellaCap(cap, modo) { modo = modo || S.vista; return hashTxt(JSON.stringify([secsModo(cap, modo).map(s => huellaSec(est(s.id))), S.procNota[cap.id + (modo === 'dueno' ? '-d' : '-e')] || ''])); }
+    function huellaTodo() { return hashTxt(JSON.stringify([GUIA.capitulos.map(c => [huellaCap(c, 'dueno'), huellaCap(c, 'equipo')]), S.cierre.acuerdos || ''])); }
     function fechaFirma(iso) { try { return new Date(iso).toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) { return iso; } }
     function htmlFirma(titulo, ley, f, cambioTras) {
       if (f) return '<div class="firma-box" data-firma><h4>' + esc(titulo) + '</h4><div class="firmado">'
@@ -1098,7 +1129,7 @@ export const prerender = true;
       if (quitar) {
         quitar.onclick = async () => {
           if (quitar.dataset.arm !== '1') { quitar.dataset.arm = '1'; quitar.textContent = '¿Seguro? Sí, quitar'; setTimeout(() => { quitar.dataset.arm = ''; quitar.textContent = 'Quitar firma'; }, 3500); return; }
-          try { await guardarFirma(id, null); logEv('Quitó la firma · ' + (id === '__cierre' ? 'Cierre' : capDe(id).nombre)); repinta(); cambio(); toast('Firma quitada'); }
+          try { await guardarFirma(id, null); logEv('Quitó la firma · ' + (id === '__cierre' ? 'Cierre' : capDe(id.replace(/-[de]$/, '')).nombre)); repinta(); cambio(); toast('Firma quitada'); }
           catch (e) { toast(e.message); }
         };
         return;
@@ -1124,8 +1155,8 @@ export const prerender = true;
     function avisosFirma() {
       if (!S) return;
       if (ruta.v === 'proc' && ruta.paso === '__fin') {
-        const a = document.querySelector('#foco [data-aviso]'); const f = F[ruta.cap];
-        if (f && a) a.classList.toggle('oculto', f.h === huellaCap(capDe(ruta.cap)));
+        const cap = capDe(ruta.cap); const a = document.querySelector('#foco [data-aviso]'); const f = F[firmaId(cap)];
+        if (f && a) a.classList.toggle('oculto', f.h === huellaCap(cap));
       }
       const ac = document.querySelector('#firmaCierre [data-aviso]');
       if (F.__cierre && ac) ac.classList.toggle('oculto', F.__cierre.h === huellaTodo());
@@ -1135,7 +1166,7 @@ export const prerender = true;
     function recolectar() {
       const fallas = [], mejoras = [], dudas = [], decs = [];
       GUIA.capitulos.forEach(cap => secsDe(cap).forEach(s => {
-        const e = est(s.id); const donde = etiquetaCap(cap) + ' · ' + s.nombre;
+        const e = est(s.id); const donde = etiquetaCap(cap) + ' · ' + (s.dueno ? 'Con el dueño' : s.nombre);
         demos(s).forEach((p, k) => { const st = e.puntos[k]; if (cuenta(s, e, k) && st && st.e === 'falla' && !st.hz) fallas.push({ cap: cap.id, donde, que: p.h + ' → ' + p.d, nota: st.n || '' }); });
         e.extra.forEach(p => { if (p.e === 'falla' && !p.hz) fallas.push({ cap: cap.id, donde, que: p.t, nota: p.n || '' }); });
         e.hall.forEach(h => (h.tipo === 'Bug' ? fallas : mejoras).push(Object.assign({ cap: cap.id, donde }, h)));
@@ -1158,7 +1189,10 @@ export const prerender = true;
         + '<h3>Mejoras que pidió el cliente (' + R.mejoras.filter(f).length + ')</h3>' + tabla(R.mejoras.filter(f), 'Sin mejoras anotadas.')
         + '<h3>Dudas (' + D.filter(d => !d.ok).length + ' abiertas)</h3>' + (D.length ? '<div class="lista-cierre">' + D.map(d => '<div class="li"><span>' + esc(d.q) + (d.r ? '<br><span class="w">' + esc(d.r) + '</span>' : '') + '<br><span class="w">' + esc(d.donde) + (d.quien ? ' · la responde: ' + esc(d.quien) : '') + '</span></span><span class="w">' + (d.ok ? 'Resuelta' : 'Abierta') + '</span></div>').join('') + '</div>' : '<div class="vacio">Sin dudas.</div>')
         + '<h3>Decisiones del cliente (' + R.decs.filter(f).length + ')</h3>' + (R.decs.filter(f).length ? '<div class="lista-cierre">' + R.decs.filter(f).map(x => '<div class="li"><span>' + esc(x.q) + '<br><span class="w">' + esc(x.donde) + '</span></span><b>' + esc(x.r) + '</b></div>').join('') + '</div>' : '<div class="vacio">Sin decisiones registradas.</div>')
-        + (Object.keys(S.procNota).some(k => (S.procNota[k] || '').trim() && (!filtroRes || k === filtroRes)) ? '<h3>Lo que el cliente cambiaría</h3><div class="lista-cierre">' + GUIA.capitulos.filter(c => (S.procNota[c.id] || '').trim() && (!filtroRes || c.id === filtroRes)).map(c => '<div class="li"><span>' + esc(S.procNota[c.id]) + '<br><span class="w">' + esc(etiquetaCap(c) + ' · ' + c.nombre) + '</span></span></div>').join('') + '</div>' : '');
+        + (function () {
+            const it = []; GUIA.capitulos.forEach(c => ['dueno', 'equipo'].forEach(m => { const k = c.id + (m === 'dueno' ? '-d' : '-e'); if ((S.procNota[k] || '').trim() && (!filtroRes || c.id === filtroRes)) it.push('<div class="li"><span>' + esc(S.procNota[k]) + '<br><span class="w">' + esc(etiquetaCap(c) + ' · ' + c.nombre + (m === 'dueno' ? ' · dueño' : ' · equipo')) + '</span></span></div>'); }));
+            return it.length ? '<h3>Lo que el cliente cambiaría</h3><div class="lista-cierre">' + it.join('') + '</div>' : '';
+          })();
       pintarFirmaCierre();
       pintarHist();
     }
@@ -1170,6 +1204,12 @@ export const prerender = true;
 
     // ── Barra ──────────────────────────────────────────────────────────────
     function ligaCliente() { return cc ? location.origin + location.pathname + '?c=' + cc : ''; }
+    $('#modo').onclick = ev => {
+      const b = ev.target.closest('[data-modo]'); if (!b || !S || b.dataset.modo === S.vista) return;
+      S.vista = b.dataset.modo; logEv('Cambió a la sesión con el ' + (esDueno() ? 'dueño' : 'equipo')); if (!esCliente()) cambio();
+      toast(esDueno() ? 'Sesión con el dueño: visión, resultados y reglas' : 'Sesión con el equipo: el detalle en pantalla');
+      if (ruta.v === 'proc') ir('#/p/' + ruta.cap); else render();
+    };
     $('#btnPend').onclick = () => {
       const on = document.body.classList.toggle('pend'); $('#btnPend').classList.toggle('on', on);
       toast(on ? 'Solo se ven los puntos sin revisar y las fallas' : 'Se ven todos los puntos');
@@ -1191,8 +1231,10 @@ export const prerender = true;
         + '<p class="sub">' + T.hechos + ' de ' + T.tot + ' puntos demostrados · ' + T.fallas + ' con falla · ' + T.decOk + '/' + T.dec + ' decisiones · ' + T.dudas + ' dudas abiertas · ' + T.firm + '/' + T.procs + ' procesos firmados</p>';
       GUIA.capitulos.forEach(cap => {
         h += '<section class="imp-cap"><h2 style="margin-top:24px">' + esc(etiquetaCap(cap) + ' · ' + cap.nombre) + '</h2>' + (cap.diagrama ? htmlMapa(cap.diagrama) : '');
-        secsDe(cap).forEach(s => { h += htmlSec(cap, s, true); });
-        h += htmlFin(cap, true) + '</section>';
+        secsModo(cap, 'dueno').forEach(s => { h += htmlSec(cap, s, true); });
+        h += htmlFin(cap, true, 'dueno');
+        secsModo(cap, 'equipo').forEach(s => { h += htmlSec(cap, s, true); });
+        h += htmlFin(cap, true, 'equipo') + '</section>';
       });
       $('#imprimir').innerHTML = h;
       setTimeout(() => window.print(), 150);
@@ -1200,19 +1242,22 @@ export const prerender = true;
     window.addEventListener('afterprint', () => { $('#imprimir').innerHTML = ''; });
     function exportarCsv() {
       const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-      const filas = [['Proceso', 'Etapa', 'Renglón', 'Tipo', 'Texto', 'Resultado / respuesta', 'Nota / cómo lo quiere', 'Prioridad', 'Responsable', 'Fecha compromiso', 'Estado', 'Fotos']];
+      const filas = [['Proceso', 'Sesión · etapa', 'Renglón', 'Tipo', 'Texto', 'Resultado / respuesta', 'Nota / cómo lo quiere', 'Prioridad', 'Responsable', 'Fecha compromiso', 'Estado', 'Fotos']];
       GUIA.capitulos.forEach(cap => {
         const pn = etiquetaCap(cap) + ' · ' + cap.nombre;
         secsDe(cap).forEach(s => {
-          const e = est(s.id);
-          demos(s).forEach((p, k) => { if (!cuenta(s, e, k)) return; const st = e.puntos[k] || {}; filas.push([pn, s.nombre, 'Demostrar', p.o ? 'Opcional' : 'Esencial', p.h + ' → ' + p.d, RES[st.e || ''], st.n || '', '', '', '', '', (st.fotos || []).join(' ')]); });
-          e.extra.forEach(p => filas.push([pn, s.nombre, 'Demostrar', 'Agregado', p.t, RES[p.e || ''], p.n || '', '', '', '', '', (p.fotos || []).join(' ')]));
-          (s.decidir || []).forEach((dq, k) => filas.push([pn, s.nombre, 'Decisión', '', dq, e.dec[k] || '', '', '', '', '', (e.dec[k] || '').trim() ? 'Contestada' : 'Pendiente', '']));
-          e.dudas.forEach(d => filas.push([pn, s.nombre, 'Duda', '', d.q, d.r || '', '', '', d.quien || '', '', d.ok ? 'Resuelta' : 'Abierta', '']));
-          e.hall.forEach(h => filas.push([pn, s.nombre, 'Mejora / falla', h.tipo, h.que, '', h.uso, h.prio, h.resp || '', h.fecha || '', h.deci || 'Pendiente', (h.fotos || []).join(' ')]));
+          const e = est(s.id); const sn = s.dueno ? 'Dueño' : 'Equipo · ' + s.nombre;
+          demos(s).forEach((p, k) => { if (!cuenta(s, e, k)) return; const st = e.puntos[k] || {}; filas.push([pn, sn, 'Demostrar', p.o ? 'Opcional' : 'Esencial', p.h + ' → ' + p.d, RES[st.e || ''], st.n || '', '', '', '', '', (st.fotos || []).join(' ')]); });
+          e.extra.forEach(p => filas.push([pn, sn, 'Demostrar', 'Agregado', p.t, RES[p.e || ''], p.n || '', '', '', '', '', (p.fotos || []).join(' ')]));
+          (s.decidir || []).forEach((dq, k) => filas.push([pn, sn, 'Decisión', '', dq, e.dec[k] || '', '', '', '', '', (e.dec[k] || '').trim() ? 'Contestada' : 'Pendiente', '']));
+          e.dudas.forEach(d => filas.push([pn, sn, 'Duda', '', d.q, d.r || '', '', '', d.quien || '', '', d.ok ? 'Resuelta' : 'Abierta', '']));
+          e.hall.forEach(h => filas.push([pn, sn, 'Mejora / falla', h.tipo, h.que, '', h.uso, h.prio, h.resp || '', h.fecha || '', h.deci || 'Pendiente', (h.fotos || []).join(' ')]));
         });
-        if ((S.procNota[cap.id] || '').trim()) filas.push([pn, 'Cierre del proceso', 'Qué cambiaría', '', S.procNota[cap.id], '', '', '', '', '', '', '']);
-        const f = F[cap.id]; if (f) filas.push([pn, 'Cierre del proceso', 'Firma', '', f.nombre + (f.puesto ? ' · ' + f.puesto : ''), 'Enterado y aceptado', fechaFirma(f.at) + (f.h !== huellaCap(cap) ? ' · con cambios después de la firma' : ''), '', '', '', '', '']);
+        ['dueno', 'equipo'].forEach(m => {
+          const k = cap.id + (m === 'dueno' ? '-d' : '-e'); const sn = m === 'dueno' ? 'Dueño · cierre' : 'Equipo · cierre';
+          if ((S.procNota[k] || '').trim()) filas.push([pn, sn, 'Qué cambiaría', '', S.procNota[k], '', '', '', '', '', '', '']);
+          const f = F[k]; if (f) filas.push([pn, sn, 'Firma', '', f.nombre + (f.puesto ? ' · ' + f.puesto : ''), 'Enterado y aceptado', fechaFirma(f.at) + (f.h !== huellaCap(cap, m) ? ' · con cambios después de la firma' : ''), '', '', '', '', '']);
+        });
       });
       const csv = '﻿' + filas.map(f => f.map(q).join(',')).join('\r\n');
       const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
