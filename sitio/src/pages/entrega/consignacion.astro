@@ -458,7 +458,7 @@ export const prerender = true;
     const sel = id => '#s-' + CSS.escape(id);
 
     let ROL = 'orq', codigo = null, cc = null;
-    let S = null, F = {}, actualizado = '', timer = null, guardando = false, pendiente = false, reintento = null, filtroRes = '';
+    let S = null, F = {}, actualizado = '', base = null, timer = null, guardando = false, pendiente = false, reintento = null, filtroRes = '';
     let ruta = { v: 'inicio', cap: null, paso: null };
     const esCliente = () => ROL === 'cliente';
 
@@ -508,6 +508,52 @@ export const prerender = true;
 
     // ── Guardado ───────────────────────────────────────────────────────────
     function local() { if (esCliente()) return; try { localStorage.setItem(LS + codigo, JSON.stringify(S)); } catch (e) {} }
+    const clon = x => JSON.parse(JSON.stringify(x === undefined ? null : x));
+    function guardarBase(datos, at) { base = clon(datos); actualizado = at || actualizado; if (esCliente()) return; try { localStorage.setItem(LS + codigo + ':base', JSON.stringify({ at: actualizado, d: base })); } catch (e) {} }
+
+    // Fusión a tres bandas: «b» es lo último que este dispositivo vio del
+    // servidor, «l» lo que tiene ahora y «r» lo que guardó otra tableta.
+    // Lo que solo cambió de un lado se toma de ese lado; si los dos cambiaron
+    // el mismo dato, gana este dispositivo. Así dos tabletas pueden llenar
+    // procesos distintos al mismo tiempo sin borrarse nada. Modifica «l» en su
+    // lugar para que los campos abiertos en pantalla sigan escribiendo en S.
+    const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    const esObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
+    function fusionar(b, l, r) {
+      if (igual(l, r) || igual(r, b)) return l;
+      if (esObj(l) && esObj(r)) {
+        const bb = esObj(b) ? b : {};
+        new Set(Object.keys(l).concat(Object.keys(r))).forEach(k => {
+          const v = fusionar(bb[k], l[k], r[k]);
+          if (v === undefined) delete l[k]; else if (v !== l[k]) l[k] = v;
+        });
+        return l;
+      }
+      if (Array.isArray(l) && Array.isArray(r)) {
+        const bb = Array.isArray(b) ? b : [], n = bb.length;
+        if (l.length < n || r.length < n) { if (igual(l, bb)) l.splice(0, l.length, ...clon(r)); return l; }
+        for (let i = 0; i < n; i++) { const v = fusionar(bb[i], l[i], r[i]); if (v !== l[i]) l[i] = v; }
+        const vistos = new Set(l.map(x => JSON.stringify(x)));
+        r.slice(n).forEach(x => { const k = JSON.stringify(x); if (!vistos.has(k)) { vistos.add(k); l.push(clon(x)); } });
+        return l;
+      }
+      if (igual(l, b)) return r === undefined ? undefined : clon(r);
+      return l;
+    }
+    // Junta en S lo que otra tableta guardó. Devuelve true si cambió algo en pantalla.
+    function fusionarS(rem) {
+      const antes = JSON.stringify(S), v = S.vista, ts = S._ts;
+      fusionar(base || {}, S, rem || {});
+      S.vista = v; S._ts = ts;
+      if (Array.isArray(S.log)) S.log.sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : 0));
+      return JSON.stringify(S) !== antes;
+    }
+    let repintar = false;
+    function repintarSiSePuede() {
+      if (ocupado()) { repintar = true; return; }
+      repintar = false; const y = window.scrollY; render(); window.scrollTo(0, y);
+    }
+    document.addEventListener('focusout', () => { if (repintar) setTimeout(() => { if (repintar && !ocupado()) repintarSiSePuede(); }, 300); });
     function recordar() {
       try {
         const r = JSON.parse(localStorage.getItem(LS + 'recientes') || '[]').filter(x => x.c !== codigo);
@@ -528,10 +574,21 @@ export const prerender = true;
       if (guardando) { pendiente = true; return; }
       guardando = true; pendiente = false; estado('sav', 'Guardando…');
       try {
-        const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ codigo, guia: ID_GUIA, cliente: S.meta.cliente, data: S }) });
+        const foto = JSON.stringify(S);
+        const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ codigo, guia: ID_GUIA, cliente: S.meta.cliente, data: S, base: base ? actualizado : '' }) });
         const j = await r.json().catch(() => ({}));
+        if (r.status === 409 && j.conflicto && j.sesion) {
+          // Otra tableta guardó primero: se juntan los cambios de las dos y se vuelve a guardar.
+          const cambio = fusionarS(j.sesion.data); normalizar();
+          guardarBase(j.sesion.data || {}, j.sesion.updated_at);
+          F = j.sesion.firmas || F;
+          if (cambio) repintarSiSePuede();
+          pendiente = true; return;
+        }
         if (!r.ok || !j.ok) throw new Error(j.error || 'Error ' + r.status);
-        S._sinc = true; cc = j.codigo_cliente || cc; actualizado = j.updated_at || actualizado; local(); recordar();
+        cc = j.codigo_cliente || cc; guardarBase(JSON.parse(foto), j.updated_at);
+        if (JSON.stringify(S) === foto) S._sinc = true; else pendiente = true;
+        local(); recordar();
         estado('ok', 'Guardado ' + new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }));
         clearTimeout(reintento);
       } catch (e) {
@@ -555,7 +612,7 @@ export const prerender = true;
       if (!/^[a-z0-9]{12,40}$/.test(codigo)) return pantallaInicio();
       $('#app').classList.remove('oculto');
       $('#intro').textContent = 'Cada proceso se ve en dos sesiones. Con el DUEÑO: la visión del proceso, los resultados y las reglas del negocio. Con el EQUIPO: el detalle en pantalla, con un caso de prueba. Cambia de sesión arriba (Dueño | Equipo). Lo que salga se anota; al día siguiente se revisa y se pule, y cuando queda se firma y se pasa al siguiente proceso.';
-      let loc = null; try { loc = JSON.parse(localStorage.getItem(LS + codigo) || 'null'); } catch (e) {}
+      let loc = null, lb = null; try { loc = JSON.parse(localStorage.getItem(LS + codigo) || 'null'); lb = JSON.parse(localStorage.getItem(LS + codigo + ':base') || 'null'); } catch (e) {}
       let fila = null, red = true;
       try {
         const r = await fetch(API + '?s=' + codigo, { cache: 'no-store' });
@@ -563,10 +620,16 @@ export const prerender = true;
         fila = j.sesion;
       } catch (e) { red = false; }
       const srv = fila && fila.data;
-      if (fila) { F = fila.firmas || {}; cc = fila.codigo_cliente || null; actualizado = fila.updated_at || ''; }
-      if (loc && !loc._sinc && (!srv || (loc._ts || 0) > (srv._ts || 0))) { S = loc; normalizar(); render(); subir(); }
-      else {
+      if (fila) { F = fila.firmas || {}; cc = fila.codigo_cliente || null; }
+      if (loc && !loc._sinc && (!srv || (loc._ts || 0) > (srv._ts || 0) || lb)) {
+        // Hay cambios de este dispositivo que no alcanzaron a subir: se suben
+        // sobre lo que había visto del servidor, y si alguien más guardó
+        // mientras tanto, se fusionan en vez de pisarlo.
+        if (lb && lb.d) { base = lb.d; actualizado = lb.at || ''; } else if (srv) { base = clon(srv); actualizado = fila.updated_at || ''; }
+        S = loc; normalizar(); render(); subir();
+      } else {
         S = srv || loc || vacio();
+        if (srv) { const v = loc && loc.vista; guardarBase(srv, fila.updated_at); if (v) S.vista = v; }
         normalizar(); render();
         if (!red) estado('err', 'Sin conexión: trabajando en este dispositivo');
         else if (!srv) subir();
@@ -597,11 +660,18 @@ export const prerender = true;
         const r = await fetch(API + (esCliente() ? '?c=' + cc : '?s=' + codigo), { cache: 'no-store' });
         const j = await r.json(); if (!j.ok || !j.sesion) return;
         const nuevas = JSON.stringify(j.sesion.firmas || {}) !== JSON.stringify(F);
-        const cambiaData = esCliente() && j.sesion.updated_at !== actualizado;
+        // El orquestador también recibe lo que otra tableta guardó, siempre que
+        // aquí no haya cambios a medio subir (esos se fusionan al guardar).
+        const cambiaData = Date.parse(j.sesion.updated_at || 0) !== Date.parse(actualizado || 0) && (esCliente() || (S._sinc && !guardando));
         if (!nuevas && !cambiaData) return;
         if (ocupado()) return;
         F = j.sesion.firmas || {};
-        if (cambiaData) { S = j.sesion.data; actualizado = j.sesion.updated_at; normalizar(); }
+        if (cambiaData) {
+          const v = S.vista;
+          if (esCliente()) { S = j.sesion.data; actualizado = j.sesion.updated_at; }
+          else { fusionarS(j.sesion.data); guardarBase(j.sesion.data, j.sesion.updated_at); S._sinc = true; local(); }
+          S.vista = v; normalizar();
+        }
         const y = window.scrollY; render(); window.scrollTo(0, y);
         if (nuevas && !esCliente()) toast('Hay firmas nuevas del cliente');
       } catch (e) {}
@@ -641,7 +711,11 @@ export const prerender = true;
     function leerRuta() {
       const h = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
       if (h[0] === 'p' && GUIA.capitulos.some(c => c.id === h[1])) {
-        const cap = capDe(h[1]); const pasos = listaPasos(cap);
+        const cap = capDe(h[1]);
+        // Una liga directa a una etapa abre la sesión (dueño/equipo) a la que pertenece.
+        const sx = h[2] && secsDe(cap).find(x => x.id === h[2]);
+        if (sx && (!!sx.dueno) !== esDueno()) S.vista = sx.dueno ? 'dueno' : 'equipo';
+        const pasos = listaPasos(cap);
         return { v: 'proc', cap: cap.id, paso: pasos.includes(h[2]) ? h[2] : pasos[0] };
       }
       if (h[0] === 'cierre') return { v: 'cierre' };
