@@ -635,8 +635,7 @@ export const prerender = true;
     // ── Rutas ──────────────────────────────────────────────────────────────
     // Cada proceso: [mapa] + etapas + cierre del proceso (resumen, «¿qué cambiarías?» y firma).
     function listaPasos(cap) {
-      const sd = secDueno(cap);
-      const reglas = !esDueno() && sd && (sd.decidir || []).length ? ['__reglas'] : [];
+      const reglas = !esDueno() && secsModo(cap, 'dueno').some(s => (s.decidir || []).length) ? ['__reglas'] : [];
       return (cap.diagrama ? ['__mapa'] : []).concat(reglas, secsModo(cap).map(s => s.id), ['__fin']);
     }
     function leerRuta() {
@@ -1070,9 +1069,9 @@ export const prerender = true;
 
     // En la sesión con el equipo: las reglas que ya decidió el dueño (solo lectura).
     function htmlReglas(cap) {
-      const sd = secDueno(cap); const e = est(sd.id);
+      const filas = secsModo(cap, 'dueno').flatMap(sd => (sd.decidir || []).map((q, k) => ({ q, r: est(sd.id).dec[k] })));
       return '<div class="foco-cab"><span class="k">' + esc(etiquetaCap(cap)) + ' · sesión con el equipo</span><h1>Lo que decidió el dueño</h1><p class="sub">Las reglas de este proceso que el equipo debe conocer antes de verlo en pantalla. Si alguna no cuadra con la operación, se anota como duda o mejora en la etapa.</p></div>'
-        + '<div class="lista-cierre" style="margin-top:20px">' + sd.decidir.map((q, k) => '<div class="li"><span>' + esc(q) + '</span><b>' + ((e.dec[k] || '').trim() ? esc(e.dec[k]) : '<span class="w">Pendiente con el dueño</span>') + '</b></div>').join('') + '</div>';
+        + '<div class="lista-cierre" style="margin-top:20px">' + filas.map(x => '<div class="li"><span>' + esc(x.q) + '</span><b>' + ((x.r || '').trim() ? esc(x.r) : '<span class="w">Pendiente con el dueño</span>') + '</b></div>').join('') + '</div>';
     }
 
     // ── Cierre de cada proceso (por sesión): resumen, «¿qué cambiarías?» y firma

@@ -75,7 +75,7 @@ export const GUIA = {
         "Condicional / regla",
         "Bug"
       ],
-      "resumen": "Con el dueño: explicar el método y acordar quién participa. Con el equipo: entrar con la cuenta de Agustín, confirmar la suite y anotar el caso de prueba.",
+      "resumen": "Con el dueño: explicar el método, la migración de su tienda en línea y el reporte de migración de datos, y acordar quién participa. Con el equipo: entrar con la cuenta de Agustín, confirmar la suite y anotar el caso de prueba.",
       "secciones": [
         {
           "id": "p0-dueno",
@@ -83,7 +83,7 @@ export const GUIA = {
           "nombre": "Arranque con el dueño",
           "donde": "Sesión individual con el dueño",
           "para": "Explicarle cómo será la implementación y acordar quién del equipo participa en cada proceso.",
-          "pitch": "Vamos a implementar la Suite de Consignación en dos tipos de sesión. Con usted revisamos cada proceso a nivel general: cómo funciona de punta a punta, qué resultados debe ver y las reglas de su negocio (comisiones, plazos, pagos, permisos). Con su equipo revisamos el detalle en pantalla, con un caso de prueba en su propia cuenta. Todo lo que salga —dudas, ajustes y mejoras— se anota; al día siguiente se revisa y se pule el proceso hasta que quede tal cual lo necesitan. Cuando un proceso queda, usted lo firma de enterado y pasamos al siguiente.",
+          "pitch": "Antes de entrar a los procesos vemos dos temas: la migración de su tienda en línea y el reporte de migración de sus datos. Después vamos a implementar la Suite de Consignación en dos tipos de sesión. Con usted revisamos cada proceso a nivel general: cómo funciona de punta a punta, qué resultados debe ver y las reglas de su negocio (comisiones, plazos, pagos, permisos). Con su equipo revisamos el detalle en pantalla, con un caso de prueba en su propia cuenta. Todo lo que salga —dudas, ajustes y mejoras— se anota; al día siguiente se revisa y se pule el proceso hasta que quede tal cual lo necesitan. Cuando un proceso queda, usted lo firma de enterado y pasamos al siguiente.",
           "demostrar": [
             {
               "h": "Le explicamos al dueño cómo será la implementación con el pitch de arriba.",
@@ -105,6 +105,66 @@ export const GUIA = {
             "¿La tienda vende en lives o dinámicas?"
           ],
           "noHace": []
+        },
+        {
+          "id": "p0-ecommerce",
+          "dueno": true,
+          "nombre": "Tienda en línea (e-commerce)",
+          "donde": "Sesión con el dueño",
+          "para": "En el transcurso de estos días migramos su tienda en línea con el diseño tal cual está hoy y con todo lo que requiere, con la posibilidad de crear después un diseño innovador. Antes, queremos entender dónde van y cómo trabajan hoy, incluidos los apartados.",
+          "pitch": "Su tienda en línea también pasa a Sacscloud. En el transcurso de estos días la migramos con su diseño tal cual está hoy y con todo lo que necesita, para que para sus clientes no cambie nada. Ya con eso funcionando, tenemos la posibilidad de crear un diseño nuevo e innovador cuando ustedes lo decidan. Para hacerlo bien, cuéntennos un poco más de los esfuerzos que han hecho hasta ahora: de dónde vienen, qué es lo que llevan y cómo manejan hoy los apartados.",
+          "demostrar": [
+            {
+              "h": "Le explicamos el plan de la tienda en línea con el pitch de arriba.",
+              "d": "Entiende que primero se migra tal cual está y que después existe la posibilidad de un diseño nuevo."
+            },
+            {
+              "h": "Recorremos juntos su tienda en línea actual.",
+              "d": "Queda claro qué secciones, funciones e integraciones tiene hoy: lo que no se puede perder en la migración."
+            }
+          ],
+          "decidir": [
+            "¿De dónde vienen y dónde van con la tienda en línea? ¿Qué esfuerzos han hecho hasta ahora y qué es lo que llevan?",
+            "¿Qué tiene hoy la tienda que no se puede perder (secciones, formas de pago, envíos, integraciones)?",
+            "¿Cómo manejan hoy los apartados en línea (anticipo, plazo y cómo se liquidan)?",
+            "¿Quieren explorar un diseño nuevo después de la migración? ¿Qué referencias les gustan?",
+            "¿Quién de su equipo es el contacto para la tienda en línea?"
+          ],
+          "noHace": []
+        },
+        {
+          "id": "p0-migracion",
+          "dueno": true,
+          "nombre": "Reporte de migración de datos",
+          "donde": "Sesión con el dueño · reporte de revisión de la migración",
+          "para": "Explicarle al dueño cómo se pasa su información a Sacscloud y cómo se comprueba, con el reporte de migración, que llegó completa y cuadra contra su sistema anterior.",
+          "demostrar": [
+            {
+              "h": "Explicamos qué se migra.",
+              "d": "Consignatarias (las repetidas se unen por teléfono), piezas con su estado, precio y fotos, lotes y contratos, compradores, saldo a favor, lo que se le debe a cada consignataria y los apartados."
+            },
+            {
+              "h": "Mostramos el reporte de migración.",
+              "d": "Por cada tipo de dato dice cuántos se esperaban, cuántos llegaron, cuáles faltan o sobran y qué campos no coinciden."
+            },
+            {
+              "h": "Revisamos el cuadre de totales.",
+              "d": "Existencias por sucursal, lo que se debe a las consignatarias, saldo a favor y apartados cuadran; el reporte termina en «CUADRA»."
+            },
+            {
+              "h": "Explicamos los pasos que siguen.",
+              "d": "Primero una muestra que se revisa en pantalla; luego la carga completa con su autorización, su revisión y el cuadre; al final, la fecha de corte con la última actualización antes de encender los avisos."
+            }
+          ],
+          "decidir": [
+            "¿Quién del cliente revisa y autoriza el reporte de migración?",
+            "¿Cuál es la fecha de corte para la última actualización de datos?",
+            "¿Hay algún dato que no aparece en el reporte y que necesitan en Sacscloud?"
+          ],
+          "noHace": [
+            "Antes de la sesión, generar el reporte más reciente (scripts/vendetucloset/comparar.js) y llevarlo; si no dice «CUADRA», revisar las diferencias antes de mostrarlo.",
+            "Hay 33 piezas vendidas con ajuste manual en revisión (INSTRUCCIONES-AWS §7, 19-oct): confirmar su estado antes de hablar de montos."
+          ]
         },
         {
           "id": "p0-prep",
