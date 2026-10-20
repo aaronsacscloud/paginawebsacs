@@ -39,24 +39,27 @@ export const GUIA = {
   capitulos: [
     // ── 0 ────────────────────────────────────────────────────────────────
     {
-      id: 'p0', nombre: 'Antes de la sesión', tipos: TIPOS,
-      resumen: 'Lo que se deja listo para que la sesión fluya, y el caso de prueba que se usa en todos los procesos.',
+      id: 'p0', nombre: 'Arranque de la sesión', tipos: TIPOS,
+      resumen: 'Entrar con la cuenta de Agustín, confirmar que la suite está instalada, explicarle al cliente cómo será la sesión y anotar el caso de prueba.',
       secciones: [
         {
-          id: 'p0-prep', nombre: 'Preparación', donde: 'Antes de empezar con el cliente',
-          para: 'Que todo lo que se va a usar en la sesión funcione: usuarios, equipo, avisos y lo publicado.',
+          id: 'p0-prep', nombre: 'Arranque con el cliente', donde: 'app.sacscloud.com, con la cuenta de Agustín',
+          para: 'Entrar a la cuenta, confirmar que la suite está instalada y explicarle al cliente cómo va a ser la sesión antes de empezar el primer proceso.',
+          pitch: 'Hoy vamos a recorrer juntos la Suite de Consignación tal como la van a usar en su día a día, proceso por proceso y en orden: desde que llega una consignataria con sus piezas hasta que se vende, se le paga y se le paga la comisión al vendedor. Usamos un caso de prueba en su propia cuenta. En cada proceso les mostramos qué hace el sistema, ustedes nos dicen cómo trabajan y tomamos sus decisiones. Van a salir dudas, ajustes y mejoras: eso es justo lo que buscamos. Lo anotamos todo aquí mismo; al día siguiente lo revisamos y pulimos el proceso hasta que quede tal cual lo necesitan. Cuando un proceso queda listo, lo firman de enterado y pasamos al siguiente. Por eso, en cada proceso necesitamos a las personas que lo hacen en la tienda.',
           demostrar: [
-            { h: 'Entramos con un usuario administrador y con uno de caja.', d: 'Ambos entran y ven el menú Consignación según sus permisos.' },
-            { h: 'Abrimos Mi Cuenta › Suite de Consignación.', d: 'La suite está activa.' },
-            { h: 'Conectamos el lector de código de barras y la impresora de tickets.', d: 'El lector escribe el código y la impresora saca un ticket de prueba.' },
-            { h: 'Abrimos «Buscar en SACS» con Ctrl/⌘ + K.', d: 'Aparece el buscador con su botón «Manual» (confirma que lo nuevo ya está publicado).' },
-            { h: 'Mandamos un aviso de prueba al correo y al WhatsApp de un teléfono nuestro.', d: 'Llega el aviso.', o: true },
+            { h: 'Entramos a app.sacscloud.com con la cuenta de Agustín.', d: 'Entra a la cuenta de Vende Tu Closet.' },
+            { h: 'Revisamos arriba a la izquierda.', d: 'Dice «Consignación»: la suite está instalada.' },
+            { h: 'Le explicamos al cliente cómo será la sesión con el pitch de arriba.', d: 'El cliente entiende el método: se demuestra, se decide, se anota y se pule al día siguiente.' },
+            { h: 'Confirmamos quién participa en cada proceso.', d: 'Para cada proceso están las personas que lo hacen en la tienda (dueña, piso, caja, tesorería).' },
+            { h: 'Acordamos qué pasa con los temas que salgan.', d: 'El cliente sabe que se anotan, se revisan al día siguiente y que cada proceso se firma cuando ya quedó pulido.' },
           ],
           decidir: [
-            '¿Quién del cliente participa en cada proceso (dueña, piso, caja, tesorería)?',
-            '¿La tienda usa preparación de piezas (certificación, fotos, etiquetado) antes de vender?',
+            '¿Quién participa en cada proceso?',
+            '¿Cuándo es la revisión del día siguiente (hora y duración)?',
           ],
           noHace: [
+            'Antes de mostrar Buscar en SACS, confirmar que lo nuevo ya está publicado en app.sacscloud.com (el front se publica a mano).',
+            'Confirmar que la revisión diaria de vencimientos esté encendida para la cuenta vendetucloset.',
             'Cuatro avisos por WhatsApp de consignación (pieza disponible, venta revertida, recuperación y no auténtica) están apagados mientras Meta aprueba sus plantillas; por correo sí salen.',
           ],
         },

@@ -247,6 +247,9 @@ export const prerender = true;
     #imprimir { display: none; }
 
     /* v2: inicio en orden, bloques por etapa, caso de prueba, cierre de proceso */
+    .pitch { margin-top: 18px; border: 1px solid #cfe0ff; background: var(--aza); border-radius: 12px; padding: 16px 18px; font-size: 1rem; line-height: 1.6; }
+    .pitch .lbl { color: var(--azh); margin-bottom: 6px; }
+    .ritmo { margin-top: 18px; border: 1px solid var(--ln); border-radius: 12px; padding: 14px 16px; background: var(--bg2); font-size: .9375rem; color: var(--tx2); }
     .procs { border: 1px solid var(--ln); border-radius: 12px; overflow: hidden; }
     .prow { display: grid; grid-template-columns: 40px 1fr 200px 20px; gap: 16px; align-items: center; width: 100%; text-align: left; background: #fff; border: 0; border-top: 1px solid var(--ln); padding: 16px 18px; cursor: pointer; }
     .prow:first-child { border-top: 0; }
@@ -542,7 +545,7 @@ export const prerender = true;
       if (/^[a-z0-9]{12,40}$/.test(qc) && !/^[a-z0-9]{12,40}$/.test(codigo)) return arrancarCliente(qc);
       if (!/^[a-z0-9]{12,40}$/.test(codigo)) return pantallaInicio();
       $('#app').classList.remove('oculto');
-      $('#intro').textContent = 'Se recorre con el cliente un flujo estándar completo, proceso por proceso y en orden, con un mismo caso de prueba. En cada etapa: se demuestra (Hacemos → Debe pasar), se deciden las reglas del cliente y se anotan dudas y mejoras. El cliente firma de enterado al terminar cada proceso.';
+      $('#intro').textContent = 'Se empieza con el arranque (cuenta de Agustín, suite instalada y el pitch al cliente) y luego se recorre un flujo estándar completo, proceso por proceso y en orden, con un mismo caso de prueba. En cada etapa se demuestra, se deciden las reglas del cliente y se anotan dudas y mejoras. Al día siguiente se revisa lo anotado y se pule el proceso; cuando queda como lo necesitan, el cliente lo firma y se pasa al siguiente.';
       let loc = null; try { loc = JSON.parse(localStorage.getItem(LS + codigo) || 'null'); } catch (e) {}
       let fila = null, red = true;
       try {
@@ -817,6 +820,7 @@ export const prerender = true;
         + (s.caso ? '' : '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">' + (c.tot ? '<span class="etiqueta">' + c.hechos + ' de ' + c.tot + ' demostrados</span>' : '') + (c.dec ? '<span class="etiqueta">' + c.decOk + ' de ' + c.dec + ' decisiones</span>' : '') + (c.fallas ? '<span class="etiqueta" style="background:var(--rja);color:var(--rjt)">' + c.fallas + ' con falla</span>' : '') + (c.dudas ? '<span class="etiqueta" style="background:var(--ama);color:var(--amt)">' + c.dudas + ' dudas abiertas</span>' : '') + '</div>')
         + '<div class="foco-meta">' + (s.donde ? '<div><b>Dónde:</b> ' + esc(s.donde) + '</div>' : '') + (s.para ? '<div><b>Qué pasa:</b> ' + esc(s.para) + '</div>' : '') + '</div>'
         + chipsCaso(s.pieza) + '</div>'
+        + (s.pitch ? '<div class="pitch"><span class="lbl">Pitch para el cliente · léelo en voz alta</span>' + esc(s.pitch) + '</div>' : '')
         + (s.nota ? '<div class="nota-calc">' + esc(s.nota) + '</div>' : '')
         + (hoy ? '<h3>Lo que muestra hoy</h3><div class="chips">' + hoy + '</div>' : '');
       if (s.caso) {
@@ -1053,6 +1057,7 @@ export const prerender = true;
         + '<div class="fin-res"><div><span>Demostrado</span><b>' + c.hechos + '/' + c.tot + '</b></div><div><span>Con falla</span><b style="color:var(--rjt)">' + c.fallas + '</b></div><div><span>Decisiones</span><b>' + c.decOk + '/' + c.dec + '</b></div><div><span>Dudas abiertas</span><b>' + c.dudas + '</b></div></div>'
         + (decs.length ? '<h3>Lo que decidió el cliente</h3><div class="lista-cierre">' + decs.map(x => '<div class="li"><span>' + esc(x.q) + '</span><b>' + esc(x.r) + '</b></div>').join('') + '</div>' : '')
         + (dudas.length ? '<h3>Dudas abiertas</h3><div class="lista-cierre">' + dudas.map(q => '<div class="li"><span>' + esc(q) + '</span></div>').join('') + '</div>' : '')
+        + '<div class="ritmo"><b>Cómo se cierra un proceso:</b> lo que salió hoy se revisa al día siguiente y se pule hasta que quede como lo necesitan. Cuando ya quedó, el cliente firma de enterado y se pasa al siguiente proceso.</div>'
         + '<h3>¿Qué cambiarías de este flujo?</h3>' + htmlTxt('data-procnota', S.procNota[cap.id] || '', 'Lo que el cliente cambiaría o necesita distinto en este proceso')
         + htmlFirma('Firma del cliente · ' + cap.nombre, LEY_PROC, F[cap.id], F[cap.id] && F[cap.id].h !== huellaCap(cap)) + '</div>';
     }
@@ -1062,7 +1067,7 @@ export const prerender = true;
     }
 
     // ── Firma de enterado y aceptado ───────────────────────────────────────
-    const LEY_PROC = 'Revisé este proceso con el orquestador. Estoy enterado y de acuerdo con lo demostrado, mis decisiones y lo anotado.';
+    const LEY_PROC = 'Revisamos y pulimos este proceso con el orquestador. Queda como lo necesitamos y estoy de acuerdo con lo demostrado, nuestras decisiones y lo anotado.';
     const LEY_CIERRE = 'Revisé con el orquestador los procesos de esta sesión. Estoy enterado y de acuerdo con lo demostrado, las decisiones, las mejoras y los acuerdos anotados.';
     function hashTxt(t) { let h = 5381; for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
     function huellaSec(e) { return [e.puntos, e.extra, e.hall, e.ocultos, e.dec, e.dudas]; }
