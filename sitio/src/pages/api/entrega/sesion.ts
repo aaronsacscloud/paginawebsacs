@@ -9,7 +9,10 @@
 //  · ?c=<codigo_cliente>  la del CLIENTE: solo lee y firma.
 //
 // GET  ?s= | ?c=                                 → { ok, sesion|null, rol }
-// POST { codigo, guia, cliente, data }           → guarda (consultor)
+// POST { codigo, guia, cliente, data, base? }    → guarda (consultor)
+//      base = el updated_at sobre el que se editó. Si otra tableta guardó
+//      después, responde 409 { conflicto, sesion } y la página fusiona sus
+//      cambios con los de la otra antes de reintentar: nadie pisa a nadie.
 // POST { accion:'firmar', codigo|cc, id, firma } → firma una etapa ('__cierre' = el cierre)
 //
 // Las firmas viven en su propia columna y solo las escribe «firmar»: así el
@@ -82,6 +85,20 @@ export const POST: APIRoute = async ({ request }) => {
 
   const updated_at = new Date().toISOString();
   const codigo_cliente = previa?.codigo_cliente || nuevoCodigo();
+  const base = String(b?.base || '');
+  if (previa && base) {
+    // Escritura condicionada: solo si nadie guardó desde «base». Atómica en la
+    // base de datos, así dos tabletas que guardan al mismo segundo no se pisan.
+    const { data: filas, error } = await supabase.from('entregas_checklist')
+      .update({ cliente, data, updated_at }).eq('codigo', codigo).eq('updated_at', base).select('codigo');
+    if (error) return json({ ok: false, error: 'No se pudo guardar.' }, 503);
+    if (!filas || !filas.length) {
+      const { data: actual, error: eA } = await porCodigo(codigo);
+      if (eA || !actual) return json({ ok: false, error: 'No se pudo guardar.' }, 503);
+      return json({ ok: false, conflicto: true, sesion: actual }, 409);
+    }
+    return json({ ok: true, updated_at, codigo_cliente });
+  }
   const { error } = await supabase.from('entregas_checklist')
     .upsert({ codigo, guia, cliente, data, updated_at, codigo_cliente }, { onConflict: 'codigo' });
   if (error) return json({ ok: false, error: 'No se pudo guardar.' }, 503);
