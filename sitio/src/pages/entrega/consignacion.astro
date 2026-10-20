@@ -673,7 +673,7 @@ export const prerender = true;
       if (id === '__mapa') return 'Mapa del proceso';
       if (id === '__fin') return esDueno() ? 'Cierre con el dueño' : 'Cierre con el equipo';
       if (id === '__reglas') return 'Lo que decidió el dueño';
-      const s = secsDe(cap).find(x => x.id === id); return s ? numSec(cap, s) + '. ' + s.nombre : id;
+      const s = secsDe(cap).find(x => x.id === id); return s ? (s.dueno ? s.nombre : numSec(cap, s) + '. ' + s.nombre) : id;
     }
     function pintarMigas() {
       const m = ['<a data-ir="#/">Inicio</a>'];
@@ -758,7 +758,7 @@ export const prerender = true;
         if (id === '__reglas') return '<button class="paso' + on + '" data-ir="' + href + '"><span class="ic"></span><span class="tx">Lo que decidió el dueño<span class="mt">Reglas que aplican al equipo</span></span></button>';
         if (id === '__fin') { const fz = F[firmaId(cap)]; return '<button class="paso' + on + '" data-ir="' + href + '"><span class="ic' + (fz ? ' ok' : '') + '">' + (fz ? ICO_OK : '') + '</span><span class="tx">' + esc(nombrePaso(cap, id)) + '<span class="mt">' + (fz ? 'Firmado' : '¿Qué cambiarías? y firma') + '</span></span></button>'; }
         const s = secsDe(cap).find(x => x.id === id); const c = conteo(s); const e = estadoPaso(s);
-        return '<button class="paso' + on + '" data-ir="' + href + '"><span class="ic ' + e + '">' + (e === 'ok' ? ICO_OK : '') + '</span><span class="tx">' + esc(numSec(cap, s) + '. ' + s.nombre)
+        return '<button class="paso' + on + '" data-ir="' + href + '"><span class="ic ' + e + '">' + (e === 'ok' ? ICO_OK : '') + '</span><span class="tx">' + esc(s.dueno ? s.nombre : numSec(cap, s) + '. ' + s.nombre)
           + '<span class="mt">' + (s.caso ? 'Datos del caso' : (c.tot ? c.hechos + '/' + c.tot : '') + (c.dec ? (c.tot ? ' · ' : '') + c.decOk + '/' + c.dec + ' decisiones' : '') + (c.fallas ? ' · ' + c.fallas + ' con falla' : '') + (c.dudas ? ' · ' + c.dudas + ' dudas' : '')) + '</span></span></button>';
       }).join('');
       $('#pasos').innerHTML = '<div class="tit"><span class="modo-cab">' + (esDueno() ? 'Sesión con el dueño' : 'Sesión con el equipo') + '</span><br>' + esc(etiquetaCap(cap)) + '<b>' + esc(cap.nombre) + '</b></div><div class="bar"><i style="width:' + pct(ct.hechos, ct.tot) + '"></i></div>' + items
