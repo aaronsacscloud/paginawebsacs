@@ -22,7 +22,7 @@ export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 const CODIGO = /^[a-z0-9]{12,40}$/;
 const ID_SEC = /^[a-z0-9_-]{1,60}$/i;
-const GUIAS = new Set(['consignacion-suite', 'consignacion-dashboard-reportes']);
+const GUIAS = new Set(['consignacion-suite-v2', 'consignacion-suite', 'consignacion-dashboard-reportes']);
 // Las firmas se guardan como trazo SVG (~2–10 KB cada una) en su columna; las
 // fotos van a Storage y aquí solo viaja su URL. El tope deja holgura.
 const MAX_BYTES = 3_000_000;

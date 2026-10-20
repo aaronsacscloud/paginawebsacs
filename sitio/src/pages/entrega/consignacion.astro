@@ -1,20 +1,24 @@
 ---
 // Checklist de ENTREGA · Suite de Consignación (19-oct-2026).
 //
-// Un solo documento para revisar con el cliente, tableta en mano, todos los
-// procesos de la suite de punta a punta y el dashboard con sus reportes.
+// Un solo documento para que la orquestadora demuestre con el cliente, tableta
+// en mano, un flujo ESTÁNDAR completo de punta a punta con un caso de prueba
+// (una consignataria y las piezas A, B y C), y para que las particularidades
+// del cliente se prueben, se decidan y se anoten ahí mismo.
 //
 // Tres vistas (ruta en el #hash, así el botón «atrás» funciona):
 //  · Inicio            #/                 datos, avance y los procesos.
 //  · Proceso (enfoque) #/p/<cap>/<etapa>  breadcrumb, lista de etapas y UNA
-//                                         etapa a la vez: sin distracciones.
+//                                         etapa a la vez (Demostrar, Decidir,
+//                                         Dudas, Mejoras y fallas); al final
+//                                         de cada proceso, su firma.
 //  · Cierre            #/cierre           resumen, acuerdos, firma, historial.
 //
 // Lo que se captura vive en `entregas_checklist` (api/entrega/sesion), una
 // fila por sesión, con ?s=<codigo> (orquestador) o ?c=<codigo> (cliente:
 // solo lee y firma). Las firmas van en su propia columna. El contenido base
 // está en lib/entrega/consignacion-guia.ts.
-import { GUIA } from '../../lib/entrega/consignacion-guia';
+import { GUIA, CASO } from '../../lib/entrega/consignacion-guia';
 export const prerender = true;
 ---
 <!doctype html>
@@ -242,7 +246,65 @@ export const prerender = true;
     body.ro .solo-orq { display: none !important; }
     #imprimir { display: none; }
 
+    /* v2: inicio en orden, bloques por etapa, caso de prueba, cierre de proceso */
+    .procs { border: 1px solid var(--ln); border-radius: 12px; overflow: hidden; }
+    .prow { display: grid; grid-template-columns: 40px 1fr 200px 20px; gap: 16px; align-items: center; width: 100%; text-align: left; background: #fff; border: 0; border-top: 1px solid var(--ln); padding: 16px 18px; cursor: pointer; }
+    .prow:first-child { border-top: 0; }
+    .prow:hover { background: var(--bg2); }
+    .prow .n { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid #cfcfcf; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: .875rem; color: var(--tx2); }
+    .prow.ok .n { background: var(--ve); border-color: var(--ve); color: #fff; }
+    .prow.firm .n { background: var(--tx); border-color: var(--tx); color: #fff; }
+    .prow .nm { font-weight: 700; font-size: 1rem; display: block; }
+    .prow .rs { font-size: .8125rem; color: var(--tx2); display: block; margin-top: 2px; }
+    .prow .av { font-size: .8125rem; color: var(--tx2); display: grid; gap: 6px; }
+    .prow .av .bar { flex: none; }
+    .prow .ch { color: var(--tx3); }
+    .prow.fin { background: var(--bg2); }
+    .interruptor { display: inline-flex; gap: 10px; align-items: center; cursor: pointer; font-size: .875rem; font-weight: 600; }
+    .interruptor input { width: 40px; height: 22px; accent-color: var(--az); }
+    .fila-ops { display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 28px; }
+    .caso-mini { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .caso-mini span { font-size: .8125rem; background: var(--bg2); border: 1px solid var(--ln); border-radius: 6px; padding: 4px 9px; color: var(--tx2); }
+    .caso-mini b { color: var(--tx); font-weight: 600; }
+    .caso-mini .vacio-c { color: var(--rjt); background: var(--rja); border-color: #f3c2ca; }
+    .bloque { margin-top: 28px; }
+    .bloque > h3 { margin-top: 0; display: flex; gap: 8px; align-items: center; }
+    .bloque > h3 .num-b { display: inline-flex; width: 20px; height: 20px; border-radius: 50%; background: var(--tx); color: #fff; font-size: .6875rem; align-items: center; justify-content: center; letter-spacing: 0; }
+    .hd { display: grid; gap: 4px; }
+    .hd .h, .hd .d { font-size: .9375rem; }
+    .hd .lb { display: inline-block; min-width: 86px; font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--tx3); }
+    .hd .d .lb { color: var(--vet); }
+    .opc { font-size: .6875rem; font-weight: 600; color: var(--tx3); border: 1px solid var(--ln); border-radius: 99px; padding: 1px 8px; margin-left: 6px; vertical-align: middle; }
+    body.corta .pt.opcional { display: none; }
+    .dec { border: 1px solid var(--ln); border-radius: 12px; }
+    .dec .q { padding: 14px 16px; border-top: 1px solid var(--ln); display: grid; gap: 8px; }
+    .dec .q:first-child { border-top: 0; }
+    .dec .q .t { font-size: .9375rem; font-weight: 600; }
+    .dec .q.listo .t::after { content: '  ✓'; color: var(--ve); }
+    .nohace { border: 1px solid #f2dfb8; background: var(--ama); border-radius: 12px; padding: 14px 16px; }
+    .nohace .tit { font-size: .8125rem; color: var(--amt); font-weight: 700; }
+    .nohace .tit span { font-weight: 500; }
+    .nohace .it { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid #f2dfb8; font-size: .875rem; }
+    .nohace .it:first-of-type { border-top: 0; }
+    .nohace .it span { flex: 1; }
+    .duda { border: 1px solid var(--ln); border-radius: 12px; padding: 12px 14px; margin-top: 10px; display: grid; gap: 10px; }
+    .duda .fila { display: grid; grid-template-columns: 1fr 180px auto auto; gap: 10px; align-items: end; }
+    .duda.resuelta { background: var(--vea); border-color: #c6ead3; }
+    .caso-form { display: grid; gap: 14px 16px; grid-template-columns: repeat(2, 1fr); margin-top: 16px; }
+    .fin-res { display: grid; gap: 12px; grid-template-columns: repeat(4, 1fr); margin-top: 20px; }
+    .fin-res div { border: 1px solid var(--ln); border-radius: 12px; padding: 14px; }
+    .fin-res span { display: block; font-size: .8125rem; color: var(--tx2); }
+    .fin-res b { font-size: 1.5rem; }
+    .lista-cierre { border: 1px solid var(--ln); border-radius: 12px; margin-top: 10px; }
+    .lista-cierre .li { padding: 12px 16px; border-top: 1px solid var(--ln2); font-size: .875rem; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; }
+    .lista-cierre .li:first-child { border-top: 0; }
+    .lista-cierre .li .w { color: var(--tx3); font-size: .8125rem; }
     @media (max-width: 1000px) {
+      .prow { grid-template-columns: 36px 1fr 20px; }
+      .prow .av { grid-column: 2; }
+      .caso-form { grid-template-columns: 1fr; }
+      .fin-res { grid-template-columns: repeat(2, 1fr); }
+      .duda .fila { grid-template-columns: 1fr 1fr; }
       .caps { grid-template-columns: repeat(2, 1fr); }
       .datos { grid-template-columns: repeat(3, 1fr); }
       .datos div:nth-child(4) { border-left: 0; }
@@ -281,7 +343,7 @@ export const prerender = true;
     <div class="inicio">
       <div class="marca">Sacscloud <i>· Checklist de entrega</i></div>
       <h1 style="margin-top:10px">Suite de Consignación</h1>
-      <p class="sub">Revisión con el cliente de todos los procesos de la suite, de inicio a fin, y del dashboard con sus reportes.</p>
+      <p class="sub">Demostración con el cliente de los flujos de la suite, de inicio a fin, con un caso de prueba.</p>
       <div class="panel" style="margin-top:24px">
         <h2>Nueva sesión</h2>
         <p class="sub">Vende Tu Closet · Producción · orquesta Andrea Araujo. Se crea una liga propia; lo que se capture se guarda solo y se abre en cualquier dispositivo con la misma liga.</p>
@@ -321,12 +383,19 @@ export const prerender = true;
       <h1>Entrega · Suite de Consignación</h1>
       <p class="sub" id="intro"></p>
       <div class="datos" id="datos"></div>
-      <div class="grid solo-orq" style="margin-top:16px; max-width:480px">
+      <div class="kpis" id="kpis"></div>
+      <div class="fila-ops">
+        <div>
+          <h3 style="margin:0">Caso de prueba</h3>
+          <div class="caso-mini" id="casoMini"></div>
+        </div>
+        <label class="interruptor solo-orq" title="Oculta los puntos opcionales para una sesión más corta"><input type="checkbox" id="chkCorta" /> Sesión corta: solo lo esencial</label>
+      </div>
+      <h3 style="margin-top:28px">Procesos, en el orden en que vive una pieza</h3>
+      <div class="procs" id="caps"></div>
+      <div class="grid solo-orq" style="margin-top:20px; max-width:480px">
         <label class="f">Quién revisa por parte del cliente (opcional)<input type="text" data-meta="responsable" placeholder="Nombre" /></label>
       </div>
-      <div class="kpis" id="kpis"></div>
-      <h3 style="margin-top:32px">Procesos</h3>
-      <div class="caps" id="caps"></div>
     </main>
 
     <!-- PROCESO (enfoque) -->
@@ -345,7 +414,7 @@ export const prerender = true;
     <!-- CIERRE -->
     <main id="vCierre" class="wrap oculto">
       <h1>Resumen y cierre</h1>
-      <p class="sub">Todo lo anotado en la sesión, de mayor a menor prioridad.</p>
+      <p class="sub">Lo que salió de la sesión: fallas por corregir, mejoras, dudas y decisiones del cliente.</p>
       <div class="filtro-res" id="filtroRes"></div>
       <div id="resumen"></div>
       <h3>Acuerdos de la sesión</h3>
@@ -363,18 +432,17 @@ export const prerender = true;
   <div class="toast" id="toast"></div>
   <input type="file" id="fotoInput" accept="image/*" hidden />
 
-  <script is:inline define:vars={{ GUIA }}>
+  <script is:inline define:vars={{ GUIA, CASO }}>
   (function () {
-    const ID_GUIA = 'consignacion-suite';
+    const ID_GUIA = 'consignacion-suite-v2';
     const API = '/api/entrega/sesion';
     const API_FOTO = '/api/entrega/foto';
     const LS = 'entrega:' + ID_GUIA + ':';
     const PRIOS = ['Alta', 'Media', 'Baja'];
     const DECIS = ['Pendiente', 'Aprobado', 'Descartado', 'Hecho'];
     const RESPS = ['Sacscloud', 'Cliente', 'Ambos'];
-    const NOTAS_RAPIDAS = ['Probado con venta real', 'Funciona, pero confunde', 'No lo usa', 'Lo quiere distinto', 'Revisar con el dueño', 'Pendiente de datos del cliente'];
+    const NOTAS_RAPIDAS = ['Funciona como lo necesitan', 'Funciona, pero confunde', 'Lo quieren distinto', 'No lo usan', 'Revisar con la dueña', 'Faltan datos del cliente'];
     const RES = { ok: 'Correcto', falla: 'Falla', na: 'No aplica', '': 'Sin revisar' };
-    // Datos fijos de esta entrega: no se capturan, se muestran.
     const FIJOS = { cliente: 'Vende Tu Closet', cuenta: 'vendetucloset', consultor: 'Andrea Araujo', ambiente: 'Producción' };
     const ICO_MIC = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
     const ICO_OK = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4"><path d="M5 12l5 5 9-10"/></svg>';
@@ -382,7 +450,6 @@ export const prerender = true;
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const sel = id => '#s-' + CSS.escape(id);
 
-    // ROL: el orquestador entra con ?s= (edita todo); el cliente con ?c= (solo lee y firma).
     let ROL = 'orq', codigo = null, cc = null;
     let S = null, F = {}, actualizado = '', timer = null, guardando = false, pendiente = false, reintento = null, filtroRes = '';
     let ruta = { v: 'inicio', cap: null, paso: null };
@@ -391,36 +458,43 @@ export const prerender = true;
     function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('on'), 2800); }
     function nuevoCodigo() { const a = new Uint8Array(12); crypto.getRandomValues(a); return Array.from(a, b => (b % 36).toString(36)).join('') + Date.now().toString(36).slice(-4); }
     function hoyLocal() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
-    function vacio() { return { meta: { cliente: FIJOS.cliente, cuenta: FIJOS.cuenta, fecha: hoyLocal(), consultor: FIJOS.consultor, responsable: '', ambiente: FIJOS.ambiente }, sec: {}, extras: [], cierre: { acuerdos: '', firmaSacs: FIJOS.consultor }, cap: GUIA.capitulos[0].id, log: [], _ts: Date.now() }; }
+    function vacio() { return { meta: { cliente: FIJOS.cliente, cuenta: FIJOS.cuenta, fecha: hoyLocal(), consultor: FIJOS.consultor, responsable: '', ambiente: FIJOS.ambiente }, caso: {}, sec: {}, extras: [], procNota: {}, cierre: { acuerdos: '', firmaSacs: FIJOS.consultor }, corta: false, log: [], _ts: Date.now() }; }
     function capDe(id) { return GUIA.capitulos.find(c => c.id === id) || GUIA.capitulos[0]; }
     function secsDe(cap) { return cap.secciones.concat((S.extras || []).filter(x => x.cap === cap.id)); }
-    function est(id) { if (!S.sec[id]) S.sec[id] = { puntos: {}, extra: [], hall: [], usadas: {} }; if (!S.sec[id].ocultos) S.sec[id].ocultos = {}; return S.sec[id]; }
-    // Los puntos base que el orquestador quitó no cuentan, no se imprimen y el cliente no los ve.
-    function visible(e, k) { return !e.ocultos[k]; }
+    function est(id) {
+      if (!S.sec[id]) S.sec[id] = {};
+      const e = S.sec[id];
+      e.puntos = e.puntos || {}; e.extra = e.extra || []; e.hall = e.hall || []; e.ocultos = e.ocultos || {}; e.dec = e.dec || {}; e.dudas = e.dudas || []; e.usadas = e.usadas || {};
+      return e;
+    }
     function secPorId(id) { for (const c of GUIA.capitulos) { const s = secsDe(c).find(x => x.id === id); if (s) return { cap: c, s }; } return null; }
     function corto(t, n) { t = String(t || ''); return t.length > (n || 60) ? t.slice(0, (n || 60) - 1) + '…' : t; }
-    function etiquetaCap(cap) { const i = GUIA.capitulos.indexOf(cap); return cap.id === 'rep' ? 'Revisión' : 'Proceso ' + (i + 1); }
-    function numSec(cap, s) { return s.clave ? 0 : secsDe(cap).filter(x => !x.clave).indexOf(s) + 1; }
-    function nombreCorto(s) { return s.nombre.replace(/^Etapa \d+ · /, ''); }
+    function numCap(cap) { return GUIA.capitulos.indexOf(cap); }
+    function etiquetaCap(cap) { return cap.id === 'rep' ? 'Revisión final' : numCap(cap) === 0 ? 'Preparación' : 'Proceso ' + numCap(cap); }
+    function numSec(cap, s) { return secsDe(cap).indexOf(s) + 1; }
     function pct(a, b) { return (b ? Math.round(a * 100 / b) : 0) + '%'; }
+    function demos(s) { return s.demostrar || []; }
+    function txtPunto(s, e, key) { if (key[0] === 'x') { const p = e.extra[+key.slice(1)]; return (p && p.t) || 'Punto agregado'; } const p = demos(s)[+key.slice(1)]; return p ? p.h + ' → ' + p.d : ''; }
+    // Un punto cuenta si no lo quitó el orquestador y, en sesión corta, si es esencial.
+    function cuenta(s, e, k) { const p = demos(s)[k]; return !e.ocultos[k] && !(S.corta && p && p.o); }
 
     // ── Historial ─────────────────────────────────────────────────────────
     function quien() { return esCliente() ? 'Cliente' : (S.meta.consultor || 'Orquestador'); }
     function logEv(texto) {
       if (esCliente()) return;
       S.log = S.log || []; S.log.push({ t: new Date().toISOString(), q: quien(), a: texto });
-      if (S.log.length > 600) S.log = S.log.slice(-600);
+      if (S.log.length > 800) S.log = S.log.slice(-800);
     }
     function fechaCorta(iso) { try { return new Date(iso).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (e) { return iso; } }
     function pintarHist() {
       if (ruta.v !== 'cierre') return;
       const ev = (S.log || []).map(x => ({ t: x.t, q: x.q, a: x.a }));
-      Object.keys(F).forEach(id => { const f = F[id]; const r = id === '__cierre' ? { s: { nombre: 'Cierre de la sesión' } } : secPorId(id); ev.push({ t: f.at, q: f.nombre + (f.desde === 'cliente' ? ' (desde su liga)' : ''), a: 'Firmó de enterado y aceptado · ' + (r ? r.s.nombre : id) }); });
+      Object.keys(F).forEach(id => { const f = F[id]; const nm = id === '__cierre' ? 'Cierre de la sesión' : (GUIA.capitulos.some(c => c.id === id) ? etiquetaCap(capDe(id)) + ' · ' + capDe(id).nombre : id); ev.push({ t: f.at, q: f.nombre + (f.desde === 'cliente' ? ' (desde su liga)' : ''), a: 'Firmó de enterado y aceptado · ' + nm }); });
       ev.sort((a, b) => (a.t < b.t ? 1 : -1));
       $('#hist').innerHTML = ev.length ? ev.slice(0, 300).map(x => '<li><span>' + esc(fechaCorta(x.t)) + '</span><div><b>' + esc(x.q) + '</b> · ' + esc(x.a) + '</div></li>').join('') : '<li><span></span><div class="vacio">Sin movimientos todavía.</div></li>';
     }
 
-    // ── Guardado: dispositivo siempre, servidor con espera de 1 s ───────────
+    // ── Guardado ───────────────────────────────────────────────────────────
     function local() { if (esCliente()) return; try { localStorage.setItem(LS + codigo, JSON.stringify(S)); } catch (e) {} }
     function recordar() {
       try {
@@ -435,7 +509,7 @@ export const prerender = true;
       S._ts = Date.now(); S._sinc = false; local();
       estado('sav', 'Cambios sin guardar…');
       clearTimeout(timer); timer = setTimeout(subir, 1000);
-      refrescarIndicadores();
+      if (ruta.v === 'proc') { pintarPasos(); avisosFirma(); } else if (ruta.v === 'cierre') avisosFirma();
     }
     async function subir() {
       if (esCliente()) return;
@@ -449,8 +523,8 @@ export const prerender = true;
         estado('ok', 'Guardado ' + new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }));
         clearTimeout(reintento);
       } catch (e) {
-        estado('err', 'Sin conexión: guardado en este dispositivo');
-        clearTimeout(reintento); reintento = setTimeout(subir, 10000);
+        estado('err', e.message && /otra guía/.test(e.message) ? 'Esta liga es de una versión anterior: crea una sesión nueva' : 'Sin conexión: guardado en este dispositivo');
+        clearTimeout(reintento); if (!/otra guía/.test(e.message || '')) reintento = setTimeout(subir, 10000);
       } finally {
         guardando = false;
         if (pendiente) subir();
@@ -468,7 +542,7 @@ export const prerender = true;
       if (/^[a-z0-9]{12,40}$/.test(qc) && !/^[a-z0-9]{12,40}$/.test(codigo)) return arrancarCliente(qc);
       if (!/^[a-z0-9]{12,40}$/.test(codigo)) return pantallaInicio();
       $('#app').classList.remove('oculto');
-      $('#intro').textContent = 'Elige un proceso para revisarlo con el cliente etapa por etapa. En cada punto se marca Correcto, Falla o No aplica; los hallazgos se anotan en cada etapa y el cliente firma de enterado al final de cada una. Todo se guarda solo.';
+      $('#intro').textContent = 'Se recorre con el cliente un flujo estándar completo, proceso por proceso y en orden, con un mismo caso de prueba. En cada etapa: se demuestra (Hacemos → Debe pasar), se deciden las reglas del cliente y se anotan dudas y mejoras. El cliente firma de enterado al terminar cada proceso.';
       let loc = null; try { loc = JSON.parse(localStorage.getItem(LS + codigo) || 'null'); } catch (e) {}
       let fila = null, red = true;
       try {
@@ -478,7 +552,6 @@ export const prerender = true;
       } catch (e) { red = false; }
       const srv = fila && fila.data;
       if (fila) { F = fila.firmas || {}; cc = fila.codigo_cliente || null; actualizado = fila.updated_at || ''; }
-      // Gana el servidor, salvo que este dispositivo tenga cambios que no alcanzó a subir.
       if (loc && !loc._sinc && (!srv || (loc._ts || 0) > (srv._ts || 0))) { S = loc; normalizar(); render(); subir(); }
       else {
         S = srv || loc || vacio();
@@ -493,7 +566,7 @@ export const prerender = true;
     async function arrancarCliente(c) {
       ROL = 'cliente'; cc = c; document.body.classList.add('ro');
       $('#app').classList.remove('oculto');
-      $('#intro').textContent = 'Aquí está lo que se revisó contigo en la entrega de la Suite de Consignación. Entra a cada proceso para ver el detalle y, al final de cada etapa, firmar de enterado y aceptado.';
+      $('#intro').textContent = 'Aquí está lo que se revisó contigo en la entrega de la Suite de Consignación, proceso por proceso. Al final de cada proceso puedes firmar de enterado y aceptado.';
       try {
         const r = await fetch(API + '?c=' + c, { cache: 'no-store' });
         const j = await r.json(); if (!j.ok) throw new Error(j.error);
@@ -505,8 +578,6 @@ export const prerender = true;
       }
     }
 
-    // Cada 20 s: firmas nuevas (el cliente pudo firmar desde su teléfono) y,
-    // en la vista del cliente, lo que el orquestador siga anotando.
     function ocupado() { return !!document.querySelector('[data-pad].con') || [...document.querySelectorAll('[data-fnom]')].some(i => i.value) || (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)); }
     async function refrescar() {
       if (document.hidden) return;
@@ -525,10 +596,11 @@ export const prerender = true;
     }
 
     function normalizar() {
-      S.sec = S.sec || {}; S.extras = S.extras || []; S.cierre = S.cierre || {}; S.log = S.log || []; S.meta = S.meta || {};
+      S.sec = S.sec || {}; S.extras = S.extras || []; S.cierre = S.cierre || {}; S.log = S.log || []; S.meta = S.meta || {}; S.caso = S.caso || {}; S.procNota = S.procNota || {};
       Object.keys(FIJOS).forEach(k => { S.meta[k] = FIJOS[k]; });
       if (!S.meta.fecha) S.meta.fecha = hoyLocal();
       if (!S.cierre.firmaSacs) S.cierre.firmaSacs = FIJOS.consultor;
+      document.body.classList.toggle('corta', !!S.corta);
     }
 
     function pantallaInicio() {
@@ -548,7 +620,8 @@ export const prerender = true;
     }
 
     // ── Rutas ──────────────────────────────────────────────────────────────
-    function listaPasos(cap) { return (cap.diagrama ? ['__mapa'] : []).concat(secsDe(cap).map(s => s.id)); }
+    // Cada proceso: [mapa] + etapas + cierre del proceso (resumen, «¿qué cambiarías?» y firma).
+    function listaPasos(cap) { return (cap.diagrama ? ['__mapa'] : []).concat(secsDe(cap).map(s => s.id)).concat(['__fin']); }
     function leerRuta() {
       const h = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
       if (h[0] === 'p' && GUIA.capitulos.some(c => c.id === h[1])) {
@@ -572,19 +645,23 @@ export const prerender = true;
       document.querySelectorAll('[data-meta]').forEach(el => { el.value = S.meta[el.dataset.meta] || ''; el.oninput = () => { S.meta[el.dataset.meta] = el.value; cambio(); }; });
       document.querySelectorAll('[data-cierre]').forEach(el => { el.value = S.cierre[el.dataset.cierre] || ''; el.oninput = () => { S.cierre[el.dataset.cierre] = el.value; cambio(); }; });
       if (ruta.v === 'inicio') pintarInicio();
-      else if (ruta.v === 'proc') { S.cap = ruta.cap; pintarProceso(); }
+      else if (ruta.v === 'proc') pintarProceso();
       else pintarCierre();
       pintarMigas();
       bloquear(document);
     }
 
+    function nombrePaso(cap, id) {
+      if (id === '__mapa') return 'Mapa del proceso';
+      if (id === '__fin') return 'Cierre del proceso';
+      const s = secsDe(cap).find(x => x.id === id); return s ? numSec(cap, s) + '. ' + s.nombre : id;
+    }
     function pintarMigas() {
       const m = ['<a data-ir="#/">Inicio</a>'];
       if (ruta.v === 'proc') {
         const cap = capDe(ruta.cap);
         m.push('<a data-ir="#/p/' + cap.id + '">' + esc(etiquetaCap(cap) + ' · ' + cap.nombre) + '</a>');
-        if (ruta.paso === '__mapa') m.push('<span class="act">Mapa del proceso</span>');
-        else { const s = secsDe(cap).find(x => x.id === ruta.paso); if (s) m.push('<span class="act">' + esc(s.clave ? 'Puntos clave' : numSec(cap, s) + '. ' + nombreCorto(s)) + '</span>'); }
+        m.push('<span class="act">' + esc(nombrePaso(cap, ruta.paso)) + '</span>');
       } else if (ruta.v === 'cierre') m.push('<span class="act">Resumen y cierre</span>');
       else m[0] = '<span class="act">Inicio</span>';
       $('#migas').innerHTML = m.join('<span class="sep">›</span>');
@@ -599,31 +676,22 @@ export const prerender = true;
     // ── Conteos ────────────────────────────────────────────────────────────
     function conteo(s) {
       const e = est(s.id); let tot = e.extra.length, hechos = 0, fallas = 0;
-      s.puntos.forEach((_, i) => { if (!visible(e, i)) return; tot++; const p = e.puntos[i]; if (p && p.e) { hechos++; if (p.e === 'falla') fallas++; } });
+      demos(s).forEach((_, i) => { if (!cuenta(s, e, i)) return; tot++; const p = e.puntos[i]; if (p && p.e) { hechos++; if (p.e === 'falla') fallas++; } });
       e.extra.forEach(p => { if (p.e) { hechos++; if (p.e === 'falla') fallas++; } });
-      return { tot, hechos, fallas, hall: e.hall.length, firm: F[s.id] ? 1 : 0 };
+      const dec = (s.decidir || []).length, decOk = (s.decidir || []).filter((_, k) => (e.dec[k] || '').trim()).length;
+      const dudas = e.dudas.filter(d => !d.ok).length;
+      return { tot, hechos, fallas, hall: e.hall.length, dec, decOk, dudas };
     }
     function conteoCap(cap) {
-      const t = { tot: 0, hechos: 0, fallas: 0, hall: 0, firm: 0, secs: 0 };
-      secsDe(cap).forEach(s => { const c = conteo(s); t.tot += c.tot; t.hechos += c.hechos; t.fallas += c.fallas; t.hall += c.hall; t.firm += c.firm; t.secs++; });
+      const t = { tot: 0, hechos: 0, fallas: 0, hall: 0, dec: 0, decOk: 0, dudas: 0 };
+      secsDe(cap).forEach(s => { const c = conteo(s); Object.keys(t).forEach(k => { t[k] += c[k]; }); });
+      t.firm = F[cap.id] ? 1 : 0;
       return t;
     }
-    function todosHall() {
-      const out = [];
-      GUIA.capitulos.forEach(cap => secsDe(cap).forEach(s => est(s.id).hall.forEach(h => out.push(Object.assign({ cap: cap.id, proceso: etiquetaCap(cap) + ' · ' + cap.nombre, pantalla: s.nombre }, h)))));
-      const o = { Alta: 0, Media: 1, Baja: 2, '': 3 };
-      return out.sort((a, b) => (o[a.prio || ''] - o[b.prio || '']));
-    }
     function totales() {
-      let tot = 0, hechos = 0, fallas = 0, firm = 0, nsec = 0;
-      GUIA.capitulos.forEach(cap => { const c = conteoCap(cap); tot += c.tot; hechos += c.hechos; fallas += c.fallas; firm += c.firm; nsec += c.secs; });
-      const H = todosHall();
-      return { tot, hechos, fallas, firm, nsec, H, altas: H.filter(h => h.prio === 'Alta').length };
-    }
-    // Lo que cambia con cada marca, sin repintar la etapa que se está llenando.
-    function refrescarIndicadores() {
-      if (ruta.v === 'proc') { pintarPasos(); avisosFirma(); }
-      else if (ruta.v === 'cierre') avisosFirma();
+      const t = { tot: 0, hechos: 0, fallas: 0, hall: 0, dec: 0, decOk: 0, dudas: 0, firm: 0, procs: 0 };
+      GUIA.capitulos.forEach(cap => { const c = conteoCap(cap); Object.keys(c).forEach(k => { if (k in t) t[k] += c[k]; }); t.procs++; });
+      return t;
     }
 
     // ── INICIO ─────────────────────────────────────────────────────────────
@@ -633,45 +701,48 @@ export const prerender = true;
         .map(x => '<div><span>' + esc(x[0]) + '</span><b>' + esc(x[1]) + '</b></div>').join('');
       const T = totales();
       $('#kpis').innerHTML =
-        '<div class="kpi"><span class="l">Avance total</span><span class="c">' + pct(T.hechos, T.tot) + '</span><span class="s">' + T.hechos + ' de ' + T.tot + ' puntos revisados</span></div>'
-        + '<div class="kpi"><span class="l">Etapas firmadas</span><span class="c">' + T.firm + '<span style="font-size:1rem;color:var(--tx3)"> / ' + T.nsec + '</span></span><span class="s">enterado y aceptado</span></div>'
-        + '<div class="kpi rj"><span class="l">Con falla</span><span class="c">' + T.fallas + '</span><span class="s">puntos que no pasaron</span></div>'
-        + '<div class="kpi"><span class="l">Hallazgos</span><span class="c">' + T.H.length + '</span><span class="s">' + T.altas + ' de prioridad alta</span></div>';
+        '<div class="kpi"><span class="l">Demostrado</span><span class="c">' + pct(T.hechos, T.tot) + '</span><span class="s">' + T.hechos + ' de ' + T.tot + ' puntos</span></div>'
+        + '<div class="kpi"><span class="l">Decisiones del cliente</span><span class="c">' + T.decOk + '<span style="font-size:1rem;color:var(--tx3)"> / ' + T.dec + '</span></span><span class="s">contestadas</span></div>'
+        + '<div class="kpi rj"><span class="l">Fallas y dudas</span><span class="c">' + T.fallas + ' · ' + T.dudas + '</span><span class="s">fallas · dudas abiertas</span></div>'
+        + '<div class="kpi"><span class="l">Procesos firmados</span><span class="c">' + T.firm + '<span style="font-size:1rem;color:var(--tx3)"> / ' + T.procs + '</span></span><span class="s">' + T.hall + ' mejoras y hallazgos</span></div>';
+      $('#casoMini').innerHTML = CASO.slice(0, 6).map(c => '<span class="' + (S.caso[c.k] ? '' : 'vacio-c') + '">' + esc(c.l.split(' · ')[0]) + ': <b>' + esc(S.caso[c.k] || 'por anotar') + '</b></span>').join('')
+        + '<a class="btn peq" data-ir="#/p/p0/p0-caso" style="min-height:30px">Editar</a>';
+      $('#chkCorta').checked = !!S.corta;
+      $('#chkCorta').onchange = ev => { S.corta = ev.target.checked; document.body.classList.toggle('corta', S.corta); logEv(S.corta ? 'Activó la sesión corta (solo lo esencial)' : 'Volvió a la sesión completa'); cambio(); pintarInicio(); };
       $('#caps').innerHTML = GUIA.capitulos.map(cap => {
         const c = conteoCap(cap); const p = c.tot ? Math.round(c.hechos * 100 / c.tot) : 0;
-        return '<button class="cap' + (c.tot && c.hechos === c.tot ? ' done' : '') + '" data-ir="#/p/' + esc(cap.id) + '">'
-          + '<span class="k">' + esc(etiquetaCap(cap)) + '</span><span class="nm">' + esc(cap.nombre) + '</span><span class="rs">' + esc(cap.resumen) + '</span>'
-          + '<span class="pie"><span class="bar"><i style="width:' + p + '%"></i></span>' + p + '%</span>'
-          + '<span class="pie" style="margin-top:0">' + c.hechos + '/' + c.tot + ' puntos' + (c.firm ? ' · ' + c.firm + '/' + c.secs + ' firmadas' : '') + (c.hall ? ' · ' + c.hall + ' hallazgos' : '') + '<span class="abrir" style="margin-left:auto">Abrir →</span></span></button>';
+        const ok = c.tot && c.hechos === c.tot;
+        return '<button class="prow' + (c.firm ? ' firm' : ok ? ' ok' : '') + '" data-ir="#/p/' + esc(cap.id) + '">'
+          + '<span class="n">' + (c.firm ? ICO_OK.replace('width="10" height="10"', 'width="14" height="14"') : esc(cap.id === 'rep' ? '✓' : numCap(cap))) + '</span>'
+          + '<span><span class="nm">' + esc(cap.nombre) + '</span><span class="rs">' + esc(cap.resumen) + '</span></span>'
+          + '<span class="av"><span class="bar"><i style="width:' + p + '%"></i></span><span>' + (c.tot ? c.hechos + '/' + c.tot + ' · ' : '') + (c.dec ? c.decOk + '/' + c.dec + ' decisiones' : '') + (c.firm ? ' · firmado' : '') + '</span></span>'
+          + '<span class="ch">›</span></button>';
       }).join('')
-        + '<button class="cap cierre" data-ir="#/cierre"><span class="k">Final</span><span class="nm">Resumen y cierre</span><span class="rs">Todos los hallazgos, los acuerdos, la firma final del cliente y el historial.</span>'
-        + '<span class="pie">' + T.H.length + ' hallazgos' + (F.__cierre ? ' · firmado' : '') + '<span class="abrir" style="margin-left:auto">Abrir →</span></span></button>';
+        + '<button class="prow fin" data-ir="#/cierre"><span class="n">' + (F.__cierre ? ICO_OK.replace('width="10" height="10"', 'width="14" height="14"') : '★') + '</span><span><span class="nm">Resumen y cierre</span><span class="rs">Fallas por corregir, mejoras, dudas, decisiones, acuerdos y la firma final.</span></span><span class="av"><span>' + T.hall + ' anotaciones · ' + T.dudas + ' dudas abiertas</span></span><span class="ch">›</span></button>';
     }
 
     // ── PROCESO (enfoque) ──────────────────────────────────────────────────
     function estadoPaso(s) {
       const c = conteo(s);
       if (c.fallas) return 'falla';
-      if (c.tot && c.hechos === c.tot) return 'ok';
-      if (c.hechos) return 'parcial';
+      if ((c.tot || c.dec) && c.hechos === c.tot && c.decOk === c.dec) return 'ok';
+      if (c.hechos || c.decOk) return 'parcial';
       return '';
     }
     function pintarPasos() {
       const cap = capDe(ruta.cap); const ct = conteoCap(cap);
       const items = listaPasos(cap).map(id => {
-        if (id === '__mapa') return '<button class="paso' + (ruta.paso === id ? ' on' : '') + '" data-ir="#/p/' + cap.id + '/__mapa"><span class="ic"></span><span class="tx">Mapa del proceso<span class="mt">Cómo funciona de punta a punta</span></span></button>';
+        const on = ruta.paso === id ? ' on' : '';
+        const href = '#/p/' + cap.id + '/' + encodeURIComponent(id);
+        if (id === '__mapa') return '<button class="paso' + on + '" data-ir="' + href + '"><span class="ic"></span><span class="tx">Mapa del proceso<span class="mt">Cómo funciona de punta a punta</span></span></button>';
+        if (id === '__fin') return '<button class="paso' + on + '" data-ir="' + href + '"><span class="ic' + (F[cap.id] ? ' ok' : '') + '">' + (F[cap.id] ? ICO_OK : '') + '</span><span class="tx">Cierre del proceso<span class="mt">' + (F[cap.id] ? 'Firmado' : '¿Qué cambiarías? y firma') + '</span></span></button>';
         const s = secsDe(cap).find(x => x.id === id); const c = conteo(s); const e = estadoPaso(s);
-        return '<button class="paso' + (ruta.paso === id ? ' on' : '') + '" data-ir="#/p/' + cap.id + '/' + encodeURIComponent(id) + '"><span class="ic ' + e + '">' + (e === 'ok' ? ICO_OK : '') + '</span><span class="tx">'
-          + esc(s.clave ? 'Puntos clave' : numSec(cap, s) + '. ' + nombreCorto(s))
-          + '<span class="mt">' + c.hechos + '/' + c.tot + (c.fallas ? ' · ' + c.fallas + ' con falla' : '') + (F[s.id] ? ' · firmada' : '') + '</span></span></button>';
+        return '<button class="paso' + on + '" data-ir="' + href + '"><span class="ic ' + e + '">' + (e === 'ok' ? ICO_OK : '') + '</span><span class="tx">' + esc(numSec(cap, s) + '. ' + s.nombre)
+          + '<span class="mt">' + (s.caso ? 'Datos del caso' : (c.tot ? c.hechos + '/' + c.tot : '') + (c.dec ? (c.tot ? ' · ' : '') + c.decOk + '/' + c.dec + ' decisiones' : '') + (c.fallas ? ' · ' + c.fallas + ' con falla' : '') + (c.dudas ? ' · ' + c.dudas + ' dudas' : '')) + '</span></span></button>';
       }).join('');
       $('#pasos').innerHTML = '<div class="tit">' + esc(etiquetaCap(cap)) + '<b>' + esc(cap.nombre) + '</b></div><div class="bar"><i style="width:' + pct(ct.hechos, ct.tot) + '"></i></div>' + items
-        + '<div class="solo-orq" style="padding:8px 10px"><button class="btn peq" id="btnOtra" style="width:100%">' + (cap.id === 'rep' ? 'Agregar pantalla o reporte' : 'Agregar etapa') + '</button></div>';
-      $('#selPasos').innerHTML = listaPasos(cap).map(id => {
-        if (id === '__mapa') return '<option value="__mapa"' + (ruta.paso === id ? ' selected' : '') + '>Mapa del proceso</option>';
-        const s = secsDe(cap).find(x => x.id === id); const c = conteo(s);
-        return '<option value="' + esc(id) + '"' + (ruta.paso === id ? ' selected' : '') + '>' + esc(s.clave ? 'Puntos clave' : numSec(cap, s) + '. ' + nombreCorto(s)) + ' — ' + pct(c.hechos, c.tot) + (F[s.id] ? ' · firmada' : '') + '</option>';
-      }).join('');
+        + '<div class="solo-orq" style="padding:8px 10px"><button class="btn peq" id="btnOtra" style="width:100%">Agregar etapa</button></div>';
+      $('#selPasos').innerHTML = listaPasos(cap).map(id => '<option value="' + esc(id) + '"' + (ruta.paso === id ? ' selected' : '') + '>' + esc(nombrePaso(cap, id)) + '</option>').join('');
       $('#selPasos').onchange = ev => ir('#/p/' + cap.id + '/' + encodeURIComponent(ev.target.value));
       const b = $('#btnOtra'); if (b) b.onclick = () => agregarEtapa(cap);
     }
@@ -683,15 +754,17 @@ export const prerender = true;
       if (ruta.paso === '__mapa') {
         $('#foco').innerHTML = '<div class="foco-cab"><span class="k">' + esc(etiquetaCap(cap)) + '</span><h1>' + esc(cap.nombre) + '</h1><p class="sub">' + esc(cap.resumen) + '</p></div>' + htmlMapa(cap.diagrama);
         $('#foco').querySelectorAll('[data-go]').forEach(g => g.onclick = () => ir('#/p/' + cap.id + '/' + encodeURIComponent(g.dataset.go)));
+      } else if (ruta.paso === '__fin') {
+        $('#foco').innerHTML = htmlFin(cap); enlazarFin(cap);
       } else {
         const s = secsDe(cap).find(x => x.id === ruta.paso);
-        $('#foco').innerHTML = htmlSec(cap, s);
-        enlazar(cap, s);
+        $('#foco').innerHTML = htmlSec(cap, s); enlazar(cap, s);
       }
       const ant = pasos[i - 1], sig = pasos[i + 1];
+      const capSig = GUIA.capitulos[numCap(cap) + 1];
       $('#btnAnt').disabled = !ant; $('#btnAnt').onclick = () => ant && ir('#/p/' + cap.id + '/' + encodeURIComponent(ant));
-      $('#btnSig').textContent = sig ? 'Siguiente →' : 'Volver a procesos';
-      $('#btnSig').onclick = () => ir(sig ? '#/p/' + cap.id + '/' + encodeURIComponent(sig) : '#/');
+      $('#btnSig').textContent = sig ? 'Siguiente →' : capSig ? 'Siguiente proceso →' : 'Ir al resumen y cierre →';
+      $('#btnSig').onclick = () => ir(sig ? '#/p/' + cap.id + '/' + encodeURIComponent(sig) : capSig ? '#/p/' + capSig.id : '#/cierre');
     }
 
     // Mapa del proceso: rejilla de 5 columnas; cada caja abre su etapa.
@@ -726,52 +799,87 @@ export const prerender = true;
     function htmlTxt(attr, valor, ph) { return '<div class="ta"><textarea ' + attr + ' placeholder="' + esc(ph || '') + '">' + esc(valor) + '</textarea><button type="button" class="mic solo-orq" title="Dictar">' + ICO_MIC + '</button></div>'; }
     function htmlFotos(arr) { return (arr || []).map((u, k) => '<div class="foto"><a href="' + esc(u) + '" target="_blank" rel="noopener"><img src="' + esc(u) + '" alt="Foto ' + (k + 1) + '" loading="lazy" /></a><button type="button" class="solo-orq" data-quitafoto="' + k + '" title="Quitar">✕</button></div>').join(''); }
     function opts(list, v, ph) { return (ph ? '<option value="">' + ph + '</option>' : '') + list.map(o => '<option' + (o === v ? ' selected' : '') + '>' + esc(o) + '</option>').join(''); }
+    function chipsCaso(pieza) {
+      if (!pieza) return '';
+      const ks = pieza === 'ABC' ? ['A', 'B', 'C'] : pieza === 'cons' ? ['cons', 'folio'] : [pieza];
+      return '<div class="caso-mini">' + ks.map(k => { const c = CASO.find(x => x.k === k); return '<span class="' + (S.caso[k] ? '' : 'vacio-c') + '">' + esc(c.l.split(' · ')[0]) + ': <b>' + esc(S.caso[k] || 'por anotar') + '</b></span>'; }).join('') + '</div>';
+    }
 
     function htmlSec(cap, s, imprimir) {
       const e = est(s.id); const c = conteo(s);
-      const hoy = (s.hoy || []).map(x => '<span class="chip">' + esc(x) + '</span>').join('');
-      const fil = (s.filtros || []).map(x => '<span class="chip fil">' + esc(x) + '</span>').join('');
-      const nOcultos = s.puntos.filter((_, k) => !visible(e, k)).length;
-      const pts = s.puntos.map((t, k) => visible(e, k) ? htmlPunto('b' + k, t, e.puntos[k] || {}, false) : '').join('') + e.extra.map((p, k) => htmlPunto('x' + k, p.t, p, true)).join('');
-      const sug = (s.sugerencias || []).map((g, k) => '<div class="sug' + (e.usadas[k] ? ' usada' : '') + '"><span class="tp">' + esc(g.tipo) + '</span><span class="tx">' + esc(g.texto) + '</span><button class="btn peq" data-sug="' + k + '"' + (e.usadas[k] ? ' disabled' : '') + '>' + (e.usadas[k] ? 'En la tabla' : 'Agregar') + '</button></div>').join('');
       const esRep = cap.id === 'rep';
-      const f = F[s.id];
-      return '<article class="sec' + (imprimir ? ' imp-sec' : '') + '"' + (imprimir ? '' : ' id="s-' + esc(s.id) + '"') + '>'
-        + '<div class="foco-cab"><span class="k">' + esc(etiquetaCap(cap)) + ' · ' + (s.clave ? 'Puntos clave' : (esRep ? 'Pantalla ' : 'Etapa ') + numSec(cap, s)) + '</span>'
-        + '<h1>' + esc(s.clave ? s.nombre : nombreCorto(s)) + '</h1>'
-        + '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><span class="etiqueta">' + c.hechos + ' de ' + c.tot + ' revisados</span>' + (c.fallas ? '<span class="etiqueta" style="background:var(--rja);color:var(--rjt)">' + c.fallas + ' con falla</span>' : '') + (f ? '<span class="etiqueta ve">Firmada</span>' : '') + '</div>'
-        + '<div class="foco-meta">' + (s.donde ? '<div><b>Dónde:</b> ' + esc(s.donde) + '</div>' : '') + (s.para ? '<div><b>' + (esRep ? 'Para qué sirve:' : 'Qué pasa:') + '</b> ' + esc(s.para) + '</div>' : '') + '</div></div>'
+      const nOcultos = demos(s).filter((_, k) => e.ocultos[k]).length;
+      const pts = demos(s).map((p, k) => e.ocultos[k] ? '' : htmlPunto('b' + k, p, e.puntos[k] || {})).join('') + e.extra.map((p, k) => htmlPunto('x' + k, p, p)).join('');
+      const hoy = (s.hoy || []).map(x => '<span class="chip">' + esc(x) + '</span>').join('');
+      let h = '<article class="sec' + (imprimir ? ' imp-sec' : '') + '"' + (imprimir ? '' : ' id="s-' + esc(s.id) + '"') + '>'
+        + '<div class="foco-cab"><span class="k">' + esc(etiquetaCap(cap)) + ' · Etapa ' + numSec(cap, s) + '</span>'
+        + '<h1>' + esc(s.nombre) + '</h1>'
+        + (s.caso ? '' : '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">' + (c.tot ? '<span class="etiqueta">' + c.hechos + ' de ' + c.tot + ' demostrados</span>' : '') + (c.dec ? '<span class="etiqueta">' + c.decOk + ' de ' + c.dec + ' decisiones</span>' : '') + (c.fallas ? '<span class="etiqueta" style="background:var(--rja);color:var(--rjt)">' + c.fallas + ' con falla</span>' : '') + (c.dudas ? '<span class="etiqueta" style="background:var(--ama);color:var(--amt)">' + c.dudas + ' dudas abiertas</span>' : '') + '</div>')
+        + '<div class="foco-meta">' + (s.donde ? '<div><b>Dónde:</b> ' + esc(s.donde) + '</div>' : '') + (s.para ? '<div><b>Qué pasa:</b> ' + esc(s.para) + '</div>' : '') + '</div>'
+        + chipsCaso(s.pieza) + '</div>'
         + (s.nota ? '<div class="nota-calc">' + esc(s.nota) + '</div>' : '')
-        + (hoy || fil ? '<h3>Lo que muestra hoy</h3><div class="chips">' + hoy + fil + '</div>' : '')
-        + (s.editable ? '<h3>' + (esRep ? 'Pantalla' : 'Etapa') + '</h3><div class="grid"><label class="f">Nombre<input type="text" data-ren value="' + esc(s.nombre) + '" /></label><label class="f">Dónde está<input type="text" data-donde value="' + esc(s.donde || '') + '" /></label></div>' : '')
-        + '<h3>' + (s.clave ? 'Pruebas de punta a punta' : 'Puntos a validar') + '</h3><div class="lista">' + (pts || '<div class="pt"><div class="vacio">Agrega los puntos que se van a revisar.</div></div>') + '</div>'
-        + '<div class="acciones solo-orq"><button class="btn peq" data-addpt>Agregar punto a validar</button>' + (nOcultos ? '<button class="btn peq" data-restaurar>Restaurar ' + nOcultos + (nOcultos === 1 ? ' punto quitado' : ' puntos quitados') + '</button>' : '') + '</div>'
-        + (sug ? '<div class="solo-orq"><h3>Sugerencias para revisar con el cliente</h3>' + sug + '</div>' : '')
-        + '<h3>' + (esRep ? 'Lo que le falta (campo, dato, filtro…)' : 'Hallazgos: mejoras, reglas y fallas') + '</h3>'
-        + '<div>' + (e.hall.length ? e.hall.map((h, k) => htmlHall(cap, h, k)).join('') : '<div class="vacio">Sin anotaciones.</div>') + '</div>'
-        + '<div class="acciones solo-orq"><button class="btn peq" data-addh>' + (esRep ? 'Agregar faltante' : 'Agregar hallazgo') + '</button>' + (s.editable ? '<button class="btn peq del" data-delsec>Quitar etapa</button>' : '') + '</div>'
-        + htmlFirma('Firma del cliente · enterado y aceptado', LEY_ETAPA, f, f && f.h !== huella(e))
-        + '</article>';
+        + (hoy ? '<h3>Lo que muestra hoy</h3><div class="chips">' + hoy + '</div>' : '');
+      if (s.caso) {
+        h += '<div class="caso-form">' + CASO.map(cf => '<label class="f">' + esc(cf.l) + '<input type="text" data-caso="' + cf.k + '" value="' + esc(S.caso[cf.k] || '') + '" placeholder="' + esc(cf.ph) + '" /></label>').join('') + '</div>';
+        return h + '</article>';
+      }
+      if (s.editable) h += '<h3>Etapa</h3><div class="grid"><label class="f">Nombre<input type="text" data-ren value="' + esc(s.nombre) + '" /></label><label class="f">Dónde está<input type="text" data-donde value="' + esc(s.donde || '') + '" /></label></div>';
+      // 1 · Demostrar
+      h += '<div class="bloque"><h3><span class="num-b">1</span>Demostrar</h3><div class="lista">' + (pts || '<div class="pt"><div class="vacio">Sin puntos a demostrar en esta etapa.</div></div>') + '</div>'
+        + '<div class="acciones solo-orq"><button class="btn peq" data-addpt>Agregar punto a demostrar</button>' + (nOcultos ? '<button class="btn peq" data-restaurar>Restaurar ' + nOcultos + (nOcultos === 1 ? ' punto quitado' : ' puntos quitados') + '</button>' : '') + '</div></div>';
+      // 2 · Decidir con el cliente
+      if ((s.decidir || []).length) {
+        h += '<div class="bloque"><h3><span class="num-b">2</span>Decidir con el cliente</h3><div class="dec">'
+          + s.decidir.map((q, k) => '<div class="q' + ((e.dec[k] || '').trim() ? ' listo' : '') + '" data-q="' + k + '"><span class="t">' + esc(q) + '</span>' + htmlTxt('data-dec="' + k + '"', e.dec[k] || '', 'Lo que decidió el cliente') + '</div>').join('')
+          + '</div></div>';
+      }
+      // Solo orquestador: lo que hoy no hace
+      if (!imprimir && (s.noHace || []).length) {
+        h += '<div class="bloque solo-orq"><div class="nohace"><div class="tit">Para el orquestador: lo que hoy no hace <span>· verifícalo antes; si el cliente lo necesita, anótalo como mejora</span></div>'
+          + s.noHace.map((t, k) => '<div class="it"><span>' + esc(t) + '</span>' + (e.usadas['n' + k] ? '<button class="btn peq" disabled>Anotado</button>' : '<button class="btn peq" data-nohace="' + k + '">Lo necesita</button>') + '</div>').join('')
+          + '</div></div>';
+      }
+      // 3 · Dudas del cliente
+      h += '<div class="bloque"><h3><span class="num-b">' + ((s.decidir || []).length ? 3 : 2) + '</span>Dudas del cliente</h3>'
+        + (e.dudas.length ? e.dudas.map((d, k) => htmlDuda(d, k)).join('') : '<div class="vacio">Sin dudas.</div>')
+        + '<div class="acciones solo-orq"><button class="btn peq" data-addduda>Agregar duda</button></div></div>';
+      // 4 · Mejoras y fallas
+      h += '<div class="bloque"><h3><span class="num-b">' + ((s.decidir || []).length ? 4 : 3) + '</span>' + (esRep ? 'Lo que le falta (campo, dato, filtro…)' : 'Mejoras y fallas') + '</h3>'
+        + (e.hall.length ? e.hall.map((x, k) => htmlHall(cap, x, k)).join('') : '<div class="vacio">Sin anotaciones.</div>')
+        + '<div class="acciones solo-orq"><button class="btn peq" data-addh>' + (esRep ? 'Agregar faltante' : 'Agregar mejora o falla') + '</button>' + (s.editable ? '<button class="btn peq del" data-delsec>Quitar etapa</button>' : '') + '</div></div>';
+      return h + '</article>';
     }
 
-    function htmlPunto(key, t, p, extra) {
-      const b = (v, l) => '<button class="' + v + (p.e === v ? ' on' : '') + '" data-e="' + v + '">' + l + '</button>';
-      const abierta = p.e === 'falla' || !!p.n || (p.fotos && p.fotos.length);
-      return '<div class="pt' + (abierta ? ' con-nota' : '') + (p.e === 'ok' || p.e === 'na' ? ' hecho' : '') + '" data-pt="' + key + '"><div class="txt">' + (extra ? '<input type="text" data-ptt value="' + esc(t) + '" placeholder="Qué se valida" />' : esc(t)) + '</div>'
+    function htmlPunto(key, p, st) {
+      const extra = key[0] === 'x';
+      const b = (v, l) => '<button class="' + v + (st.e === v ? ' on' : '') + '" data-e="' + v + '">' + l + '</button>';
+      const abierta = st.e === 'falla' || !!st.n || (st.fotos && st.fotos.length);
+      const txt = extra ? '<input type="text" data-ptt value="' + esc(p.t || '') + '" placeholder="Hacemos… y debe pasar…" />'
+        : '<div class="hd"><div class="h"><span class="lb">Hacemos</span>' + esc(p.h) + (p.o ? '<span class="opc">opcional</span>' : '') + '</div><div class="d"><span class="lb">Debe pasar</span>' + esc(p.d) + '</div></div>';
+      return '<div class="pt' + (abierta ? ' con-nota' : '') + (st.e === 'ok' || st.e === 'na' ? ' hecho' : '') + (p.o ? ' opcional' : '') + '" data-pt="' + key + '"><div class="txt">' + txt + '</div>'
         + '<div class="ctrl"><div class="seg">' + b('ok', 'Correcto') + b('falla', 'Falla') + b('na', 'No aplica') + '</div><button class="btn peq solo-orq" data-abrirnota title="Nota o foto">Nota</button><button class="btn peq del x solo-orq" data-quitarpt title="Quitar este punto" aria-label="Quitar este punto">✕</button></div>'
-        + '<div class="nota">' + htmlTxt('data-nota', p.n || '', 'Qué se vio / comentario del cliente')
+        + '<div class="nota">' + htmlTxt('data-nota', st.n || '', 'Qué se vio / comentario del cliente')
         + '<div class="nrs solo-orq">' + NOTAS_RAPIDAS.map(x => '<button type="button" class="nr" data-nr="' + esc(x) + '">' + esc(x) + '</button>').join('') + '</div>'
-        + '<div class="fotos" data-fotos>' + htmlFotos(p.fotos) + '</div>'
+        + '<div class="fotos" data-fotos>' + htmlFotos(st.fotos) + '</div>'
         + '<div class="acciones solo-orq"><button type="button" class="btn peq" data-addfoto>Agregar foto</button>'
-        + (p.e === 'falla' ? (p.hz ? '<button type="button" class="btn peq" disabled>Ya está en hallazgos</button>' : '<button type="button" class="btn peq" data-ahz>Pasar a hallazgos</button>') : '')
+        + (st.e === 'falla' ? (st.hz ? '<button type="button" class="btn peq" disabled>Ya está en mejoras y fallas</button>' : '<button type="button" class="btn peq" data-ahz>Pasar a mejoras y fallas</button>') : '')
         + '</div></div></div>';
+    }
+
+    function htmlDuda(d, k) {
+      return '<div class="duda' + (d.ok ? ' resuelta' : '') + '" data-duda="' + k + '">'
+        + '<div class="fila"><div><span class="lbl">Duda</span>' + htmlTxt('data-df="q"', d.q || '', '¿Qué preguntó el cliente?') + '</div>'
+        + '<div><span class="lbl">La responde</span><select data-df="quien">' + opts(RESPS, d.quien, '—') + '</select></div>'
+        + '<label class="chk" style="margin:0 0 10px"><input type="checkbox" data-df="ok"' + (d.ok ? ' checked' : '') + ' />Resuelta</label>'
+        + '<button class="btn peq del x solo-orq" data-delduda title="Quitar">✕</button></div>'
+        + '<div><span class="lbl">Respuesta</span>' + htmlTxt('data-df="r"', d.r || '', 'Cómo se resolvió') + '</div></div>';
     }
 
     function htmlHall(cap, h, k) {
       return '<div class="hall" data-h="' + k + '">'
         + '<div class="hrow a"><div><span class="lbl">Tipo</span><select data-hf="tipo">' + opts(cap.tipos, h.tipo, 'Tipo…') + '</select></div>'
-        + '<div><span class="lbl">' + esc(cap.cols.a) + '</span>' + htmlTxt('data-hf="que"', h.que, '') + '</div>'
-        + '<div><span class="lbl">' + esc(cap.cols.b) + '</span>' + htmlTxt('data-hf="uso"', h.uso, '') + '</div></div>'
+        + '<div><span class="lbl">Qué pasó / qué falta</span>' + htmlTxt('data-hf="que"', h.que, '') + '</div>'
+        + '<div><span class="lbl">Cómo lo quiere el cliente</span>' + htmlTxt('data-hf="uso"', h.uso, '') + '</div></div>'
         + '<div class="hrow b"><div><span class="lbl">Prioridad</span><select data-hf="prio">' + opts(PRIOS, h.prio, '—') + '</select></div>'
         + '<div><span class="lbl">Decisión</span><select data-hf="deci">' + opts(DECIS, h.deci || 'Pendiente') + '</select></div>'
         + '<div><span class="lbl">Responsable</span><select data-hf="resp">' + opts(RESPS, h.resp, '—') + '</select></div>'
@@ -787,7 +895,7 @@ export const prerender = true;
       window.scrollTo(0, y);
     }
 
-    // ── Dictado por voz (Web Speech API; si no hay, el botón no aparece) ───
+    // ── Dictado por voz ────────────────────────────────────────────────────
     let rec = null, recBtn = null;
     function dictar(btn) {
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) return;
@@ -805,7 +913,7 @@ export const prerender = true;
     }
     document.addEventListener('click', ev => { const m = ev.target.closest('.mic'); if (m) { ev.preventDefault(); dictar(m); } });
 
-    // ── Fotos: se comprimen en la tableta y se suben a Storage ────────────
+    // ── Fotos ──────────────────────────────────────────────────────────────
     let fotoDestino = null;
     $('#fotoInput').onchange = ev => { const f = ev.target.files && ev.target.files[0]; ev.target.value = ''; if (f && fotoDestino) subirFoto(f, fotoDestino); };
     function pedirFoto(destino) { fotoDestino = destino; $('#fotoInput').click(); }
@@ -838,22 +946,23 @@ export const prerender = true;
       const destino = { caja, arr: getArr, donde, listo };
       if (add) add.onclick = () => pedirFoto(destino);
       cont.querySelectorAll('[data-quitafoto]').forEach(b => b.onclick = () => { getArr().splice(+b.dataset.quitafoto, 1); logEv('Quitó una foto · ' + donde); listo(); cambio(); });
-      // Pegar una captura directo en la nota también la sube.
       cont.querySelectorAll('textarea').forEach(ta => ta.addEventListener('paste', ev => {
         const it = [...((ev.clipboardData && ev.clipboardData.items) || [])].find(x => x.type && x.type.indexOf('image/') === 0);
         if (it) { ev.preventDefault(); subirFoto(it.getAsFile(), destino); }
       }));
     }
 
+    function nuevoHall(tipo, que, fotos) { return { tipo: tipo || '', que: que || '', uso: '', prio: '', deci: 'Pendiente', resp: '', fecha: '', fotos: fotos || [] }; }
+
     function enlazar(cap, s) {
       const el = $(sel(s.id)); if (!el) return; const e = est(s.id);
+      el.querySelectorAll('[data-caso]').forEach(i => i.oninput = () => { S.caso[i.dataset.caso] = i.value; cambio(); });
       el.querySelectorAll('[data-pt]').forEach(row => {
         const key = row.dataset.pt; const extra = key[0] === 'x'; const k = +key.slice(1);
         const obj = () => extra ? e.extra[k] : (e.puntos[k] = e.puntos[k] || {});
-        const texto = () => extra ? (e.extra[k].t || 'Punto agregado') : s.puntos[k];
         row.querySelectorAll('[data-e]').forEach(b => b.onclick = () => {
           const p = obj(); p.e = p.e === b.dataset.e ? '' : b.dataset.e;
-          logEv(s.nombre + ' · «' + corto(texto()) + '» → ' + RES[p.e || '']);
+          logEv(s.nombre + ' · «' + corto(txtPunto(s, e, key)) + '» → ' + RES[p.e || '']);
           repintarSec(cap, s); cambio();
           if (p.e === 'falla') { const t = $(sel(s.id) + ' [data-pt="' + key + '"] [data-nota]'); if (t) t.focus({ preventScroll: true }); }
         });
@@ -863,7 +972,7 @@ export const prerender = true;
         const tt = row.querySelector('[data-ptt]'); if (tt) tt.oninput = ev => { obj().t = ev.target.value; cambio(); };
         const qp = row.querySelector('[data-quitarpt]');
         if (qp) qp.onclick = () => {
-          logEv(s.nombre + ' · quitó el punto «' + corto(texto()) + '»');
+          logEv(s.nombre + ' · quitó el punto «' + corto(txtPunto(s, e, key)) + '»');
           if (extra) e.extra.splice(k, 1); else e.ocultos[k] = true;
           repintarSec(cap, s); cambio(); toast(extra ? 'Punto quitado' : 'Punto quitado · se puede restaurar abajo de la lista');
         };
@@ -871,19 +980,39 @@ export const prerender = true;
         const ahz = row.querySelector('[data-ahz]');
         if (ahz) ahz.onclick = () => {
           const p = obj(); p.hz = true;
-          e.hall.push({ tipo: cap.id === 'rep' ? '' : 'Bug', que: corto(texto(), 200) + (p.n ? ' — ' + p.n : ''), uso: '', prio: '', deci: 'Pendiente', resp: '', fecha: '', fotos: (p.fotos || []).slice() });
-          logEv(s.nombre + ' · pasó a hallazgos «' + corto(texto()) + '»'); repintarSec(cap, s); cambio(); toast('Pasado a hallazgos: ponle prioridad y responsable');
+          e.hall.push(nuevoHall(cap.id === 'rep' ? 'Bug' : 'Bug', corto(txtPunto(s, e, key), 220) + (p.n ? ' — ' + p.n : ''), (p.fotos || []).slice()));
+          logEv(s.nombre + ' · pasó a mejoras y fallas «' + corto(txtPunto(s, e, key)) + '»'); repintarSec(cap, s); cambio(); toast('Anotado: ponle prioridad y responsable');
         };
       });
       const rest = el.querySelector('[data-restaurar]');
       if (rest) rest.onclick = () => { e.ocultos = {}; logEv(s.nombre + ' · restauró los puntos quitados'); repintarSec(cap, s); cambio(); toast('Puntos restaurados'); };
       const addpt = el.querySelector('[data-addpt]');
-      if (addpt) addpt.onclick = () => { e.extra.push({ t: '', e: '', n: '' }); logEv(s.nombre + ' · agregó un punto a validar'); repintarSec(cap, s); cambio(); const ins = document.querySelectorAll(sel(s.id) + ' [data-ptt]'); if (ins.length) ins[ins.length - 1].focus(); };
-      el.querySelectorAll('[data-sug]').forEach(b => b.onclick = () => {
-        const k = +b.dataset.sug; const g = s.sugerencias[k]; e.usadas[k] = true;
-        e.hall.push({ tipo: g.tipo, que: g.texto, uso: '', prio: '', deci: 'Pendiente', resp: '', fecha: '', fotos: [] });
-        logEv(s.nombre + ' · agregó «' + corto(g.texto) + '»'); repintarSec(cap, s); cambio(); toast('Agregado a la tabla');
+      if (addpt) addpt.onclick = () => { e.extra.push({ t: '', e: '', n: '' }); logEv(s.nombre + ' · agregó un punto a demostrar'); repintarSec(cap, s); cambio(); const ins = document.querySelectorAll(sel(s.id) + ' [data-ptt]'); if (ins.length) ins[ins.length - 1].focus(); };
+      // Decisiones
+      el.querySelectorAll('[data-dec]').forEach(t => t.oninput = () => { e.dec[t.dataset.dec] = t.value; t.closest('.q').classList.toggle('listo', !!t.value.trim()); cambio(); });
+      el.querySelectorAll('[data-dec]').forEach(t => t.onchange = () => { if (t.value.trim()) logEv(s.nombre + ' · decidió: «' + corto(s.decidir[+t.dataset.dec], 50) + '» → ' + corto(t.value, 60)); cambio(); });
+      // Lo que hoy no hace → mejora
+      el.querySelectorAll('[data-nohace]').forEach(b => b.onclick = () => {
+        const k = +b.dataset.nohace; e.usadas['n' + k] = true;
+        e.hall.push(nuevoHall(cap.id === 'rep' ? 'Reporte nuevo' : 'Mejora de proceso', s.noHace[k]));
+        logEv(s.nombre + ' · el cliente necesita «' + corto(s.noHace[k]) + '»'); repintarSec(cap, s); cambio(); toast('Anotado como mejora: ponle prioridad');
       });
+      // Dudas
+      el.querySelectorAll('[data-duda]').forEach(row => {
+        const k = +row.dataset.duda;
+        row.querySelectorAll('[data-df]').forEach(f => {
+          const ev = (f.tagName === 'SELECT' || f.type === 'checkbox') ? 'onchange' : 'oninput';
+          f[ev] = () => {
+            e.dudas[k][f.dataset.df] = f.type === 'checkbox' ? f.checked : f.value;
+            if (f.type === 'checkbox') { row.classList.toggle('resuelta', f.checked); logEv(s.nombre + ' · duda ' + (f.checked ? 'resuelta' : 'reabierta') + ': «' + corto(e.dudas[k].q, 50) + '»'); }
+            cambio();
+          };
+        });
+        row.querySelector('[data-delduda]').onclick = () => { logEv(s.nombre + ' · quitó la duda «' + corto(e.dudas[k].q, 40) + '»'); e.dudas.splice(k, 1); repintarSec(cap, s); cambio(); };
+      });
+      const addd = el.querySelector('[data-addduda]');
+      if (addd) addd.onclick = () => { e.dudas.push({ q: '', quien: '', r: '', ok: false }); logEv(s.nombre + ' · agregó una duda'); repintarSec(cap, s); cambio(); const t = document.querySelectorAll(sel(s.id) + ' [data-df="q"]'); if (t.length) t[t.length - 1].focus(); };
+      // Mejoras y fallas
       el.querySelectorAll('[data-h]').forEach(row => {
         const k = +row.dataset.h;
         row.querySelectorAll('[data-hf]').forEach(f => {
@@ -898,8 +1027,7 @@ export const prerender = true;
         row.querySelector('[data-delh]').onclick = () => { logEv(s.nombre + ' · quitó «' + corto(e.hall[k].que, 40) + '»'); e.hall.splice(k, 1); repintarSec(cap, s); cambio(); toast('Quitado'); };
       });
       const addh = el.querySelector('[data-addh]');
-      if (addh) addh.onclick = () => { e.hall.push({ tipo: '', que: '', uso: '', prio: '', deci: 'Pendiente', resp: '', fecha: '', fotos: [] }); logEv(s.nombre + ' · agregó un hallazgo'); repintarSec(cap, s); cambio(); const t = document.querySelectorAll(sel(s.id) + ' [data-hf="que"]'); if (t.length) t[t.length - 1].focus(); };
-      enlazarFirma(el.querySelector('[data-firma]'), s.id, () => huella(e), () => { repintarSec(cap, s); pintarPasos(); });
+      if (addh) addh.onclick = () => { e.hall.push(nuevoHall()); logEv(s.nombre + ' · agregó una mejora o falla'); repintarSec(cap, s); cambio(); const t = document.querySelectorAll(sel(s.id) + ' [data-hf="que"]'); if (t.length) t[t.length - 1].focus(); };
       const ren = el.querySelector('[data-ren]'); if (ren) ren.oninput = () => { s.nombre = ren.value; cambio(); };
       const don = el.querySelector('[data-donde]'); if (don) don.oninput = () => { s.donde = don.value; cambio(); };
       const del = el.querySelector('[data-delsec]');
@@ -910,22 +1038,36 @@ export const prerender = true;
     }
 
     function agregarEtapa(cap) {
-      const esRep = cap.id === 'rep';
-      const s = { id: 'x' + Date.now().toString(36), cap: cap.id, nombre: esRep ? 'Pantalla o reporte nuevo' : 'Etapa nueva', donde: '', para: '', puntos: [], sugerencias: [], editable: true };
-      S.extras.push(s); logEv('Agregó una ' + (esRep ? 'pantalla' : 'etapa') + ' al proceso «' + cap.nombre + '»'); cambio();
+      const s = { id: 'x' + Date.now().toString(36), cap: cap.id, nombre: 'Etapa nueva', donde: '', para: '', demostrar: [], decidir: [], noHace: [], editable: true };
+      S.extras.push(s); logEv('Agregó una etapa al proceso «' + cap.nombre + '»'); cambio();
       ir('#/p/' + cap.id + '/' + s.id);
       setTimeout(() => { const r = $('[data-ren]'); if (r) { r.focus(); r.select(); } }, 50);
     }
 
+    // ── Cierre de cada proceso: resumen, «¿qué cambiarías?» y firma ────────
+    function htmlFin(cap, imprimir) {
+      const c = conteoCap(cap);
+      const dudas = secsDe(cap).flatMap(s => est(s.id).dudas.filter(d => !d.ok).map(d => d.q)).filter(Boolean);
+      const decs = secsDe(cap).flatMap(s => (s.decidir || []).map((q, k) => ({ q, r: est(s.id).dec[k] }))).filter(x => (x.r || '').trim());
+      return '<div class="' + (imprimir ? 'imp-sec' : '') + '"><div class="foco-cab"><span class="k">' + esc(etiquetaCap(cap)) + '</span><h1>Cierre del proceso</h1><p class="sub">' + esc(cap.nombre) + '</p></div>'
+        + '<div class="fin-res"><div><span>Demostrado</span><b>' + c.hechos + '/' + c.tot + '</b></div><div><span>Con falla</span><b style="color:var(--rjt)">' + c.fallas + '</b></div><div><span>Decisiones</span><b>' + c.decOk + '/' + c.dec + '</b></div><div><span>Dudas abiertas</span><b>' + c.dudas + '</b></div></div>'
+        + (decs.length ? '<h3>Lo que decidió el cliente</h3><div class="lista-cierre">' + decs.map(x => '<div class="li"><span>' + esc(x.q) + '</span><b>' + esc(x.r) + '</b></div>').join('') + '</div>' : '')
+        + (dudas.length ? '<h3>Dudas abiertas</h3><div class="lista-cierre">' + dudas.map(q => '<div class="li"><span>' + esc(q) + '</span></div>').join('') + '</div>' : '')
+        + '<h3>¿Qué cambiarías de este flujo?</h3>' + htmlTxt('data-procnota', S.procNota[cap.id] || '', 'Lo que el cliente cambiaría o necesita distinto en este proceso')
+        + htmlFirma('Firma del cliente · ' + cap.nombre, LEY_PROC, F[cap.id], F[cap.id] && F[cap.id].h !== huellaCap(cap)) + '</div>';
+    }
+    function enlazarFin(cap) {
+      const t = $('#foco [data-procnota]'); if (t) { t.oninput = () => { S.procNota[cap.id] = t.value; cambio(); }; }
+      enlazarFirma($('#foco [data-firma]'), cap.id, () => huellaCap(cap), () => { $('#foco').innerHTML = htmlFin(cap); enlazarFin(cap); bloquear($('#foco')); pintarPasos(); });
+    }
+
     // ── Firma de enterado y aceptado ───────────────────────────────────────
-    // El trazo se guarda como trayectoria SVG (unos cuantos KB). Las firmas
-    // viven aparte (F) y solo las escribe la acción «firmar» del servidor.
-    // La huella dice si la etapa cambió después de firmarla.
-    const LEY_ETAPA = 'Revisé esta etapa con el orquestador. Estoy enterado y de acuerdo con lo validado y con los hallazgos anotados.';
-    const LEY_CIERRE = 'Revisé con el orquestador los procesos de esta sesión. Estoy enterado y de acuerdo con lo validado, los hallazgos y los acuerdos anotados.';
+    const LEY_PROC = 'Revisé este proceso con el orquestador. Estoy enterado y de acuerdo con lo demostrado, mis decisiones y lo anotado.';
+    const LEY_CIERRE = 'Revisé con el orquestador los procesos de esta sesión. Estoy enterado y de acuerdo con lo demostrado, las decisiones, las mejoras y los acuerdos anotados.';
     function hashTxt(t) { let h = 5381; for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
-    function huella(e) { const o = e.ocultos && Object.keys(e.ocultos).length ? [e.ocultos] : []; return hashTxt(JSON.stringify([e.puntos, e.extra, e.hall].concat(o))); }
-    function huellaTodo() { return hashTxt(JSON.stringify([Object.keys(S.sec).sort().map(k => [S.sec[k].puntos, S.sec[k].extra, S.sec[k].hall]), S.cierre.acuerdos || ''])); }
+    function huellaSec(e) { return [e.puntos, e.extra, e.hall, e.ocultos, e.dec, e.dudas]; }
+    function huellaCap(cap) { return hashTxt(JSON.stringify([secsDe(cap).map(s => huellaSec(est(s.id))), S.procNota[cap.id] || ''])); }
+    function huellaTodo() { return hashTxt(JSON.stringify([GUIA.capitulos.map(c => huellaCap(c)), S.cierre.acuerdos || ''])); }
     function fechaFirma(iso) { try { return new Date(iso).toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) { return iso; } }
     function htmlFirma(titulo, ley, f, cambioTras) {
       if (f) return '<div class="firma-box" data-firma><h4>' + esc(titulo) + '</h4><div class="firmado">'
@@ -951,7 +1093,7 @@ export const prerender = true;
       if (quitar) {
         quitar.onclick = async () => {
           if (quitar.dataset.arm !== '1') { quitar.dataset.arm = '1'; quitar.textContent = '¿Seguro? Sí, quitar'; setTimeout(() => { quitar.dataset.arm = ''; quitar.textContent = 'Quitar firma'; }, 3500); return; }
-          try { await guardarFirma(id, null); logEv('Quitó la firma · ' + (id === '__cierre' ? 'Cierre' : (secPorId(id) || { s: { nombre: id } }).s.nombre)); repinta(); cambio(); toast('Firma quitada'); }
+          try { await guardarFirma(id, null); logEv('Quitó la firma · ' + (id === '__cierre' ? 'Cierre' : capDe(id).nombre)); repinta(); cambio(); toast('Firma quitada'); }
           catch (e) { toast(e.message); }
         };
         return;
@@ -974,28 +1116,44 @@ export const prerender = true;
         } catch (e) { btn.disabled = false; btn.textContent = 'Firmar'; toast(e.message); }
       };
     }
-    // Si algo cambia en una etapa ya firmada, se avisa en el momento.
     function avisosFirma() {
       if (!S) return;
-      if (ruta.v === 'proc' && ruta.paso !== '__mapa') {
-        const e = S.sec[ruta.paso]; const a = document.querySelector('#foco [data-aviso]');
-        if (e && F[ruta.paso] && a) a.classList.toggle('oculto', F[ruta.paso].h === huella(e));
+      if (ruta.v === 'proc' && ruta.paso === '__fin') {
+        const a = document.querySelector('#foco [data-aviso]'); const f = F[ruta.cap];
+        if (f && a) a.classList.toggle('oculto', f.h === huellaCap(capDe(ruta.cap)));
       }
       const ac = document.querySelector('#firmaCierre [data-aviso]');
       if (F.__cierre && ac) ac.classList.toggle('oculto', F.__cierre.h === huellaTodo());
     }
 
-    // ── CIERRE ─────────────────────────────────────────────────────────────
+    // ── CIERRE GENERAL ─────────────────────────────────────────────────────
+    function recolectar() {
+      const fallas = [], mejoras = [], dudas = [], decs = [];
+      GUIA.capitulos.forEach(cap => secsDe(cap).forEach(s => {
+        const e = est(s.id); const donde = etiquetaCap(cap) + ' · ' + s.nombre;
+        demos(s).forEach((p, k) => { const st = e.puntos[k]; if (cuenta(s, e, k) && st && st.e === 'falla' && !st.hz) fallas.push({ cap: cap.id, donde, que: p.h + ' → ' + p.d, nota: st.n || '' }); });
+        e.extra.forEach(p => { if (p.e === 'falla' && !p.hz) fallas.push({ cap: cap.id, donde, que: p.t, nota: p.n || '' }); });
+        e.hall.forEach(h => (h.tipo === 'Bug' ? fallas : mejoras).push(Object.assign({ cap: cap.id, donde }, h)));
+        e.dudas.forEach(d => { if (d.q) dudas.push(Object.assign({ cap: cap.id, donde }, d)); });
+        (s.decidir || []).forEach((q, k) => { if ((e.dec[k] || '').trim()) decs.push({ cap: cap.id, donde, q, r: e.dec[k] }); });
+      }));
+      const o = { Alta: 0, Media: 1, Baja: 2, '': 3 };
+      const ord = (a, b) => (o[a.prio || ''] - o[b.prio || '']);
+      return { fallas: fallas.sort(ord), mejoras: mejoras.sort(ord), dudas, decs };
+    }
     function pintarCierre() {
-      const H = todosHall();
       $('#filtroRes').innerHTML = '<button class="pill' + (!filtroRes ? ' on' : '') + '" data-fr="">Todos</button>' + GUIA.capitulos.map(c => '<button class="pill' + (filtroRes === c.id ? ' on' : '') + '" data-fr="' + esc(c.id) + '">' + esc(etiquetaCap(c)) + '</button>').join('');
       $('#filtroRes').querySelectorAll('[data-fr]').forEach(b => b.onclick = () => { filtroRes = b.dataset.fr; pintarCierre(); });
-      const Fh = filtroRes ? H.filter(h => h.cap === filtroRes) : H;
-      $('#resumen').innerHTML = Fh.length
-        ? '<table class="resumen-t"><thead><tr><th>Prioridad</th><th>Proceso · etapa</th><th>Tipo</th><th>Hallazgo</th><th>Propuesta / para qué</th><th>Responsable</th><th>Compromiso</th><th>Decisión</th></tr></thead><tbody>'
-          + Fh.map(h => '<tr><td>' + (h.prio ? '<span class="tag ' + esc(h.prio) + '">' + esc(h.prio) + '</span>' : '—') + '</td><td class="pr">' + esc(h.proceso) + '<br>' + esc(h.pantalla) + '</td><td>' + esc(h.tipo || '—') + '</td><td>' + esc(h.que) + (h.fotos && h.fotos.length ? ' <span class="pr">(' + h.fotos.length + ' foto' + (h.fotos.length > 1 ? 's' : '') + ')</span>' : '') + '</td><td>' + esc(h.uso) + '</td><td>' + esc(h.resp || '—') + '</td><td>' + esc(h.fecha || '—') + '</td><td>' + esc(h.deci || 'Pendiente') + '</td></tr>').join('')
-          + '</tbody></table>'
-        : '<div class="vacio">Todavía no hay anotaciones.</div>';
+      const R = recolectar(); const f = x => !filtroRes || x.cap === filtroRes;
+      const tag = p => p ? '<span class="tag ' + esc(p) + '">' + esc(p) + '</span>' : '';
+      const tabla = (arr, vacio) => arr.length ? '<div class="lista-cierre">' + arr.map(x => '<div class="li"><span>' + tag(x.prio) + ' ' + esc(x.que) + (x.uso ? ' — <i>' + esc(x.uso) + '</i>' : '') + (x.nota ? ' — <i>' + esc(x.nota) + '</i>' : '') + '<br><span class="w">' + esc(x.donde) + (x.resp ? ' · responsable: ' + esc(x.resp) : '') + (x.fecha ? ' · ' + esc(x.fecha) : '') + '</span></span><span class="w">' + esc(x.deci || '') + '</span></div>').join('') + '</div>' : '<div class="vacio">' + vacio + '</div>';
+      const D = R.dudas.filter(f);
+      $('#resumen').innerHTML =
+        '<h3>Fallas por corregir (' + R.fallas.filter(f).length + ')</h3>' + tabla(R.fallas.filter(f), 'Sin fallas.')
+        + '<h3>Mejoras que pidió el cliente (' + R.mejoras.filter(f).length + ')</h3>' + tabla(R.mejoras.filter(f), 'Sin mejoras anotadas.')
+        + '<h3>Dudas (' + D.filter(d => !d.ok).length + ' abiertas)</h3>' + (D.length ? '<div class="lista-cierre">' + D.map(d => '<div class="li"><span>' + esc(d.q) + (d.r ? '<br><span class="w">' + esc(d.r) + '</span>' : '') + '<br><span class="w">' + esc(d.donde) + (d.quien ? ' · la responde: ' + esc(d.quien) : '') + '</span></span><span class="w">' + (d.ok ? 'Resuelta' : 'Abierta') + '</span></div>').join('') + '</div>' : '<div class="vacio">Sin dudas.</div>')
+        + '<h3>Decisiones del cliente (' + R.decs.filter(f).length + ')</h3>' + (R.decs.filter(f).length ? '<div class="lista-cierre">' + R.decs.filter(f).map(x => '<div class="li"><span>' + esc(x.q) + '<br><span class="w">' + esc(x.donde) + '</span></span><b>' + esc(x.r) + '</b></div>').join('') + '</div>' : '<div class="vacio">Sin decisiones registradas.</div>')
+        + (Object.keys(S.procNota).some(k => (S.procNota[k] || '').trim() && (!filtroRes || k === filtroRes)) ? '<h3>Lo que el cliente cambiaría</h3><div class="lista-cierre">' + GUIA.capitulos.filter(c => (S.procNota[c.id] || '').trim() && (!filtroRes || c.id === filtroRes)).map(c => '<div class="li"><span>' + esc(S.procNota[c.id]) + '<br><span class="w">' + esc(etiquetaCap(c) + ' · ' + c.nombre) + '</span></span></div>').join('') + '</div>' : '');
       pintarFirmaCierre();
       pintarHist();
     }
@@ -1021,16 +1179,15 @@ export const prerender = true;
       const url = location.origin + location.pathname + '?s=' + codigo;
       try { await navigator.clipboard.writeText(url); toast('Tu liga de orquestador está copiada (no la compartas con el cliente)'); } catch (e) { toast(url); }
     }
-    // Imprimir / PDF: todo el documento, proceso por proceso, sin botones.
     function imprimir() {
       const T = totales();
       let h = '<div class="marca">Sacscloud · Checklist de entrega</div><h1 style="margin-top:6px">Suite de Consignación</h1>'
         + '<p class="sub">' + esc(S.meta.cliente) + ' · ' + esc(S.meta.cuenta) + ' · Orquestador: ' + esc(S.meta.consultor) + ' · ' + esc(S.meta.fecha) + ' · ' + esc(S.meta.ambiente) + '</p>'
-        + '<p class="sub">' + T.hechos + ' de ' + T.tot + ' puntos revisados · ' + T.fallas + ' con falla · ' + T.H.length + ' hallazgos · ' + T.firm + '/' + T.nsec + ' etapas firmadas</p>';
+        + '<p class="sub">' + T.hechos + ' de ' + T.tot + ' puntos demostrados · ' + T.fallas + ' con falla · ' + T.decOk + '/' + T.dec + ' decisiones · ' + T.dudas + ' dudas abiertas · ' + T.firm + '/' + T.procs + ' procesos firmados</p>';
       GUIA.capitulos.forEach(cap => {
         h += '<section class="imp-cap"><h2 style="margin-top:24px">' + esc(etiquetaCap(cap) + ' · ' + cap.nombre) + '</h2>' + (cap.diagrama ? htmlMapa(cap.diagrama) : '');
         secsDe(cap).forEach(s => { h += htmlSec(cap, s, true); });
-        h += '</section>';
+        h += htmlFin(cap, true) + '</section>';
       });
       $('#imprimir').innerHTML = h;
       setTimeout(() => window.print(), 150);
@@ -1038,16 +1195,19 @@ export const prerender = true;
     window.addEventListener('afterprint', () => { $('#imprimir').innerHTML = ''; });
     function exportarCsv() {
       const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-      const filas = [['Proceso', 'Etapa / pantalla', 'Renglón', 'Tipo', 'Punto / hallazgo', 'Resultado', 'Nota / propuesta', 'Prioridad', 'Responsable', 'Fecha compromiso', 'Decisión', 'Fotos']];
+      const filas = [['Proceso', 'Etapa', 'Renglón', 'Tipo', 'Texto', 'Resultado / respuesta', 'Nota / cómo lo quiere', 'Prioridad', 'Responsable', 'Fecha compromiso', 'Estado', 'Fotos']];
       GUIA.capitulos.forEach(cap => {
         const pn = etiquetaCap(cap) + ' · ' + cap.nombre;
         secsDe(cap).forEach(s => {
           const e = est(s.id);
-          s.puntos.forEach((t, k) => { if (!visible(e, k)) return; const p = e.puntos[k] || {}; filas.push([pn, s.nombre, 'Punto a validar', '', t, RES[p.e || ''], p.n || '', '', '', '', '', (p.fotos || []).join(' ')]); });
-          e.extra.forEach(p => filas.push([pn, s.nombre, 'Punto a validar', '', p.t, RES[p.e || ''], p.n || '', '', '', '', '', (p.fotos || []).join(' ')]));
-          e.hall.forEach(h => filas.push([pn, s.nombre, 'Hallazgo', h.tipo, h.que, '', h.uso, h.prio, h.resp || '', h.fecha || '', h.deci || 'Pendiente', (h.fotos || []).join(' ')]));
-          const f = F[s.id]; if (f) filas.push([pn, s.nombre, 'Firma', '', f.nombre + (f.puesto ? ' · ' + f.puesto : ''), 'Enterado y aceptado', fechaFirma(f.at) + (f.h !== huella(e) ? ' · con cambios después de la firma' : ''), '', '', '', '', '']);
+          demos(s).forEach((p, k) => { if (!cuenta(s, e, k)) return; const st = e.puntos[k] || {}; filas.push([pn, s.nombre, 'Demostrar', p.o ? 'Opcional' : 'Esencial', p.h + ' → ' + p.d, RES[st.e || ''], st.n || '', '', '', '', '', (st.fotos || []).join(' ')]); });
+          e.extra.forEach(p => filas.push([pn, s.nombre, 'Demostrar', 'Agregado', p.t, RES[p.e || ''], p.n || '', '', '', '', '', (p.fotos || []).join(' ')]));
+          (s.decidir || []).forEach((dq, k) => filas.push([pn, s.nombre, 'Decisión', '', dq, e.dec[k] || '', '', '', '', '', (e.dec[k] || '').trim() ? 'Contestada' : 'Pendiente', '']));
+          e.dudas.forEach(d => filas.push([pn, s.nombre, 'Duda', '', d.q, d.r || '', '', '', d.quien || '', '', d.ok ? 'Resuelta' : 'Abierta', '']));
+          e.hall.forEach(h => filas.push([pn, s.nombre, 'Mejora / falla', h.tipo, h.que, '', h.uso, h.prio, h.resp || '', h.fecha || '', h.deci || 'Pendiente', (h.fotos || []).join(' ')]));
         });
+        if ((S.procNota[cap.id] || '').trim()) filas.push([pn, 'Cierre del proceso', 'Qué cambiaría', '', S.procNota[cap.id], '', '', '', '', '', '', '']);
+        const f = F[cap.id]; if (f) filas.push([pn, 'Cierre del proceso', 'Firma', '', f.nombre + (f.puesto ? ' · ' + f.puesto : ''), 'Enterado y aceptado', fechaFirma(f.at) + (f.h !== huellaCap(cap) ? ' · con cambios después de la firma' : ''), '', '', '', '', '']);
       });
       const csv = '﻿' + filas.map(f => f.map(q).join(',')).join('\r\n');
       const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
@@ -1055,19 +1215,17 @@ export const prerender = true;
       a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     }
 
-    // Enviar al cliente: su liga (solo lectura + firma) con el resumen, por
-    // WhatsApp o correo. El PDF sale de esa misma liga con «Imprimir / PDF».
     $('#btnEnviar').onclick = async () => {
       if (!cc) { await subir(); }
       if (!cc) return toast('Sin conexión: guarda la sesión y vuelve a intentar.');
-      const T = totales(); const url = ligaCliente();
+      const T = totales(); const R = recolectar(); const url = ligaCliente();
       const nombre = S.meta.responsable ? S.meta.responsable.split(' ')[0] : '';
       const fecha = S.meta.fecha ? new Date(S.meta.fecha + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }) : 'hoy';
       const txt = 'Hola' + (nombre ? ' ' + nombre : '') + ', te comparto el resumen de la revisión de la Suite de Consignación del ' + fecha + ': '
-        + T.hechos + ' puntos revisados, ' + T.fallas + ' con falla y ' + T.H.length + ' hallazgos anotados (' + T.altas + ' de prioridad alta). '
-        + 'Aquí puedes ver el detalle, descargarlo en PDF y firmar de enterado cada etapa: ' + url;
-      const lista = T.H.slice(0, 20).map(h => '• [' + (h.prio || 'Sin prioridad') + '] ' + h.pantalla + ': ' + corto(h.que, 120) + (h.resp ? ' (responsable: ' + h.resp + (h.fecha ? ', ' + h.fecha : '') + ')' : '')).join('\n');
-      const cuerpo = txt + '\n\nHallazgos principales:\n' + (lista || '• Sin hallazgos') + (S.cierre.acuerdos ? '\n\nAcuerdos:\n' + S.cierre.acuerdos : '') + '\n\nSacscloud';
+        + T.hechos + ' puntos demostrados, ' + T.decOk + ' decisiones tomadas, ' + R.mejoras.length + ' mejoras anotadas y ' + T.dudas + ' dudas por resolver. '
+        + 'Aquí puedes ver el detalle, descargarlo en PDF y firmar de enterado cada proceso: ' + url;
+      const lista = R.mejoras.concat(R.fallas).slice(0, 20).map(h => '• [' + (h.prio || 'Sin prioridad') + '] ' + h.donde + ': ' + corto(h.que, 120) + (h.resp ? ' (responsable: ' + h.resp + (h.fecha ? ', ' + h.fecha : '') + ')' : '')).join('\n');
+      const cuerpo = txt + '\n\nPendientes principales:\n' + (lista || '• Sin pendientes') + (S.cierre.acuerdos ? '\n\nAcuerdos:\n' + S.cierre.acuerdos : '') + '\n\nSacscloud';
       const m = document.createElement('div'); m.className = 'modal-fondo';
       m.innerHTML = '<div class="modal"><h2>Enviar al cliente</h2><p class="sub">El cliente recibe su propia liga: ve todo lo revisado, lo descarga en PDF y firma de enterado. No puede editar nada.</p>'
         + '<div class="liga">' + esc(url) + '</div>'

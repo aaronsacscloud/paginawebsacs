@@ -1,1151 +1,779 @@
-// Contenido de la guía de entrega de la Suite de Consignación (19-oct-2026).
-// La página /entrega/consignacion lo pinta; lo que se captura con cada cliente
-// se guarda aparte (api/entrega/sesion). Cada capítulo es un proceso de punta
-// a punta o el bloque de dashboard y reportes.
+// Contenido de la guía de entrega de la Suite de Consignación (v2, 20-oct-2026).
 //
-// - `secciones[].puntos`: lo que se valida con el cliente.
-// - `hoy` / `filtros`: lo que la pantalla ya muestra (solo reportes).
-// - `sugerencias`: faltantes a proponer; pasan a la tabla solo si el cliente los quiere.
-// - Los `id` de sección son la llave de lo capturado: NO se renombran.
+// Objetivo: que la orquestadora demuestre con el cliente, en piso, un flujo
+// ESTÁNDAR completo de punta a punta y que las particularidades del cliente
+// se prueben y se ajusten ahí mismo. Por eso:
+//  · Los procesos van en el orden de la vida de la pieza.
+//  · Un mismo CASO DE PRUEBA conecta todo: una consignataria y tres piezas
+//    (A se vende de contado, B se aparta y la clienta la devuelve, C no se
+//    vende y llega a vencimiento).
+//  · Cada etapa tiene tres bloques:
+//      demostrar  → «Hacemos… / Debe pasar…» (Correcto / Falla / No aplica).
+//                   `o: true` = opcional (se oculta en «sesión corta»).
+//      decidir    → preguntas que el cliente contesta por escrito.
+//      noHace     → lo que el sistema HOY no hace. Solo lo ve la orquestadora:
+//                   se verifica antes y, si el cliente lo necesita, se anota
+//                   como mejora. Al cliente solo se le habla con lo verificado.
+//  · Todo lo que dice «Debe pasar» está revisado contra el código de
+//    sacs3/sacs_api (oct-2026). Si algo cambia en el sistema, se cambia aquí.
+//
+// `pieza`: qué parte del caso se usa en la etapa ('cons', 'A', 'B', 'C', 'ABC').
+// Los `id` de sección son la llave de lo capturado: NO se renombran.
 
-const TIPOS_FLUJO = ["Mejora de UI", "Mejora de proceso", "Condicional / regla", "Bug"];
-const TIPOS_REPORTE = ["Campo / columna", "Dato / cálculo", "Filtro", "Total / subtotal", "Exportación", "Gráfica / indicador", "Reporte nuevo", "Otro"];
-const COLS_FLUJO = { a: "Qué hizo / qué esperaba / qué vio", b: "Propuesta del cliente" };
-const COLS_REPORTE = { a: "Qué falta", b: "Para qué lo usa el cliente" };
+const TIPOS = ['Mejora de UI', 'Mejora de proceso', 'Condicional / regla', 'Bug'];
+const TIPOS_REPORTE = ['Campo / columna', 'Dato / cálculo', 'Filtro', 'Total / subtotal', 'Exportación', 'Reporte nuevo', 'Bug', 'Otro'];
+
+// Datos del caso de prueba: se anotan conforme se crean en la sesión.
+export const CASO = [
+  { k: 'cons', l: 'Consignataria de prueba', ph: 'Nombre' },
+  { k: 'folio', l: 'Folio de la consignataria', ph: 'CONS-…' },
+  { k: 'lote', l: 'Folio del lote', ph: 'LOTE-…' },
+  { k: 'A', l: 'Pieza A · se vende de contado', ph: 'SKU y descripción' },
+  { k: 'B', l: 'Pieza B · se aparta y se devuelve', ph: 'SKU y descripción' },
+  { k: 'C', l: 'Pieza C · no se vende (vencimiento)', ph: 'SKU y descripción' },
+  { k: 'ticketA', l: 'Ticket de la venta de A', ph: 'Folio del ticket' },
+  { k: 'pedidoB', l: 'Apartado de B', ph: 'Folio del pedido' },
+];
 
 export const GUIA = {
   capitulos: [
+    // ── 0 ────────────────────────────────────────────────────────────────
     {
-      id: "f1",
-      nombre: "Alta, venta, liquidación y comisiones",
-      resumen: "Del alta del consignatario con su contrato hasta la venta, el pago al consignatario y la comisión de los vendedores.",
-      tipos: TIPOS_FLUJO, cols: COLS_FLUJO,
-      // Mapa del proceso: cajas en una rejilla de 5 columnas (col 0–4) por
-      // filas; `sec` = la etapa a la que salta al tocarla.
-      diagrama: {
-        titulo: 'Cada pieza termina pagada al consignatario o devuelta al vencer',
-        lectura: 'La pieza entra con contrato firmado y sigue uno de dos caminos: se vende y se le paga al consignatario, o vence y se le devuelve. Cada venta genera también la comisión del vendedor; una devolución del cliente final regresa la pieza a la venta.',
-        nodos: [
-          { id: 'a', c: 0, r: 0, t: 'Configuración', s: '1 · plantilla', sec: 'f1-config' },
-          { id: 'b', c: 1, r: 0, t: 'Consignatario', s: '2 · alta y datos', sec: 'f1-alta' },
-          { id: 'c', c: 2, r: 0, t: 'Recepción', s: '3 · lote y piezas', sec: 'f1-recepcion' },
-          { id: 'd', c: 3, r: 0, t: 'Contrato', s: '4 · firma', sec: 'f1-firma' },
-          { id: 'e', c: 4, r: 0, t: 'Preparación', s: '5 · opcional', sec: 'f1-preparacion' },
-          { id: 'f', c: 0, r: 1, t: 'Venta', s: '6 · POS / pedido', sec: 'f1-venta' },
-          { id: 'g', c: 1, r: 1, t: 'Liquidación', s: '8 · corte', sec: 'f1-liquidacion' },
-          { id: 'h', c: 2, r: 1, t: 'Pago', s: '8 · comprobante', sec: 'f1-liquidacion', fin: true },
-          { id: 'j', c: 4, r: 1, t: 'Cierre', s: '10 · vencimiento', sec: 'f1-cierre' },
-          { id: 'k', c: 0, r: 2, t: 'Devolución', s: '7 · cliente final', sec: 'f1-devoluciones' },
-          { id: 'l', c: 1, r: 2, t: 'Comisión', s: '9 · vendedores', sec: 'f1-comisiones' }
-        ],
-        flechas: [
-          { de: 'a', a: 'b' }, { de: 'b', a: 'c' }, { de: 'c', a: 'd' }, { de: 'd', a: 'e' },
-          { de: 'e', a: 'f', et: 'se vende' }, { de: 'e', a: 'j', et: 'no se vende' },
-          { de: 'f', a: 'g' }, { de: 'g', a: 'h' },
-          { de: 'f', a: 'k', et: 'si devuelve', dx: -40 }, { de: 'f', a: 'l', dx: 40 }
-        ]
-      },
+      id: 'p0', nombre: 'Antes de la sesión', tipos: TIPOS,
+      resumen: 'Lo que se deja listo para que la sesión fluya, y el caso de prueba que se usa en todos los procesos.',
       secciones: [
-      {
-        id: 'f1-clave',
-        clave: true,
-        nombre: 'Puntos clave del proceso',
-        para: 'Lo mínimo que tiene que funcionar de punta a punta antes de entregar. Se prueba con un consignatario y dos piezas reales: una que se vende de contado y otra que se aparta.',
-        puntos: [
-          'El contrato firmado refleja las reglas reales del cliente: comisión, vigencia, forma y plazo de pago.',
-          'Una pieza recibida aparece en inventario y solo se puede vender cuando está disponible.',
-          'Una venta real genera el pago correcto al consignatario (comprobado a mano, con y sin descuento).',
-          'Pagar al consignatario cambia la pieza a liquidada, emite el comprobante y su estado de cuenta cuadra.',
-          'La comisión del vendedor por esa venta sale correcta en su periodo.',
-          'Una devolución del cliente final deja en orden la pieza, el pago al consignatario y la comisión.',
-          'El consignatario recibe los avisos de venta y de pago.'
-        ]
-      },
-      {
-        id: 'f1-config',
-        nombre: 'Etapa 1 · Configuración y plantilla de contrato',
-        donde: 'Consignación › Configuración (también Mi Cuenta › Suite de Consignación), tarjeta «Plantillas de contrato (reglas)»',
-        para: 'El cliente define hasta 5 plantillas, una predeterminada. Cada una fija el % de comisión de la tienda (y si es negociable, con mínimo y máximo), la vigencia, la renovación, la frecuencia de liquidación, los días para pagar, los días de espera antes de pagar, la forma de pago (dinero o saldo a favor), qué hacer si no se vende y las cláusulas.',
-        puntos: [
-          'La suite está activa y el menú Consignación muestra sus secciones.',
-          'Existe al menos una plantilla con las reglas reales del cliente y está marcada como predeterminada.',
-          'El % de comisión, el mínimo y el máximo coinciden con la política comercial del cliente.',
-          'La frecuencia de liquidación y los días de pago coinciden con lo que se le promete al consignatario.',
-          'Los días de espera antes de pagar cubren el plazo de devolución que da la tienda a sus clientes.',
-          'La regla de «no venta» (rebaja, devolución o renovación) es la que el cliente aplica hoy.',
-          'Los servicios con cargo (certificación, limpieza, fotos, reparación) y sus importes están dados de alta, y se sabe si se cobran al firmar o se descuentan al liquidar.',
-          'El texto de las cláusulas muestra bien las variables (comisión, forma de pago, no venta, vigencia).'
-        ]
-      },
-      {
-        id: 'f1-alta',
-        nombre: 'Etapa 2 · Alta del consignatario',
-        donde: 'Consignación › Consignatarios › «Nuevo Consignatario» (asistente: 1 Datos · 2 Productos · 3 Contrato)',
-        para: 'Se capturan los datos personales, de contacto y bancarios. El sistema asigna el folio CONS-AAAA-NNN, avisa si el correo o el teléfono ya existen y valida la CLABE. Se suben la identificación y las fotos de ingreso.',
-        puntos: [
-          'El alta se completa sin errores y asigna folio CONS-.',
-          'Al repetir un correo o teléfono existente, el sistema avisa del posible duplicado.',
-          'Una CLABE inválida se rechaza con un mensaje claro.',
-          'La identificación y las fotos se suben y se pueden volver a ver desde el perfil.',
-          'El consignatario aparece en la lista y su perfil muestra Resumen / Productos / Contrato / Liquidaciones.',
-          'Los campos obligatorios son los que el cliente necesita (ni de más ni de menos).'
-        ]
-      },
-      {
-        id: 'f1-recepcion',
-        nombre: 'Etapa 3 · Recepción de productos (lote)',
-        donde: 'Paso 2 del asistente: «Contrato del lote» y «Agregar producto rápido»',
-        para: 'Se elige la plantilla del lote y se agregan las piezas con precio, fotos y servicios. Con la primera pieza la plantilla queda bloqueada. Cada pieza recibe SKU CONS-AAAAMMDD-NNN y el lote folio LOTE-AAAA-NNN. El sistema calcula la comisión y el pago estimado al consignatario.',
-        nota: 'Cálculo del % de comisión: primero el % negociado (dentro de mínimo y máximo); si no, la tabla escalonada por precio; si no, la tabulada (menos de $6,000 = 30%, desde $6,000 = 20%); si no, el de la plantilla.',
-        puntos: [
-          'Cada pieza recibe su SKU y queda ligada al consignatario y al lote.',
-          'El % de comisión que se muestra corresponde a la regla esperada para ese precio.',
-          'Un % negociado fuera del mínimo o máximo se ajusta o se rechaza.',
-          'El pago estimado = precio − comisión − servicios que se descuentan. Comprobado a mano con una pieza.',
-          'Un precio fuera de límites se rechaza; una baja de precio de 70% o más pide confirmación.',
-          'La plantilla no se puede cambiar después de agregar la primera pieza.',
-          'Quedó claro cómo se etiqueta físicamente la pieza.'
-        ]
-      },
-      {
-        id: 'f1-firma',
-        nombre: 'Etapa 4 · Contrato y firma',
-        donde: 'Paso 3 del asistente: «Finalizar y Firmar» (presencial) o «Enviar enlace para firmar» (remota, 48 horas)',
-        para: 'Antes de firmar se revisan las reglas de activación (datos bancarios y, si se exige, que no tenga adeudos). Al firmar se genera el PDF con QR de verificación y la responsiva de ingreso; el consignatario pasa a activo y las piezas entran al inventario.',
-        puntos: [
-          'Sin datos bancarios (si la plantilla los exige) no deja firmar y explica por qué.',
-          'La firma presencial se captura y el contrato queda firmado.',
-          'El enlace de firma remota llega por correo, abre sin cuenta y deja firmar; pasadas 48 horas ya no funciona.',
-          'El PDF del contrato muestra datos, piezas, reglas y cláusulas correctas, el logo y un QR que verifica.',
-          'La responsiva de ingreso se genera y se puede imprimir.',
-          'No se puede firmar dos veces el mismo lote.',
-          'Se puede subir un contrato firmado en papel.',
-          'Después de firmar, el consignatario queda activo y cada pieza aparece en el inventario de la sucursal y almacén correctos.',
-          'Cancelación y adenda de contrato funcionan, si el cliente las usa.'
-        ]
-      },
-      {
-        id: 'f1-preparacion',
-        nombre: 'Etapa 5 · Preparación y puesta a la venta',
-        donde: 'Consignación › Colas de proceso (solo si el proceso post-contrato está activo)',
-        para: 'Las piezas pasan por pasos como certificación, limpieza, fotos, reparación y etiquetado. Mientras están en proceso no se venden. Al terminar quedan disponibles.',
-        puntos: [
-          'Los pasos del proceso son los que el cliente realiza en su operación.',
-          'Una pieza en proceso no aparece en la búsqueda del punto de venta.',
-          'Al completar los pasos, la pieza queda disponible y aparece en el punto de venta.',
-          'Si el cliente no usa proceso, la pieza queda disponible al firmar.'
-        ]
-      },
-      {
-        id: 'f1-venta',
-        nombre: 'Etapa 6 · Venta en punto de venta o por apartado',
-        donde: 'Punto de venta (contado) o Pedidos / Apartados',
-        para: 'Solo se venden piezas disponibles. Al cobrar, la pieza pasa a vendida, se guarda quién la vendió y en qué sucursal, se calcula la comisión y el pago al consignatario, y se le avisa. Un apartado reserva la pieza y se vende cuando el pedido queda pagado.',
-        nota: 'Cálculo al vender: base = precio cobrado (con descuento y con IVA). Comisión = base × %. Pago al consignatario = base − comisión − servicios pendientes. Por defecto el descuento lo absorbe el consignatario.',
-        puntos: [
-          'Una pieza en proceso, retenida, vencida o con incidente no aparece en el punto de venta.',
-          'La venta de contado se cobra normal y la pieza pasa a vendida en el perfil del consignatario.',
-          'Comisión y pago al consignatario comprobados a mano con una venta real. Se acordó con el cliente si la base incluye IVA.',
-          'Venta con descuento: se acordó quién lo absorbe (consignatario o tienda) y el resultado coincide.',
-          'El vendedor y la sucursal quedan registrados; una venta en otra sucursal se identifica como venta cruzada.',
-          'El consignatario recibe el aviso de venta.',
-          'Apartado: la pieza no se puede vender a otro cliente; al liquidar el pedido pasa a vendida; al cancelarlo vuelve a disponible.',
-          'El lote cambia de estado conforme se vende (activo → parcial → vendido).',
-          'Después de cada venta la pieza tiene su pago generado en Liquidaciones.'
-        ]
-      },
-      {
-        id: 'f1-devoluciones',
-        nombre: 'Etapa 7 · Devoluciones y excepciones de la venta',
-        donde: 'Devolución o cancelación en ventas; en el perfil del consignatario: «Cliente devolvió» y «No auténtica»',
-        para: 'Si el cliente final devuelve y al consignatario aún no se le paga, la pieza vuelve a disponible y su pago se cancela. Si ya se le pagó, se usa «Cliente devolvió» para recuperar el dinero (cuenta por cobrar o descuento del saldo).',
-        puntos: [
-          'Devolución antes de pagar al consignatario: la pieza vuelve a disponible y sale de lo pendiente por pagar.',
-          'Devolución de una pieza ya pagada: «Cliente devolvió» genera la recuperación esperada.',
-          'Pieza no auténtica después de vendida: «No auténtica» da el resultado acordado con el cliente.',
-          'Se acordó qué pasa con la comisión del vendedor cuando hay devolución.'
-        ]
-      },
-      {
-        id: 'f1-liquidacion',
-        nombre: 'Etapa 8 · Liquidación y pago al consignatario',
-        donde: 'Perfil del consignatario › Liquidaciones («Por pagar», «Total a Liquidar», «Pagar seleccionadas», «Liquidar (dividir pago)», «Conciliar», «Estado de cuenta»)',
-        para: 'Cada venta genera una cuenta por pagar. Liquidación inmediata = una por pieza (folio LIQ-); semanal, quincenal o mensual = un corte por periodo. Fecha de pago = venta + días de pago. Se paga en dinero, en saldo a favor o mixto, y se emite el comprobante.',
-        puntos: [
-          'La cuenta por pagar aparece con el monto, la fecha de pago y el folio correctos.',
-          'Con frecuencia semanal, quincenal o mensual, las ventas del periodo se suman en un solo corte.',
-          'Pagar antes de terminar los días de espera no se permite y el mensaje es claro.',
-          'Pago total, parcial y de varias liquidaciones a la vez funcionan; el pendiente se actualiza.',
-          'Pago en saldo a favor y pago mixto dejan el saldo correcto, incluido el bono si aplica.',
-          'Al pagar, la pieza pasa a liquidada.',
-          'El comprobante de pago (PDF) se genera y llega por correo.',
-          'El estado de cuenta cuadra con lo vendido, pagado y pendiente.',
-          'Se acordó con el cliente si necesita retenciones fiscales o factura de la liquidación.',
-          'Se revisó cómo se refleja un pago en efectivo en el corte de caja.'
-        ]
-      },
-      {
-        id: 'f1-comisiones',
-        nombre: 'Etapa 9 · Comisión a vendedores',
-        donde: 'Metas y comisiones (planes, periodos, aprobación); reporte «Desempeño de vendedores»',
-        para: 'El plan paga sobre venta o sobre margen; en piezas consignadas el margen es la comisión de la tienda. Puede haber comisión de captación para quien registró la pieza. El periodo se calcula, se aprueba y se envía a cuentas por pagar. Las «Metas rápidas» son solo seguimiento.',
-        puntos: [
-          'El plan refleja el esquema real del cliente (sobre venta o margen, %).',
-          'La comisión de una pieza consignada se calcula sobre la base acordada; comprobado a mano.',
-          'La comisión de captación se paga a quien registró la pieza, si el cliente la usa.',
-          'En apartados, la comisión se genera en el momento acordado (al liquidar o al primer abono).',
-          'Calcular, aprobar y enviar el periodo a cuentas por pagar funciona; el pago queda registrado.',
-          'El reporte «Desempeño de vendedores» muestra la comisión de cada vendedor y cuadra con el periodo.',
-          'Devolución después de aprobado o pagado el periodo: se acordó si se descuenta la comisión.'
-        ]
-      },
-      {
-        id: 'f1-cierre',
-        nombre: 'Etapa 10 · Cierre del ciclo de la pieza',
-        donde: 'Perfil del consignatario («Devolver / retirar»), Solicitudes de retiro y portal del consignatario',
-        para: 'Si la pieza no se vende, el contrato vence: aviso, rebaja, renovación o devolución. El detalle completo está en el proceso 2 (Vencimiento, devolución y retiro).',
-        puntos: [
-          'El cliente entiende qué pasa con una pieza que no se vende y lo ve reflejado en el sistema.',
-          'Una pieza vendida y pagada queda cerrada (liquidada) y no aparece como pendiente en ningún lado.'
-        ]
-      }
+        {
+          id: 'p0-prep', nombre: 'Preparación', donde: 'Antes de empezar con el cliente',
+          para: 'Que todo lo que se va a usar en la sesión funcione: usuarios, equipo, avisos y lo publicado.',
+          demostrar: [
+            { h: 'Entramos con un usuario administrador y con uno de caja.', d: 'Ambos entran y ven el menú Consignación según sus permisos.' },
+            { h: 'Abrimos Mi Cuenta › Suite de Consignación.', d: 'La suite está activa.' },
+            { h: 'Conectamos el lector de código de barras y la impresora de tickets.', d: 'El lector escribe el código y la impresora saca un ticket de prueba.' },
+            { h: 'Abrimos «Buscar en SACS» con Ctrl/⌘ + K.', d: 'Aparece el buscador con su botón «Manual» (confirma que lo nuevo ya está publicado).' },
+            { h: 'Mandamos un aviso de prueba al correo y al WhatsApp de un teléfono nuestro.', d: 'Llega el aviso.', o: true },
+          ],
+          decidir: [
+            '¿Quién del cliente participa en cada proceso (dueña, piso, caja, tesorería)?',
+            '¿La tienda usa preparación de piezas (certificación, fotos, etiquetado) antes de vender?',
+          ],
+          noHace: [
+            'Cuatro avisos por WhatsApp de consignación (pieza disponible, venta revertida, recuperación y no auténtica) están apagados mientras Meta aprueba sus plantillas; por correo sí salen.',
+          ],
+        },
+        {
+          id: 'p0-caso', caso: true, nombre: 'Caso de prueba', donde: 'Se llena conforme se crean los datos en la sesión',
+          para: 'Una consignataria de prueba y tres piezas que recorren toda la sesión: la A se vende de contado, la B se aparta y la clienta la devuelve, y la C no se vende y llega a vencimiento. Se crean en el Proceso 1 y aquí se anotan sus folios para tenerlos a la mano en cada etapa.',
+          demostrar: [], decidir: [], noHace: [],
+        },
+      ],
+    },
 
-      ]
-    },
+    // ── 1 ────────────────────────────────────────────────────────────────
     {
-      id: 'p2',
-      nombre: 'Vencimiento, devolución y retiro de piezas',
-      resumen: 'Qué pasa con una pieza que no se vende: aviso, rebaja, renovación o devolución al consignatario, y las salidas especiales (compra por la tienda, robo o pérdida).',
-      tipos: TIPOS_FLUJO, cols: COLS_FLUJO,
+      id: 'p1', nombre: 'Alta, piezas y contrato', tipos: TIPOS,
+      resumen: 'De la plantilla de contrato al alta de la consignataria con sus tres piezas y la firma. Al terminar, las piezas están en inventario.',
       diagrama: {
-        titulo: 'Al vencer, el contrato se renueva solo o sus piezas pasan a devolución',
-        lectura: 'Una revisión automática diaria avisa 7 días antes, aplica la regla de no venta y, al vencer, renueva o manda las piezas a devolución. Al devolver se cobran los servicios que el consignatario no pagó.',
+        titulo: 'Al firmar, la consignataria queda activa y sus piezas entran al inventario',
+        lectura: 'La plantilla fija las reglas; el asistente da de alta a la consignataria (paso 1), sus piezas (paso 2) y el contrato (paso 3). La firma puede ser en la tableta o a distancia.',
         nodos: [
-          { id: 'a', c: 0, r: 0, t: 'Contrato', s: 'vigente', sec: 'p2-adenda' },
-          { id: 'b', c: 1, r: 0, t: 'Aviso', s: '7 días antes', sec: 'p2-aviso' },
-          { id: 'c', c: 2, r: 0, t: 'No venta', s: 'rebaja o devolución', sec: 'p2-aviso' },
-          { id: 'd', c: 3, r: 0, t: 'Vencimiento', s: 'revisión diaria', sec: 'p2-vence' },
-          { id: 'e', c: 4, r: 0, t: 'Renovación', s: 'automática', sec: 'p2-vence', fin: true },
-          { id: 'f', c: 3, r: 1, t: 'Por devolver', s: 'ya no se vende', sec: 'p2-vence' },
-          { id: 'g', c: 2, r: 1, t: 'Devolver', s: 'sale de inventario', sec: 'p2-devolver' },
-          { id: 'h', c: 1, r: 1, t: 'Cobro', s: 'servicios (DEV-)', sec: 'p2-devolver' },
-          { id: 'i', c: 3, r: 2, t: 'Compra', s: 'la tienda la compra', sec: 'p2-compra' },
-          { id: 'j', c: 0, r: 1, t: 'Adenda', s: 'nueva versión', sec: 'p2-adenda' }
+          { id: 'a', c: 0, r: 0, t: 'Plantilla', s: 'reglas', sec: 'p1-plantilla' },
+          { id: 'b', c: 1, r: 0, t: 'Alta', s: 'paso 1 · datos', sec: 'p1-alta' },
+          { id: 'c', c: 2, r: 0, t: 'Piezas', s: 'paso 2 · A, B y C', sec: 'p1-piezas' },
+          { id: 'd', c: 3, r: 0, t: 'Contrato', s: 'paso 3 · firma', sec: 'p1-firma' },
+          { id: 'e', c: 4, r: 0, t: 'Activa', s: 'piezas en inventario', sec: 'p1-resultado', fin: true },
+          { id: 'f', c: 3, r: 1, t: 'Firma remota', s: 'enlace de 48 h', sec: 'p1-firma' },
         ],
-        flechas: [
-          { de: 'a', a: 'b' }, { de: 'b', a: 'c' }, { de: 'c', a: 'd' },
-          { de: 'd', a: 'e', et: 'renueva' }, { de: 'd', a: 'f', et: 'no renueva' },
-          { de: 'f', a: 'g' }, { de: 'g', a: 'h' },
-          { de: 'f', a: 'i', et: 'o la compra' }, { de: 'a', a: 'j', et: 'cambios' }
-        ]
+        flechas: [{ de: 'a', a: 'b' }, { de: 'b', a: 'c' }, { de: 'c', a: 'd' }, { de: 'd', a: 'e' }, { de: 'd', a: 'f', et: 'o a distancia' }],
       },
       secciones: [
         {
-          id: 'p2-clave', clave: true,
-          nombre: 'Puntos clave del proceso',
-          para: 'Se prueba con un contrato de prueba con vigencia corta (o ya vencido) y con piezas sin vender.',
-          puntos: [
-            'La revisión diaria corre en la cuenta del cliente: un contrato de prueba vencido cambia de estado al día siguiente.',
-            'El consignatario recibe el aviso de «por vencer».',
-            'La regla de no venta hace lo que el cliente espera (rebaja una sola vez, o manda a devolución).',
-            'Un contrato sin renovación deja sus piezas sin poder venderse, en el punto de venta y en la tienda en línea.',
-            'Devolver una pieza la saca del inventario y cobra los servicios pendientes.',
-            'Comprar la pieza o registrar robo/pérdida le paga al consignatario lo acordado.'
-          ]
+          id: 'p1-plantilla', nombre: 'Plantilla de contrato',
+          donde: 'Consignación › Configuración › «Plantillas de contrato (reglas)»',
+          para: 'La plantilla fija las reglas que se copian a cada contrato: comisión, vigencia, renovación, cuándo se paga y qué pasa si no se vende. Hasta 5 plantillas, una predeterminada.',
+          demostrar: [
+            { h: 'Abrimos la plantilla predeterminada (★).', d: 'Muestra comisión, vigencia, renovación, frecuencia y días de pago, días de espera y regla de no venta.' },
+            { h: 'Ajustamos los valores a la política de la tienda y guardamos.', d: 'Se guardan y quedan como predeterminados para los contratos nuevos.' },
+            { h: 'Revisamos el texto de las cláusulas.', d: 'Las variables (comisión, forma de pago, no venta, vigencia) se llenan con los valores de la plantilla.' },
+          ],
+          decidir: [
+            '% de comisión de la tienda y si es negociable (mínimo y máximo).',
+            'Vigencia del contrato y si se renueva sola (cuántos días).',
+            'Cada cuándo se le paga a la consignataria (inmediata, semanal, quincenal o mensual) y en cuántos días.',
+            'Días de espera antes de pagar (para cubrir devoluciones del cliente final).',
+            'Qué pasa si no se vende: rebaja (cuánto %), devolución o renovación, y a los cuántos días.',
+            'Servicios con cargo (certificación, limpieza, fotos, reparación) y si se cobran al firmar o se descuentan al pagar.',
+          ],
+          noHace: [],
         },
         {
-          id: 'p2-aviso',
-          nombre: 'Etapa 1 · Aviso por vencer y regla de no venta',
-          donde: 'Automático (revisión diaria, 7:20 a.m. aprox.). Se ve en la pieza (precio tachado) y en el Dashboard («Contratos por vencer»)',
-          para: 'Avisa una sola vez, 7 días antes de vencer. Si la pieza no se vende en los días que marca la plantilla, aplica la acción: rebaja de precio (una vez, con precio anterior tachado), marcar para devolución, o nada si la acción es renovación. Los días cuentan desde la firma.',
-          puntos: [
-            'El aviso de «por vencer» llega al consignatario por WhatsApp o correo, una sola vez.',
-            'Los días de aviso son los que el cliente quiere (el sistema usa 7 por defecto).',
-            'La rebaja se aplica una sola vez, con el % de la plantilla, y el precio anterior se ve tachado.',
-            'Después de la rebaja, la comisión y el pago al consignatario se recalculan como el cliente espera.',
-            'Se acordó si el consignatario debe recibir aviso de la rebaja (hoy no se le avisa).',
-            'Con acción «devolución», las piezas quedan por devolver y ya no se venden.'
-          ]
+          id: 'p1-alta', nombre: 'Alta de la consignataria', pieza: 'cons',
+          donde: 'Consignación › Consignatarios › «Nuevo Consignatario» · paso 1 Datos',
+          para: 'Se capturan datos personales, de contacto y bancarios. El sistema asigna el folio CONS-, avisa si el correo o el teléfono ya existen y valida la CLABE.',
+          demostrar: [
+            { h: 'Damos de alta a la consignataria de prueba.', d: 'Recibe su folio CONS- (anótalo en el caso de prueba).' },
+            { h: 'Subimos su identificación y una foto de ingreso.', d: 'Se ven después en su perfil.' },
+            { h: 'Escribimos un teléfono o correo que ya existe.', d: 'El sistema avisa del posible duplicado.', o: true },
+            { h: 'Capturamos una CLABE con un dígito mal.', d: 'La rechaza con un mensaje claro.', o: true },
+          ],
+          decidir: ['Qué datos son obligatorios en el alta (datos bancarios, identificación, dirección).'],
+          noHace: [],
         },
         {
-          id: 'p2-vence',
-          nombre: 'Etapa 2 · Vencimiento y renovación',
-          donde: 'Automático (revisión diaria). Chip «Por devolver» en la pieza; filtro «Con piezas por devolver» en Clientes',
-          para: 'Con renovación automática el contrato se extiende (45 días por defecto) sin nueva firma y se avisa por correo. Sin renovación, el contrato queda vencido y sus piezas no vendidas pasan a por devolver, con un correo que invita a recogerlas.',
-          puntos: [
-            'Un contrato con renovación automática se extiende los días acordados y el consignatario recibe el correo.',
-            'Un contrato sin renovación queda vencido y sus piezas pasan a «Por devolver».',
-            'Una pieza por devolver no aparece en el punto de venta.',
-            'Una pieza por devolver deja de mostrarse en la tienda en línea.',
-            'El filtro «Con piezas por devolver» muestra a los consignatarios correctos.',
-            'El texto del correo de vencimiento es el que el cliente quiere enviar.'
-          ]
+          id: 'p1-piezas', nombre: 'Piezas del lote', pieza: 'ABC',
+          donde: 'Asistente · paso 2 Productos («Contrato del lote» y «Agregar producto rápido»)',
+          para: 'Se elige la plantilla del lote y se agregan las piezas con precio, fotos y servicios. Cada pieza recibe su SKU y el lote su folio LOTE-. El sistema calcula la comisión y lo que le toca a la consignataria.',
+          nota: 'Cómo elige el % de comisión: el negociado (dentro de mínimo y máximo); si no, la tabla por precio; si no, la tabulada (menos de $6,000 = 30%, desde $6,000 = 20%); si no, el de la plantilla.',
+          demostrar: [
+            { h: 'Agregamos las piezas A, B y C con precio y fotos.', d: 'Cada una recibe su SKU y el lote su folio LOTE- (anótalos en el caso de prueba).' },
+            { h: 'Revisamos la comisión y el pago estimado de la pieza A.', d: 'Pago = precio − comisión − servicios que se descuentan; lo calculamos juntos y coincide.' },
+            { h: 'Intentamos cambiar la plantilla después de la primera pieza.', d: 'Queda bloqueada para ese lote.', o: true },
+            { h: 'Capturamos por error un precio 70% más bajo.', d: 'Pide confirmación antes de guardarlo.', o: true },
+          ],
+          decidir: ['Cómo se etiqueta físicamente la pieza y qué código lleva la etiqueta.'],
+          noHace: [],
         },
         {
-          id: 'p2-devolver',
-          nombre: 'Etapa 3 · Devolver o retirar la pieza',
-          donde: 'Perfil del consignatario › Productos › «Devolver / Retirar»',
-          para: 'La pieza pasa a devuelta y sale del inventario. Si tiene servicios que el consignatario no pagó al firmar, se genera una cuenta por cobrar con folio DEV- a 15 días. No se permite si la pieza está apartada, tiene incidente o ya se vendió.',
-          puntos: [
-            'Devolver una pieza la saca del inventario y queda como devuelta en el perfil.',
-            'Se genera el cobro DEV- por los servicios pendientes, con el monto correcto.',
-            'No se puede devolver una pieza apartada, con incidente o vendida, y el mensaje es claro.',
-            'Se puede devolver varias piezas de un consignatario sin hacerlo una por una (si el cliente lo necesita, anotarlo).',
-            'Queda constancia de la entrega (quién y cuándo) para el cliente.'
-          ]
+          id: 'p1-firma', nombre: 'Contrato y firma',
+          donde: 'Asistente · paso 3 Contrato: «Finalizar y Firmar» o «Enviar enlace para firmar»',
+          para: 'Antes de firmar se revisan los datos bancarios (si la plantilla los exige). La firma puede ser en la tableta o a distancia, con un enlace por correo que dura 48 horas.',
+          demostrar: [
+            { h: 'Revisamos el contrato en pantalla con la consignataria.', d: 'Muestra sus datos, las tres piezas, las reglas y las cláusulas.' },
+            { h: 'Firma en la tableta y tocamos «Finalizar y Firmar».', d: 'El contrato queda firmado.' },
+            { h: 'Descargamos el PDF del contrato.', d: 'Lleva logo y un código QR de verificación.' },
+            { h: 'Enviamos el enlace para firmar a distancia a otro correo.', d: 'Abre sin cuenta y deja firmar.', o: true },
+          ],
+          decidir: ['¿Se firma en tienda, a distancia o ambos?', '¿Se imprime la responsiva de ingreso de las piezas?'],
+          noHace: ['Cancelar un contrato no tiene botón en pantalla; la adenda sí («Más acciones › Crear adenda»).'],
         },
         {
-          id: 'p2-compra',
-          nombre: 'Etapa 4 · Compra de la pieza por la tienda, robo o pérdida',
-          donde: 'Perfil del consignatario › Productos › «Comprarle la pieza» / «Robo / pérdida» (requiere permiso)',
-          para: 'Comprar la pieza paga al consignatario valuación − comisión − cargos (por cuenta por pagar, saldo a favor o pago directo) y la pieza pasa al inventario propio. Robo o pérdida le paga al consignatario como si se hubiera vendido y registra la pieza como pérdida.',
-          puntos: [
-            'Solo los usuarios con permiso ven «Comprarle la pieza».',
-            'El pago al consignatario por la compra se calcula como acordó el cliente.',
-            'La pieza comprada aparece en el inventario propio de la tienda.',
-            'Robo o pérdida genera el pago al consignatario por el monto correcto.',
-            'Se acordó cómo se registra la pérdida para la tienda y si se le cobra a un empleado responsable.'
-          ]
+          id: 'p1-resultado', nombre: 'Consignataria activa y piezas en inventario', pieza: 'A',
+          donde: 'Perfil de la consignataria (Resumen / Productos / Contrato / Liquidaciones) e inventario',
+          para: 'Al firmar, la consignataria queda activa y las piezas entran al inventario (o a preparación, si la tienda la usa).',
+          demostrar: [
+            { h: 'Abrimos su perfil.', d: 'Está activa, con sus pestañas Resumen, Productos, Contrato y Liquidaciones.' },
+            { h: 'Buscamos la pieza A en el inventario de la sucursal.', d: 'Aparece con su precio y existencia 1.' },
+            { h: 'Imprimimos la responsiva de ingreso.', d: 'Sale con las piezas recibidas.', o: true },
+          ],
+          decidir: [], noHace: [],
         },
-        {
-          id: 'p2-adenda',
-          nombre: 'Etapa 5 · Adenda y cancelación de contrato',
-          donde: 'Perfil del consignatario › Contrato › «Más acciones» › «Crear adenda»',
-          para: 'La adenda crea una nueva versión firmada del contrato con los precios y cargos actuales y la misma vigencia. La cancelación regresa el lote a borrador.',
-          puntos: [
-            'Crear una adenda genera la nueva versión y el PDF refleja los cambios.',
-            'La adenda conserva la vigencia original.',
-            'Se revisó cómo cancela el cliente un contrato (hoy no tiene botón en pantalla).'
-          ]
-        }
-      ]
+      ],
     },
+
+    // ── 2 ────────────────────────────────────────────────────────────────
     {
-      id: 'p3',
-      nombre: 'Preparación de piezas (colas de proceso)',
-      resumen: 'Lo que pasa entre la firma y la venta: certificación, limpieza, fotos, reparación y etiquetado; piezas falsas, no aptas o retenidas; y el cobro de servicios.',
-      tipos: TIPOS_FLUJO, cols: COLS_FLUJO,
+      id: 'p2', nombre: 'Preparación de piezas', tipos: TIPOS,
+      resumen: 'Solo si la tienda la usa: certificación, limpieza, fotos, reparación y etiquetado antes de poner la pieza a la venta.',
       diagrama: {
         titulo: 'Una pieza solo se vende cuando completa sus pasos obligatorios',
-        lectura: 'Con el proceso activo, cada pieza firmada entra en proceso y no se vende hasta completar los pasos requeridos. Una pieza falsa genera un cobro de penalización; un costo extra alto espera aprobación; una pieza retenida deja de venderse.',
+        lectura: 'Con la preparación activa, cada pieza firmada entra en proceso y no se vende hasta completar sus pasos. Un costo alto espera aprobación; una pieza retenida deja de venderse.',
         nodos: [
-          { id: 'a', c: 0, r: 0, t: 'Firma', s: 'contrato', sec: 'p3-activar' },
-          { id: 'b', c: 1, r: 0, t: 'En proceso', s: 'no se vende', sec: 'p3-activar' },
-          { id: 'c', c: 2, r: 0, t: 'Pasos', s: 'certificación, fotos', sec: 'p3-pasos' },
-          { id: 'd', c: 3, r: 0, t: 'Disponible', s: 'a la venta', sec: 'p3-pasos', fin: true },
-          { id: 'e', c: 1, r: 1, t: 'Fake / no apta', s: 'penalización FAKE-', sec: 'p3-fake' },
-          { id: 'f', c: 2, r: 1, t: 'Costo extra', s: 'por aprobar', sec: 'p3-cargos' },
-          { id: 'g', c: 3, r: 1, t: 'Retenida', s: 'pausa la venta', sec: 'p3-retener' }
+          { id: 'a', c: 0, r: 0, t: 'Firma', s: 'contrato', sec: 'p2-cola' },
+          { id: 'b', c: 1, r: 0, t: 'En proceso', s: 'no se vende', sec: 'p2-cola' },
+          { id: 'c', c: 2, r: 0, t: 'Pasos', s: 'certificación, fotos', sec: 'p2-pasos' },
+          { id: 'd', c: 3, r: 0, t: 'Disponible', s: 'a la venta', sec: 'p2-pasos', fin: true },
+          { id: 'f', c: 2, r: 1, t: 'Costo extra', s: 'por aprobar', sec: 'p2-cargos' },
+          { id: 'g', c: 3, r: 1, t: 'Retenida', s: 'pausa la venta', sec: 'p2-excepciones' },
         ],
-        flechas: [
-          { de: 'a', a: 'b' }, { de: 'b', a: 'c' }, { de: 'c', a: 'd', et: 'completa' },
-          { de: 'c', a: 'e', et: 'falsa', dx: -40 }, { de: 'c', a: 'f', et: 'costo', dx: 20 }, { de: 'd', a: 'g', et: 'retener' }
-        ]
+        flechas: [{ de: 'a', a: 'b' }, { de: 'b', a: 'c' }, { de: 'c', a: 'd', et: 'completa' }, { de: 'c', a: 'f', et: 'costo' }, { de: 'd', a: 'g', et: 'retener' }],
       },
       secciones: [
         {
-          id: 'p3-clave', clave: true,
-          nombre: 'Puntos clave del proceso',
-          para: 'Se prueba con dos piezas: una que completa todos los pasos y otra que se marca como falsa.',
-          puntos: [
-            'Una pieza en proceso no se puede vender en ningún canal.',
-            'Al completar los pasos obligatorios, la pieza queda disponible y el consignatario recibe aviso.',
-            'Una pieza falsa genera el cobro de penalización correcto.',
-            'Un costo extra alto espera aprobación antes de cobrarse.',
-            'Los servicios cobrados al firmar no se vuelven a descontar al vender.'
-          ]
+          id: 'p2-cola', nombre: 'La cola de preparación', pieza: 'ABC',
+          donde: 'Consignación › Colas de proceso (vistas Cola y Kanban)',
+          para: 'Con la preparación activa (Configuración › «Proceso post-contrato»), cada pieza firmada entra en proceso y no se puede vender hasta completar sus pasos obligatorios.',
+          demostrar: [
+            { h: 'Abrimos la cola.', d: 'Están las piezas A, B y C con sus pasos pendientes.' },
+            { h: 'Buscamos la pieza A en caja.', d: 'No aparece para vender mientras está en preparación.' },
+          ],
+          decidir: ['Qué pasos aplica la tienda y cuáles son obligatorios.', 'Quién es responsable de cada paso.'],
+          noHace: [],
         },
         {
-          id: 'p3-activar',
-          nombre: 'Etapa 1 · Proceso activo y pasos configurados',
-          donde: 'Consignación › Configuración («Proceso post-contrato») y Consignación › Colas de proceso (vistas Cola y Kanban)',
-          para: 'Si el proceso está activo, cada pieza firmada entra en proceso. Pasos: certificación, limpieza, fotos, reparación y etiquetado; todos requeridos menos reparación. El orden es sugerido.',
-          puntos: [
-            'Los pasos activos son los que el cliente realiza en su operación.',
-            'Los pasos requeridos son los correctos (reparación es opcional por defecto).',
-            'La vista Cola y el Kanban muestran las piezas donde van.',
-            'Quedó claro quién en el equipo del cliente es responsable de cada paso.'
-          ]
-        },
-        {
-          id: 'p3-pasos',
-          nombre: 'Etapa 2 · Completar pasos y evidencias',
+          id: 'p2-pasos', nombre: 'Completar los pasos', pieza: 'ABC',
           donde: 'Colas de proceso › pieza › «Completar [paso]» › «Guardar y completar»',
-          para: 'Cada paso pide sus datos: certificación (resultado, certificadora, número y al menos una evidencia), fotos (mínimo 3), reparación (descripción), etiquetado (confirmar etiqueta colocada). Al terminar los requeridos, la pieza queda disponible.',
-          puntos: [
-            'Cada paso pide los datos que el cliente necesita, ni más ni menos.',
-            'Sin los datos obligatorios, el paso no se puede completar y el mensaje es claro.',
-            'Las fotos y evidencias se suben bien desde la tableta o el teléfono.',
-            'Al completar el último paso requerido, la pieza aparece en el punto de venta.',
-            'El consignatario recibe el aviso de pieza disponible.',
-            'La cadena de custodia muestra quién hizo cada paso.'
-          ]
+          para: 'Cada paso pide sus datos: certificación (resultado, certificadora, número y una evidencia), fotos (mínimo 3), reparación (descripción) y etiquetado (confirmar la etiqueta colocada).',
+          demostrar: [
+            { h: 'Completamos los pasos de la pieza A con sus fotos y evidencias.', d: 'Al terminar el último obligatorio queda disponible y la consignataria recibe aviso.' },
+            { h: 'Completamos los pasos de B y C.', d: 'Las tres quedan disponibles.' },
+            { h: 'Intentamos completar un paso sin sus datos.', d: 'No deja y explica qué falta.', o: true },
+            { h: 'Abrimos la cadena de custodia de la pieza A.', d: 'Muestra quién hizo cada paso y cuándo.', o: true },
+          ],
+          decidir: [], noHace: ['No hay editor en pantalla para cambiar los campos que pide cada paso.'],
         },
         {
-          id: 'p3-cargos',
-          nombre: 'Etapa 3 · Costos y cargos por aprobar',
-          donde: 'Colas de proceso › costo real del paso; «Cargos pendientes de aprobación» (Aprobar / Rechazar)',
-          para: 'El costo real de un paso se vuelve cargo al consignatario. Si rebasa el tope en % del precio se rechaza; arriba del umbral de aprobación queda pendiente. Si la pieza trae «Kit limpieza + certificado», esos dos pasos no se cobran aparte.',
-          puntos: [
-            'El tope de cargo y el umbral de aprobación son los que el cliente quiere.',
-            'Un cargo arriba del umbral aparece en pendientes y se puede aprobar o rechazar.',
-            'Un cargo aprobado se refleja en el pago al consignatario.',
-            'El kit de limpieza + certificado no cobra esos pasos dos veces.',
-            'Se acordó qué hacer con un cargo pendiente si la pieza se vende antes de aprobarlo.'
-          ]
+          id: 'p2-cargos', nombre: 'Costos y cargos',
+          donde: 'Colas de proceso › costo real del paso; «Cargos pendientes de aprobación»',
+          para: 'El costo real de un paso se vuelve cargo a la consignataria; arriba del umbral espera aprobación. Los servicios se pueden cobrar al firmar (entran al corte de caja) o descontarse al pagarle.',
+          demostrar: [{ h: 'Capturamos un costo de limpieza arriba del umbral.', d: 'Aparece en «Cargos pendientes de aprobación» con Aprobar y Rechazar.', o: true }],
+          decidir: ['Tope de cargos y umbral de aprobación.', 'Penalización por pieza falsa (por defecto $1,500).'],
+          noHace: ['Un cargo pendiente ya no se puede aprobar si la pieza se vendió; se ajusta a mano en lo que se le debe a la consignataria.'],
         },
         {
-          id: 'p3-fake',
-          nombre: 'Etapa 4 · Pieza falsa o no apta',
-          donde: 'Colas de proceso › pieza › «FAKE» / «No apta»',
-          para: 'Una pieza falsa genera una cuenta por cobrar FAKE- por la penalización ($1,500 por defecto) más los cargos no pagados. Una pieza no apta no genera cobro; su salida es la devolución.',
-          puntos: [
-            'Marcar una pieza como falsa genera el cobro FAKE- con el monto acordado.',
-            'La penalización es la que el cliente cobra en su política.',
-            'Una pieza falsa o no apta no se puede vender.',
-            'Una pieza no apta se puede devolver al consignatario.'
-          ]
+          id: 'p2-excepciones', nombre: 'Retener, no apta o falsa',
+          donde: 'Detalle de la pieza › «Retener (pausar venta)» / «Liberar» / «No apta» / «Fake»',
+          para: 'Retener pausa la venta y quita la pieza de la tienda en línea. «No apta» la deja lista para devolver. «Fake» genera el cobro de penalización (no se usa con las piezas del caso: es un cobro real).',
+          demostrar: [{ h: 'Retenemos la pieza C y luego la liberamos.', d: 'Mientras está retenida no se vende; al liberarla vuelve a disponible.', o: true }],
+          decidir: [], noHace: [],
         },
-        {
-          id: 'p3-retener',
-          nombre: 'Etapa 5 · Retener y liberar',
-          donde: 'Detalle de la pieza › «Retener (pausar venta)» / «Liberar»',
-          para: 'Retener pausa la venta de una pieza disponible o en proceso, pide motivo y la quita de la tienda en línea. Liberar la regresa a su estado anterior.',
-          puntos: [
-            'Una pieza retenida no se puede vender y se pide el motivo.',
-            'La pieza retenida deja de verse en la tienda en línea.',
-            'Al liberarla, vuelve a su estado anterior y a la tienda en línea si estaba publicada.'
-          ]
-        },
-        {
-          id: 'p3-cobro',
-          nombre: 'Etapa 6 · Cobro de servicios al firmar',
-          donde: 'Asistente del consignatario › Contrato › cobro de servicios (método de pago y caja abierta)',
-          para: 'Los servicios se pueden cobrar al firmar: entran al corte de caja y ya no se descuentan al vender. Lo que no se cobra se descuenta en la liquidación o se cobra si la pieza se devuelve.',
-          puntos: [
-            'El cobro al firmar pide caja abierta y entra al corte de caja.',
-            'Un servicio cobrado al firmar no se descuenta otra vez al liquidar.',
-            'Un servicio no cobrado se descuenta en la liquidación.'
-          ]
-        }
-      ]
+      ],
     },
+
+    // ── 3 ────────────────────────────────────────────────────────────────
     {
-      id: 'p4',
-      nombre: 'Devoluciones, incidentes y recuperaciones',
-      resumen: 'Qué pasa cuando el cliente final devuelve una pieza, cuando resulta no auténtica y cuando hay un daño, pérdida o reclamo (incidentes).',
-      tipos: TIPOS_FLUJO, cols: COLS_FLUJO,
+      id: 'p3', nombre: 'Venta', tipos: TIPOS,
+      resumen: 'La pieza A se vende de contado con descuento y la pieza B se aparta y se liquida. Cada venta genera lo que se le debe a la consignataria.',
       diagrama: {
-        titulo: 'Una devolución se revierte sola solo si al consignatario aún no se le paga',
-        lectura: 'Si al consignatario no se le ha pagado, la devolución en caja revierte la venta sola. Si ya se le pagó, se usa «Cliente devolvió» para recuperar el dinero. Los incidentes bloquean la pieza hasta resolverse.',
+        titulo: 'Cada venta genera lo que se le debe a la consignataria',
+        lectura: 'La pieza A se cobra en caja y queda vendida con su pago pendiente. La pieza B se aparta y se vende cuando el pedido queda pagado.',
         nodos: [
-          { id: 'a', c: 0, r: 0, t: 'Venta', s: 'pieza vendida', sec: 'p4-revertida' },
-          { id: 'b', c: 1, r: 0, t: 'Devolución', s: 'cliente final', sec: 'p4-revertida' },
-          { id: 'c', c: 2, r: 0, t: '¿Ya se pagó?', s: 'al consignatario', sec: 'p4-revertida' },
-          { id: 'd', c: 3, r: 0, t: 'Se revierte', s: 'automático', sec: 'p4-revertida' },
-          { id: 'e', c: 2, r: 1, t: 'Cliente devolvió', s: 'en el perfil', sec: 'p4-devolvio' },
-          { id: 'f', c: 3, r: 1, t: 'Recupera', s: 'cobro o saldo', sec: 'p4-devolvio' },
-          { id: 'g', c: 0, r: 2, t: 'Incidente', s: 'daño, robo, reclamo', sec: 'p4-incidente' },
-          { id: 'h', c: 1, r: 2, t: 'Bloqueada', s: 'no se vende', sec: 'p4-incidente' },
-          { id: 'i', c: 2, r: 2, t: 'Investigación', s: 'y propuesta', sec: 'p4-incidente' },
-          { id: 'j', c: 3, r: 2, t: 'Resolver', s: 'con efecto', sec: 'p4-resolver', fin: true }
+          { id: 'a', c: 0, r: 0, t: 'Disponible', s: 'pieza A', sec: 'p3-contado' },
+          { id: 'b', c: 1, r: 0, t: 'Caja', s: 'contado + descuento', sec: 'p3-contado' },
+          { id: 'c', c: 2, r: 0, t: 'Vendida', s: 'perfil y aviso', sec: 'p3-perfil' },
+          { id: 'd', c: 3, r: 0, t: 'Por pagar', s: 'a la consignataria', sec: 'p3-perfil', fin: true },
+          { id: 'e', c: 1, r: 1, t: 'Apartado', s: 'pieza B', sec: 'p3-apartado' },
+          { id: 'f', c: 2, r: 1, t: 'Pagado', s: 'pasa a vendida', sec: 'p3-apartado' },
         ],
-        flechas: [
-          { de: 'a', a: 'b' }, { de: 'b', a: 'c' }, { de: 'c', a: 'd', et: 'no' },
-          { de: 'c', a: 'e', et: 'sí' }, { de: 'e', a: 'f' },
-          { de: 'g', a: 'h' }, { de: 'h', a: 'i' }, { de: 'i', a: 'j' }
-        ]
+        flechas: [{ de: 'a', a: 'b' }, { de: 'b', a: 'c' }, { de: 'c', a: 'd' }, { de: 'a', a: 'e', et: 'se aparta' }, { de: 'e', a: 'f' }],
       },
       secciones: [
         {
-          id: 'p4-clave', clave: true,
-          nombre: 'Puntos clave del proceso',
-          para: 'Se prueba con dos ventas devueltas: una antes de pagar al consignatario y otra después, y con un incidente de prueba.',
-          puntos: [
-            'Una devolución antes de pagar al consignatario regresa la pieza a la venta y cancela su pago.',
-            'Una devolución después de pagar se resuelve con «Cliente devolvió» y recupera el dinero.',
-            'Una pieza no auténtica recupera el dinero y queda bloqueada para siempre.',
-            'Un incidente abierto bloquea la pieza para vender, liquidar y retirar.',
-            'Resolver un incidente con compensación genera el pago al consignatario.'
-          ]
+          id: 'p3-contado', nombre: 'Venta de contado con descuento', pieza: 'A',
+          donde: 'Punto de venta',
+          para: 'Solo se venden piezas disponibles. Al cobrar se guarda quién vendió y en qué sucursal, se calcula la comisión y lo que le toca a la consignataria, y se le avisa.',
+          nota: 'Base del cálculo: el precio cobrado (con descuento y con IVA). Pago a la consignataria = base − comisión − servicios pendientes. Por defecto el descuento lo absorbe la consignataria.',
+          demostrar: [
+            { h: 'Escaneamos la pieza A en caja.', d: 'Aparece con su precio.' },
+            { h: 'Aplicamos un descuento y cobramos.', d: 'El ticket sale normal (anota su folio en el caso de prueba).' },
+            { h: 'Buscamos una pieza que no está disponible (en preparación, retenida o vencida).', d: 'No aparece para vender.', o: true },
+          ],
+          decidir: ['¿El descuento lo absorbe la consignataria o la tienda?', '¿El pago a la consignataria se calcula con o sin IVA?'],
+          noHace: ['El pago estimado del contrato se calcula sin IVA y el de la venta con IVA; con IVA configurado pueden no coincidir.'],
         },
         {
-          id: 'p4-revertida',
-          nombre: 'Etapa 1 · Devolución antes de pagar al consignatario',
-          donde: 'Devolución o cancelación en el punto de venta o en pedidos',
-          para: 'Si la cuenta por pagar al consignatario no tiene pagos, la venta se revierte sola: se cancela el pago, la pieza vuelve a disponible, se republica y se avisa al consignatario.',
-          puntos: [
-            'La pieza vuelve a disponible y aparece de nuevo en el punto de venta.',
-            'El pago pendiente al consignatario se cancela o sale del corte.',
-            'El consignatario recibe el aviso.',
-            'Con una pieza ya pagada, el consignatario no queda afectado hasta que se use «Cliente devolvió» (el equipo sabe que debe hacerlo).'
-          ]
+          id: 'p3-perfil', nombre: 'Lo que ve la tienda después de vender', pieza: 'A',
+          donde: 'Perfil de la consignataria › Productos y Liquidaciones',
+          para: 'La pieza pasa a vendida, el lote cambia de estado y se genera lo que se le debe a la consignataria.',
+          demostrar: [
+            { h: 'Abrimos el perfil de la consignataria › Productos.', d: 'La pieza A dice «Vendida».' },
+            { h: 'Abrimos la pestaña Liquidaciones.', d: 'Aparece lo que se le debe por la pieza A, con su fecha de pago.' },
+            { h: 'Calculamos juntos el monto.', d: 'Coincide: precio cobrado − comisión − servicios.' },
+            { h: 'Revisamos el correo de la consignataria.', d: 'Llegó el aviso de venta.' },
+          ],
+          decidir: [], noHace: [],
         },
         {
-          id: 'p4-devolvio',
-          nombre: 'Etapa 2 · «Cliente devolvió» (pieza ya pagada)',
-          donde: 'Perfil del consignatario › pieza vendida o liquidada › «Cliente devolvió»',
-          para: 'Dentro de política: recupera del consignatario el neto pagado con una cuenta por cobrar o descontándolo de su saldo, y la pieza vuelve a la venta. Fuera de política: la tienda se queda la pieza y no se le cobra al consignatario.',
-          puntos: [
-            'Dentro de política: se recupera el neto por el medio acordado y la pieza vuelve a la venta.',
-            'Si el saldo no alcanza, el resto se cobra con cuenta por cobrar.',
-            'Fuera de política: la pieza pasa al inventario propio y no se le cobra al consignatario.',
-            'Se acordó qué pasa con la comisión del vendedor en una devolución.'
-          ]
+          id: 'p3-apartado', nombre: 'Apartado', pieza: 'B',
+          donde: 'Pedidos / Apartados',
+          para: 'Un apartado reserva la pieza; se vende cuando el pedido queda pagado y se libera si se cancela.',
+          demostrar: [
+            { h: 'Apartamos la pieza B a una clienta con un anticipo.', d: 'La pieza queda apartada y no se puede vender a otra persona.' },
+            { h: 'Liquidamos el pedido.', d: 'La pieza B pasa a vendida y aparece en lo que se le debe a la consignataria (anota el folio del pedido).' },
+            { h: 'Cancelamos otro apartado de prueba.', d: 'Su pieza vuelve a disponible.', o: true },
+          ],
+          decidir: ['¿Se apartan piezas consignadas? ¿Con qué plazo y anticipo?'],
+          noHace: [],
         },
-        {
-          id: 'p4-noautentica',
-          nombre: 'Etapa 3 · Pieza no auténtica después de vendida',
-          donde: 'Perfil del consignatario › pieza vendida › «No auténtica»',
-          para: 'Recupera el neto pagado al consignatario siempre con cuenta por cobrar y bloquea la pieza de forma permanente.',
-          puntos: [
-            'Se genera el cobro por el neto pagado.',
-            'La pieza queda bloqueada y no se puede volver a vender.',
-            'El proceso con el cliente final (reembolso) está claro para el equipo.'
-          ]
-        },
-        {
-          id: 'p4-incidente',
-          nombre: 'Etapa 4 · Reportar e investigar un incidente',
-          donde: 'Consignación › Incidentes › «Reportar incidente» / «Cambiar estado»',
-          para: 'Tipos: daño, mancha, alteración, pérdida, robo, discrepancia, reclamación del cliente o del consignatario. Severidad baja a crítica. Al abrirlo, la pieza queda bloqueada. Estados: abierto, en investigación, propuesta de resolución, aprobación, resuelto.',
-          puntos: [
-            'Se puede reportar un incidente desde la pieza con tipo y severidad.',
-            'La pieza con incidente no se puede vender, liquidar ni retirar.',
-            'Los estados reflejan cómo trabaja el cliente; se acordó quién aprueba.',
-            'Se acordó si el consignatario debe recibir aviso del incidente (hoy no se le avisa).'
-          ]
-        },
-        {
-          id: 'p4-resolver',
-          nombre: 'Etapa 5 · Resolver el incidente',
-          donde: 'Consignación › Incidentes › «Resolver»',
-          para: 'Compensación al consignatario genera una cuenta por pagar COMP- a 15 días. Merma, ajuste de liquidación, cargo a responsable y sin impacto solo se registran. La pieza se desbloquea si no tiene otros incidentes.',
-          puntos: [
-            'Resolver con compensación genera el pago al consignatario por el monto correcto.',
-            'Los efectos que solo se registran (merma, cargo a responsable) se entienden y le sirven al cliente.',
-            'Al resolver, la pieza se desbloquea.',
-            'La cadena de custodia muestra el historial del incidente.'
-          ]
-        }
-      ]
+      ],
     },
+
+    // ── 4 ────────────────────────────────────────────────────────────────
     {
-      id: 'p5',
-      nombre: 'Saldo a favor y portal del consignatario',
-      resumen: 'Pagar al consignatario con saldo a favor (con bono), cómo lo usa en la tienda, y el portal donde ve sus piezas, pagos y pide retiros.',
-      tipos: TIPOS_FLUJO, cols: COLS_FLUJO,
+      id: 'p4', nombre: 'Devolución del cliente final', tipos: TIPOS,
+      resumen: 'La clienta devuelve la pieza B antes de que se le pague a la consignataria: la venta se revierte sola y la pieza vuelve a la venta.',
       diagrama: {
-        titulo: 'El consignatario cobra en dinero o en saldo, y lo sigue todo desde su portal',
-        lectura: 'Al liquidar, el pago puede ir a saldo a favor (con bono) y el consignatario lo usa para comprar en la tienda. Desde su portal ve sus piezas y pagos, pide retiros y solicita cambios bancarios que la tienda aprueba.',
+        titulo: 'Antes de pagarle a la consignataria, la devolución se revierte sola',
+        lectura: 'Si a la consignataria aún no se le paga la pieza, la devolución en caja cancela lo que se le debe y la pieza vuelve a la venta. Si ya se le pagó, se resuelve con «Cliente devolvió» (proceso 8).',
         nodos: [
-          { id: 'a', c: 0, r: 0, t: 'Venta', s: 'pieza vendida', sec: 'p5-saldo' },
-          { id: 'b', c: 1, r: 0, t: 'Liquidación', s: 'por pagar', sec: 'p5-saldo' },
-          { id: 'c', c: 2, r: 0, t: 'Saldo a favor', s: '+ bono', sec: 'p5-saldo' },
-          { id: 'd', c: 3, r: 0, t: 'Compra', s: 'en la tienda', sec: 'p5-mixto', fin: true },
-          { id: 'e', c: 0, r: 1, t: 'Portal', s: 'enlace propio', sec: 'p5-portal' },
-          { id: 'f', c: 1, r: 1, t: 'Retiro', s: 'solicitud', sec: 'p5-retiro' },
-          { id: 'g', c: 2, r: 1, t: 'Bandeja', s: 'retiros', sec: 'p5-retiro' },
-          { id: 'h', c: 1, r: 2, t: 'Datos bancarios', s: 'cambio', sec: 'p5-bancario' },
-          { id: 'i', c: 2, r: 2, t: 'Aprobación', s: 'de la tienda', sec: 'p5-bancario' }
+          { id: 'a', c: 0, r: 0, t: 'Venta', s: 'pieza B', sec: 'p4-devolucion' },
+          { id: 'b', c: 1, r: 0, t: 'Devolución', s: 'en caja', sec: 'p4-devolucion' },
+          { id: 'c', c: 2, r: 0, t: '¿Ya se pagó?', s: 'a la consignataria', sec: 'p4-devolucion' },
+          { id: 'd', c: 3, r: 0, t: 'Se revierte', s: 'vuelve a la venta', sec: 'p4-devolucion', fin: true },
+          { id: 'e', c: 2, r: 1, t: 'Cliente devolvió', s: 'proceso 8', sec: 'p4-devolucion' },
         ],
-        flechas: [
-          { de: 'a', a: 'b' }, { de: 'b', a: 'c', et: 'a saldo' }, { de: 'c', a: 'd' },
-          { de: 'e', a: 'f' }, { de: 'f', a: 'g' },
-          { de: 'e', a: 'h', dx: 40 }, { de: 'h', a: 'i' }
-        ]
+        flechas: [{ de: 'a', a: 'b' }, { de: 'b', a: 'c' }, { de: 'c', a: 'd', et: 'no' }, { de: 'c', a: 'e', et: 'sí' }],
       },
       secciones: [
         {
-          id: 'p5-clave', clave: true,
-          nombre: 'Puntos clave del proceso',
-          para: 'Se prueba con un consignatario que tenga una venta por liquidar y su portal abierto en un teléfono.',
-          puntos: [
-            'Liquidar a saldo deja el saldo correcto, con el bono acordado.',
-            'El consignatario puede pagar una compra en la tienda con su saldo.',
-            'El portal muestra sus piezas, pagos y contrato correctos.',
-            'Una solicitud de retiro llega a la tienda y se atiende.',
-            'Un cambio de datos bancarios no se aplica hasta que la tienda lo aprueba.'
-          ]
+          id: 'p4-devolucion', nombre: 'Devolución en caja', pieza: 'B',
+          donde: 'Devolución o cancelación de la venta en caja (o del pedido)',
+          para: 'Si a la consignataria aún no se le paga esa pieza, la venta se revierte sola: se cancela lo que se le debe, la pieza vuelve a disponible y se le avisa.',
+          demostrar: [
+            { h: 'Hacemos la devolución del pedido de la pieza B.', d: 'La devolución se registra normal en caja.' },
+            { h: 'Abrimos el perfil de la consignataria.', d: 'La pieza B vuelve a disponible y ya no aparece en lo que se le debe.' },
+            { h: 'Escaneamos la pieza B en caja.', d: 'Se puede volver a vender.' },
+            { h: 'Revisamos el correo de la consignataria.', d: 'Llegó el aviso de venta revertida.', o: true },
+          ],
+          decidir: [
+            '¿Cuántos días tiene el cliente final para devolver? (Los días de espera antes de pagar deben cubrirlos.)',
+            '¿Qué pasa con la comisión del vendedor cuando hay devolución?',
+          ],
+          noHace: ['La comisión del vendedor no se descuenta sola si su periodo ya se aprobó o pagó.'],
+        },
+      ],
+    },
+
+    // ── 5 ────────────────────────────────────────────────────────────────
+    {
+      id: 'p5', nombre: 'Pago a la consignataria', tipos: TIPOS,
+      resumen: 'Lo que se le debe por la pieza A: fecha de pago, días de espera, pago (en dinero o saldo a favor), comprobante y estado de cuenta.',
+      diagrama: {
+        titulo: 'La consignataria cobra en dinero o en saldo a favor, con su comprobante',
+        lectura: 'La venta genera lo que se le debe con su fecha de pago. Pasados los días de espera se paga y se emite el comprobante. El pago también puede ir a saldo a favor, que usa para comprar en la tienda.',
+        nodos: [
+          { id: 'a', c: 0, r: 0, t: 'Vendida', s: 'pieza A', sec: 'p5-porpagar' },
+          { id: 'b', c: 1, r: 0, t: 'Por pagar', s: 'folio LIQ-', sec: 'p5-porpagar' },
+          { id: 'c', c: 2, r: 0, t: 'Espera', s: 'días acordados', sec: 'p5-porpagar' },
+          { id: 'd', c: 3, r: 0, t: 'Pago', s: 'dinero', sec: 'p5-pagar' },
+          { id: 'e', c: 4, r: 0, t: 'Comprobante', s: 'y estado de cuenta', sec: 'p5-pagar', fin: true },
+          { id: 'f', c: 3, r: 1, t: 'Saldo a favor', s: '+ bono', sec: 'p5-saldo' },
+          { id: 'g', c: 4, r: 1, t: 'Compra', s: 'en la tienda', sec: 'p5-saldo' },
+        ],
+        flechas: [{ de: 'a', a: 'b' }, { de: 'b', a: 'c' }, { de: 'c', a: 'd' }, { de: 'd', a: 'e' }, { de: 'd', a: 'f', et: 'o a saldo' }, { de: 'f', a: 'g' }],
+      },
+      secciones: [
+        {
+          id: 'p5-porpagar', nombre: 'Lo que se le debe', pieza: 'A',
+          donde: 'Perfil › Liquidaciones («Por pagar al consignatario», «Total a Liquidar», «Próximo pago»)',
+          para: 'Cada venta genera lo que se le debe (folio LIQ-). Con pago semanal, quincenal o mensual se juntan en un solo corte. La fecha de pago es la venta más los días de pago.',
+          demostrar: [
+            { h: 'Abrimos Liquidaciones.', d: 'La pieza A aparece con su folio LIQ-, monto y fecha de pago.' },
+            { h: 'Intentamos pagar antes de que terminen los días de espera.', d: 'No deja y lo explica.' },
+          ],
+          decidir: ['¿Quién del equipo paga a las consignatarias y cada cuándo?'],
+          noHace: ['No hay una vista con lo que se le debe a todas las consignatarias juntas; se ve por consignataria o con «vencido» y «por pagar» en Buscar en SACS.'],
         },
         {
-          id: 'p5-saldo',
-          nombre: 'Etapa 1 · Liquidar a saldo a favor',
-          donde: 'Perfil del consignatario › tarjeta «Saldo a favor» › «Liquidar a saldo»',
-          para: 'Marca la liquidación como pagada con saldo a favor, suma el bono configurado y avisa al consignatario. El saldo es el monedero del cliente (pesos 1:1) y lo que viene de consignación no caduca.',
-          puntos: [
-            'Liquidar a saldo marca el pago y la pieza como liquidada.',
-            'El bono que se suma es el que el cliente ofrece.',
-            'El consignatario recibe el aviso con su nuevo saldo.',
-            'Se acordó si el reparto dinero/saldo se decide al liquidar (como hoy) o automático por contrato.'
-          ]
+          id: 'p5-pagar', nombre: 'Pagar y comprobante', pieza: 'A',
+          donde: 'Liquidaciones › «Pagar seleccionadas» / «Liquidar (dividir pago)» › «Estado de cuenta»',
+          para: 'Se paga total o parcial. Al pagar, la pieza pasa a liquidada y se emite el comprobante.',
+          nota: 'Para pagar en la sesión hace falta que hayan pasado los días de espera: usa una plantilla de prueba con 0 días o una venta anterior ya vencida.',
+          demostrar: [
+            { h: 'Pagamos lo que se le debe por la pieza A.', d: 'La pieza pasa a «Liquidada».' },
+            { h: 'Descargamos y enviamos el comprobante.', d: 'La consignataria lo recibe por correo.' },
+            { h: 'Abrimos «Estado de cuenta».', d: 'Cuadra lo vendido, lo pagado y lo pendiente.' },
+          ],
+          decidir: ['¿Necesitan retenciones fiscales o factura de lo que se le paga a la consignataria?'],
+          noHace: [
+            'No calcula retenciones de ISR/IVA ni emite factura de la liquidación.',
+            'Un pago en efectivo a la consignataria no se resta solo del corte de caja.',
+          ],
         },
         {
-          id: 'p5-mixto',
-          nombre: 'Etapa 2 · Pago mixto y uso del saldo',
-          donde: 'Liquidación «dividir pago»; punto de venta con método «Tarjeta de lealtad»',
-          para: 'El pago mixto (saldo + otro método) no da bono. En el punto de venta el saldo se cobra con el método «Tarjeta de lealtad». El saldo también paga cobros pendientes (DEV-, FAKE-).',
-          puntos: [
-            'El pago mixto deja los montos correctos; el cliente sabe que no lleva bono.',
-            'En el punto de venta el consignatario paga con su saldo y se descuenta bien.',
-            'El saldo puede pagar un cobro pendiente y eso libera la firma de un nuevo contrato.'
-          ]
+          id: 'p5-saldo', nombre: 'Pago en saldo a favor',
+          donde: 'Perfil › tarjeta «Saldo a favor» › «Liquidar a saldo»; caja: método «Tarjeta de lealtad»',
+          para: 'En vez de dinero, el pago se convierte en saldo a favor (más el bono configurado) que la consignataria usa para comprar en la tienda. Lo que viene de consignación no caduca.',
+          demostrar: [
+            { h: 'Liquidamos a saldo lo que se le debe por otra venta.', d: 'Su saldo sube con el bono.', o: true },
+            { h: 'En caja, la consignataria paga una compra con «Tarjeta de lealtad».', d: 'Se descuenta de su saldo.', o: true },
+          ],
+          decidir: ['¿Ofrecen saldo a favor? ¿Con qué bono?'],
+          noHace: ['El pago mixto (saldo + dinero) no da bono.'],
+        },
+      ],
+    },
+
+    // ── 6 ────────────────────────────────────────────────────────────────
+    {
+      id: 'p6', nombre: 'Comisión del vendedor', tipos: TIPOS,
+      resumen: 'La venta de la pieza A cuenta para la comisión de quien la vendió: se calcula, se aprueba y se paga en su periodo.',
+      diagrama: {
+        titulo: 'La venta entra a la comisión del vendedor en su periodo',
+        lectura: 'El plan define sobre qué se paga. Al cerrar el periodo se calcula, se aprueba y se manda a lo que se le debe al vendedor.',
+        nodos: [
+          { id: 'a', c: 0, r: 0, t: 'Venta', s: 'pieza A', sec: 'p6-periodo' },
+          { id: 'b', c: 1, r: 0, t: 'Plan', s: 'venta o margen', sec: 'p6-plan' },
+          { id: 'c', c: 2, r: 0, t: 'Calcular', s: 'periodo', sec: 'p6-periodo' },
+          { id: 'd', c: 3, r: 0, t: 'Aprobar', s: 'gerencia', sec: 'p6-periodo' },
+          { id: 'e', c: 4, r: 0, t: 'Por pagar', s: 'al vendedor', sec: 'p6-periodo', fin: true },
+        ],
+        flechas: [{ de: 'a', a: 'b' }, { de: 'b', a: 'c' }, { de: 'c', a: 'd' }, { de: 'd', a: 'e' }],
+      },
+      secciones: [
+        {
+          id: 'p6-plan', nombre: 'Plan de comisiones',
+          donde: 'Metas y comisiones',
+          para: 'El plan paga sobre la venta o sobre el margen; en piezas consignadas el margen es la comisión de la tienda. Opcional: comisión de captación para quien registró la pieza.',
+          demostrar: [{ h: 'Abrimos el plan del equipo de piso.', d: 'Muestra su base (venta o margen) y el %.' }],
+          decidir: [
+            '¿La comisión es sobre la venta o sobre lo que gana la tienda?',
+            '¿Hay comisión para quien capta la pieza?',
+            'En apartados, ¿se paga al liquidar o al primer abono?',
+          ],
+          noHace: [],
         },
         {
-          id: 'p5-portal',
-          nombre: 'Etapa 3 · Portal del consignatario',
-          donde: 'Perfil › «Portal del consignatario» (Generar, Copiar, WhatsApp, correo, QR, Rotar enlace, Revocar)',
-          para: 'Enlace público propio del consignatario. Muestra saldo, pagado, por cobrar, sus productos, servicios, liquidaciones, contrato con días restantes, solicitud de retiro y datos de contacto y bancarios.',
-          puntos: [
-            'El enlace se envía por WhatsApp o correo y abre en el teléfono.',
-            'El portal muestra datos correctos y fáciles de entender para el consignatario.',
-            'Rotar o revocar el enlace deja de dar acceso al anterior.',
-            'Se ve el último acceso y el número de accesos.'
-          ]
+          id: 'p6-periodo', nombre: 'Calcular, aprobar y pagar', pieza: 'A',
+          donde: 'Metas y comisiones › periodo',
+          para: 'El periodo se calcula, se aprueba y se envía a lo que se le debe al vendedor.',
+          demostrar: [
+            { h: 'Calculamos el periodo actual.', d: 'La venta de la pieza A aparece para su vendedor con el monto esperado.' },
+            { h: 'Aprobamos y enviamos a pago.', d: 'Queda registrado lo que se le debe al vendedor.', o: true },
+          ],
+          decidir: [],
+          noHace: ['El reporte «Desempeño de vendedores» de consignación muestra la comisión en $0; el monto real está en Metas y comisiones.'],
+        },
+      ],
+    },
+
+    // ── 7 ────────────────────────────────────────────────────────────────
+    {
+      id: 'p7', nombre: 'Si no se vende: vencimiento y retiro', tipos: TIPOS,
+      resumen: 'La pieza C no se vende: aviso, rebaja automática, renovación o devolución a la consignataria.',
+      diagrama: {
+        titulo: 'Al vencer, el contrato se renueva solo o sus piezas se devuelven',
+        lectura: 'Una revisión automática diaria avisa 7 días antes, aplica la regla de no venta y, al vencer, renueva o marca las piezas para devolver. Al devolver se cobran los servicios que no se pagaron.',
+        nodos: [
+          { id: 'a', c: 0, r: 0, t: 'Pieza C', s: 'sin vender', sec: 'p7-reglas' },
+          { id: 'b', c: 1, r: 0, t: 'Aviso', s: '7 días antes', sec: 'p7-reglas' },
+          { id: 'c', c: 2, r: 0, t: 'Vencimiento', s: 'revisión diaria', sec: 'p7-vence' },
+          { id: 'd', c: 3, r: 0, t: 'Renovación', s: 'automática', sec: 'p7-vence', fin: true },
+          { id: 'e', c: 2, r: 1, t: 'Por devolver', s: 'ya no se vende', sec: 'p7-vence' },
+          { id: 'f', c: 3, r: 1, t: 'Devolver', s: 'y cobrar servicios', sec: 'p7-retiro' },
+        ],
+        flechas: [{ de: 'a', a: 'b' }, { de: 'b', a: 'c' }, { de: 'c', a: 'd', et: 'renueva' }, { de: 'c', a: 'e', et: 'no renueva' }, { de: 'e', a: 'f' }],
+      },
+      secciones: [
+        {
+          id: 'p7-reglas', nombre: 'Aviso y rebaja automática', pieza: 'C',
+          donde: 'Automático, una vez al día (≈7:20 a.m.); se ve en la pieza y en el Dashboard',
+          para: 'Avisa una sola vez, 7 días antes de vencer. Si la pieza no se vende en los días de la plantilla, aplica la regla: rebaja (una sola vez, con el precio anterior tachado) o la marca para devolver.',
+          demostrar: [
+            { h: 'Abrimos la pieza C en el perfil.', d: 'Muestra su contrato y los días que faltan para vencer.' },
+            { h: 'Con un contrato de prueba de vigencia corta, revisamos al día siguiente.', d: 'Llegó el aviso «por vencer» y se aplicó la regla.', o: true },
+          ],
+          decidir: ['¿Cuántos días sin venderse hacen estancada una pieza?'],
+          noHace: [
+            'La rebaja automática no le avisa a la consignataria.',
+            'Confirmar antes que la revisión diaria esté encendida para la cuenta vendetucloset.',
+          ],
         },
         {
-          id: 'p5-retiro',
-          nombre: 'Etapa 4 · Solicitud de retiro',
+          id: 'p7-vence', nombre: 'Vencimiento y renovación',
+          donde: 'Automático; en Clientes, filtro «Con piezas por devolver»',
+          para: 'Con renovación automática el contrato se extiende sin nueva firma y se avisa por correo. Sin renovación, queda vencido y sus piezas pasan a «Por devolver».',
+          demostrar: [
+            { h: 'Buscamos en caja una pieza por devolver.', d: 'No se puede vender.' },
+            { h: 'Revisamos en Clientes el filtro «Con piezas por devolver».', d: 'Aparecen las consignatarias con piezas vencidas.', o: true },
+          ],
+          decidir: ['¿El texto del correo de vencimiento es el que la tienda quiere enviar?'],
+          noHace: ['Una pieza por devolver no se quita sola de la tienda en línea.'],
+        },
+        {
+          id: 'p7-retiro', nombre: 'Devolver la pieza', pieza: 'C',
+          donde: 'Perfil › Productos › «Devolver / Retirar»',
+          para: 'La pieza sale del inventario. Si tiene servicios sin pagar, se genera el cobro (folio DEV-) a 15 días.',
+          demostrar: [
+            { h: 'Devolvemos la pieza C.', d: 'Queda devuelta y sale del inventario.' },
+            { h: 'Revisamos los cobros de la consignataria.', d: 'Si C tenía servicios sin pagar, aparece su cobro DEV- correcto.' },
+            { h: 'Intentamos devolver una pieza apartada.', d: 'No deja y lo explica.', o: true },
+          ],
+          decidir: ['¿Cómo se registra la entrega física (quién recibe y firma)?'],
+          noHace: [],
+        },
+      ],
+    },
+
+    // ── 8 ────────────────────────────────────────────────────────────────
+    {
+      id: 'p8', nombre: 'Casos especiales', tipos: TIPOS,
+      resumen: 'Lo que pasa poco pero hay que saber resolver: devolución de una pieza ya pagada, pieza no auténtica, incidentes, compra de la pieza por la tienda y robo o pérdida.',
+      secciones: [
+        {
+          id: 'p8-pagada', nombre: 'Devolución de una pieza ya pagada',
+          donde: 'Perfil › pieza liquidada › «Cliente devolvió»',
+          para: 'Si a la consignataria ya se le pagó, la devolución en caja no la revierte sola: con «Cliente devolvió» se recupera el dinero (cobro o descuento de su saldo) y la pieza vuelve a la venta. Fuera de política, la tienda se queda la pieza y no se le cobra.',
+          demostrar: [{ h: 'Mostramos «Cliente devolvió» en una pieza liquidada.', d: 'Ofrece recuperar por cobro o descontando del saldo, antes de confirmar.', o: true }],
+          decidir: ['¿Cuál es la política: se le cobra a la consignataria o la tienda absorbe?'],
+          noHace: ['Si a la consignataria ya se le pagó, la devolución en caja no avisa: hay que hacer «Cliente devolvió» desde su perfil.'],
+        },
+        {
+          id: 'p8-noaut', nombre: 'Pieza no auténtica después de vendida',
+          donde: 'Perfil › pieza vendida › «No auténtica»',
+          para: 'Recupera lo pagado a la consignataria con un cobro y bloquea la pieza para siempre.',
+          demostrar: [{ h: 'Mostramos «No auténtica» en una pieza vendida.', d: 'Explica el cobro y el bloqueo antes de confirmar.', o: true }],
+          decidir: ['¿Qué se le dice al cliente final y cómo se le reembolsa?'],
+          noHace: [],
+        },
+        {
+          id: 'p8-incidente', nombre: 'Incidentes',
+          donde: 'Consignación › Incidentes («Reportar incidente», «Cambiar estado», «Resolver»)',
+          para: 'Daño, mancha, pérdida, robo o reclamo. Mientras está abierto, la pieza no se vende, no se paga ni se retira. Al resolver con compensación se genera lo que se le debe a la consignataria.',
+          demostrar: [{ h: 'Reportamos un incidente de prueba sobre una pieza disponible y lo resolvemos «sin impacto».', d: 'Mientras estuvo abierto, la pieza no se pudo vender.', o: true }],
+          decidir: ['¿Quién atiende y aprueba los incidentes?'],
+          noHace: ['La consignataria no recibe aviso de los incidentes.'],
+        },
+        {
+          id: 'p8-compra', nombre: 'Compra por la tienda, robo o pérdida',
+          donde: 'Perfil › Productos › «Comprarle la pieza» / «Robo / pérdida» (requiere permiso)',
+          para: '«Comprarle la pieza» le paga valuación − comisión − cargos y la pieza pasa al inventario propio. «Robo / pérdida» le paga como si se hubiera vendido.',
+          demostrar: [{ h: 'Mostramos ambos botones con un usuario con permiso.', d: 'Calculan el pago antes de confirmar.', o: true }],
+          decidir: ['¿Quién puede comprarle piezas a la consignataria?'],
+          noHace: [],
+        },
+      ],
+    },
+
+    // ── 9 ────────────────────────────────────────────────────────────────
+    {
+      id: 'p9', nombre: 'Lo que ve la consignataria (portal)', tipos: TIPOS,
+      resumen: 'Su enlace propio para ver piezas, ventas, pagos y contrato, pedir retiros y actualizar sus datos.',
+      diagrama: {
+        titulo: 'La consignataria sigue todo desde su portal',
+        lectura: 'Con su enlace ve sus piezas, ventas y pagos. Sus solicitudes de retiro llegan a la bandeja de la tienda y los cambios bancarios esperan aprobación.',
+        nodos: [
+          { id: 'a', c: 0, r: 0, t: 'Enlace', s: 'WhatsApp, correo, QR', sec: 'p9-portal' },
+          { id: 'b', c: 1, r: 0, t: 'Portal', s: 'piezas y pagos', sec: 'p9-portal', fin: true },
+          { id: 'c', c: 2, r: 0, t: 'Retiro', s: 'solicitud', sec: 'p9-retiro' },
+          { id: 'd', c: 3, r: 0, t: 'Bandeja', s: 'de la tienda', sec: 'p9-retiro' },
+          { id: 'e', c: 2, r: 1, t: 'Datos bancarios', s: 'cambio', sec: 'p9-banco' },
+          { id: 'f', c: 3, r: 1, t: 'Aprobación', s: 'de la tienda', sec: 'p9-banco' },
+        ],
+        flechas: [{ de: 'a', a: 'b' }, { de: 'b', a: 'c' }, { de: 'c', a: 'd' }, { de: 'b', a: 'e', dx: 40 }, { de: 'e', a: 'f' }],
+      },
+      secciones: [
+        {
+          id: 'p9-portal', nombre: 'Enlace y portal', pieza: 'ABC',
+          donde: 'Perfil › «Portal del consignatario» (Generar, WhatsApp, correo, QR, Rotar enlace, Revocar)',
+          para: 'Muestra su saldo, lo pagado, lo pendiente, sus productos, servicios, liquidaciones y su contrato con los días restantes.',
+          demostrar: [
+            { h: 'Generamos el enlace de la consignataria de prueba y lo abrimos en un teléfono.', d: 'Ve las piezas A, B y C con su estado y lo que se le pagó.' },
+            { h: 'Rotamos el enlace.', d: 'El anterior deja de funcionar.', o: true },
+          ],
+          decidir: ['¿Se le da el portal a todas las consignatarias?'],
+          noHace: [],
+        },
+        {
+          id: 'p9-retiro', nombre: 'Solicitud de retiro',
           donde: 'Portal › «Solicitar retiro»; tienda: Consignación › Solicitudes de retiro',
-          para: 'La solicitud llega a la bandeja con estados solicitada, en proceso, entregada o cancelada. Marcarla como entregada no devuelve piezas: se devuelven una por una desde el perfil.',
-          puntos: [
-            'La solicitud del portal aparece en la bandeja.',
-            'El equipo sabe que debe devolver las piezas desde el perfil (la bandeja no las devuelve).',
-            'Se acordó cómo se entera la tienda de una solicitud nueva (hoy no hay aviso).'
-          ]
+          para: 'La solicitud llega a la bandeja de la tienda. Marcarla «Entregada» no devuelve las piezas: se devuelven desde el perfil.',
+          demostrar: [{ h: 'Pedimos un retiro desde el portal.', d: 'Aparece en Solicitudes de retiro.' }],
+          decidir: ['¿Quién atiende los retiros?'],
+          noHace: ['La tienda no recibe aviso de una solicitud nueva; hay que revisar la bandeja.'],
         },
         {
-          id: 'p5-bancario',
-          nombre: 'Etapa 5 · Cambio de datos bancarios',
-          donde: 'Portal (si está habilitado); tienda: alerta «Cambios bancarios por aprobar» › perfil › «Aprobar y aplicar» / «Rechazar»',
-          para: 'El consignatario solicita el cambio (CLABE, tarjeta o cuenta) y queda pendiente hasta que la tienda lo aprueba. Viene apagado por defecto.',
-          puntos: [
-            'Se decidió si el consignatario puede cambiar sus datos bancarios desde el portal.',
-            'El cambio queda pendiente y no se aplica hasta aprobarlo.',
-            'Al aprobar o rechazar, el consignatario recibe aviso.'
-          ]
-        }
-      ]
+          id: 'p9-banco', nombre: 'Cambio de datos bancarios',
+          donde: 'Portal (si está activo); tienda: alerta «Cambios bancarios por aprobar» › perfil',
+          para: 'Viene apagado. Si se activa, el cambio queda pendiente hasta que la tienda lo aprueba y se le avisa a la consignataria.',
+          demostrar: [{ h: 'Solicitamos un cambio desde el portal.', d: 'Aparece «Cambios bancarios por aprobar» y no se aplica hasta aprobarlo.', o: true }],
+          decidir: ['¿Se permite cambiar datos bancarios desde el portal?'],
+          noHace: [],
+        },
+      ],
     },
-    // La importación de consignatarios (antes «p6») queda fuera de la entrega
-    // por decisión del cliente (19-oct-2026). Sus ids no se reutilizan.
+
+    // ── 10 ───────────────────────────────────────────────────────────────
     {
-      id: 'p7',
-      nombre: 'Dinámicas: lives y promociones',
-      resumen: 'Vender piezas en lives, unboxings o campañas de WhatsApp y medir cuánto convierte cada dinámica.',
-      tipos: TIPOS_FLUJO, cols: COLS_FLUJO,
-      diagrama: {
-        titulo: 'Una dinámica agrupa piezas para venderlas en vivo; no cambia su precio',
-        lectura: 'Se crea la dinámica, se le asignan piezas disponibles y se venden por el punto de venta normal. Al finalizar, las no vendidas regresan y se mide la conversión.',
-        nodos: [
-          { id: 'a', c: 0, r: 0, t: 'Nueva dinámica', s: 'live, unboxing…', sec: 'p7-crear' },
-          { id: 'b', c: 1, r: 0, t: 'Asignar piezas', s: 'disponibles', sec: 'p7-asignar' },
-          { id: 'c', c: 2, r: 0, t: 'En vivo', s: 'venta por POS', sec: 'p7-venta' },
-          { id: 'd', c: 3, r: 0, t: 'Finalizar', s: 'cierre', sec: 'p7-finalizar' },
-          { id: 'e', c: 4, r: 0, t: 'Conversión', s: '% y monto', sec: 'p7-finalizar', fin: true },
-          { id: 'f', c: 3, r: 1, t: 'Regresan', s: 'no vendidas', sec: 'p7-finalizar' }
-        ],
-        flechas: [
-          { de: 'a', a: 'b' }, { de: 'b', a: 'c' }, { de: 'c', a: 'd' }, { de: 'd', a: 'e' },
-          { de: 'd', a: 'f', et: 'no vendidas' }
-        ]
-      },
+      id: 'p10', nombre: 'Dinámicas: lives y promociones', tipos: TIPOS,
+      resumen: 'Solo si la tienda vende en lives, unboxings o campañas de WhatsApp: agrupar piezas, venderlas y medir cuánto convierte cada dinámica.',
       secciones: [
         {
-          id: 'p7-clave', clave: true,
-          nombre: 'Puntos clave del proceso',
-          para: 'Se prueba con una dinámica de 3 piezas: se vende una durante la dinámica y se finaliza.',
-          puntos: [
-            'Solo se pueden asignar piezas disponibles que no estén en otra dinámica.',
-            'La pieza vendida durante la dinámica genera su pago al consignatario como cualquier venta.',
-            'Al finalizar, las no vendidas regresan a disponibles.',
-            'La conversión (vendidas, % y monto) coincide con lo que pasó.'
-          ]
+          id: 'p10-crear', nombre: 'Crear la dinámica y asignar piezas',
+          donde: 'Consignación › Dinámicas («Lives y dinámicas») › «Nueva dinámica» › «Asignar pieza»',
+          para: 'Tipos: live, unboxing, WhatsApp o promoción. Solo admite piezas disponibles o apartadas, sin bloqueo y que no estén en otra dinámica. La dinámica no cambia precio ni comisión.',
+          demostrar: [
+            { h: 'Creamos una dinámica y le asignamos una pieza disponible.', d: 'La pieza queda en la dinámica y la consignataria recibe aviso.', o: true },
+            { h: 'Intentamos asignar una pieza que no está disponible.', d: 'No deja y lo explica.', o: true },
+          ],
+          decidir: ['¿Qué tipos y canales usa la tienda?', '¿Quieren precio especial en la dinámica? (hoy no cambia el precio)'],
+          noHace: [],
         },
         {
-          id: 'p7-crear',
-          nombre: 'Etapa 1 · Crear la dinámica',
-          donde: 'Consignación › Dinámicas («Lives y dinámicas») › «Nueva dinámica»',
-          para: 'Tipos: live, unboxing, WhatsApp o promoción; canales Instagram, Facebook, TikTok, WhatsApp u otro.',
-          puntos: [
-            'Los tipos y canales son los que el cliente usa.',
-            'Crear una dinámica es rápido y claro para el equipo.'
-          ]
+          id: 'p10-cerrar', nombre: 'Vender, finalizar y medir',
+          donde: 'Punto de venta normal; Dinámica › «Finalizar» / «Conversión»',
+          para: 'La venta corre por el punto de venta normal. Al finalizar, las no vendidas regresan; las estadísticas muestran participantes, vendidas, % de conversión y monto.',
+          demostrar: [{ h: 'Finalizamos la dinámica.', d: 'Las piezas no vendidas regresan a disponibles y se ve la conversión.', o: true }],
+          decidir: [],
+          noHace: ['Cuenta como vendida cualquier pieza vendida mientras siga en la dinámica, sin importar la fecha.'],
         },
-        {
-          id: 'p7-asignar',
-          nombre: 'Etapa 2 · Asignar piezas',
-          donde: 'Dinámica › «Asignar pieza»',
-          para: 'Solo admite piezas activas, disponibles o apartadas, sin bloqueo, que no estén por devolver ni en otra dinámica. Avisa al consignatario cuando su pieza se asigna o regresa.',
-          puntos: [
-            'Una pieza no disponible no se puede asignar y el mensaje es claro.',
-            'El consignatario recibe aviso al asignar su pieza.',
-            'Se acordó si al consignatario le conviene recibir este aviso.'
-          ]
-        },
-        {
-          id: 'p7-venta',
-          nombre: 'Etapa 3 · Venta durante la dinámica',
-          donde: 'Punto de venta normal',
-          para: 'La dinámica no cambia precio ni comisión: la venta corre por el punto de venta normal y genera su liquidación como cualquier otra.',
-          puntos: [
-            'La venta se hace en el punto de venta sin pasos extra.',
-            'Si el cliente quiere precio especial en la dinámica, quedó anotado (hoy no cambia el precio).'
-          ]
-        },
-        {
-          id: 'p7-finalizar',
-          nombre: 'Etapa 4 · Finalizar y medir',
-          donde: 'Dinámica › «Finalizar» / «Conversión»',
-          para: 'Al finalizar, las vendidas quedan como vendidas y el resto regresa. Las estadísticas muestran participantes, vendidas, % de conversión y monto.',
-          puntos: [
-            'Las piezas no vendidas regresan a disponibles.',
-            'La conversión cuenta solo lo vendido durante la dinámica.',
-            'Las estadísticas le sirven al cliente para decidir su próxima dinámica.'
-          ]
-        }
-      ]
+      ],
     },
-    // «Buscar en SACS» como acceso rápido (lista de Aaron Herzberg, 20-oct-2026):
-    // los 10 puntos clave son las 10 etapas. En cada una se busca, se revisa la
-    // vista previa sin abrir nada y se da clic para confirmar que lleva directo
-    // al detalle.
+
+    // ── 11 ───────────────────────────────────────────────────────────────
+    // «Buscar en SACS» (lista de Aaron Herzberg, 20-oct-2026), con el caso de prueba.
     {
-      id: 'p8',
-      nombre: 'Buscar en SACS: acceso rápido',
-      resumen: 'Confirmar que «Buscar en SACS» (la lupa junto al nombre de la cuenta, o Ctrl/⌘ + K) resuelve las consultas diarias de Vende Tu Closet con la Suite de Consignación prendida.',
-      tipos: TIPOS_FLUJO, cols: COLS_FLUJO,
+      id: 'p11', nombre: 'Buscar en SACS: acceso rápido', tipos: TIPOS,
+      resumen: 'La lupa junto al nombre de la cuenta (o Ctrl/⌘ + K) resuelve las consultas del día: se busca, se revisa la vista previa sin abrir nada y el clic lleva directo al detalle.',
       diagrama: {
         titulo: 'Cada búsqueda se resuelve en la vista previa o con un clic al detalle',
-        lectura: 'Se abre el buscador con la lupa o Ctrl/⌘ + K, se escribe o se escanea, la vista previa responde sin abrir nada y el clic lleva directo al detalle. Cada usuario solo ve los grupos de resultados de los módulos a los que tiene acceso.',
+        lectura: 'Se abre con la lupa o Ctrl/⌘ + K, se escribe o se escanea, la vista previa responde sin abrir nada y el clic lleva directo al detalle. Cada usuario solo ve los resultados de los módulos a los que tiene acceso.',
         nodos: [
-          { id: 'a', c: 0, r: 0, t: 'Abrir', s: 'lupa o Ctrl/⌘ + K', sec: 'p8-clave' },
-          { id: 'b', c: 1, r: 0, t: 'Buscar', s: 'texto o escáner', sec: 'p8-marca' },
-          { id: 'c', c: 2, r: 0, t: 'Vista previa', s: 'sin abrir nada', sec: 'p8-consignataria' },
-          { id: 'd', c: 3, r: 0, t: 'Clic', s: 'botón o renglón', sec: 'p8-permisos' },
-          { id: 'e', c: 4, r: 0, t: 'Detalle', s: 'resaltado', sec: 'p8-permisos', fin: true },
-          { id: 'f', c: 1, r: 1, t: 'Filtros', s: 'en la frase', sec: 'p8-marca' },
-          { id: 'g', c: 3, r: 1, t: 'Permisos', s: 'por rol', sec: 'p8-permisos' }
+          { id: 'a', c: 0, r: 0, t: 'Abrir', s: 'lupa o Ctrl/⌘ + K', sec: 'p11-consignataria' },
+          { id: 'b', c: 1, r: 0, t: 'Buscar', s: 'texto o escáner', sec: 'p11-marca' },
+          { id: 'c', c: 2, r: 0, t: 'Vista previa', s: 'sin abrir nada', sec: 'p11-consignataria' },
+          { id: 'd', c: 3, r: 0, t: 'Clic', s: 'botón o renglón', sec: 'p11-permisos' },
+          { id: 'e', c: 4, r: 0, t: 'Detalle', s: 'resaltado', sec: 'p11-permisos', fin: true },
+          { id: 'f', c: 1, r: 1, t: 'Filtros', s: 'en la frase', sec: 'p11-marca' },
+          { id: 'g', c: 3, r: 1, t: 'Permisos', s: 'por rol', sec: 'p11-permisos' },
         ],
-        flechas: [
-          { de: 'a', a: 'b' }, { de: 'b', a: 'c' }, { de: 'c', a: 'd' }, { de: 'd', a: 'e' },
-          { de: 'b', a: 'f', et: 'marca, precio…' }, { de: 'd', a: 'g', et: 'según usuario' }
-        ]
+        flechas: [{ de: 'a', a: 'b' }, { de: 'b', a: 'c' }, { de: 'c', a: 'd' }, { de: 'd', a: 'e' }, { de: 'b', a: 'f', et: 'marca, precio…' }, { de: 'd', a: 'g', et: 'según usuario' }],
       },
       secciones: [
         {
-          id: 'p8-clave', clave: true,
-          nombre: 'Puntos clave del proceso',
-          donde: 'La lupa junto al nombre de la cuenta, o Ctrl/⌘ + K, en app.sacscloud.com',
-          para: 'Antes de la sesión, las mejoras del buscador deben estar publicadas en app.sacscloud.com. En cada etapa se busca, se revisa la vista previa sin abrir nada y se da clic para confirmar que lleva directo al detalle.',
-          nota: 'Límite conocido: al buscar una venta por ticket, si sus piezas ya se le pagaron a la consignataria, solo aparecen las que siguen pendientes. El manual del buscador (botón «Manual» arriba del buscador) explica cada término y forma de búsqueda.',
-          puntos: [
-            'Las mejoras del buscador están publicadas en app.sacscloud.com.',
-            'La lupa junto al nombre de la cuenta abre el buscador.',
-            'Ctrl/⌘ + K abre el buscador desde cualquier pantalla.',
-            'El botón «Manual» arriba del buscador abre la guía y el equipo sabe consultarla.',
-            'El equipo entiende el límite de la búsqueda por ticket con piezas ya pagadas.'
-          ]
-        },
-        {
-          id: 'p8-consignataria',
-          nombre: 'Etapa 1 · Encontrar a una consignataria',
+          id: 'p11-consignataria', nombre: 'Encontrar a una consignataria', pieza: 'cons',
           donde: 'Buscar en SACS › nombre, teléfono, correo, Instagram o folio CONS-',
           para: 'La vista previa muestra piezas en tienda, vendidas, saldo a favor, lo que se le debe, su próximo pago, su contrato vigente y sus retiros pendientes. Clic → su perfil.',
-          nota: 'Caso de Vende Tu Closet: buscar a una consignataria activa por su nombre y luego por su teléfono; comparar los números con su perfil.',
-          puntos: [
-            'La encuentra por nombre.',
-            'La encuentra por teléfono, correo, Instagram y folio CONS-.',
-            'La vista previa muestra piezas en tienda, vendidas, saldo a favor, lo que se le debe, próximo pago, contrato vigente y retiros pendientes.',
-            'Los números de la vista previa coinciden con su perfil.',
-            'El clic abre su perfil.',
-            'Se decidió con el cliente qué datos necesita ver la tienda en la tarjeta para no tener que abrir el perfil.'
-          ]
+          demostrar: [
+            { h: 'Buscamos a la consignataria de prueba por su nombre y luego por su teléfono.', d: 'La encuentra las dos veces.' },
+            { h: 'Revisamos la vista previa sin abrir nada.', d: 'Muestra sus piezas, ventas, saldo, lo que se le debe, contrato y retiros, igual que su perfil.' },
+            { h: 'Damos clic.', d: 'Abre su perfil.' },
+          ],
+          decidir: ['¿Qué datos necesita ver la tienda en la tarjeta para no tener que abrir el perfil?'], noHace: [],
         },
         {
-          id: 'p8-codigo',
-          nombre: 'Etapa 2 · Encontrar una pieza por código',
+          id: 'p11-codigo', nombre: 'Encontrar una pieza por código', pieza: 'A',
           donde: 'Buscar en SACS › SKU o código de barras con el lector',
           para: 'El SKU o el código de barras abre la ficha directo, con fotos, precio, comisión, lo que le toca a la consignataria y días a la venta; funciona aunque la pieza ya se haya pagado o devuelto.',
-          nota: 'Caso de Vende Tu Closet: escanear la etiqueta de una pieza que está en tienda y de una que ya se vendió.',
-          puntos: [
-            'Escanear la etiqueta de una pieza en tienda abre su ficha directo.',
-            'Escanear una pieza ya vendida también la encuentra.',
-            'Una pieza pagada o devuelta también aparece.',
-            'La ficha muestra fotos, precio, comisión, lo que le toca a la consignataria y días a la venta.',
-            'Se confirmó qué código trae la etiqueta de la tienda y si el lector manda Enter al final.'
-          ]
+          demostrar: [
+            { h: 'Escaneamos la etiqueta de la pieza A (ya vendida).', d: 'Abre su ficha con fotos, precio, comisión y lo que le toca a la consignataria.' },
+            { h: 'Escaneamos una pieza que está en tienda.', d: 'También la abre directo, con sus días a la venta.' },
+          ],
+          decidir: ['¿Qué código trae la etiqueta de la tienda? ¿El lector manda Enter al final?'], noHace: [],
         },
         {
-          id: 'p8-marca',
-          nombre: 'Etapa 3 · Encontrar piezas por marca con filtros en la frase',
+          id: 'p11-marca', nombre: 'Piezas por marca con filtros en la frase',
           donde: 'Buscar en SACS › marca + precio, estado y sucursal en la misma búsqueda',
           para: 'Ejemplos: «gucci menos de 15000 polanco», «chanel entre 10 mil y 20 mil», «vendidas», «apartadas».',
-          nota: 'Caso de Vende Tu Closet: repetir las 3 búsquedas que más hace el equipo de piso y comparar contra el inventario.',
-          puntos: [
-            '«gucci menos de 15000 polanco» filtra por marca, precio y sucursal.',
-            '«chanel entre 10 mil y 20 mil» entiende el rango de precio escrito así.',
-            '«vendidas» y «apartadas» filtran por estado.',
-            'Las 3 búsquedas más comunes del equipo de piso coinciden con el inventario.',
-            'Se anotaron las búsquedas reales del día a día y los nombres de sucursal que usa el equipo.'
-          ]
+          demostrar: [
+            { h: 'Hacemos las 3 búsquedas que más usa el equipo de piso.', d: 'Los resultados coinciden con el inventario.' },
+            { h: 'Escribimos «vendidas» y luego «apartadas».', d: 'Filtra por estado.' },
+          ],
+          decidir: ['¿Cuáles son las búsquedas del día a día y cómo llaman a sus sucursales?'], noHace: [],
         },
         {
-          id: 'p8-deuda',
-          nombre: 'Etapa 4 · Lo que se le debe a las consignatarias',
+          id: 'p11-deuda', nombre: 'Lo que se le debe a las consignatarias', pieza: 'A',
           donde: 'Buscar en SACS › «vencido», «por pagar», «esta semana» o folio LIQ-',
           para: 'Muestra montos, vencimiento y pagos hechos. «Ir a pagar» abre esa liquidación en Cuentas por pagar.',
-          nota: 'Caso de Vende Tu Closet: buscar «vencido» y abrir el pago de una liquidación vencida.',
-          puntos: [
-            '«vencido» muestra las liquidaciones vencidas con monto y vencimiento.',
-            '«por pagar» y «esta semana» muestran lo que corresponde.',
-            'Un folio LIQ- encuentra esa liquidación con sus pagos hechos.',
-            '«Ir a pagar» abre esa liquidación en Cuentas por pagar.',
-            'Se decidió quién del equipo paga y si esos montos los puede ver cualquier usuario.'
-          ]
+          demostrar: [
+            { h: 'Buscamos el folio LIQ- de la pieza A.', d: 'Muestra el monto, el vencimiento y el pago hecho.' },
+            { h: 'Buscamos «vencido» y damos «Ir a pagar».', d: 'Abre esa liquidación en Cuentas por pagar.' },
+          ],
+          decidir: ['¿Quién paga y si cualquier usuario puede ver esos montos?'], noHace: [],
         },
         {
-          id: 'p8-comprador',
-          nombre: 'Etapa 5 · Cliente comprador y sus apartados',
+          id: 'p11-comprador', nombre: 'Cliente comprador y sus apartados', pieza: 'B',
           donde: 'Buscar en SACS › nombre o teléfono del cliente comprador',
           para: 'Muestra compras, último ticket y apartados con saldo y vencimiento. Clic en un apartado → ese apartado.',
-          nota: 'Caso de Vende Tu Closet: buscar a una clienta con un apartado activo y abrirlo desde la vista previa.',
-          puntos: [
-            'La encuentra por nombre y por teléfono.',
-            'La vista previa muestra compras, último ticket y apartados con saldo y vencimiento.',
-            'El clic en un apartado abre ese apartado.',
-            'Se decidió si el cajero debe ver el historial de compras de la clienta.'
-          ]
+          demostrar: [
+            { h: 'Buscamos a la clienta del apartado de B.', d: 'Muestra sus compras, su último ticket y sus apartados.' },
+            { h: 'Damos clic en un apartado.', d: 'Abre ese apartado.' },
+          ],
+          decidir: ['¿El cajero debe ver el historial de compras de la clienta?'], noHace: [],
         },
         {
-          id: 'p8-lote',
-          nombre: 'Etapa 6 · Lote y contrato',
+          id: 'p11-lote', nombre: 'Lote y contrato', pieza: 'cons',
           donde: 'Buscar en SACS › folio LOTE-',
-          para: 'Muestra la consignataria, sus piezas por estado y su contrato (comisión, vence en N días). «Ver contrato» abre ese contrato y el botón de PDF lo descarga.',
-          nota: 'Caso de Vende Tu Closet: buscar el lote de una consignataria con contrato por vencer y descargar su PDF.',
-          puntos: [
-            'El folio LOTE- muestra la consignataria y sus piezas por estado.',
-            'Se ve el contrato con su comisión y los días para vencer.',
-            '«Ver contrato» abre ese contrato.',
-            'El botón de PDF descarga el contrato.',
-            'Se decidió qué folio de lote usa la tienda hoy y si el contrato debe salir de aquí o solo del perfil.'
-          ]
+          para: 'Muestra la consignataria, sus piezas por estado y su contrato (comisión, vence en N días). «Ver contrato» lo abre y el botón de PDF lo descarga.',
+          demostrar: [
+            { h: 'Buscamos el folio LOTE- del caso de prueba.', d: 'Muestra a la consignataria, las piezas A, B y C por estado y su contrato.' },
+            { h: 'Damos «Ver contrato» y descargamos el PDF.', d: 'Abre el contrato y se descarga.' },
+          ],
+          decidir: ['¿El contrato debe salir de aquí o solo del perfil?'], noHace: [],
         },
         {
-          id: 'p8-preparacion',
-          nombre: 'Etapa 7 · Piezas en preparación',
+          id: 'p11-preparacion', nombre: 'Piezas en preparación',
           donde: 'Buscar en SACS › «por autenticar», «por limpiar», «por fotografiar», «por reparar», «por etiquetar» o «en proceso»',
           para: 'Muestra cuántos días lleva cada pieza y si ya pasó su meta. «Ver en la cola» abre la cola con la pieza resaltada.',
-          nota: 'Caso de Vende Tu Closet: buscar «por autenticar» y confirmar que coincide con la cola de proceso.',
-          puntos: [
-            '«por autenticar» coincide con la cola de proceso.',
-            'Las demás búsquedas por etapa («por limpiar», «por fotografiar», «por reparar», «por etiquetar», «en proceso») responden.',
-            'Cada pieza muestra los días que lleva y si ya pasó su meta.',
-            '«Ver en la cola» abre la cola con la pieza resaltada.',
-            'Se definieron los días meta de cada etapa que la tienda va a exigir.'
-          ]
+          demostrar: [
+            { h: 'Buscamos «por autenticar».', d: 'Coincide con la cola de proceso y muestra los días de cada pieza.', o: true },
+            { h: 'Damos «Ver en la cola».', d: 'Abre la cola con la pieza resaltada.', o: true },
+          ],
+          decidir: ['¿Cuántos días meta tiene cada etapa de preparación?'], noHace: [],
         },
         {
-          id: 'p8-estancadas',
-          nombre: 'Etapa 8 · Piezas estancadas',
+          id: 'p11-estancadas', nombre: 'Piezas estancadas', pieza: 'C',
           donde: 'Buscar en SACS › «estancadas» o «louis vuitton +60 días»',
           para: 'Muestra las piezas que no se mueven, cuántos días llevan y la acción sugerida (rebajar o devolver).',
-          nota: 'Caso de Vende Tu Closet: buscar «estancadas» y revisar si la lista coincide con lo que el equipo ya identifica.',
-          puntos: [
-            '«estancadas» muestra las piezas que no se mueven con sus días.',
-            '«louis vuitton +60 días» combina marca y días.',
-            'Cada pieza trae la acción sugerida (rebajar o devolver).',
-            'La lista coincide con lo que el equipo ya identifica como estancado.',
-            'Se definió cuántos días sin venderse hacen estancada a una pieza en Vende Tu Closet.'
-          ]
+          demostrar: [
+            { h: 'Buscamos «estancadas».', d: 'Muestra las piezas con sus días y la acción sugerida; coincide con lo que el equipo ya identifica.' },
+            { h: 'Buscamos una marca con «+60 días».', d: 'Combina marca y días.', o: true },
+          ],
+          decidir: [], noHace: [],
         },
         {
-          id: 'p8-hoy',
-          nombre: 'Etapa 9 · Lo que hay que atender hoy',
+          id: 'p11-hoy', nombre: 'Lo que hay que atender hoy', pieza: 'A',
           donde: 'Buscar en SACS › «retiros», «incidentes», «recuperaciones», «lives», folios DIN-, INC-, REC- o ticket (V-/VEN-)',
           para: 'Muestra el registro con su estado; el clic abre su pantalla con ese registro resaltado.',
-          nota: 'Caso de Vende Tu Closet: buscar el ticket de una venta con piezas consignadas y luego «retiros».',
-          puntos: [
-            'El folio de un ticket (V-/VEN-) con piezas consignadas muestra la venta y sus piezas.',
-            '«retiros» muestra las solicitudes con su estado.',
-            '«incidentes», «recuperaciones» y «lives» responden.',
-            'Los folios DIN-, INC- y REC- encuentran su registro.',
-            'El clic abre la pantalla con ese registro resaltado.',
-            'Se decidió quién atiende retiros e incidentes, para que solo esa persona vea esos accesos.'
-          ]
+          nota: 'Límite conocido: al buscar una venta por ticket, si sus piezas ya se le pagaron a la consignataria solo aparecen las que siguen pendientes.',
+          demostrar: [
+            { h: 'Buscamos el ticket de la venta de A.', d: 'Muestra la venta y sus piezas consignadas.' },
+            { h: 'Buscamos «retiros».', d: 'Aparece la solicitud del portal con su estado; el clic la abre resaltada.' },
+          ],
+          decidir: ['¿Quién atiende retiros e incidentes, para que solo esa persona vea esos accesos?'], noHace: [],
         },
         {
-          id: 'p8-permisos',
-          nombre: 'Etapa 10 · Cada clic lleva al detalle, con los permisos de cada usuario',
+          id: 'p11-permisos', nombre: 'Cada clic lleva al detalle, con los permisos de cada usuario',
           donde: 'Buscar en SACS › con un usuario de caja y con uno administrador',
-          para: 'El resultado, sus botones, los renglones de la vista previa, las fotos de las piezas y «Ver más» abren el detalle de esa cosa; un usuario sin acceso a un módulo no ve ese grupo de resultados.',
-          nota: 'Caso de Vende Tu Closet: repetir los puntos 1 a 9 con un usuario de caja y con uno administrador.',
-          puntos: [
-            'El resultado, sus botones, los renglones de la vista previa, las fotos y «Ver más» abren el detalle.',
-            'Con el usuario de caja, los puntos 1 a 9 se comportan según sus permisos.',
-            'Con el usuario administrador, los puntos 1 a 9 muestran todo.',
-            'Un usuario sin acceso a un módulo no ve ese grupo de resultados.',
-            'Se decidió qué ve cada rol en el buscador (montos por pagar, datos de contacto, contratos).'
-          ]
-        }
-      ]
+          para: 'El resultado, sus botones, los renglones de la vista previa, las fotos y «Ver más» abren el detalle; un usuario sin acceso a un módulo no ve ese grupo de resultados.',
+          demostrar: [
+            { h: 'Repetimos tres búsquedas con el usuario de caja.', d: 'Solo ve los grupos de resultados de sus módulos.' },
+            { h: 'Repetimos con el usuario administrador.', d: 'Ve todo y cada clic abre el detalle.' },
+          ],
+          decidir: ['¿Qué ve cada rol en el buscador (montos por pagar, datos de contacto, contratos)?'], noHace: [],
+        },
+      ],
     },
-    {
-      id: "rep",
-      nombre: "Dashboard y reportes",
-      resumen: "Revisión del dashboard general y de los reportes especiales: qué se valida y qué campo, dato o filtro les falta.",
-      tipos: TIPOS_REPORTE, cols: COLS_REPORTE,
-      secciones: [
-      {
-        id: 'dashboard',
-        nombre: 'Dashboard de consignación',
-        donde: 'Consignación › Dashboard',
-        para: 'La foto del negocio de consignación: alertas del día, cuánto hay en inventario, cuánto se ha vendido y cuánto se debe a los consignatarios.',
-        hoy: ['Franja de alertas', 'Consignatarios activos', 'Valor de inventario', 'Vendido', 'Comisión del negocio', 'Por pagar a consignatarios', 'Saldo a favor', 'Contratos por vencer (30 d)', 'Incidentes abiertos', 'Productos por estado', 'Cargos por servicios', 'Top consignatarios por ventas', 'Antigüedad del inventario', 'Rendimiento por consignatario'],
-        filtros: ['Sin filtros'],
-        puntos: [
-          'Abre sin errores y en un tiempo aceptable con el volumen real del cliente.',
-          'Las alertas que aparecen son las que el cliente quiere ver; las que no le sirven se pueden apagar en Configuración.',
-          '«Consignatarios activos» coincide con el conteo del cliente.',
-          '«Valor de inventario» cuadra con la suma de precios de las piezas disponibles (el cliente entiende que es a precio de venta).',
-          '«Vendido» y «Comisión del negocio» se entienden como cifras de todo el histórico (no del mes).',
-          '«Por pagar a consignatarios» coincide con la suma de liquidaciones pendientes del perfil de cada consignatario.',
-          '«Saldo a favor» coincide con el saldo de los consignatarios.',
-          '«Contratos por vencer» coincide con los contratos que vencen en 30 días.',
-          'Los rangos de antigüedad (0–30, 31–60, 61–90, más de 90 días) le sirven al cliente para decidir rebajas o devoluciones.',
-          '«Rendimiento por consignatario» muestra a todos los consignatarios que el cliente espera ver.',
-          'Las cifras se entienden sin explicación: el cliente sabe qué significa cada tarjeta.'
-        ],
-        sugerencias: [
-          { tipo: 'Filtro', texto: 'Rango de fechas (hoy, semana, mes, año) para Vendido y Comisión del negocio.' },
-          { tipo: 'Filtro', texto: 'Filtro por sucursal.' },
-          { tipo: 'Filtro', texto: 'Filtro por consignatario y por vendedor.' },
-          { tipo: 'Dato / cálculo', texto: 'Valor de inventario neto (lo que se pagaría al consignatario) y comisión potencial, además del precio de venta.' },
-          { tipo: 'Gráfica / indicador', texto: 'Tarjeta «Pagado a consignatarios» en el periodo.' },
-          { tipo: 'Otro', texto: 'Tocar una alerta o una fila para ir al detalle (lista de piezas, contratos o liquidaciones).' },
-          { tipo: 'Exportación', texto: 'Exportar el dashboard a Excel o PDF.' },
-          { tipo: 'Dato / cálculo', texto: 'Que los rangos de antigüedad se ajusten a los días de «estancado» que configura el cliente.' },
-          { tipo: 'Gráfica / indicador', texto: 'Tendencia mensual de ventas y comisión.' }
-        ]
-      },
-      {
-        id: 'inicio',
-        nombre: 'Dashboard de inicio · pestaña Consignación',
-        donde: 'Inicio › Dashboard › pestaña Consignación',
-        para: 'El resumen de consignación dentro del dashboard general, con periodo y sucursal.',
-        hoy: ['Utilidad neta', 'Por liquidar', 'Ya liquidado', 'Por consignatario', 'Por sucursal', 'Cargos'],
-        filtros: ['Periodo', 'Sucursal'],
-        puntos: [
-          'La pestaña Consignación aparece y carga con la suite activa.',
-          'Al cambiar el periodo, todas las cifras cambian de acuerdo con él.',
-          'Al cambiar la sucursal, las cifras corresponden solo a esa sucursal.',
-          'Las cifras coinciden con las del Dashboard de consignación para el mismo periodo.',
-          'La tabla por consignatario muestra comisión y monto liquidado reales (no en cero).',
-          'La tabla por sucursal muestra valor consignado, productos activos y liquidaciones reales.',
-          '«Por liquidar» y «Ya liquidado» respetan el periodo elegido.',
-          'Contratos vencidos, devoluciones pendientes y piezas liberadas muestran cifras reales.'
-        ],
-        sugerencias: [
-          { tipo: 'Gráfica / indicador', texto: 'Tendencia del valor de inventario consignado.' },
-          { tipo: 'Filtro', texto: 'Filtro por consignatario.' },
-          { tipo: 'Otro', texto: 'Tocar una cifra para ir al reporte de detalle.' }
-        ]
-      },
-      {
-        id: 'venta',
-        nombre: 'Reporte · Venta por consignación',
-        donde: 'Consignación › Reportes (también Reportes › Ventas › Venta por consignación)',
-        para: 'Una fila por pieza vendida: cuánto se vendió, cuánto le toca al consignatario, la comisión y el estado de su pago.',
-        hoy: ['Foto', 'ID', 'Consignatario', 'Comprador', 'Sucursal', 'Modelo', 'Total de venta', 'Total a recibir', 'Status', 'Días Status', 'Columnas opcionales: Tipo, Marca, Categoría, Cargos, % Comisión, Comisión $, Utilidad, Hora, Usuario, Almacén, Caja, Condición, Folio consignatario, Lote', 'Fila de totales', 'Vista Lista / Por Consignatario', 'Panel de detalle'],
-        filtros: ['Fechas (máx. 40 días)', 'Sucursal', 'Almacén', 'Artículo', 'Consignatario', 'Categoría', 'Marca', 'Usuario', 'Caja', 'Estado de liquidación', 'Condición', 'Pestañas: Todos, Pendientes, Liquidados, Urgentes, Recientes', 'Buscador'],
-        puntos: [
-          'Carga las ventas del periodo y el total coincide con las ventas reales de piezas consignadas.',
-          '«Total de venta», «Total a recibir», «Comisión $» y «Utilidad» cuadran a mano con una venta de ejemplo.',
-          'La fila de TOTALES suma correctamente.',
-          'La columna «Sucursal» muestra el nombre de la sucursal.',
-          'Filtrar por sucursal deja solo las ventas de esa sucursal.',
-          'Filtrar por almacén, artículo, usuario y caja cambia el resultado.',
-          'Las columnas Usuario, Almacén y Caja traen dato.',
-          '«Folio Consignatario» muestra el folio que conoce el cliente (CONS-…).',
-          'Ordenar por fecha deja las ventas en orden cronológico correcto.',
-          'El panel de detalle muestra datos reales de la pieza: días en consigna, historial de precios, actividad y vendedor.',
-          'La suma de los cargos por tipo coincide con «Cargos Totales».',
-          'El Excel exportado respeta todos los filtros aplicados en pantalla (sucursal, consignatario, búsqueda, pestañas).',
-          'Las pestañas «Urgentes» (más de 15 días) y «Recientes» (7 días) usan los plazos que el cliente maneja.',
-          'Los atajos del menú (Bolsos, Joyería, Relojes) corresponden a las categorías reales del cliente.',
-          'La vista «Por Consignatario» muestra por pagar, liquidado y pago más antiguo correctos.',
-          'Con un periodo de mucha venta, el reporte avisa si no está mostrando todo.'
-        ],
-        sugerencias: [
-          { tipo: 'Campo / columna', texto: 'Fecha de venta como columna visible.' },
-          { tipo: 'Campo / columna', texto: 'SKU como columna visible.' },
-          { tipo: 'Campo / columna', texto: 'Vendedor (asesor) que hizo la venta.' },
-          { tipo: 'Campo / columna', texto: 'Comisión del vendedor por pieza.' },
-          { tipo: 'Campo / columna', texto: 'Folio de liquidación y fecha de pago al consignatario.' },
-          { tipo: 'Campo / columna', texto: 'Folio de contrato.' },
-          { tipo: 'Campo / columna', texto: 'Días en inventario (de la entrada a la venta).' },
-          { tipo: 'Campo / columna', texto: 'Método de pago de la venta.' },
-          { tipo: 'Campo / columna', texto: 'IVA de la venta.' },
-          { tipo: 'Campo / columna', texto: 'Cargo de kit y cargo de reparación.' },
-          { tipo: 'Filtro', texto: 'Rango de fechas mayor a 40 días (trimestre, año).' },
-          { tipo: 'Filtro', texto: 'Filtro por vendedor.' },
-          { tipo: 'Filtro', texto: 'Filtro por lote o por contrato.' },
-          { tipo: 'Exportación', texto: 'Exportar a PDF.' },
-          { tipo: 'Total / subtotal', texto: 'Subtotales por consignatario y por sucursal en la vista lista.' }
-        ]
-      },
-      {
-        id: 'estado-cuenta',
-        nombre: 'Estado de cuenta del consignatario (PDF)',
-        donde: 'Perfil del consignatario › Liquidaciones › Estado de cuenta',
-        para: 'El documento que se le entrega al consignatario con lo vendido, lo pagado y lo pendiente.',
-        hoy: ['Datos del consignatario', 'Resumen: Total vendido, Comisión, Cargos, Total a liquidar, Pagado, Pendiente', 'Detalle de ventas: Producto (SKU), Venta, Comisión (%), Servicios, Neto, Estado', 'Pagos realizados'],
-        filtros: ['Sin filtros (todo el histórico)'],
-        puntos: [
-          'Se genera y se descarga sin errores.',
-          'Los totales del resumen coinciden con la pestaña Liquidaciones del perfil.',
-          'El detalle de ventas lista todas las piezas vendidas del consignatario.',
-          'Los pagos realizados coinciden con los pagos registrados.',
-          'El consignatario entiende el documento sin explicación.',
-          'El documento lleva la marca del cliente y se ve profesional.'
-        ],
-        sugerencias: [
-          { tipo: 'Filtro', texto: 'Elegir el periodo del estado de cuenta (mes, rango de fechas).' },
-          { tipo: 'Campo / columna', texto: 'Fecha de venta por pieza.' },
-          { tipo: 'Campo / columna', texto: 'Folio de liquidación en cada pago.' },
-          { tipo: 'Campo / columna', texto: 'Lote y folio de contrato.' },
-          { tipo: 'Dato / cálculo', texto: 'Saldo a favor del consignatario.' },
-          { tipo: 'Dato / cálculo', texto: 'Piezas que siguen en inventario y piezas devueltas.' },
-          { tipo: 'Exportación', texto: 'Versión en Excel.' },
-          { tipo: 'Otro', texto: 'Enviar el estado de cuenta por correo o WhatsApp desde el mismo botón.' }
-        ]
-      },
-      {
-        id: 'liquidaciones',
-        nombre: 'Liquidaciones y pagos a consignatarios',
-        donde: 'Perfil del consignatario › Liquidaciones',
-        para: 'Saber qué se debe, cuándo vence y pagarlo.',
-        hoy: ['Por pagar al consignatario', 'Total a liquidar', 'Próximo pago', 'Vencimientos y conciliación', 'Pagar seleccionadas', 'Liquidar (dividir pago)', 'Pagadas — conciliación bancaria', 'Saldo a favor'],
-        filtros: ['Por consignatario (una a la vez)'],
-        puntos: [
-          'Las liquidaciones pendientes del consignatario coinciden con sus ventas.',
-          'Las fechas de pago corresponden a la regla del contrato.',
-          'Pagar seleccionadas y pagar dividido funcionan y dejan el saldo correcto.',
-          'La conciliación bancaria de lo pagado le sirve al cliente.',
-          'El cliente puede ver, en un solo lugar, lo que debe a todos los consignatarios esta semana.'
-        ],
-        sugerencias: [
-          { tipo: 'Otro', texto: 'Vista general de liquidaciones de todos los consignatarios (lista o calendario de vencimientos).' },
-          { tipo: 'Filtro', texto: 'Filtros por fecha de vencimiento, estado (pendiente, vencida, pagada) y sucursal.' },
-          { tipo: 'Total / subtotal', texto: 'Total a pagar por semana.' },
-          { tipo: 'Exportación', texto: 'Exportar las liquidaciones a Excel para tesorería.' },
-          { tipo: 'Campo / columna', texto: 'Datos bancarios (CLABE) del consignatario en la lista para pagar.' }
-        ]
-      },
-      {
-        id: 'utilidad-ventas',
-        nombre: 'Reporte · Utilidad real de las ventas',
-        donde: 'Reportes › Comparativo de ventas (sección de consignación)',
-        para: 'Cuánto gana realmente el negocio con lo vendido, separando lo que es del consignatario.',
-        hoy: ['Agrupar por: Mes, Día, Sucursal, Vendedor, Consignataria, Categoría, Marca, Producto', 'Aviso cuando se corta el resultado'],
-        filtros: ['Periodo', 'Agrupación'],
-        puntos: [
-          'El cliente encuentra el reporte sin ayuda.',
-          'La utilidad cuadra con la comisión del Dashboard para el mismo periodo.',
-          'Cada agrupación muestra datos coherentes.',
-          'El CSV se abre bien en Excel con acentos correctos.',
-          'El aviso de resultado recortado se entiende.'
-        ],
-        sugerencias: [
-          { tipo: 'Exportación', texto: 'Exportar a PDF.' },
-          { tipo: 'Gráfica / indicador', texto: 'Gráfica de utilidad por mes.' },
-          { tipo: 'Otro', texto: 'Acceso directo desde el menú Consignación.' }
-        ]
-      },
-      {
-        id: 'utilidad-cobros',
-        nombre: 'Reporte · De lo cobrado, ¿cuánto es de las consignatarias?',
-        donde: 'Reportes › Comparativo de cobros (sección de consignación)',
-        para: 'Separar del dinero que entró a caja la parte que se le debe a los consignatarios.',
-        hoy: ['Agrupar por: Método de pago, Mes, Día, Sucursal'],
-        filtros: ['Periodo', 'Agrupación'],
-        puntos: [
-          'El total cobrado coincide con el corte de caja del periodo.',
-          'La parte de consignatarias coincide con lo generado en liquidaciones.',
-          'La separación por método de pago le sirve al cliente para conciliar.',
-          'El CSV se abre bien en Excel.'
-        ],
-        sugerencias: [
-          { tipo: 'Exportación', texto: 'Exportar a PDF.' },
-          { tipo: 'Filtro', texto: 'Filtro por consignatario.' },
-          { tipo: 'Otro', texto: 'Acceso directo desde el menú Consignación.' }
-        ]
-      },
-      {
-        id: 'incidentes',
-        nombre: 'Incidentes',
-        donde: 'Consignación › Incidentes',
-        para: 'Seguimiento de piezas con problema: réplicas, daños, reclamos.',
-        hoy: ['Abiertos', 'Críticos / alta', 'Total (filtro)'],
-        filtros: ['Abiertos / Todos / Resueltos'],
-        puntos: [
-          'La lista muestra todos los incidentes del cliente.',
-          'Los conteos de las tarjetas coinciden con la lista.',
-          'Abrir un incidente muestra su detalle completo y su historial.',
-          'Con muchos incidentes, la pantalla avisa si no está mostrando todos.'
-        ],
-        sugerencias: [
-          { tipo: 'Filtro', texto: 'Rango de fechas.' },
-          { tipo: 'Filtro', texto: 'Filtro por consignatario, tipo de incidente y sucursal.' },
-          { tipo: 'Exportación', texto: 'Exportar a Excel.' },
-          { tipo: 'Gráfica / indicador', texto: 'Resumen por tipo y por etapa, con monto de mermas.' }
-        ]
-      },
-      {
-        id: 'retiros',
-        nombre: 'Solicitudes de retiro',
-        donde: 'Consignación › Solicitudes de retiro',
-        para: 'Atender lo que el consignatario pide desde su portal: retiros de piezas y cambios de datos.',
-        hoy: ['Todas', 'Solicitadas', 'En proceso', 'Entregadas', 'Canceladas'],
-        filtros: ['Por estado'],
-        puntos: [
-          'Una solicitud hecha desde el portal llega a la bandeja.',
-          'Cambiar el estado de la solicitud se refleja para el consignatario.',
-          'Con muchas solicitudes, la pantalla avisa si no está mostrando todas.'
-        ],
-        sugerencias: [
-          { tipo: 'Campo / columna', texto: 'SKU y foto de las piezas solicitadas.' },
-          { tipo: 'Filtro', texto: 'Rango de fechas y filtro por consignatario.' },
-          { tipo: 'Exportación', texto: 'Exportar a Excel.' }
-        ]
-      },
-      {
-        id: 'faltantes',
-        nombre: 'Reportes que el cliente necesita y hoy no tiene a la vista',
-        donde: 'Por definir con el cliente',
-        para: 'Revisar con el cliente qué otros reportes usa en su operación. El sistema ya calcula varios de estos datos; hace falta definir cuáles quiere ver en pantalla.',
-        hoy: [],
-        filtros: [],
-        puntos: [
-          'Se revisaron con el cliente los reportes que hoy lleva fuera del sistema (Excel, cuaderno).',
-          'Quedó claro qué reporte usa cada persona del cliente (dueño, gerente, tesorería, vendedores).'
-        ],
-        sugerencias: [
-          { tipo: 'Reporte nuevo', texto: 'Inventario consignado: piezas disponibles por consignatario, lote, sucursal y días en inventario.' },
-          { tipo: 'Reporte nuevo', texto: 'Rentabilidad por consignatario: piezas recibidas, vendidas, % vendido, venta, ganancia y clasificación A/B/C.' },
-          { tipo: 'Reporte nuevo', texto: 'Marcas que conviene aceptar: % vendido, días para vender, ticket promedio y rebajas por marca.' },
-          { tipo: 'Reporte nuevo', texto: 'Inventario en riesgo: piezas estancadas, contrato por vencer y acción sugerida.' },
-          { tipo: 'Reporte nuevo', texto: 'Descuentos: cuánto se rebajó, quién lo absorbió y quién lo autorizó, por vendedor.' },
-          { tipo: 'Reporte nuevo', texto: 'Tiempos del proceso de ingreso: días por etapa y piezas atoradas.' },
-          { tipo: 'Reporte nuevo', texto: 'Servicios: cobrado, costo, absorbido y margen por servicio y proveedor.' },
-          { tipo: 'Reporte nuevo', texto: 'Flujo de pagos a consignatarios por semana de vencimiento.' },
-          { tipo: 'Reporte nuevo', texto: 'Desempeño de vendedores: piezas, venta, ganancia, comisión, descuentos y captación.' },
-          { tipo: 'Reporte nuevo', texto: 'Retención de consignatarios: quién vuelve a traer piezas después de cobrar.' },
-          { tipo: 'Reporte nuevo', texto: 'Incidencias: réplicas, no aptas, devoluciones y monto recuperado.' }
-        ]
-      }
 
-      ]
-    }
-  ]
+    // ── 12 ───────────────────────────────────────────────────────────────
+    {
+      id: 'rep', nombre: 'Dashboard y reportes', tipos: TIPOS_REPORTE,
+      resumen: 'Que el dashboard y los reportes muestren lo que se hizo en la sesión (ventas de A y B, devolución de B, pago de A, retiro de C) y que tengan los datos que la tienda necesita.',
+      secciones: [
+        {
+          id: 'rep-dashboard', nombre: 'Dashboard de consignación',
+          donde: 'Consignación › Dashboard',
+          para: 'La foto del negocio: alertas del día, consignatarias activas, valor de inventario, lo vendido, la comisión, lo que se debe a consignatarias, saldo a favor, contratos por vencer y antigüedad del inventario.',
+          demostrar: [
+            { h: 'Abrimos el Dashboard después de las ventas del caso.', d: 'Lo vendido y la comisión incluyen la pieza A.' },
+            { h: 'Revisamos «Por pagar a consignatarios».', d: 'Coincide con lo que se le debe a la consignataria de prueba.' },
+            { h: 'Revisamos las alertas del día.', d: 'Son las que la tienda quiere ver; las demás se apagan en Configuración.' },
+          ],
+          decidir: ['¿Qué cifras revisa la dueña cada mañana?'],
+          noHace: [
+            'Lo vendido y la comisión son de todo el histórico: no hay filtro de fechas, sucursal ni consignataria.',
+            'No se exporta ni se puede abrir el detalle desde una alerta o una fila.',
+          ],
+        },
+        {
+          id: 'rep-venta', nombre: 'Reporte · Venta por consignación',
+          donde: 'Consignación › Reportes (también Reportes › Ventas › Venta por consignación)',
+          para: 'Una fila por pieza vendida: cuánto se vendió, cuánto le toca a la consignataria, la comisión y el estado de su pago. Se exporta a Excel.',
+          demostrar: [
+            { h: 'Filtramos el día de hoy.', d: 'Aparece la pieza A con total de venta, lo que le toca a la consignataria y la comisión correctos.' },
+            { h: 'Revisamos la fila de TOTALES.', d: 'Suma correctamente.' },
+            { h: 'Exportamos a Excel.', d: 'El archivo trae las ventas del periodo.' },
+          ],
+          decidir: ['¿Qué columnas necesita la tienda a la vista (fecha de venta, SKU, vendedor, folio de pago)?'],
+          noHace: [
+            'El rango de fechas es de máximo 40 días.',
+            'Algunas columnas (Usuario, Almacén, Caja) y algunos filtros todavía no traen dato; revisarlo antes de mostrarlo.',
+            'El panel de detalle de la pieza muestra datos de ejemplo en «Días en consigna», historial de precios y actividad.',
+            'El Excel solo respeta fechas y estado, no los demás filtros.',
+          ],
+        },
+        {
+          id: 'rep-utilidad', nombre: 'Utilidad de ventas y de cobros',
+          donde: 'Reportes › Comparativo de ventas y Comparativo de cobros (sección de consignación)',
+          para: 'Cuánto gana realmente la tienda con lo vendido y qué parte de lo cobrado es de las consignatarias. Se agrupan por mes, día, sucursal, vendedor, consignataria, categoría o marca; se exportan a CSV.',
+          demostrar: [
+            { h: 'Abrimos «Utilidad real de las ventas» con el día de hoy.', d: 'La utilidad coincide con la comisión de la pieza A.' },
+            { h: 'Abrimos «De lo cobrado, ¿cuánto es de las consignatarias?».', d: 'La parte de la consignataria coincide con lo que se le debe.', o: true },
+          ],
+          decidir: [], noHace: [],
+        },
+        {
+          id: 'rep-faltan', nombre: 'Reportes que la tienda necesita',
+          donde: 'Por definir con el cliente',
+          para: 'Revisar qué reportes lleva hoy la tienda fuera del sistema (Excel, cuaderno) y cuáles quiere ver en pantalla. El sistema ya calcula varios de estos datos.',
+          demostrar: [],
+          decidir: [
+            '¿Qué reportes llevan hoy fuera del sistema y quién los usa?',
+            '¿Necesitan una vista general de lo que se debe a todas las consignatarias (por semana)?',
+            '¿Necesitan inventario consignado por consignataria, lote y días en tienda?',
+            '¿Necesitan rentabilidad por consignataria o por marca?',
+          ],
+          noHace: ['Los 10 reportes especiales (rentabilidad, marcas, riesgo, descuentos, tiempos, servicios, flujo de pagos, vendedores, incidencias y retención) están calculados en el sistema pero todavía no tienen pantalla.'],
+        },
+      ],
+    },
+  ],
 };
