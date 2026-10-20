@@ -136,8 +136,9 @@ export const GUIA = {
           "id": "p0-migracion",
           "dueno": true,
           "nombre": "Reporte de migración de datos",
+          "docs": [{"d":"resumen","t":"Resumen de la migración","s":"20-oct · 3 páginas"},{"d":"checklist","t":"Checklist de verificación","s":"15 puntos · 2 páginas"}],
           "donde": "Sesión con el dueño · reporte de revisión de la migración",
-          "para": "Explicarle al dueño cómo se pasa su información a Sacscloud y cómo se comprueba, con el reporte de migración, que llegó completa y cuadra contra su sistema anterior.",
+          "para": "Explicarle al dueño cómo se pasa su información a Sacscloud y cómo se comprueba, con el reporte de migración, que llegó completa y cuadra contra su sistema anterior. El detalle punto por punto se revisa en el Proceso 1.",
           "demostrar": [
             {
               "h": "Explicamos qué se migra.",
@@ -202,10 +203,396 @@ export const GUIA = {
           "caso": true,
           "nombre": "Caso de prueba",
           "donde": "Se llena conforme se crean los datos en la sesión",
-          "para": "Una consignataria de prueba y tres piezas que recorren toda la sesión: la A se vende de contado, la B se aparta y la clienta la devuelve, y la C no se vende y llega a vencimiento. Se crean en el Proceso 1 y aquí se anotan sus folios para tenerlos a la mano en cada etapa.",
+          "para": "Una consignataria de prueba y tres piezas que recorren toda la sesión: la A se vende de contado, la B se aparta y la clienta la devuelve, y la C no se vende y llega a vencimiento. Se crean en el Proceso 2 y aquí se anotan sus folios para tenerlos a la mano en cada etapa.",
           "demostrar": [],
           "decidir": [],
           "noHace": []
+        }
+      ]
+    },
+    {
+      "id": "mig",
+      "nombre": "Verificación y optimización de la migración",
+      "tipos": [
+        "Dato faltante",
+        "Dato distinto",
+        "Pregunta para la tienda",
+        "Mejora de UI",
+        "Bug"
+      ],
+      "resumen": "Comprobar que los datos que llegaron de su sistema anterior están completos y cuadran: con el dueño, las cifras clave y las decisiones pendientes; con el equipo, los 15 puntos del checklist en pantalla. Al final se firma la migración.",
+      "diagrama": {
+        "titulo": "La migración se firma cuando los 15 puntos cuadran o quedan explicados",
+        "lectura": "Lo que entregó la tienda se carga en SACS y se compara punto por punto. Si algo no cuadra, se corrige o se le pregunta a la tienda, y se vuelve a comparar después de cada carga nueva.",
+        "nodos": [
+          {
+            "id": "a",
+            "c": 0,
+            "r": 0,
+            "t": "Su sistema",
+            "s": "paquete de datos",
+            "sec": "mig-dueno"
+          },
+          {
+            "id": "b",
+            "c": 1,
+            "r": 0,
+            "t": "Carga en SACS",
+            "s": "resumen de migración",
+            "sec": "mig-dueno"
+          },
+          {
+            "id": "c",
+            "c": 2,
+            "r": 0,
+            "t": "Comparar",
+            "s": "checklist · 15 puntos",
+            "sec": "mig-inventario"
+          },
+          {
+            "id": "d",
+            "c": 3,
+            "r": 0,
+            "t": "Cuadra",
+            "s": "o queda explicado",
+            "sec": "mig-repetir"
+          },
+          {
+            "id": "e",
+            "c": 4,
+            "r": 0,
+            "t": "Firmada",
+            "s": "datos listos para operar",
+            "sec": "mig-repetir",
+            "fin": true
+          },
+          {
+            "id": "f",
+            "c": 2,
+            "r": 1,
+            "t": "Corregir",
+            "s": "o preguntar a la tienda",
+            "sec": "mig-dueno"
+          }
+        ],
+        "flechas": [
+          {
+            "de": "a",
+            "a": "b"
+          },
+          {
+            "de": "b",
+            "a": "c"
+          },
+          {
+            "de": "c",
+            "a": "d"
+          },
+          {
+            "de": "d",
+            "a": "e"
+          },
+          {
+            "de": "c",
+            "a": "f",
+            "et": "no cuadra"
+          }
+        ]
+      },
+      "secciones": [
+        {
+          "id": "mig-dueno",
+          "dueno": true,
+          "nombre": "Visión con el dueño",
+          "donde": "Sesión con el dueño · Resumen de la migración (PDF)",
+          "para": "Que el dueño vea que toda la historia de su sistema ya está en SACS, qué cuadra al peso, qué se decidió por él y qué falta, y que resuelva las preguntas que solo él puede contestar.",
+          "docs": [
+            {
+              "d": "resumen",
+              "t": "Resumen de la migración",
+              "s": "20-oct · 3 páginas"
+            },
+            {
+              "d": "checklist",
+              "t": "Checklist de verificación",
+              "s": "15 puntos · 2 páginas"
+            }
+          ],
+          "demostrar": [
+            {
+              "h": "Abrimos el resumen de la migración y recorremos «Lo que se migró».",
+              "d": "Ve sus consignatarias, piezas con fotos, contratos con firma e INE, apartados, ventas con cobros, saldos a favor, usuarios y cajas, cada uno contra su sistema."
+            },
+            {
+              "h": "Revisamos las cifras que cuadran al peso.",
+              "d": "Apartados por cobrar: 564 y $9,444,508. Saldo a favor: 159 consignatarias y $1,800,889. Cobros de ventas: cuadran venta por venta."
+            },
+            {
+              "h": "Revisamos lo que se corrigió en pantalla.",
+              "d": "Apartados cuenta los 29,273, Transacciones abre donde hay ventas, «Ver contrato» trae firma e INE, la ficha de la consignataria ya no se congela, y el Reporte de Cobros y el Dashboard dan cifras correctas."
+            },
+            {
+              "h": "Repasamos las decisiones que se tomaron por él.",
+              "d": "Apartados pagados al 100 % pasados a liquidados, 905 piezas liquidadas dejadas como pagadas, anticipos sin cargar, caja 1 por sucursal, vendedores como agentes sin PIN. Todas se pueden revertir."
+            },
+            {
+              "h": "Explicamos lo que falta.",
+              "d": "La extracción nueva de Diego (16 piezas sin consignante y la pieza 72887) y 8 fotos de piezas vigentes que ya no existen en sus servidores."
+            }
+          ],
+          "decidir": [
+            "Anticipos y pagos parciales: 22 pagos parciales de piezas vendidas ($209 mil) y 31 anticipos de piezas aún apartadas ($62 mil). ¿Cuentan como abono del apartado?",
+            "Consignatarias internas «Vendetucloset» ($881,738 por pagar) y «Consignacion Vtc Polanco» ($779,266): ¿deben salir en «Pagos a consignatarias»?",
+            "Empleados: hay 18 activos sin usuario. ¿Se activa el módulo de pago «Empleados» y se dan de alta?",
+            "Las 905 piezas liquidadas cuyo pago registrado es menor (871 de 2023) y los 23 pagos parciales: ¿se quedan como pagadas?",
+            "Contratos: su sistema dice 11,970 y SACS tiene 12,008 en 12,087 lotes. ¿Con qué regla cuenta los contratos?",
+            "¿Se quedan las decisiones que se tomaron por él (liquidados, piezas pagadas, caja 1, inicio de cajeros en Punto de venta, pieza genérica fuera del catálogo) o se revierte alguna?"
+          ],
+          "noHace": [
+            "Las cifras de los PDF son del 20-oct, 8:30 a. m. Si hubo una carga nueva, repetir antes los puntos 1, 2, 5, 6, 7 y 13 del checklist.",
+            "Si el dueño revierte una decisión, anotarla como mejora con responsable Sacscloud: cada una tiene respaldo (foto de los apartados y de los 31 anticipos)."
+          ]
+        },
+        {
+          "id": "mig-inventario",
+          "nombre": "Piezas, fotos y sucursales",
+          "donde": "Productos · Inventario · Kardex por almacén",
+          "para": "Comparar las piezas de su sistema contra SACS por estado, con su foto y en su sucursal (puntos 1, 13 y 15 del checklist).",
+          "docs": [
+            {
+              "d": "resumen",
+              "t": "Resumen de la migración",
+              "s": "20-oct · 3 páginas"
+            },
+            {
+              "d": "checklist",
+              "t": "Checklist de verificación",
+              "s": "15 puntos · 2 páginas"
+            }
+          ],
+          "nota": "Resultado del 20-oct: piezas 🟡 (faltan 17 que su paquete dejó fuera), fotos 🟡 (143 sin foto en origen, 8 vigentes), sucursales ✅.",
+          "demostrar": [
+            {
+              "h": "Contamos las piezas por estado en su sistema y en SACS: disponible, en proceso, apartada, vendida, pagada, devuelta, retenida y no apta.",
+              "d": "Cuadra cada estado (8,315 disponibles, 564 apartadas, 2,641 vendidas, 49,400 pagadas, 10,126 devueltas…). Si no cuadra: revisar pieza por pieza con el número de la tienda y cargar las que falten."
+            },
+            {
+              "h": "Abrimos piezas al azar en Productos y en su detalle.",
+              "d": "Tienen foto en la tabla y en el detalle, y video cuando lo traía (9,696). Si falta: pedir a la tienda las 8 fotos de piezas vigentes."
+            },
+            {
+              "h": "Revisamos sucursales, cajas y existencias por almacén.",
+              "d": "6 sucursales con su caja; el kardex de cada almacén responde con sus piezas. Si no: corregir la sucursal o el almacén de la pieza."
+            }
+          ],
+          "decidir": []
+        },
+        {
+          "id": "mig-personas",
+          "nombre": "Consignatarias, compradores y contratos",
+          "donde": "Consignatarias · Clientes · ficha de la consignataria → «Ver contrato»",
+          "para": "Comparar las personas y sus contratos (puntos 9, 10, 11 y 12 del checklist).",
+          "docs": [
+            {
+              "d": "resumen",
+              "t": "Resumen de la migración",
+              "s": "20-oct · 3 páginas"
+            },
+            {
+              "d": "checklist",
+              "t": "Checklist de verificación",
+              "s": "15 puntos · 2 páginas"
+            }
+          ],
+          "nota": "Resultado del 20-oct: consignatarias ✅, compradores 🟡, contratos 🟡 (pendiente la regla de la tienda), firma e INE ✅.",
+          "demostrar": [
+            {
+              "h": "Contamos consignatarias con piezas en su sistema y en SACS.",
+              "d": "8,719 contra 8,656: las 67 de diferencia son duplicados unidos por teléfono. Si alguna no aparece: confirmar su teléfono."
+            },
+            {
+              "h": "Contamos compradores.",
+              "d": "14,190 contra 14,405; 312 traían teléfono inválido y quedaron como público en general. Si no: corregir el teléfono o dejarlos como público en general."
+            },
+            {
+              "h": "Contamos contratos y lotes.",
+              "d": "12,008 contratos en 12,087 lotes; 79 lotes sin firmar quedan sin contrato. Si no cuadra: pedir a la tienda la regla con que cuenta contratos."
+            },
+            {
+              "h": "Abrimos contratos de muestra desde la ficha de la consignataria.",
+              "d": "Sale la firma de Regina y las dos INE (Regina y consignataria). Si falta: revisar las consignatarias sin INE (188 siguen con Diego)."
+            }
+          ],
+          "decidir": []
+        },
+        {
+          "id": "mig-apartados",
+          "nombre": "Apartados y abonos",
+          "donde": "Apartados",
+          "para": "Comparar apartados por cobrar, cerrados y cancelados, y sus abonos (puntos 2, 3 y 4 del checklist).",
+          "docs": [
+            {
+              "d": "resumen",
+              "t": "Resumen de la migración",
+              "s": "20-oct · 3 páginas"
+            },
+            {
+              "d": "checklist",
+              "t": "Checklist de verificación",
+              "s": "15 puntos · 2 páginas"
+            }
+          ],
+          "nota": "Resultado del 20-oct: por cobrar ✅ al peso, cerrados y cancelados ✅, abonos y anticipos 🔴 hasta que el dueño decida.",
+          "demostrar": [
+            {
+              "h": "Sumamos el saldo de los apartados abiertos.",
+              "d": "564 apartados y $9,444,508, igual que su sistema. Si no: buscar apartados con total o pagado distinto al de la tienda."
+            },
+            {
+              "h": "Revisamos que ningún apartado abierto tenga la pieza vendida, pagada, rechazada o devuelta.",
+              "d": "Ya no hay abiertos con pieza distinta a «Apartada» (se corrigieron 63: 46 cerrados y 17 cancelados). Si aparece uno: cerrarlo o cancelarlo según el estado de la pieza."
+            },
+            {
+              "h": "Sumamos los abonos por apartado y los comparamos con los de la tienda.",
+              "d": "Cuadran, salvo los anticipos que decide el dueño (389 anticipos y 22 pagos parciales)."
+            }
+          ],
+          "decidir": []
+        },
+        {
+          "id": "mig-ventas",
+          "nombre": "Ventas y cobros",
+          "donde": "Transacciones · Reporte de Cobros",
+          "para": "Comparar cada venta con su cobro y los totales por forma de pago (puntos 5 y 6 del checklist).",
+          "docs": [
+            {
+              "d": "resumen",
+              "t": "Resumen de la migración",
+              "s": "20-oct · 3 páginas"
+            },
+            {
+              "d": "checklist",
+              "t": "Checklist de verificación",
+              "s": "15 puntos · 2 páginas"
+            }
+          ],
+          "nota": "Resultado del 20-oct: cobros por venta ✅, por forma de pago 🟡 (+$0.35 M, 0.27 %, explicado por los anticipos del punto 4).",
+          "demostrar": [
+            {
+              "h": "Contamos y sumamos los cobros de ventas, venta por venta.",
+              "d": "Cada venta tiene su cobro y su importe (ya están los 290 pagos que faltaban). Si no: buscar la venta sin pago o con otro importe."
+            },
+            {
+              "h": "Sumamos por forma de pago en su sistema y en SACS (21 formas).",
+              "d": "SACS suma $128.61 M contra $128.26 M; se quitaron 104 cobros repetidos. Si una forma de pago no cuadra: revisar sus ventas una por una."
+            },
+            {
+              "h": "Abrimos ventas de muestra en Transacciones, incluidas apartados liquidados al 100 %.",
+              "d": "Tienen su estado, su vendedor y sus formas de pago; los 25,425 apartados liquidados aparecen como transacción sin duplicar ventas."
+            }
+          ],
+          "decidir": []
+        },
+        {
+          "id": "mig-pagos",
+          "nombre": "Saldo a favor y pagos a consignatarias",
+          "donde": "Consignatarias · Pagos a consignatarias",
+          "para": "Comparar saldos a favor y lo pagado y por pagar a las consignatarias (puntos 7 y 8 del checklist).",
+          "docs": [
+            {
+              "d": "resumen",
+              "t": "Resumen de la migración",
+              "s": "20-oct · 3 páginas"
+            },
+            {
+              "d": "checklist",
+              "t": "Checklist de verificación",
+              "s": "15 puntos · 2 páginas"
+            }
+          ],
+          "nota": "Resultado del 20-oct: saldo a favor ✅, pagos 🟡 (905 piezas por confirmar con la tienda).",
+          "demostrar": [
+            {
+              "h": "Contamos consignatarias con saldo a favor y lo sumamos.",
+              "d": "159 personas y $1,800,889, igual que el resumen de su sistema. Si no: revisar los saldos uno por uno."
+            },
+            {
+              "h": "Contamos piezas liquidadas y comparamos lo pagado con lo que se debía.",
+              "d": "49,401 liquidadas; por pagar 2,618 piezas ($24.2 M), como en su sistema. Antes de dejar algo «por pagar», confirmarlo con la tienda para no pagar dos veces."
+            }
+          ],
+          "decidir": []
+        },
+        {
+          "id": "mig-usuarios",
+          "nombre": "Usuarios, agentes y cajas",
+          "donde": "Configuración · Usuarios · Agentes · Punto de venta",
+          "para": "Comparar empleados contra usuarios y agentes, y que cada quien entre a lo suyo (punto 14 del checklist).",
+          "docs": [
+            {
+              "d": "resumen",
+              "t": "Resumen de la migración",
+              "s": "20-oct · 3 páginas"
+            },
+            {
+              "d": "checklist",
+              "t": "Checklist de verificación",
+              "s": "15 puntos · 2 páginas"
+            }
+          ],
+          "nota": "Resultado del 20-oct: 🟡 91 empleados (55 activos) en su sistema; en SACS 37 usuarios y 36 agentes.",
+          "demostrar": [
+            {
+              "h": "Revisamos la lista de usuarios con su grupo y sucursal.",
+              "d": "Están los 37 que deben entrar al sistema. Si falta alguien que debe entrar: darlo de alta."
+            },
+            {
+              "h": "Revisamos los agentes del punto de venta.",
+              "d": "Los 36 vendedores están como agentes, sin PIN; cada vendedor o el administrador pone el suyo."
+            },
+            {
+              "h": "Entramos con un usuario de cajero.",
+              "d": "Abre en Punto de venta y la caja de su sucursal está lista."
+            }
+          ],
+          "decidir": [
+            "¿Quién pone los PIN de los vendedores y para cuándo?"
+          ]
+        },
+        {
+          "id": "mig-repetir",
+          "nombre": "Repetir después de cada carga y firmar",
+          "donde": "Checklist de verificación (PDF)",
+          "para": "Dejar claro cómo se vuelve a verificar cuando llegue una carga nueva y firmar la migración.",
+          "docs": [
+            {
+              "d": "resumen",
+              "t": "Resumen de la migración",
+              "s": "20-oct · 3 páginas"
+            },
+            {
+              "d": "checklist",
+              "t": "Checklist de verificación",
+              "s": "15 puntos · 2 páginas"
+            }
+          ],
+          "demostrar": [
+            {
+              "h": "Explicamos qué se repite después de cada carga.",
+              "d": "Los puntos 1, 2, 5, 6, 7 y 13; los puntos 4, 8 y 11 quedan abiertos hasta tener la respuesta de la tienda."
+            },
+            {
+              "h": "Revisamos lo que falta por llegar.",
+              "d": "Extracción nueva de Diego (16 piezas sin consignante y la pieza 72887) y las 8 fotos vigentes; se cargan en cuanto lleguen."
+            },
+            {
+              "h": "Repasamos las diferencias anotadas en esta sesión.",
+              "d": "Cada una tiene responsable y fecha; al día siguiente se revisan y, cuando todo cuadra o queda explicado, se firma."
+            }
+          ],
+          "decidir": [
+            "¿Quién de la tienda repite la verificación después de cada carga y a quién le avisa si algo no cuadra?"
+          ]
         }
       ]
     },
@@ -872,7 +1259,7 @@ export const GUIA = {
       "resumen": "La clienta devuelve la pieza B antes de que se le pague a la consignataria: la venta se revierte sola y la pieza vuelve a la venta.",
       "diagrama": {
         "titulo": "Antes de pagarle a la consignataria, la devolución se revierte sola",
-        "lectura": "Si a la consignataria aún no se le paga la pieza, la devolución en caja cancela lo que se le debe y la pieza vuelve a la venta. Si ya se le pagó, se resuelve con «Cliente devolvió» (proceso 8).",
+        "lectura": "Si a la consignataria aún no se le paga la pieza, la devolución en caja cancela lo que se le debe y la pieza vuelve a la venta. Si ya se le pagó, se resuelve con «Cliente devolvió» (proceso 9).",
         "nodos": [
           {
             "id": "a",
@@ -912,7 +1299,7 @@ export const GUIA = {
             "c": 2,
             "r": 1,
             "t": "Cliente devolvió",
-            "s": "proceso 8",
+            "s": "proceso 9",
             "sec": "p4-devolucion"
           }
         ],
