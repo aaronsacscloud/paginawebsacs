@@ -136,7 +136,7 @@ export const GUIA = {
           "id": "p0-migracion",
           "dueno": true,
           "nombre": "Reporte de migración de datos",
-          "docs": [{"d":"resumen","t":"Resumen de la migración","s":"20-oct · 3 páginas"},{"d":"checklist","t":"Checklist de verificación","s":"15 puntos · 2 páginas"}],
+          "docs": [{"d":"resumen","t":"Resumen de la migración","s":"20-oct · 3 páginas"},{"d":"checklist","t":"Checklist de verificación","s":"15 puntos · 2 páginas"},{"d":"fotos","t":"Piezas sin foto y grupos de usuarios","s":"143 piezas · 37 usuarios · 8 páginas"}],
           "donde": "Sesión con el dueño · reporte de revisión de la migración",
           "para": "Explicarle al dueño cómo se pasa su información a Sacscloud y cómo se comprueba, con el reporte de migración, que llegó completa y cuadra contra su sistema anterior. El detalle punto por punto se revisa en el Proceso 1.",
           "demostrar": [
@@ -316,6 +316,11 @@ export const GUIA = {
               "d": "checklist",
               "t": "Checklist de verificación",
               "s": "15 puntos · 2 páginas"
+            },
+            {
+              "d": "fotos",
+              "t": "Piezas sin foto y grupos de usuarios",
+              "s": "143 piezas · 37 usuarios · 8 páginas"
             }
           ],
           "demostrar": [
@@ -368,6 +373,11 @@ export const GUIA = {
               "d": "checklist",
               "t": "Checklist de verificación",
               "s": "15 puntos · 2 páginas"
+            },
+            {
+              "d": "fotos",
+              "t": "Piezas sin foto y grupos de usuarios",
+              "s": "143 piezas · 37 usuarios · 8 páginas"
             }
           ],
           "nota": "Resultado del 20-oct: piezas 🟡 (faltan 17 que su paquete dejó fuera), fotos 🟡 (143 sin foto en origen, 8 vigentes), sucursales ✅.",
@@ -378,7 +388,7 @@ export const GUIA = {
             },
             {
               "h": "Abrimos piezas al azar en Productos y en su detalle.",
-              "d": "Tienen foto en la tabla y en el detalle, y video cuando lo traía (9,696). Si falta: pedir a la tienda las 8 fotos de piezas vigentes."
+              "d": "Tienen foto en la tabla y en el detalle, y video cuando lo traía (9,696). Si falta: pedir a la tienda las 8 fotos de piezas vigentes (la lista de las 143 está en el PDF «Piezas sin foto y grupos de usuarios»)."
             },
             {
               "h": "Revisamos sucursales, cajas y existencias por almacén.",
@@ -402,6 +412,11 @@ export const GUIA = {
               "d": "checklist",
               "t": "Checklist de verificación",
               "s": "15 puntos · 2 páginas"
+            },
+            {
+              "d": "fotos",
+              "t": "Piezas sin foto y grupos de usuarios",
+              "s": "143 piezas · 37 usuarios · 8 páginas"
             }
           ],
           "nota": "Resultado del 20-oct: consignatarias ✅, compradores 🟡, contratos 🟡 (pendiente la regla de la tienda), firma e INE ✅.",
@@ -440,6 +455,11 @@ export const GUIA = {
               "d": "checklist",
               "t": "Checklist de verificación",
               "s": "15 puntos · 2 páginas"
+            },
+            {
+              "d": "fotos",
+              "t": "Piezas sin foto y grupos de usuarios",
+              "s": "143 piezas · 37 usuarios · 8 páginas"
             }
           ],
           "nota": "Resultado del 20-oct: por cobrar ✅ al peso, cerrados y cancelados ✅, abonos y anticipos 🔴 hasta que el dueño decida.",
@@ -474,6 +494,11 @@ export const GUIA = {
               "d": "checklist",
               "t": "Checklist de verificación",
               "s": "15 puntos · 2 páginas"
+            },
+            {
+              "d": "fotos",
+              "t": "Piezas sin foto y grupos de usuarios",
+              "s": "143 piezas · 37 usuarios · 8 páginas"
             }
           ],
           "nota": "Resultado del 20-oct: cobros por venta ✅, por forma de pago 🟡 (+$0.35 M, 0.27 %, explicado por los anticipos del punto 4).",
@@ -508,6 +533,11 @@ export const GUIA = {
               "d": "checklist",
               "t": "Checklist de verificación",
               "s": "15 puntos · 2 páginas"
+            },
+            {
+              "d": "fotos",
+              "t": "Piezas sin foto y grupos de usuarios",
+              "s": "143 piezas · 37 usuarios · 8 páginas"
             }
           ],
           "nota": "Resultado del 20-oct: saldo a favor ✅, pagos 🟡 (905 piezas por confirmar con la tienda).",
@@ -538,13 +568,18 @@ export const GUIA = {
               "d": "checklist",
               "t": "Checklist de verificación",
               "s": "15 puntos · 2 páginas"
+            },
+            {
+              "d": "fotos",
+              "t": "Piezas sin foto y grupos de usuarios",
+              "s": "143 piezas · 37 usuarios · 8 páginas"
             }
           ],
           "nota": "Resultado del 20-oct: 🟡 91 empleados (55 activos) en su sistema; en SACS 37 usuarios y 36 agentes.",
           "demostrar": [
             {
               "h": "Revisamos la lista de usuarios con su grupo y sucursal.",
-              "d": "Están los 37 que deben entrar al sistema. Si falta alguien que debe entrar: darlo de alta."
+              "d": "Están los 37 que deben entrar al sistema, con el grupo y la sucursal que dice el PDF «Piezas sin foto y grupos de usuarios». Si falta alguien que debe entrar: darlo de alta."
             },
             {
               "h": "Revisamos los agentes del punto de venta.",
@@ -574,6 +609,11 @@ export const GUIA = {
               "d": "checklist",
               "t": "Checklist de verificación",
               "s": "15 puntos · 2 páginas"
+            },
+            {
+              "d": "fotos",
+              "t": "Piezas sin foto y grupos de usuarios",
+              "s": "143 piezas · 37 usuarios · 8 páginas"
             }
           ],
           "demostrar": [
