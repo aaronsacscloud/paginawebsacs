@@ -2,15 +2,18 @@
 // Checklist de ENTREGA · Suite de Consignación (19-oct-2026).
 //
 // Un solo documento para revisar con el cliente, tableta en mano, todos los
-// procesos de la suite de punta a punta y el dashboard con sus reportes. Cada
-// capítulo es un proceso: sus etapas, los puntos a validar y una tabla donde
-// el consultor anota mejoras, condicionales y fallas (o, en reportes, el
-// campo, dato o filtro que falta).
+// procesos de la suite de punta a punta y el dashboard con sus reportes.
+//
+// Tres vistas (ruta en el #hash, así el botón «atrás» funciona):
+//  · Inicio            #/                 datos, avance y los procesos.
+//  · Proceso (enfoque) #/p/<cap>/<etapa>  breadcrumb, lista de etapas y UNA
+//                                         etapa a la vez: sin distracciones.
+//  · Cierre            #/cierre           resumen, acuerdos, firma, historial.
 //
 // Lo que se captura vive en `entregas_checklist` (api/entrega/sesion), una
-// fila por cliente, identificada por ?s=<codigo> en la liga; con respaldo en
-// el dispositivo por si se cae la señal. El contenido base está en
-// lib/entrega/consignacion-guia.ts.
+// fila por sesión, con ?s=<codigo> (orquestador) o ?c=<codigo> (cliente:
+// solo lee y firma). Las firmas van en su propia columna. El contenido base
+// está en lib/entrega/consignacion-guia.ts.
 import { GUIA } from '../../lib/entrega/consignacion-guia';
 export const prerender = true;
 ---
@@ -24,293 +27,339 @@ export const prerender = true;
   <link rel="icon" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700;9..40,800&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
   <style is:inline>
+    /* Estilo «Square»: blanco, gris neutro, un solo acento azul, bordes finos
+       y mucho aire. El color solo dice estado (verde bien, rojo falla). */
     :root {
-      --v: #9B8CFA; --vt: #5B4BD6; --vh: #4536BE; --va: #EEECFE; --vb: #ddd6fb;
-      --az: #7DA6F5; --azt: #2C5FC4; --aza: #E3EDFD;
-      --ro: #D9538E;
-      --ve: #4FBF95; --vet: #1E8A63; --vea: #EAF8F2;
-      --rj: #EF7A72; --rjt: #C0554E; --rja: #FEF0EF;
-      --am: #E8A838; --amt: #9a6a10; --ama: #FFF4E5;
-      --tx: #1d1b2e; --tx2: #5f5d72; --tx3: #8b8a99; --ln: #ececec; --bg: #f7f6fb; --card: #fff;
+      --tx: #1a1a1a; --tx2: #5c5c5c; --tx3: #8f8f8f;
+      --ln: #e3e3e3; --ln2: #f0f0f0; --bg: #ffffff; --bg2: #f7f7f7;
+      --az: #006aff; --azh: #0055d4; --aza: #eaf2ff;
+      --ve: #00a63e; --vet: #007a2e; --vea: #e7f7ec;
+      --rj: #d4002b; --rjt: #b00024; --rja: #fdecef;
+      --am: #c97a00; --amt: #8a5300; --ama: #fff4e0;
+      --r: 8px;
     }
     * { box-sizing: border-box; }
-    html, body { margin: 0; background: var(--bg); color: var(--tx); font-family: 'DM Sans', system-ui, -apple-system, sans-serif; -webkit-text-size-adjust: 100%; }
-    body { font-size: 15px; line-height: 1.45; }
+    html, body { margin: 0; background: var(--bg); color: var(--tx); font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif; -webkit-text-size-adjust: 100%; }
+    body { font-size: 15px; line-height: 1.5; }
     button, input, select, textarea { font: inherit; color: inherit; }
-    .cinta { height: 5px; background: linear-gradient(90deg,#9B8CFA,#7DA6F5 55%,rgba(244,168,205,.9)); }
-    .wrap { max-width: 1120px; margin: 0 auto; padding: 22px 16px 120px; }
-    .firma { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; background: linear-gradient(100deg,#7C6BF0,#8E7DEF 35%,#D9538E); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .firma .marca { text-transform: none; letter-spacing: .02em; font-size: 13px; }
-    h1 { font-size: 1.65rem; line-height: 1.2; margin: 6px 0 4px; font-weight: 800; }
-    h2 { font-size: 1.2rem; margin: 0; font-weight: 800; }
-    h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--tx3); margin: 18px 0 8px; font-weight: 800; }
-    .sub { color: var(--tx2); margin: 0; }
-    .card { background: var(--card); border: 1px solid var(--ln); border-radius: 12px; padding: 16px 18px; margin-top: 14px; }
-    .ancla { background: linear-gradient(135deg,#EEECFE,rgba(244,168,205,.22)); border-color: var(--vb); }
-    .grid { display: grid; gap: 10px 14px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
-    label.f { display: flex; flex-direction: column; gap: 4px; font-size: .75rem; font-weight: 700; color: var(--tx2); text-transform: uppercase; letter-spacing: .05em; }
-    input[type=text], input[type=date], select, textarea {
-      width: 100%; border: 1px solid #dcdbe6; border-radius: 9px; padding: 10px 11px; background: #fff; font-size: 15px; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--tx);
-      min-height: 44px;
-    }
-    textarea { resize: vertical; min-height: 64px; }
-    input:focus, select:focus, textarea:focus { outline: 2px solid var(--v); outline-offset: 0; border-color: var(--v); }
-    .btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1.5px solid var(--v); background: #fff; color: var(--vt); font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-    .btn:hover { background: var(--va); }
-    .btn.pri { background: var(--v); color: #fff; }
-    .btn.pri:hover { background: #7C6BF0; }
-    .btn.ter { border-color: #d8d8de; color: var(--tx2); }
-    .btn.peq { min-height: 36px; padding: 0 12px; font-size: .875rem; }
-    .btn.del { border-color: #f0c4bd; color: var(--rjt); }
-    .btn:disabled { opacity: .5; cursor: default; }
-    .barra { position: sticky; top: 0; z-index: 20; background: rgba(247,246,251,.94); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-bottom: 1px solid var(--ln); }
-    .barra .in { max-width: 1120px; margin: 0 auto; padding: 8px 16px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .estado { font-size: .8125rem; color: var(--tx2); display: inline-flex; align-items: center; gap: 6px; margin-right: auto; }
+    h1 { font-size: 1.75rem; line-height: 1.2; margin: 0; font-weight: 700; letter-spacing: -.01em; }
+    h2 { font-size: 1.25rem; margin: 0; font-weight: 700; letter-spacing: -.005em; }
+    h3 { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--tx3); margin: 24px 0 10px; font-weight: 700; }
+    .sub { color: var(--tx2); margin: 6px 0 0; }
+    .oculto { display: none !important; }
+    .vacio { color: var(--tx3); font-size: .875rem; padding: 6px 0; }
+
+    /* Barra superior */
+    .top { position: sticky; top: 0; z-index: 30; background: rgba(255,255,255,.96); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-bottom: 1px solid var(--ln); }
+    .top .in { max-width: 1240px; margin: 0 auto; padding: 10px 20px; display: flex; gap: 12px; align-items: center; }
+    .marca { font-size: .8125rem; font-weight: 700; white-space: nowrap; }
+    .marca i { font-style: normal; color: var(--tx3); font-weight: 500; }
+    .estado { font-size: .8125rem; color: var(--tx2); display: inline-flex; align-items: center; gap: 6px; margin-left: auto; white-space: nowrap; }
     .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--tx3); }
-    .estado.ok .punto { background: var(--ve); } .estado.err .punto { background: var(--am); } .estado.sav .punto { background: var(--v); }
-    .nav { display: flex; gap: 10px; align-items: center; padding: 4px 16px 10px; max-width: 1120px; margin: 0 auto; }
-    .nav select { flex: 1; max-width: 640px; font-weight: 700; color: var(--vt); border-color: var(--vb); background: #fff; }
-    .nav-prog { font-size: .8125rem; font-weight: 800; color: var(--vt); background: var(--va); border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
-    .pill { white-space: nowrap; border: 1px solid var(--ln); background: #fff; border-radius: 999px; padding: 7px 12px; font-size: .8125rem; font-weight: 600; color: var(--tx2); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
-    .kpis { display: grid; gap: 10px; grid-template-columns: repeat(4, 1fr); margin-top: 14px; }
-    .kpi { background: #fff; border: 1px solid var(--ln); border-left: 3px solid var(--v); border-radius: 10px; padding: 13px 15px; display: flex; flex-direction: column; }
-    .kpi .l { font-size: .625rem; text-transform: uppercase; letter-spacing: .08em; color: #999; font-weight: 800; }
-    .kpi .c { font-size: 1.5rem; font-weight: 800; color: var(--vt); margin-top: 2px; }
-    .kpi .s { font-size: .6875rem; color: #888; margin-top: auto; }
-    .kpi.ve { border-left-color: var(--ve); } .kpi.ve .c { color: var(--vet); }
-    .kpi.rj { border-left-color: var(--rj); } .kpi.rj .c { color: var(--rjt); }
-    .kpi.am { border-left-color: var(--am); } .kpi.am .c { color: var(--amt); }
-    .sec-cab { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
-    .sec-cab .num { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px; background: var(--va); color: var(--vt); font-weight: 800; display: flex; align-items: center; justify-content: center; }
-    .sec-cab .t { flex: 1; min-width: 0; }
-    .sec-cab .prog { font-size: .75rem; font-weight: 800; color: var(--vt); background: var(--va); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
-    .sec-cab .prog.done { background: var(--vea); color: var(--vet); }
-    .meta { font-size: .8125rem; color: var(--tx2); margin-top: 3px; }
-    .meta b { color: var(--tx); font-weight: 700; }
-    .chev { transition: transform .2s; color: var(--tx3); flex: 0 0 auto; margin-top: 6px; }
-    .sec.cerrada .chev { transform: rotate(-90deg); }
-    .sec.cerrada .cuerpo { display: none; }
+    .estado.ok .punto { background: var(--ve); } .estado.err .punto { background: var(--am); } .estado.sav .punto { background: var(--az); }
+    .migas { max-width: 1240px; margin: 0 auto; padding: 0 20px 10px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: .875rem; }
+    .migas a { color: var(--az); text-decoration: none; font-weight: 500; cursor: pointer; }
+    .migas a:hover { text-decoration: underline; }
+    .migas .sep { color: var(--tx3); }
+    .migas .act { color: var(--tx); font-weight: 600; }
+
+    /* Botones */
+    .btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: var(--r); border: 1px solid #d4d4d4; background: #fff; color: var(--tx); font-weight: 600; font-size: .875rem; cursor: pointer; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
+    .btn:hover { background: var(--bg2); }
+    .btn.pri { background: var(--az); border-color: var(--az); color: #fff; }
+    .btn.pri:hover { background: var(--azh); }
+    .btn.peq { min-height: 36px; padding: 0 12px; font-size: .8125rem; }
+    .btn.del { color: var(--rjt); }
+    .btn.on { background: var(--tx); border-color: var(--tx); color: #fff; }
+    .btn:disabled { opacity: .45; cursor: default; }
+    .menu { position: relative; }
+    .menu-lista { position: absolute; right: 0; top: calc(100% + 6px); background: #fff; border: 1px solid var(--ln); border-radius: var(--r); box-shadow: 0 8px 24px rgba(0,0,0,.08); min-width: 220px; padding: 6px; z-index: 40; }
+    .menu-lista button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 10px 12px; border-radius: 6px; font-weight: 500; cursor: pointer; }
+    .menu-lista button:hover { background: var(--bg2); }
+
+    /* Campos */
+    label.f { display: flex; flex-direction: column; gap: 6px; font-size: .8125rem; font-weight: 600; color: var(--tx2); }
+    input[type=text], input[type=date], select, textarea { width: 100%; border: 1px solid #d4d4d4; border-radius: var(--r); padding: 10px 12px; background: #fff; font-size: 15px; font-weight: 400; color: var(--tx); min-height: 44px; }
+    textarea { resize: vertical; min-height: 64px; }
+    input:focus, select:focus, textarea:focus { outline: 2px solid var(--az); outline-offset: -1px; border-color: var(--az); }
+    input:disabled, select:disabled, textarea:disabled { background: var(--bg2); color: var(--tx); opacity: 1; -webkit-text-fill-color: var(--tx); }
+    .grid { display: grid; gap: 12px 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .acciones { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+    /* Inicio */
+    .wrap { max-width: 1240px; margin: 0 auto; padding: 28px 20px 120px; }
+    .panel { border: 1px solid var(--ln); border-radius: 12px; padding: 20px; background: #fff; }
+    .panel + .panel { margin-top: 16px; }
+    .datos { display: grid; gap: 0; grid-template-columns: repeat(5, 1fr); border: 1px solid var(--ln); border-radius: 12px; margin-top: 20px; }
+    .datos div { padding: 14px 16px; border-left: 1px solid var(--ln); }
+    .datos div:first-child { border-left: 0; }
+    .datos span { display: block; font-size: .75rem; color: var(--tx3); font-weight: 500; }
+    .datos b { font-weight: 600; }
+    .kpis { display: grid; gap: 16px; grid-template-columns: repeat(4, 1fr); margin-top: 24px; }
+    .kpi { border: 1px solid var(--ln); border-radius: 12px; padding: 16px 18px; }
+    .kpi .l { font-size: .8125rem; color: var(--tx2); font-weight: 500; }
+    .kpi .c { font-size: 2rem; font-weight: 700; letter-spacing: -.02em; margin-top: 2px; display: block; }
+    .kpi .s { font-size: .8125rem; color: var(--tx3); }
+    .kpi.rj .c { color: var(--rjt); }
+    .caps { display: grid; gap: 16px; grid-template-columns: repeat(4, 1fr); }
+    .cap.cierre { background: var(--bg2); }
+    .cap { text-align: left; background: #fff; border: 1px solid var(--ln); border-radius: 12px; padding: 18px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; min-height: 168px; transition: border-color .15s, box-shadow .15s; }
+    .cap:hover { border-color: #bdbdbd; box-shadow: 0 4px 16px rgba(0,0,0,.06); }
+    .cap .k { font-size: .75rem; font-weight: 600; color: var(--tx3); }
+    .cap .nm { font-weight: 700; font-size: 1.0625rem; line-height: 1.3; }
+    .cap .rs { font-size: .8125rem; color: var(--tx2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .cap .pie { margin-top: auto; display: flex; gap: 10px; align-items: center; font-size: .8125rem; color: var(--tx2); }
+    .bar { flex: 1; height: 4px; background: var(--ln2); border-radius: 99px; overflow: hidden; }
+    .bar i { display: block; height: 100%; background: var(--az); }
+    .cap.done .bar i { background: var(--ve); }
+    .cap .abrir { color: var(--az); font-weight: 600; font-size: .8125rem; }
+
+    /* Vista de proceso: lista de etapas + una etapa a la vez */
+    .proc { max-width: 1240px; margin: 0 auto; padding: 24px 20px 120px; display: grid; grid-template-columns: 280px 1fr; gap: 32px; align-items: start; }
+    .pasos { position: sticky; top: 112px; border: 1px solid var(--ln); border-radius: 12px; padding: 8px; max-height: calc(100vh - 130px); overflow: auto; }
+    .pasos .tit { padding: 10px 10px 6px; font-size: .75rem; color: var(--tx3); font-weight: 600; }
+    .pasos .tit b { display: block; color: var(--tx); font-size: .9375rem; margin-top: 2px; }
+    .pasos .bar { margin: 8px 10px 10px; }
+    .paso { display: flex; gap: 10px; align-items: flex-start; width: 100%; text-align: left; border: 0; background: none; padding: 9px 10px; border-radius: 8px; cursor: pointer; font-size: .875rem; color: var(--tx2); }
+    .paso:hover { background: var(--bg2); }
+    .paso.on { background: var(--aza); color: var(--tx); font-weight: 600; }
+    .paso .ic { flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid #c4c4c4; margin-top: 2px; display: inline-flex; align-items: center; justify-content: center; }
+    .paso .ic.parcial { border-color: var(--az); background: linear-gradient(90deg, var(--az) 50%, transparent 50%); }
+    .paso .ic.ok { border-color: var(--ve); background: var(--ve); }
+    .paso .ic.falla { border-color: var(--rj); background: var(--rj); }
+    .paso .ic svg { display: block; }
+    .paso .tx { flex: 1; min-width: 0; }
+    .paso .mt { display: block; font-size: .75rem; color: var(--tx3); font-weight: 500; }
+    .sel-pasos { display: none; margin-bottom: 16px; }
+    .foco-cab .k { font-size: .8125rem; color: var(--tx3); font-weight: 600; }
+    .foco-cab h1 { margin-top: 4px; }
+    .foco-meta { margin-top: 14px; display: grid; gap: 8px; }
+    .foco-meta div { font-size: .9375rem; color: var(--tx2); }
+    .foco-meta b { color: var(--tx); font-weight: 600; }
+    .etiqueta { display: inline-flex; align-items: center; gap: 6px; font-size: .75rem; font-weight: 600; border-radius: 99px; padding: 3px 10px; background: var(--bg2); color: var(--tx2); }
+    .etiqueta.ve { background: var(--vea); color: var(--vet); }
+    .foco-pie { display: flex; justify-content: space-between; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--ln); }
+    .nota-calc { margin-top: 14px; font-size: .875rem; background: var(--bg2); border-radius: var(--r); padding: 12px 14px; color: var(--tx2); }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-    .chip { font-size: .8125rem; background: #f3f3f6; border-radius: 7px; padding: 4px 9px; color: var(--tx2); }
-    .chip.fil { background: var(--aza); color: var(--azt); }
-    .pt { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; align-items: center; padding: 10px 0; border-top: 1px solid #f1f1f4; }
-    .pt:first-of-type { border-top: 0; }
+    .chip { font-size: .8125rem; background: var(--bg2); border-radius: 6px; padding: 4px 9px; color: var(--tx2); }
+    .chip.fil { background: var(--aza); color: var(--azh); }
+
+    /* Puntos a validar */
+    .lista { border: 1px solid var(--ln); border-radius: 12px; }
+    .pt { display: grid; grid-template-columns: 1fr auto; gap: 10px 16px; align-items: center; padding: 14px 16px; border-top: 1px solid var(--ln); }
+    .pt:first-child { border-top: 0; }
     .pt .txt { font-size: .9375rem; }
-    .pt .txt .extra { font-size: .6875rem; color: var(--vt); background: var(--va); border-radius: 5px; padding: 1px 6px; margin-left: 6px; font-weight: 700; }
-    .seg { display: inline-flex; border: 1px solid #dcdbe6; border-radius: 10px; overflow: hidden; }
-    .seg button { border: 0; background: #fff; min-height: 40px; min-width: 76px; padding: 0 10px; font-size: .8125rem; font-weight: 700; color: var(--tx2); cursor: pointer; border-left: 1px solid #dcdbe6; }
+    .ctrl { display: flex; gap: 8px; align-items: center; }
+    .seg { display: inline-flex; border: 1px solid #d4d4d4; border-radius: var(--r); overflow: hidden; }
+    .seg button { border: 0; background: #fff; min-height: 40px; min-width: 84px; padding: 0 12px; font-size: .8125rem; font-weight: 600; color: var(--tx2); cursor: pointer; border-left: 1px solid #d4d4d4; }
     .seg button:first-child { border-left: 0; }
     .seg button.on.ok { background: var(--vea); color: var(--vet); }
     .seg button.on.falla { background: var(--rja); color: var(--rjt); }
-    .seg button.on.na { background: #f1f1f4; color: var(--tx2); }
+    .seg button.on.na { background: var(--ln2); color: var(--tx); }
+    .seg button:disabled { cursor: default; }
     .pt .nota { grid-column: 1 / -1; display: none; }
     .pt.con-nota .nota { display: block; }
-    .pt .nota textarea { min-height: 44px; }
-    .sug { display: flex; gap: 10px; align-items: flex-start; padding: 9px 11px; border: 1px dashed var(--vb); border-radius: 10px; background: #fcfbff; margin-top: 8px; }
-    .sug .tp { font-size: .6875rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--azt); background: var(--aza); border-radius: 5px; padding: 2px 6px; white-space: nowrap; margin-top: 2px; }
-    .sug .tx { flex: 1; font-size: .875rem; }
-    .sug.usada { opacity: .5; }
-    .hall { border: 1px solid #e6e5ee; border-radius: 10px; padding: 10px 12px; margin-top: 10px; background: #fff; }
-    .hrow { display: grid; gap: 8px 10px; align-items: end; }
-    .hrow.a { grid-template-columns: 170px 1fr 1fr; align-items: start; }
-    .hrow.b { grid-template-columns: repeat(4, minmax(0, 1fr)) auto; margin-top: 8px; }
-    .hall textarea { min-height: 44px; }
-    .hall .x { min-height: 44px; width: 44px; padding: 0; }
-    .hall .lbl, .lbl { display: block; font-size: .6875rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--tx3); margin-bottom: 3px; }
-    .hall .acc { display: flex; gap: 6px; }
-    .ctrl { display: flex; gap: 6px; align-items: center; }
+    .pt .nota textarea { min-height: 52px; }
     .ta { position: relative; }
-    .ta textarea { padding-right: 46px; }
-    .mic { position: absolute; right: 6px; top: 6px; width: 34px; height: 34px; border-radius: 8px; border: 1px solid #e3e1ee; background: #fff; color: var(--vt); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
-    .mic.on { background: var(--rja); color: var(--rjt); border-color: #f0c4bd; animation: latido 1.2s infinite; }
+    .ta textarea { padding-right: 48px; }
+    .mic { position: absolute; right: 6px; top: 6px; width: 34px; height: 34px; border-radius: 6px; border: 1px solid var(--ln); background: #fff; color: var(--tx2); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+    .mic.on { background: var(--rja); color: var(--rjt); border-color: #f3c2ca; animation: latido 1.2s infinite; }
     @keyframes latido { 50% { opacity: .55; } }
     .sin-voz .mic { display: none; }
-    .sin-voz .ta textarea { padding-right: 11px; }
-    .nrs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-    .nr { border: 1px solid var(--vb); background: #fff; color: var(--vt); border-radius: 999px; padding: 5px 10px; font-size: .75rem; font-weight: 700; cursor: pointer; }
-    .fotos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .sin-voz .ta textarea { padding-right: 12px; }
+    .nrs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .nr { border: 1px solid var(--ln); background: #fff; color: var(--tx2); border-radius: 99px; padding: 5px 11px; font-size: .75rem; font-weight: 600; cursor: pointer; }
+    .nr:hover { border-color: #bdbdbd; color: var(--tx); }
+    .fotos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
     .fotos:empty { display: none; }
-    .foto { position: relative; width: 84px; height: 84px; border-radius: 9px; overflow: hidden; border: 1px solid var(--ln); background: #f3f3f6; }
+    .foto { position: relative; width: 84px; height: 84px; border-radius: 8px; overflow: hidden; border: 1px solid var(--ln); background: var(--bg2); }
     .foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .foto button { position: absolute; top: 3px; right: 3px; width: 24px; height: 24px; border-radius: 50%; border: 0; background: rgba(29,27,46,.7); color: #fff; font-size: 12px; cursor: pointer; }
+    .foto button { position: absolute; top: 3px; right: 3px; width: 24px; height: 24px; border-radius: 50%; border: 0; background: rgba(0,0,0,.6); color: #fff; font-size: 12px; cursor: pointer; }
     .foto.subiendo { display: flex; align-items: center; justify-content: center; font-size: .6875rem; color: var(--tx3); }
-    body.pend .pt.hecho, body.pend .sec.completa { display: none; }
-    .btn.on { background: var(--v); color: #fff; }
-    body.ro .solo-consultor { display: none !important; }
-    .modal-fondo { position: fixed; inset: 0; background: rgba(29,27,46,.45); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 16px; }
-    .modal { background: #fff; border-radius: 14px; max-width: 560px; width: 100%; padding: 20px; max-height: 90vh; overflow: auto; }
-    .modal .liga { font-size: .8125rem; background: #f6f5fb; border-radius: 8px; padding: 9px 10px; word-break: break-all; margin: 8px 0; }
-    .hist { list-style: none; padding: 0; margin: 8px 0 0; max-height: 360px; overflow: auto; }
-    .hist li { display: grid; grid-template-columns: 128px 1fr; gap: 10px; padding: 7px 0; border-top: 1px solid #f1f1f4; font-size: .8125rem; }
-    .hist li span { color: var(--tx3); }
-    .vacio { color: var(--tx3); font-size: .875rem; padding: 6px 0; }
-    .acciones { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-    .resumen-t { width: 100%; border-collapse: collapse; font-size: .875rem; margin-top: 8px; }
-    .resumen-t th { text-align: left; font-size: .6875rem; text-transform: uppercase; letter-spacing: .05em; color: var(--tx3); padding: 6px 8px; border-bottom: 1px solid var(--ln); }
-    .resumen-t td { padding: 8px; border-bottom: 1px solid #f1f1f4; vertical-align: top; }
-    .tag { font-size: .6875rem; font-weight: 800; border-radius: 5px; padding: 2px 7px; white-space: nowrap; display: inline-block; }
-    .tag.Alta { background: var(--rja); color: var(--rjt); } .tag.Media { background: var(--ama); color: var(--amt); } .tag.Baja { background: #f1f1f4; color: var(--tx2); }
-    .inicio { max-width: 620px; margin: 40px auto; }
-    .recientes a { display: block; padding: 10px 0; border-top: 1px solid #f1f1f4; color: var(--vt); text-decoration: none; font-weight: 600; }
-    .recientes a span { color: var(--tx3); font-weight: 400; font-size: .8125rem; margin-left: 6px; }
-    .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); background: #2b2840; color: #fff; padding: 11px 16px; border-radius: 10px; font-size: .875rem; opacity: 0; transition: .25s; pointer-events: none; z-index: 50; max-width: calc(100% - 32px); }
-    .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
-    .oculto { display: none !important; }
-    .caps { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); margin-top: 14px; }
-    .cap { text-align: left; background: #fff; border: 1px solid var(--ln); border-radius: 12px; padding: 14px 15px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; min-height: 132px; -webkit-tap-highlight-color: transparent; }
-    .cap:hover { border-color: var(--vb); }
-    .cap.on { border: 2px solid var(--v); background: linear-gradient(135deg,#EEECFE,rgba(244,168,205,.16)); padding: 13px 14px; }
-    .cap .k { font-size: .6875rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--vt); }
-    .cap .nm { font-weight: 800; font-size: 1rem; line-height: 1.25; }
-    .cap .rs { font-size: .8125rem; color: var(--tx2); }
-    .cap .pie { margin-top: auto; display: flex; gap: 8px; align-items: center; font-size: .75rem; color: var(--tx2); }
-    .cap .bar { flex: 1; height: 6px; background: #efeef5; border-radius: 99px; overflow: hidden; }
-    .cap .bar i { display: block; height: 100%; background: var(--v); border-radius: 99px; }
-    .cap.done .bar i { background: var(--ve); }
-    .cap-cab { margin-top: 22px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-    .cap-cab h2 { font-size: 1.35rem; }
-    .nota-calc { margin-top: 8px; font-size: .875rem; background: var(--aza); color: #24467f; border-radius: 9px; padding: 9px 11px; }
-    .resumen-t td.pr { color: var(--tx2); font-size: .8125rem; }
-    .mapa svg { width: 100%; height: auto; display: block; margin-top: 6px; }
-    .mapa .nd { cursor: pointer; }
-    .mapa .nd:hover rect { fill: #EEECFE; }
-    .mapa .lec { margin-top: 10px; font-size: .875rem; color: var(--tx2); }
-    .sec.clave { border: 1.5px solid var(--vb); }
-    .sec.clave .num { background: var(--v); color: #fff; }
-    .firma-box { margin-top: 18px; border: 1px solid var(--vb); border-radius: 12px; padding: 14px; background: #fcfbff; }
-    .firma-box h4 { margin: 0 0 4px; font-size: .9375rem; font-weight: 800; }
-    .firma-box .ley { font-size: .8125rem; color: var(--tx2); margin: 0 0 10px; }
-    .pad { position: relative; border: 1.5px dashed #c9c6d8; border-radius: 10px; background: #fff; touch-action: none; height: 150px; }
+    body.pend .pt.hecho { display: none; }
+
+    /* Sugerencias y hallazgos */
+    .sug { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border: 1px dashed #cfcfcf; border-radius: var(--r); margin-top: 8px; }
+    .sug .tp { font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--azh); background: var(--aza); border-radius: 4px; padding: 2px 6px; white-space: nowrap; }
+    .sug .tx { flex: 1; font-size: .875rem; }
+    .sug.usada { opacity: .45; }
+    .hall { border: 1px solid var(--ln); border-radius: 12px; padding: 14px 16px; margin-top: 10px; }
+    .hrow { display: grid; gap: 10px 12px; align-items: end; }
+    .hrow.a { grid-template-columns: 180px 1fr 1fr; align-items: start; }
+    .hrow.b { grid-template-columns: repeat(4, minmax(0, 1fr)) auto; margin-top: 10px; }
+    .hall textarea { min-height: 48px; }
+    .lbl { display: block; font-size: .75rem; font-weight: 600; color: var(--tx3); margin-bottom: 4px; }
+    .hall .acc { display: flex; gap: 6px; }
+    .hall .x { width: 44px; padding: 0; }
+
+    /* Firma */
+    .firma-box { margin-top: 28px; border: 1px solid var(--ln); border-radius: 12px; padding: 18px; background: var(--bg2); }
+    .firma-box h4 { margin: 0 0 4px; font-size: 1rem; font-weight: 700; }
+    .firma-box .ley { font-size: .875rem; color: var(--tx2); margin: 0 0 12px; }
+    .pad { position: relative; border: 1px dashed #bdbdbd; border-radius: var(--r); background: #fff; touch-action: none; height: 150px; }
     .pad svg { width: 100%; height: 100%; display: block; }
     .pad .ph { position: absolute; left: 12px; bottom: 10px; font-size: .75rem; color: var(--tx3); pointer-events: none; }
     .pad.con .ph { display: none; }
-    .firma-box .chk { display: flex; gap: 10px; align-items: flex-start; font-size: .875rem; margin-top: 10px; }
-    .firma-box .chk input { width: 22px; height: 22px; flex: 0 0 auto; accent-color: #9B8CFA; }
-    .firmado { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
-    .firmado svg { width: 220px; height: 55px; border-bottom: 1px solid #c9c6d8; }
-    .firmado .q { font-size: .8125rem; color: var(--tx2); }
-    .firmado .q b { color: var(--vet); }
-    .aviso-cambio { margin-top: 10px; font-size: .8125rem; background: var(--ama); color: var(--amt); border-radius: 8px; padding: 8px 10px; }
-    .sec-cab .fir { font-size: .6875rem; font-weight: 800; color: var(--vet); background: var(--vea); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
-    .filtro-res { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
-    .filtro-res .pill.on { background: var(--v); border-color: var(--v); color: #fff; }
-    @media (max-width: 900px) {
+    .chk { display: flex; gap: 10px; align-items: center; font-size: .9375rem; margin-top: 12px; }
+    .chk input { width: 22px; height: 22px; accent-color: var(--az); }
+    .firmado { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    .firmado svg { width: 220px; height: 55px; border-bottom: 1px solid #bdbdbd; }
+    .firmado .q { font-size: .875rem; color: var(--tx2); }
+    .firmado .q b { color: var(--tx); }
+    .aviso-cambio { margin-top: 12px; font-size: .875rem; background: var(--ama); color: var(--amt); border-radius: var(--r); padding: 10px 12px; }
+
+    /* Mapa */
+    .mapa svg { width: 100%; height: auto; display: block; margin-top: 8px; }
+    .mapa .nd { cursor: pointer; }
+    .mapa .nd:hover rect { fill: #f2f6ff; }
+    .mapa .lec { margin-top: 12px; font-size: .9375rem; color: var(--tx2); }
+
+    /* Resumen */
+    .resumen-t { width: 100%; border-collapse: collapse; font-size: .875rem; margin-top: 12px; }
+    .resumen-t th { text-align: left; font-size: .75rem; color: var(--tx3); font-weight: 600; padding: 8px; border-bottom: 1px solid var(--ln); }
+    .resumen-t td { padding: 10px 8px; border-bottom: 1px solid var(--ln2); vertical-align: top; }
+    .resumen-t td.pr { color: var(--tx2); font-size: .8125rem; }
+    .tag { font-size: .75rem; font-weight: 600; border-radius: 99px; padding: 2px 9px; white-space: nowrap; display: inline-block; }
+    .tag.Alta { background: var(--rja); color: var(--rjt); } .tag.Media { background: var(--ama); color: var(--amt); } .tag.Baja { background: var(--ln2); color: var(--tx2); }
+    .filtro-res { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+    .pill { border: 1px solid var(--ln); background: #fff; border-radius: 99px; padding: 6px 12px; font-size: .8125rem; font-weight: 600; color: var(--tx2); cursor: pointer; }
+    .pill.on { background: var(--tx); border-color: var(--tx); color: #fff; }
+    .hist { list-style: none; padding: 0; margin: 8px 0 0; max-height: 420px; overflow: auto; }
+    .hist li { display: grid; grid-template-columns: 130px 1fr; gap: 12px; padding: 9px 0; border-top: 1px solid var(--ln2); font-size: .875rem; }
+    .hist li span { color: var(--tx3); }
+
+    /* Inicio sin sesión, modal, toast */
+    .inicio { max-width: 560px; margin: 48px auto; padding: 0 20px; }
+    .recientes a { display: block; padding: 10px 0; border-top: 1px solid var(--ln2); color: var(--az); text-decoration: none; font-weight: 600; }
+    .recientes a span { color: var(--tx3); font-weight: 400; font-size: .8125rem; margin-left: 6px; }
+    .modal-fondo { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .modal { background: #fff; border-radius: 12px; max-width: 560px; width: 100%; padding: 24px; max-height: 90vh; overflow: auto; }
+    .modal .liga { font-size: .8125rem; background: var(--bg2); border-radius: var(--r); padding: 10px 12px; word-break: break-all; margin: 12px 0; }
+    .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); background: var(--tx); color: #fff; padding: 12px 16px; border-radius: var(--r); font-size: .875rem; opacity: 0; transition: .25s; pointer-events: none; z-index: 70; max-width: calc(100% - 32px); }
+    .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+    body.ro .solo-orq { display: none !important; }
+    #imprimir { display: none; }
+
+    @media (max-width: 1000px) {
+      .caps { grid-template-columns: repeat(2, 1fr); }
+      .datos { grid-template-columns: repeat(3, 1fr); }
+      .datos div:nth-child(4) { border-left: 0; }
+      .datos div:nth-child(n+4) { border-top: 1px solid var(--ln); }
       .kpis { grid-template-columns: repeat(2, 1fr); }
+      .proc { grid-template-columns: 1fr; gap: 20px; }
+      .pasos { display: none; }
+      .sel-pasos { display: block; }
       .hrow.a { grid-template-columns: 1fr; }
       .hrow.b { grid-template-columns: 1fr 1fr; }
       .hall .acc { grid-column: 1 / -1; }
+      .marca i { display: none; }
     }
-    @media (max-width: 560px) {
+    @media (max-width: 620px) {
+      .caps { grid-template-columns: 1fr; }
       .pt { grid-template-columns: 1fr; }
       .ctrl { flex-wrap: wrap; }
       .seg { width: 100%; } .seg button { flex: 1; min-width: 0; }
     }
     @media print {
-      .no-print, .barra, .nav, .sug, .acciones, .hall .x, .mic, .nrs, .solo-consultor, .modal-fondo { display: none !important; }
-      body { background: #fff; font-size: 12px; }
+      body > *:not(#imprimir) { display: none !important; }
+      #imprimir { display: block !important; padding: 0 8px; }
+      .mic, .nrs, .solo-orq, .acciones, .sug, .foco-pie { display: none !important; }
+      body { font-size: 11.5px; }
       * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .sec.cerrada .cuerpo { display: block; }
-      .card { break-inside: avoid-page; }
-      .wrap { padding-bottom: 0; }
+      .imp-sec { break-inside: avoid-page; margin-top: 22px; padding-top: 14px; border-top: 1px solid #e3e3e3; }
+      .imp-cap { break-before: page; }
+      .imp-cap:first-of-type { break-before: auto; }
     }
   </style>
 </head>
 <body>
-  <div class="cinta"></div>
 
-  <!-- Pantalla de inicio: sin ?s ni ?c en la liga -->
-  <div id="inicio" class="wrap oculto">
+  <!-- Sin ?s ni ?c: crear o abrir una sesión -->
+  <div id="inicio" class="oculto">
     <div class="inicio">
-      <div class="firma"><span class="marca">Sacscloud</span> · Checklist de entrega</div>
-      <h1>Suite de Consignación</h1>
+      <div class="marca">Sacscloud <i>· Checklist de entrega</i></div>
+      <h1 style="margin-top:10px">Suite de Consignación</h1>
       <p class="sub">Revisión con el cliente de todos los procesos de la suite, de inicio a fin, y del dashboard con sus reportes.</p>
-      <div class="card ancla">
+      <div class="panel" style="margin-top:24px">
         <h2>Nueva sesión</h2>
-        <p class="sub" style="margin-top:4px">Se crea una liga propia para este cliente. Lo que se capture se guarda solo y se abre en cualquier dispositivo con la misma liga.</p>
-        <div class="grid" style="margin-top:12px">
-          <label class="f">Cliente<input type="text" id="nuevoCliente" placeholder="Nombre comercial" autocomplete="off" /></label>
-        </div>
+        <p class="sub">Vende Tu Closet · Producción · orquesta Andrea Araujo. Se crea una liga propia; lo que se capture se guarda solo y se abre en cualquier dispositivo con la misma liga.</p>
         <div class="acciones"><button class="btn pri" id="btnNueva">Crear sesión</button></div>
       </div>
-      <div class="card">
+      <div class="panel">
         <h2>Abrir una sesión</h2>
-        <div class="grid" style="margin-top:12px">
-          <label class="f">Liga o código<input type="text" id="abrirCodigo" placeholder="Pega la liga de la sesión" autocomplete="off" /></label>
-        </div>
+        <div class="grid" style="margin-top:12px"><label class="f">Liga o código<input type="text" id="abrirCodigo" placeholder="Pega la liga de la sesión" autocomplete="off" /></label></div>
         <div class="acciones"><button class="btn" id="btnAbrir">Abrir</button></div>
         <div id="recientes" class="recientes" style="margin-top:8px"></div>
       </div>
     </div>
   </div>
 
-  <!-- La sesión -->
   <div id="app" class="oculto">
-    <div class="barra no-print">
+    <header class="top">
       <div class="in">
+        <span class="marca">Sacscloud <i>· Checklist de entrega · Suite de Consignación</i></span>
         <span class="estado" id="estado"><span class="punto"></span><span id="estadoTxt">Cargando…</span></span>
-        <button class="btn peq ter solo-consultor" id="btnPend">Solo pendientes</button>
-        <button class="btn peq solo-consultor" id="btnEnviar">Enviar al cliente</button>
-        <button class="btn peq solo-consultor" id="btnLiga">Mi liga</button>
-        <button class="btn peq" id="btnCsv">Excel</button>
-        <button class="btn peq ter" id="btnPdf">Imprimir / PDF</button>
+        <button class="btn peq solo-orq oculto" id="btnPend">Solo pendientes</button>
+        <button class="btn peq pri solo-orq" id="btnEnviar">Enviar al cliente</button>
+        <div class="menu">
+          <button class="btn peq" id="btnMas" aria-haspopup="true">Más</button>
+          <div class="menu-lista oculto" id="menuMas">
+            <button data-acc="pdf">Imprimir / PDF</button>
+            <button data-acc="csv">Exportar a Excel</button>
+            <button data-acc="liga" class="solo-orq">Copiar mi liga de orquestador</button>
+            <button data-acc="cierre">Resumen y cierre</button>
+          </div>
+        </div>
       </div>
-      <nav class="nav" id="nav"></nav>
-    </div>
+      <nav class="migas" id="migas" aria-label="Ruta"></nav>
+    </header>
 
-    <div class="wrap">
-      <div class="firma"><span class="marca">Sacscloud</span> · Checklist de entrega</div>
-      <h1>Suite de Consignación</h1>
+    <!-- INICIO -->
+    <main id="vInicio" class="wrap oculto">
+      <h1>Entrega · Suite de Consignación</h1>
       <p class="sub" id="intro"></p>
-
-      <div class="card ancla">
-        <h2>Datos de la sesión</h2>
-        <div class="grid" style="margin-top:12px">
-          <label class="f">Cliente<input type="text" data-meta="cliente" /></label>
-          <label class="f">Cuenta Sacscloud<input type="text" data-meta="cuenta" /></label>
-          <label class="f">Fecha<input type="date" data-meta="fecha" /></label>
-          <label class="f">Consultor<input type="text" data-meta="consultor" /></label>
-          <label class="f">Responsable del cliente<input type="text" data-meta="responsable" /></label>
-          <label class="f">Ambiente<select data-meta="ambiente"><option value="">—</option><option>Producción</option><option>Pruebas</option></select></label>
-        </div>
+      <div class="datos" id="datos"></div>
+      <div class="grid solo-orq" style="margin-top:16px; max-width:480px">
+        <label class="f">Quién revisa por parte del cliente (opcional)<input type="text" data-meta="responsable" placeholder="Nombre" /></label>
       </div>
-
       <div class="kpis" id="kpis"></div>
+      <h3 style="margin-top:32px">Procesos</h3>
+      <div class="caps" id="caps"></div>
+    </main>
 
-      <h3 style="margin-top:22px">Procesos</h3>
-      <div class="caps no-print" id="caps"></div>
-
-      <div class="cap-cab" id="capCab"></div>
-      <div id="mapa"></div>
-      <div id="secciones"></div>
-
-      <div class="card no-print solo-consultor" style="text-align:center">
-        <p class="sub" style="margin-bottom:8px" id="otraTxt"></p>
-        <button class="btn" id="btnOtra"></button>
-      </div>
-
-      <div class="card" id="cierre">
-        <h2>Resumen y cierre</h2>
-        <p class="sub" style="margin-top:4px">Todo lo anotado en la sesión, de mayor a menor prioridad.</p>
-        <div class="filtro-res no-print" id="filtroRes"></div>
-        <div id="resumen"></div>
-        <h3>Acuerdos de la sesión</h3>
-        <div class="ta"><textarea data-cierre="acuerdos" placeholder="Lo que quedó decidido y los siguientes pasos"></textarea><button type="button" class="mic solo-consultor" title="Dictar"></button></div>
-        <div id="firmaCierre"></div>
-        <div class="grid" style="margin-top:12px">
-          <label class="f">Consultor Sacscloud que valida<input type="text" data-cierre="firmaSacs" /></label>
+    <!-- PROCESO (enfoque) -->
+    <main id="vProceso" class="proc oculto">
+      <aside class="pasos" id="pasos"></aside>
+      <section>
+        <select class="sel-pasos" id="selPasos" aria-label="Etapa"></select>
+        <div id="foco"></div>
+        <div class="foco-pie">
+          <button class="btn" id="btnAnt">← Anterior</button>
+          <button class="btn pri" id="btnSig">Siguiente →</button>
         </div>
-      </div>
+      </section>
+    </main>
 
-      <div class="card" id="historial">
-        <h2>Historial de cambios</h2>
-        <p class="sub" style="margin-top:4px">Quién marcó, anotó o firmó qué, y cuándo.</p>
-        <ul class="hist" id="hist"></ul>
+    <!-- CIERRE -->
+    <main id="vCierre" class="wrap oculto">
+      <h1>Resumen y cierre</h1>
+      <p class="sub">Todo lo anotado en la sesión, de mayor a menor prioridad.</p>
+      <div class="filtro-res" id="filtroRes"></div>
+      <div id="resumen"></div>
+      <h3>Acuerdos de la sesión</h3>
+      <div class="ta"><textarea data-cierre="acuerdos" placeholder="Lo que quedó decidido y los siguientes pasos"></textarea><button type="button" class="mic solo-orq" title="Dictar"></button></div>
+      <div id="firmaCierre"></div>
+      <div class="grid" style="margin-top:16px; max-width:480px">
+        <label class="f">Orquestador Sacscloud que valida<input type="text" data-cierre="firmaSacs" /></label>
       </div>
-    </div>
+      <h3 style="margin-top:36px">Historial de cambios</h3>
+      <ul class="hist" id="hist"></ul>
+    </main>
   </div>
 
+  <div id="imprimir"></div>
   <div class="toast" id="toast"></div>
   <input type="file" id="fotoInput" accept="image/*" hidden />
 
@@ -325,28 +374,36 @@ export const prerender = true;
     const RESPS = ['Sacscloud', 'Cliente', 'Ambos'];
     const NOTAS_RAPIDAS = ['Probado con venta real', 'Funciona, pero confunde', 'No lo usa', 'Lo quiere distinto', 'Revisar con el dueño', 'Pendiente de datos del cliente'];
     const RES = { ok: 'Correcto', falla: 'Falla', na: 'No aplica', '': 'Sin revisar' };
+    // Datos fijos de esta entrega: no se capturan, se muestran.
+    const FIJOS = { cliente: 'Vende Tu Closet', cuenta: 'vendetucloset', consultor: 'Andrea Araujo', ambiente: 'Producción' };
     const ICO_MIC = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
+    const ICO_OK = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4"><path d="M5 12l5 5 9-10"/></svg>';
     const $ = (s, r) => (r || document).querySelector(s);
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const sel = id => '#s-' + CSS.escape(id);
 
-    // ROL: el consultor entra con ?s= (edita todo); el cliente con ?c= (solo lee y firma).
-    let ROL = 'consultor', codigo = null, cc = null;
+    // ROL: el orquestador entra con ?s= (edita todo); el cliente con ?c= (solo lee y firma).
+    let ROL = 'orq', codigo = null, cc = null;
     let S = null, F = {}, actualizado = '', timer = null, guardando = false, pendiente = false, reintento = null, filtroRes = '';
+    let ruta = { v: 'inicio', cap: null, paso: null };
     const esCliente = () => ROL === 'cliente';
 
     function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('on'), 2800); }
     function nuevoCodigo() { const a = new Uint8Array(12); crypto.getRandomValues(a); return Array.from(a, b => (b % 36).toString(36)).join('') + Date.now().toString(36).slice(-4); }
-    function vacio(cliente) { return { meta: { cliente: cliente || '', cuenta: '', fecha: new Date().toISOString().slice(0, 10), consultor: '', responsable: '', ambiente: '' }, sec: {}, extras: [], cierre: { acuerdos: '', firmaSacs: '' }, cerradas: {}, cap: GUIA.capitulos[0].id, log: [], _ts: Date.now() }; }
+    function hoyLocal() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+    function vacio() { return { meta: { cliente: FIJOS.cliente, cuenta: FIJOS.cuenta, fecha: hoyLocal(), consultor: FIJOS.consultor, responsable: '', ambiente: FIJOS.ambiente }, sec: {}, extras: [], cierre: { acuerdos: '', firmaSacs: FIJOS.consultor }, cap: GUIA.capitulos[0].id, log: [], _ts: Date.now() }; }
     function capDe(id) { return GUIA.capitulos.find(c => c.id === id) || GUIA.capitulos[0]; }
     function secsDe(cap) { return cap.secciones.concat((S.extras || []).filter(x => x.cap === cap.id)); }
-    function capActual() { return capDe(S.cap); }
     function est(id) { if (!S.sec[id]) S.sec[id] = { puntos: {}, extra: [], hall: [], usadas: {} }; return S.sec[id]; }
     function secPorId(id) { for (const c of GUIA.capitulos) { const s = secsDe(c).find(x => x.id === id); if (s) return { cap: c, s }; } return null; }
     function corto(t, n) { t = String(t || ''); return t.length > (n || 60) ? t.slice(0, (n || 60) - 1) + '…' : t; }
+    function etiquetaCap(cap) { const i = GUIA.capitulos.indexOf(cap); return cap.id === 'rep' ? 'Revisión' : 'Proceso ' + (i + 1); }
+    function numSec(cap, s) { return s.clave ? 0 : secsDe(cap).filter(x => !x.clave).indexOf(s) + 1; }
+    function nombreCorto(s) { return s.nombre.replace(/^Etapa \d+ · /, ''); }
+    function pct(a, b) { return (b ? Math.round(a * 100 / b) : 0) + '%'; }
 
     // ── Historial ─────────────────────────────────────────────────────────
-    function quien() { return esCliente() ? 'Cliente' : (S.meta.consultor || 'Consultor'); }
+    function quien() { return esCliente() ? 'Cliente' : (S.meta.consultor || 'Orquestador'); }
     function logEv(texto) {
       if (esCliente()) return;
       S.log = S.log || []; S.log.push({ t: new Date().toISOString(), q: quien(), a: texto });
@@ -354,6 +411,7 @@ export const prerender = true;
     }
     function fechaCorta(iso) { try { return new Date(iso).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (e) { return iso; } }
     function pintarHist() {
+      if (ruta.v !== 'cierre') return;
       const ev = (S.log || []).map(x => ({ t: x.t, q: x.q, a: x.a }));
       Object.keys(F).forEach(id => { const f = F[id]; const r = id === '__cierre' ? { s: { nombre: 'Cierre de la sesión' } } : secPorId(id); ev.push({ t: f.at, q: f.nombre + (f.desde === 'cliente' ? ' (desde su liga)' : ''), a: 'Firmó de enterado y aceptado · ' + (r ? r.s.nombre : id) }); });
       ev.sort((a, b) => (a.t < b.t ? 1 : -1));
@@ -365,7 +423,7 @@ export const prerender = true;
     function recordar() {
       try {
         const r = JSON.parse(localStorage.getItem(LS + 'recientes') || '[]').filter(x => x.c !== codigo);
-        r.unshift({ c: codigo, n: S.meta.cliente || 'Sin nombre', t: Date.now() });
+        r.unshift({ c: codigo, n: (S.meta.cliente || 'Sesión') + ' · ' + (S.meta.fecha || ''), t: Date.now() });
         localStorage.setItem(LS + 'recientes', JSON.stringify(r.slice(0, 8)));
       } catch (e) {}
     }
@@ -375,7 +433,7 @@ export const prerender = true;
       S._ts = Date.now(); S._sinc = false; local();
       estado('sav', 'Cambios sin guardar…');
       clearTimeout(timer); timer = setTimeout(subir, 1000);
-      pintarResumen(); avisosFirma(); pintarHist();
+      refrescarIndicadores();
     }
     async function subir() {
       if (esCliente()) return;
@@ -401,13 +459,14 @@ export const prerender = true;
     // ── Arranque ───────────────────────────────────────────────────────────
     async function arrancar() {
       if (!(window.SpeechRecognition || window.webkitSpeechRecognition)) document.body.classList.add('sin-voz');
+      document.querySelectorAll('.mic').forEach(m => { if (!m.innerHTML) m.innerHTML = ICO_MIC; });
       const q = new URLSearchParams(location.search);
       codigo = (q.get('s') || '').toLowerCase();
       const qc = (q.get('c') || '').toLowerCase();
       if (/^[a-z0-9]{12,40}$/.test(qc) && !/^[a-z0-9]{12,40}$/.test(codigo)) return arrancarCliente(qc);
       if (!/^[a-z0-9]{12,40}$/.test(codigo)) return pantallaInicio();
       $('#app').classList.remove('oculto');
-      $('#intro').innerHTML = 'Se elige un proceso y se recorre con el cliente etapa por etapa. En cada punto se marca <b>Correcto</b>, <b>Falla</b> o <b>No aplica</b>; las mejoras, reglas y fallas se anotan en la tabla de cada etapa y el cliente firma de enterado al final de cada una. Todo se guarda solo.';
+      $('#intro').textContent = 'Elige un proceso para revisarlo con el cliente etapa por etapa. En cada punto se marca Correcto, Falla o No aplica; los hallazgos se anotan en cada etapa y el cliente firma de enterado al final de cada una. Todo se guarda solo.';
       let loc = null; try { loc = JSON.parse(localStorage.getItem(LS + codigo) || 'null'); } catch (e) {}
       let fila = null, red = true;
       try {
@@ -418,10 +477,10 @@ export const prerender = true;
       const srv = fila && fila.data;
       if (fila) { F = fila.firmas || {}; cc = fila.codigo_cliente || null; actualizado = fila.updated_at || ''; }
       // Gana el servidor, salvo que este dispositivo tenga cambios que no alcanzó a subir.
-      if (loc && !loc._sinc && (!srv || (loc._ts || 0) > (srv._ts || 0))) { S = loc; normalizar(); pintar(); subir(); }
+      if (loc && !loc._sinc && (!srv || (loc._ts || 0) > (srv._ts || 0))) { S = loc; normalizar(); render(); subir(); }
       else {
-        S = srv || loc || vacio('');
-        normalizar(); pintar();
+        S = srv || loc || vacio();
+        normalizar(); render();
         if (!red) estado('err', 'Sin conexión: trabajando en este dispositivo');
         else if (!srv) subir();
         else { S._sinc = true; local(); recordar(); estado('ok', 'Sesión cargada'); }
@@ -432,20 +491,20 @@ export const prerender = true;
     async function arrancarCliente(c) {
       ROL = 'cliente'; cc = c; document.body.classList.add('ro');
       $('#app').classList.remove('oculto');
-      $('#intro').innerHTML = 'Aquí está lo que se revisó contigo en la entrega de la Suite de Consignación. Al final de cada etapa puedes <b>firmar de enterado y aceptado</b>.';
+      $('#intro').textContent = 'Aquí está lo que se revisó contigo en la entrega de la Suite de Consignación. Entra a cada proceso para ver el detalle y, al final de cada etapa, firmar de enterado y aceptado.';
       try {
         const r = await fetch(API + '?c=' + c, { cache: 'no-store' });
         const j = await r.json(); if (!j.ok) throw new Error(j.error);
-        S = j.sesion.data || vacio(''); F = j.sesion.firmas || {}; actualizado = j.sesion.updated_at || '';
-        normalizar(); pintar(); estado('ok', 'Vista del cliente');
+        S = j.sesion.data || vacio(); F = j.sesion.firmas || {}; actualizado = j.sesion.updated_at || '';
+        normalizar(); render(); estado('ok', 'Vista del cliente');
         setInterval(refrescar, 20000);
       } catch (e) {
-        document.querySelector('#app .wrap').innerHTML = '<div class="card"><h2>Esta liga no está disponible</h2><p class="sub">Pide al consultor que te la vuelva a enviar.</p></div>';
+        $('#app').innerHTML = '<div class="inicio"><div class="panel"><h2>Esta liga no está disponible</h2><p class="sub">Pide al orquestador que te la vuelva a enviar.</p></div></div>';
       }
     }
 
     // Cada 20 s: firmas nuevas (el cliente pudo firmar desde su teléfono) y,
-    // en la vista del cliente, lo que el consultor siga anotando.
+    // en la vista del cliente, lo que el orquestador siga anotando.
     function ocupado() { return !!document.querySelector('[data-pad].con') || [...document.querySelectorAll('[data-fnom]')].some(i => i.value) || (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)); }
     async function refrescar() {
       if (document.hidden) return;
@@ -457,17 +516,17 @@ export const prerender = true;
         if (!nuevas && !cambiaData) return;
         if (ocupado()) return;
         F = j.sesion.firmas || {};
-        if (cambiaData) { const cap = S.cap; S = j.sesion.data; S.cap = cap; actualizado = j.sesion.updated_at; normalizar(); }
-        pintar();
+        if (cambiaData) { S = j.sesion.data; actualizado = j.sesion.updated_at; normalizar(); }
+        const y = window.scrollY; render(); window.scrollTo(0, y);
         if (nuevas && !esCliente()) toast('Hay firmas nuevas del cliente');
       } catch (e) {}
     }
 
     function normalizar() {
-      S.sec = S.sec || {}; S.extras = S.extras || []; S.cerradas = S.cerradas || {}; S.cierre = S.cierre || {}; S.log = S.log || [];
-      if (!GUIA.capitulos.some(c => c.id === S.cap)) S.cap = GUIA.capitulos[0].id;
-      const pc = (new URLSearchParams(location.search)).get('p');
-      if (pc && GUIA.capitulos.some(c => c.id === pc)) S.cap = pc;
+      S.sec = S.sec || {}; S.extras = S.extras || []; S.cierre = S.cierre || {}; S.log = S.log || []; S.meta = S.meta || {};
+      Object.keys(FIJOS).forEach(k => { S.meta[k] = FIJOS[k]; });
+      if (!S.meta.fecha) S.meta.fecha = hoyLocal();
+      if (!S.cierre.firmaSacs) S.cierre.firmaSacs = FIJOS.consultor;
     }
 
     function pantallaInicio() {
@@ -475,8 +534,8 @@ export const prerender = true;
       let r = []; try { r = JSON.parse(localStorage.getItem(LS + 'recientes') || '[]'); } catch (e) {}
       $('#recientes').innerHTML = r.length ? '<h3>Recientes en este dispositivo</h3>' + r.map(x => '<a href="?s=' + esc(x.c) + '">' + esc(x.n) + '<span>' + new Date(x.t).toLocaleDateString('es-MX') + '</span></a>').join('') : '';
       $('#btnNueva').onclick = () => {
-        const c = nuevoCodigo(); const cliente = $('#nuevoCliente').value.trim();
-        try { localStorage.setItem(LS + c, JSON.stringify(Object.assign(vacio(cliente), { _sinc: false }))); } catch (e) {}
+        const c = nuevoCodigo();
+        try { localStorage.setItem(LS + c, JSON.stringify(Object.assign(vacio(), { _sinc: false }))); } catch (e) {}
         location.search = '?s=' + c;
       };
       $('#btnAbrir').onclick = () => {
@@ -486,53 +545,154 @@ export const prerender = true;
       };
     }
 
+    // ── Rutas ──────────────────────────────────────────────────────────────
+    function listaPasos(cap) { return (cap.diagrama ? ['__mapa'] : []).concat(secsDe(cap).map(s => s.id)); }
+    function leerRuta() {
+      const h = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
+      if (h[0] === 'p' && GUIA.capitulos.some(c => c.id === h[1])) {
+        const cap = capDe(h[1]); const pasos = listaPasos(cap);
+        return { v: 'proc', cap: cap.id, paso: pasos.includes(h[2]) ? h[2] : pasos[0] };
+      }
+      if (h[0] === 'cierre') return { v: 'cierre' };
+      return { v: 'inicio' };
+    }
+    function ir(hash) { if (location.hash === hash) { render(); window.scrollTo(0, 0); } else location.hash = hash; }
+    window.addEventListener('hashchange', () => { if (!S) return; render(); window.scrollTo(0, 0); });
+    document.addEventListener('click', ev => { const a = ev.target.closest('[data-ir]'); if (a) { ev.preventDefault(); ir(a.dataset.ir); } });
+
+    function render() {
+      if (!S) return;
+      ruta = leerRuta();
+      $('#vInicio').classList.toggle('oculto', ruta.v !== 'inicio');
+      $('#vProceso').classList.toggle('oculto', ruta.v !== 'proc');
+      $('#vCierre').classList.toggle('oculto', ruta.v !== 'cierre');
+      $('#btnPend').classList.toggle('oculto', ruta.v !== 'proc');
+      document.querySelectorAll('[data-meta]').forEach(el => { el.value = S.meta[el.dataset.meta] || ''; el.oninput = () => { S.meta[el.dataset.meta] = el.value; cambio(); }; });
+      document.querySelectorAll('[data-cierre]').forEach(el => { el.value = S.cierre[el.dataset.cierre] || ''; el.oninput = () => { S.cierre[el.dataset.cierre] = el.value; cambio(); }; });
+      if (ruta.v === 'inicio') pintarInicio();
+      else if (ruta.v === 'proc') { S.cap = ruta.cap; pintarProceso(); }
+      else pintarCierre();
+      pintarMigas();
+      bloquear(document);
+    }
+
+    function pintarMigas() {
+      const m = ['<a data-ir="#/">Inicio</a>'];
+      if (ruta.v === 'proc') {
+        const cap = capDe(ruta.cap);
+        m.push('<a data-ir="#/p/' + cap.id + '">' + esc(etiquetaCap(cap) + ' · ' + cap.nombre) + '</a>');
+        if (ruta.paso === '__mapa') m.push('<span class="act">Mapa del proceso</span>');
+        else { const s = secsDe(cap).find(x => x.id === ruta.paso); if (s) m.push('<span class="act">' + esc(s.clave ? 'Puntos clave' : numSec(cap, s) + '. ' + nombreCorto(s)) + '</span>'); }
+      } else if (ruta.v === 'cierre') m.push('<span class="act">Resumen y cierre</span>');
+      else m[0] = '<span class="act">Inicio</span>';
+      $('#migas').innerHTML = m.join('<span class="sep">›</span>');
+    }
+
+    // Vista del cliente: todo se ve, nada se edita salvo la firma.
+    function bloquear(root) {
+      if (!esCliente()) return;
+      root.querySelectorAll('input, textarea, select, .seg button').forEach(el => { if (!el.closest('[data-firma]') && el.id !== 'selPasos') el.disabled = true; });
+    }
+
     // ── Conteos ────────────────────────────────────────────────────────────
     function conteo(s) {
-      const e = est(s.id); const tot = s.puntos.length + e.extra.length; let hechos = 0, fallas = 0, ok = 0;
-      s.puntos.forEach((_, i) => { const p = e.puntos[i]; if (p && p.e) { hechos++; if (p.e === 'falla') fallas++; else ok++; } });
-      e.extra.forEach(p => { if (p.e) { hechos++; if (p.e === 'falla') fallas++; else ok++; } });
-      return { tot, hechos, fallas, ok, hall: e.hall.length, firm: F[s.id] ? 1 : 0 };
+      const e = est(s.id); const tot = s.puntos.length + e.extra.length; let hechos = 0, fallas = 0;
+      s.puntos.forEach((_, i) => { const p = e.puntos[i]; if (p && p.e) { hechos++; if (p.e === 'falla') fallas++; } });
+      e.extra.forEach(p => { if (p.e) { hechos++; if (p.e === 'falla') fallas++; } });
+      return { tot, hechos, fallas, hall: e.hall.length, firm: F[s.id] ? 1 : 0 };
     }
     function conteoCap(cap) {
       const t = { tot: 0, hechos: 0, fallas: 0, hall: 0, firm: 0, secs: 0 };
       secsDe(cap).forEach(s => { const c = conteo(s); t.tot += c.tot; t.hechos += c.hechos; t.fallas += c.fallas; t.hall += c.hall; t.firm += c.firm; t.secs++; });
       return t;
     }
-
-    // ── Pintado ────────────────────────────────────────────────────────────
-    function pintar() {
-      document.querySelectorAll('[data-meta]').forEach(el => { el.value = S.meta[el.dataset.meta] || ''; el.oninput = () => { S.meta[el.dataset.meta] = el.value; cambio(); }; });
-      document.querySelectorAll('[data-cierre]').forEach(el => { el.value = S.cierre[el.dataset.cierre] || ''; el.oninput = () => { S.cierre[el.dataset.cierre] = el.value; cambio(); }; });
-      pintarCap();
-      pintarFirmaCierre();
-      pintarHist();
-      bloquear(document);
+    function todosHall() {
+      const out = [];
+      GUIA.capitulos.forEach(cap => secsDe(cap).forEach(s => est(s.id).hall.forEach(h => out.push(Object.assign({ cap: cap.id, proceso: etiquetaCap(cap) + ' · ' + cap.nombre, pantalla: s.nombre }, h)))));
+      const o = { Alta: 0, Media: 1, Baja: 2, '': 3 };
+      return out.sort((a, b) => (o[a.prio || ''] - o[b.prio || '']));
+    }
+    function totales() {
+      let tot = 0, hechos = 0, fallas = 0, firm = 0, nsec = 0;
+      GUIA.capitulos.forEach(cap => { const c = conteoCap(cap); tot += c.tot; hechos += c.hechos; fallas += c.fallas; firm += c.firm; nsec += c.secs; });
+      const H = todosHall();
+      return { tot, hechos, fallas, firm, nsec, H, altas: H.filter(h => h.prio === 'Alta').length };
+    }
+    // Lo que cambia con cada marca, sin repintar la etapa que se está llenando.
+    function refrescarIndicadores() {
+      if (ruta.v === 'proc') { pintarPasos(); avisosFirma(); }
+      else if (ruta.v === 'cierre') avisosFirma();
     }
 
-    // Vista del cliente: todo se ve, nada se edita salvo la firma.
-    function bloquear(root) {
-      if (!esCliente()) return;
-      root.querySelectorAll('input, textarea, select, button').forEach(el => {
-        if (el.closest('[data-firma]') || el.closest('.barra') || el.closest('.caps') || el.closest('.filtro-res') || el.closest('[data-tog]')) return;
-        if (el.tagName === 'BUTTON') { if (!el.closest('.seg')) return; el.disabled = true; } else { el.disabled = true; }
-      });
+    // ── INICIO ─────────────────────────────────────────────────────────────
+    function pintarInicio() {
+      const f = S.meta.fecha ? new Date(S.meta.fecha + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }) : '—';
+      $('#datos').innerHTML = [['Cliente', S.meta.cliente], ['Cuenta Sacscloud', S.meta.cuenta], ['Orquestador', S.meta.consultor], ['Inicio de la sesión', f], ['Ambiente', S.meta.ambiente]]
+        .map(x => '<div><span>' + esc(x[0]) + '</span><b>' + esc(x[1]) + '</b></div>').join('');
+      const T = totales();
+      $('#kpis').innerHTML =
+        '<div class="kpi"><span class="l">Avance total</span><span class="c">' + pct(T.hechos, T.tot) + '</span><span class="s">' + T.hechos + ' de ' + T.tot + ' puntos revisados</span></div>'
+        + '<div class="kpi"><span class="l">Etapas firmadas</span><span class="c">' + T.firm + '<span style="font-size:1rem;color:var(--tx3)"> / ' + T.nsec + '</span></span><span class="s">enterado y aceptado</span></div>'
+        + '<div class="kpi rj"><span class="l">Con falla</span><span class="c">' + T.fallas + '</span><span class="s">puntos que no pasaron</span></div>'
+        + '<div class="kpi"><span class="l">Hallazgos</span><span class="c">' + T.H.length + '</span><span class="s">' + T.altas + ' de prioridad alta</span></div>';
+      $('#caps').innerHTML = GUIA.capitulos.map(cap => {
+        const c = conteoCap(cap); const p = c.tot ? Math.round(c.hechos * 100 / c.tot) : 0;
+        return '<button class="cap' + (c.tot && c.hechos === c.tot ? ' done' : '') + '" data-ir="#/p/' + esc(cap.id) + '">'
+          + '<span class="k">' + esc(etiquetaCap(cap)) + '</span><span class="nm">' + esc(cap.nombre) + '</span><span class="rs">' + esc(cap.resumen) + '</span>'
+          + '<span class="pie"><span class="bar"><i style="width:' + p + '%"></i></span>' + p + '%</span>'
+          + '<span class="pie" style="margin-top:0">' + c.hechos + '/' + c.tot + ' puntos' + (c.firm ? ' · ' + c.firm + '/' + c.secs + ' firmadas' : '') + (c.hall ? ' · ' + c.hall + ' hallazgos' : '') + '<span class="abrir" style="margin-left:auto">Abrir →</span></span></button>';
+      }).join('')
+        + '<button class="cap cierre" data-ir="#/cierre"><span class="k">Final</span><span class="nm">Resumen y cierre</span><span class="rs">Todos los hallazgos, los acuerdos, la firma final del cliente y el historial.</span>'
+        + '<span class="pie">' + T.H.length + ' hallazgos' + (F.__cierre ? ' · firmado' : '') + '<span class="abrir" style="margin-left:auto">Abrir →</span></span></button>';
     }
 
-    function pintarCap() {
-      const cap = capActual(); const i = GUIA.capitulos.indexOf(cap);
-      const esRep = cap.id === 'rep';
-      $('#capCab').innerHTML = '<span class="firma">' + (esRep ? 'Revisión' : 'Proceso ' + (i + 1)) + '</span><h2>' + esc(cap.nombre) + '</h2><p class="sub" style="flex-basis:100%">' + esc(cap.resumen) + '</p>';
-      $('#mapa').innerHTML = cap.diagrama ? htmlMapa(cap.diagrama) : '';
-      $('#mapa').querySelectorAll('[data-go]').forEach(g => g.onclick = () => irASec(g.dataset.go));
-      $('#secciones').innerHTML = secsDe(cap).map((s, k) => htmlSec(cap, s, k)).join('');
-      secsDe(cap).forEach(s => enlazar(cap, s));
-      $('#otraTxt').textContent = esRep ? '¿El cliente usa una pantalla o reporte que no está en la lista?' : '¿Hay una etapa de su operación que no está en la lista?';
-      $('#btnOtra').textContent = esRep ? 'Agregar pantalla o reporte' : 'Agregar etapa';
-      pintarResumen();
-      bloquear($('#secciones'));
+    // ── PROCESO (enfoque) ──────────────────────────────────────────────────
+    function estadoPaso(s) {
+      const c = conteo(s);
+      if (c.fallas) return 'falla';
+      if (c.tot && c.hechos === c.tot) return 'ok';
+      if (c.hechos) return 'parcial';
+      return '';
+    }
+    function pintarPasos() {
+      const cap = capDe(ruta.cap); const ct = conteoCap(cap);
+      const items = listaPasos(cap).map(id => {
+        if (id === '__mapa') return '<button class="paso' + (ruta.paso === id ? ' on' : '') + '" data-ir="#/p/' + cap.id + '/__mapa"><span class="ic"></span><span class="tx">Mapa del proceso<span class="mt">Cómo funciona de punta a punta</span></span></button>';
+        const s = secsDe(cap).find(x => x.id === id); const c = conteo(s); const e = estadoPaso(s);
+        return '<button class="paso' + (ruta.paso === id ? ' on' : '') + '" data-ir="#/p/' + cap.id + '/' + encodeURIComponent(id) + '"><span class="ic ' + e + '">' + (e === 'ok' ? ICO_OK : '') + '</span><span class="tx">'
+          + esc(s.clave ? 'Puntos clave' : numSec(cap, s) + '. ' + nombreCorto(s))
+          + '<span class="mt">' + c.hechos + '/' + c.tot + (c.fallas ? ' · ' + c.fallas + ' con falla' : '') + (F[s.id] ? ' · firmada' : '') + '</span></span></button>';
+      }).join('');
+      $('#pasos').innerHTML = '<div class="tit">' + esc(etiquetaCap(cap)) + '<b>' + esc(cap.nombre) + '</b></div><div class="bar"><i style="width:' + pct(ct.hechos, ct.tot) + '"></i></div>' + items
+        + '<div class="solo-orq" style="padding:8px 10px"><button class="btn peq" id="btnOtra" style="width:100%">' + (cap.id === 'rep' ? 'Agregar pantalla o reporte' : 'Agregar etapa') + '</button></div>';
+      $('#selPasos').innerHTML = listaPasos(cap).map(id => {
+        if (id === '__mapa') return '<option value="__mapa"' + (ruta.paso === id ? ' selected' : '') + '>Mapa del proceso</option>';
+        const s = secsDe(cap).find(x => x.id === id); const c = conteo(s);
+        return '<option value="' + esc(id) + '"' + (ruta.paso === id ? ' selected' : '') + '>' + esc(s.clave ? 'Puntos clave' : numSec(cap, s) + '. ' + nombreCorto(s)) + ' — ' + pct(c.hechos, c.tot) + (F[s.id] ? ' · firmada' : '') + '</option>';
+      }).join('');
+      $('#selPasos').onchange = ev => ir('#/p/' + cap.id + '/' + encodeURIComponent(ev.target.value));
+      const b = $('#btnOtra'); if (b) b.onclick = () => agregarEtapa(cap);
     }
 
-    // Mapa del proceso: rejilla de 5 columnas; cada caja salta a su etapa.
+    function pintarProceso() {
+      const cap = capDe(ruta.cap);
+      pintarPasos();
+      const pasos = listaPasos(cap); const i = pasos.indexOf(ruta.paso);
+      if (ruta.paso === '__mapa') {
+        $('#foco').innerHTML = '<div class="foco-cab"><span class="k">' + esc(etiquetaCap(cap)) + '</span><h1>' + esc(cap.nombre) + '</h1><p class="sub">' + esc(cap.resumen) + '</p></div>' + htmlMapa(cap.diagrama);
+        $('#foco').querySelectorAll('[data-go]').forEach(g => g.onclick = () => ir('#/p/' + cap.id + '/' + encodeURIComponent(g.dataset.go)));
+      } else {
+        const s = secsDe(cap).find(x => x.id === ruta.paso);
+        $('#foco').innerHTML = htmlSec(cap, s);
+        enlazar(cap, s);
+      }
+      const ant = pasos[i - 1], sig = pasos[i + 1];
+      $('#btnAnt').disabled = !ant; $('#btnAnt').onclick = () => ant && ir('#/p/' + cap.id + '/' + encodeURIComponent(ant));
+      $('#btnSig').textContent = sig ? 'Siguiente →' : 'Volver a procesos';
+      $('#btnSig').onclick = () => ir(sig ? '#/p/' + cap.id + '/' + encodeURIComponent(sig) : '#/');
+    }
+
+    // Mapa del proceso: rejilla de 5 columnas; cada caja abre su etapa.
     function htmlMapa(d) {
       const W = 128, H = 52, X = c => 92 + c * 144, Y = r => 84 + r * 130;
       const N = {}; d.nodos.forEach(n => { N[n.id] = n; });
@@ -547,74 +707,59 @@ export const prerender = true;
         else if (a.c === b.c || ax === bx) { p = 'M' + ax + ' ' + (ay + H / 2) + 'V' + (by - H / 2); ly = by - H / 2 - 12; if (ax > 600) { lx = ax - 8; anc = 'end'; } else { lx = ax + 8; } }
         else { const mid = ay + H / 2 + 39; p = 'M' + ax + ' ' + (ay + H / 2) + 'V' + mid + 'H' + bx + 'V' + (by - H / 2); lx = bx + 8; ly = mid - 8; }
         lineas.push('<path d="' + p + '" marker-end="url(#mapa-flecha)"/>');
-        if (f.et) etiquetas.push('<text x="' + lx + '" y="' + ly + '" text-anchor="' + anc + '" font-size="11.5" fill="#5f5d72">' + esc(f.et) + '</text>');
+        if (f.et) etiquetas.push('<text x="' + lx + '" y="' + ly + '" text-anchor="' + anc + '" font-size="11.5" fill="#5c5c5c">' + esc(f.et) + '</text>');
       });
-      const cajas = d.nodos.map(n => '<g class="nd" data-go="' + esc(n.sec) + '" role="button" tabindex="0"><rect x="' + (X(n.c) - W / 2) + '" y="' + (Y(n.r) - H / 2) + '" width="' + W + '" height="' + H + '" rx="8" fill="' + (n.fin ? 'rgba(155,140,250,.14)' : '#fff') + '" stroke="' + (n.fin ? '#9B8CFA' : '#c9c6d8') + '" stroke-width="' + (n.fin ? 2 : 1.25) + '"/>'
-        + '<text x="' + X(n.c) + '" y="' + (Y(n.r) - 3) + '" text-anchor="middle" font-size="13" font-weight="700" fill="#1d1b2e">' + esc(n.t) + '</text>'
-        + '<text x="' + X(n.c) + '" y="' + (Y(n.r) + 15) + '" text-anchor="middle" font-size="11" fill="#5f5d72">' + esc(n.s) + '</text></g>').join('');
-      return '<section class="card mapa"><h2>Mapa del proceso</h2>'
-        + '<svg viewBox="0 0 760 ' + alto + '" role="img" aria-label="' + esc(d.titulo) + '" font-family="DM Sans, system-ui, sans-serif">'
-        + '<defs><marker id="mapa-flecha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b5b2c6"/></marker></defs>'
-        + '<text x="28" y="30" font-size="15" font-weight="700" fill="#5B4BD6">' + esc(d.titulo) + '</text>'
-        + '<g fill="none" stroke="#b5b2c6" stroke-width="1.25">' + lineas.join('') + '</g>' + etiquetas.join('') + cajas + '</svg>'
-        + '<p class="lec">' + esc(d.lectura) + ' Toca una caja para ir a su etapa.</p></section>';
+      const cajas = d.nodos.map(n => '<g class="nd" data-go="' + esc(n.sec) + '" role="button" tabindex="0"><rect x="' + (X(n.c) - W / 2) + '" y="' + (Y(n.r) - H / 2) + '" width="' + W + '" height="' + H + '" rx="8" fill="' + (n.fin ? '#eaf2ff' : '#fff') + '" stroke="' + (n.fin ? '#006aff' : '#cfcfcf') + '" stroke-width="' + (n.fin ? 1.75 : 1.1) + '"/>'
+        + '<text x="' + X(n.c) + '" y="' + (Y(n.r) - 3) + '" text-anchor="middle" font-size="13" font-weight="600" fill="#1a1a1a">' + esc(n.t) + '</text>'
+        + '<text x="' + X(n.c) + '" y="' + (Y(n.r) + 15) + '" text-anchor="middle" font-size="11" fill="#5c5c5c">' + esc(n.s) + '</text></g>').join('');
+      return '<section class="mapa panel" style="margin-top:24px">'
+        + '<svg viewBox="0 0 760 ' + alto + '" role="img" aria-label="' + esc(d.titulo) + '" font-family="Inter, system-ui, sans-serif">'
+        + '<defs><marker id="mapa-flecha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#a8a8a8"/></marker></defs>'
+        + '<text x="28" y="30" font-size="15" font-weight="700" fill="#1a1a1a">' + esc(d.titulo) + '</text>'
+        + '<g fill="none" stroke="#a8a8a8" stroke-width="1.2">' + lineas.join('') + '</g>' + etiquetas.join('') + cajas + '</svg>'
+        + '<p class="lec">' + esc(d.lectura) + ' Toca una caja para abrir su etapa.</p></section>';
     }
 
-    function irASec(id) {
-      const el = $(sel(id)); if (!el) return;
-      if (S.cerradas[id]) { S.cerradas[id] = false; el.classList.remove('cerrada'); }
-      window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 110, behavior: 'smooth' });
-    }
-
-    function irACap(id) {
-      if (S.cap === id) return;
-      S.cap = id; pintarCap(); if (!esCliente()) cambio(); else pintarResumen();
-      const el = $('#capCab'); window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 110, behavior: 'smooth' });
-    }
-
-    // ── Piezas de UI reutilizables ─────────────────────────────────────────
-    function htmlTxt(attr, valor, ph) { return '<div class="ta"><textarea ' + attr + ' placeholder="' + esc(ph || '') + '">' + esc(valor) + '</textarea><button type="button" class="mic solo-consultor" title="Dictar">' + ICO_MIC + '</button></div>'; }
-    function htmlFotos(arr) { return (arr || []).map((u, k) => '<div class="foto"><a href="' + esc(u) + '" target="_blank" rel="noopener"><img src="' + esc(u) + '" alt="Foto ' + (k + 1) + '" loading="lazy" /></a><button type="button" class="solo-consultor" data-quitafoto="' + k + '" title="Quitar">✕</button></div>').join(''); }
+    // ── Piezas de UI ───────────────────────────────────────────────────────
+    function htmlTxt(attr, valor, ph) { return '<div class="ta"><textarea ' + attr + ' placeholder="' + esc(ph || '') + '">' + esc(valor) + '</textarea><button type="button" class="mic solo-orq" title="Dictar">' + ICO_MIC + '</button></div>'; }
+    function htmlFotos(arr) { return (arr || []).map((u, k) => '<div class="foto"><a href="' + esc(u) + '" target="_blank" rel="noopener"><img src="' + esc(u) + '" alt="Foto ' + (k + 1) + '" loading="lazy" /></a><button type="button" class="solo-orq" data-quitafoto="' + k + '" title="Quitar">✕</button></div>').join(''); }
     function opts(list, v, ph) { return (ph ? '<option value="">' + ph + '</option>' : '') + list.map(o => '<option' + (o === v ? ' selected' : '') + '>' + esc(o) + '</option>').join(''); }
 
-    function htmlSec(cap, s, i) {
-      const e = est(s.id); const c = conteo(s); const cerrada = S.cerradas[s.id];
+    function htmlSec(cap, s, imprimir) {
+      const e = est(s.id); const c = conteo(s);
       const hoy = (s.hoy || []).map(x => '<span class="chip">' + esc(x) + '</span>').join('');
       const fil = (s.filtros || []).map(x => '<span class="chip fil">' + esc(x) + '</span>').join('');
       const pts = s.puntos.map((t, k) => htmlPunto('b' + k, t, e.puntos[k] || {}, false)).join('') + e.extra.map((p, k) => htmlPunto('x' + k, p.t, p, true)).join('');
       const sug = (s.sugerencias || []).map((g, k) => '<div class="sug' + (e.usadas[k] ? ' usada' : '') + '"><span class="tp">' + esc(g.tipo) + '</span><span class="tx">' + esc(g.texto) + '</span><button class="btn peq" data-sug="' + k + '"' + (e.usadas[k] ? ' disabled' : '') + '>' + (e.usadas[k] ? 'En la tabla' : 'Agregar') + '</button></div>').join('');
       const esRep = cap.id === 'rep';
-      const num = s.clave ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5 9-10"/></svg>' : (secsDe(cap).filter(x => !x.clave).indexOf(s) + 1);
       const f = F[s.id];
-      return '<section class="card sec' + (s.clave ? ' clave' : '') + (cerrada ? ' cerrada' : '') + (c.tot && c.hechos === c.tot && !c.fallas ? ' completa' : '') + '" id="s-' + esc(s.id) + '">'
-        + '<div class="sec-cab" data-tog><div class="num">' + num + '</div><div class="t"><h2>' + esc(s.nombre) + '</h2>'
-        + (s.donde ? '<div class="meta"><b>Dónde:</b> ' + esc(s.donde) + '</div>' : '')
-        + (s.para ? '<div class="meta"><b>' + (esRep ? 'Para qué sirve:' : 'Qué pasa:') + '</b> ' + esc(s.para) + '</div>' : '')
-        + '</div>' + (f ? '<span class="fir">Firmada</span>' : '') + '<span class="prog' + (c.tot && c.hechos === c.tot ? ' done' : '') + '" data-prog>' + c.hechos + '/' + c.tot + '</span>'
-        + '<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>'
-        + '<div class="cuerpo">'
+      return '<article class="sec' + (imprimir ? ' imp-sec' : '') + '"' + (imprimir ? '' : ' id="s-' + esc(s.id) + '"') + '>'
+        + '<div class="foco-cab"><span class="k">' + esc(etiquetaCap(cap)) + ' · ' + (s.clave ? 'Puntos clave' : (esRep ? 'Pantalla ' : 'Etapa ') + numSec(cap, s)) + '</span>'
+        + '<h1>' + esc(s.clave ? s.nombre : nombreCorto(s)) + '</h1>'
+        + '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><span class="etiqueta">' + c.hechos + ' de ' + c.tot + ' revisados</span>' + (c.fallas ? '<span class="etiqueta" style="background:var(--rja);color:var(--rjt)">' + c.fallas + ' con falla</span>' : '') + (f ? '<span class="etiqueta ve">Firmada</span>' : '') + '</div>'
+        + '<div class="foco-meta">' + (s.donde ? '<div><b>Dónde:</b> ' + esc(s.donde) + '</div>' : '') + (s.para ? '<div><b>' + (esRep ? 'Para qué sirve:' : 'Qué pasa:') + '</b> ' + esc(s.para) + '</div>' : '') + '</div></div>'
         + (s.nota ? '<div class="nota-calc">' + esc(s.nota) + '</div>' : '')
         + (hoy || fil ? '<h3>Lo que muestra hoy</h3><div class="chips">' + hoy + fil + '</div>' : '')
         + (s.editable ? '<h3>' + (esRep ? 'Pantalla' : 'Etapa') + '</h3><div class="grid"><label class="f">Nombre<input type="text" data-ren value="' + esc(s.nombre) + '" /></label><label class="f">Dónde está<input type="text" data-donde value="' + esc(s.donde || '') + '" /></label></div>' : '')
-        + '<h3>' + (s.clave ? 'Pruebas de punta a punta' : 'Puntos a validar') + '</h3><div>' + (pts || '<div class="vacio">Agrega los puntos que se van a revisar.</div>') + '</div>'
-        + '<div class="acciones no-print solo-consultor"><button class="btn peq ter" data-addpt>Agregar punto a validar</button></div>'
-        + (sug ? '<div class="solo-consultor"><h3>Sugerencias para revisar con el cliente</h3>' + sug + '</div>' : '')
+        + '<h3>' + (s.clave ? 'Pruebas de punta a punta' : 'Puntos a validar') + '</h3><div class="lista">' + (pts || '<div class="pt"><div class="vacio">Agrega los puntos que se van a revisar.</div></div>') + '</div>'
+        + '<div class="acciones solo-orq"><button class="btn peq" data-addpt>Agregar punto a validar</button></div>'
+        + (sug ? '<div class="solo-orq"><h3>Sugerencias para revisar con el cliente</h3>' + sug + '</div>' : '')
         + '<h3>' + (esRep ? 'Lo que le falta (campo, dato, filtro…)' : 'Hallazgos: mejoras, reglas y fallas') + '</h3>'
         + '<div>' + (e.hall.length ? e.hall.map((h, k) => htmlHall(cap, h, k)).join('') : '<div class="vacio">Sin anotaciones.</div>') + '</div>'
-        + '<div class="acciones no-print solo-consultor"><button class="btn peq" data-addh>' + (esRep ? 'Agregar faltante' : 'Agregar hallazgo') + '</button>' + (s.editable ? '<button class="btn peq del" data-delsec>Quitar</button>' : '') + '</div>'
+        + '<div class="acciones solo-orq"><button class="btn peq" data-addh>' + (esRep ? 'Agregar faltante' : 'Agregar hallazgo') + '</button>' + (s.editable ? '<button class="btn peq del" data-delsec>Quitar etapa</button>' : '') + '</div>'
         + htmlFirma('Firma del cliente · enterado y aceptado', LEY_ETAPA, f, f && f.h !== huella(e))
-        + '</div></section>';
+        + '</article>';
     }
 
     function htmlPunto(key, t, p, extra) {
       const b = (v, l) => '<button class="' + v + (p.e === v ? ' on' : '') + '" data-e="' + v + '">' + l + '</button>';
       const abierta = p.e === 'falla' || !!p.n || (p.fotos && p.fotos.length);
       return '<div class="pt' + (abierta ? ' con-nota' : '') + (p.e === 'ok' || p.e === 'na' ? ' hecho' : '') + '" data-pt="' + key + '"><div class="txt">' + (extra ? '<input type="text" data-ptt value="' + esc(t) + '" placeholder="Qué se valida" />' : esc(t)) + '</div>'
-        + '<div class="ctrl"><div class="seg">' + b('ok', 'Correcto') + b('falla', 'Falla') + b('na', 'No aplica') + '</div><button class="btn peq ter solo-consultor" data-abrirnota title="Nota o foto">Nota</button></div>'
+        + '<div class="ctrl"><div class="seg">' + b('ok', 'Correcto') + b('falla', 'Falla') + b('na', 'No aplica') + '</div><button class="btn peq solo-orq" data-abrirnota title="Nota o foto">Nota</button></div>'
         + '<div class="nota">' + htmlTxt('data-nota', p.n || '', 'Qué se vio / comentario del cliente')
-        + '<div class="nrs solo-consultor">' + NOTAS_RAPIDAS.map(x => '<button type="button" class="nr" data-nr="' + esc(x) + '">' + esc(x) + '</button>').join('') + '</div>'
+        + '<div class="nrs solo-orq">' + NOTAS_RAPIDAS.map(x => '<button type="button" class="nr" data-nr="' + esc(x) + '">' + esc(x) + '</button>').join('') + '</div>'
         + '<div class="fotos" data-fotos>' + htmlFotos(p.fotos) + '</div>'
-        + '<div class="acciones solo-consultor"><button type="button" class="btn peq ter" data-addfoto>Agregar foto</button>'
+        + '<div class="acciones solo-orq"><button type="button" class="btn peq" data-addfoto>Agregar foto</button>'
         + (p.e === 'falla' ? (p.hz ? '<button type="button" class="btn peq" disabled>Ya está en hallazgos</button>' : '<button type="button" class="btn peq" data-ahz>Pasar a hallazgos</button>') : '')
         + '</div></div></div>';
     }
@@ -628,13 +773,15 @@ export const prerender = true;
         + '<div><span class="lbl">Decisión</span><select data-hf="deci">' + opts(DECIS, h.deci || 'Pendiente') + '</select></div>'
         + '<div><span class="lbl">Responsable</span><select data-hf="resp">' + opts(RESPS, h.resp, '—') + '</select></div>'
         + '<div><span class="lbl">Fecha compromiso</span><input type="date" data-hf="fecha" value="' + esc(h.fecha || '') + '" /></div>'
-        + '<div class="acc solo-consultor"><button type="button" class="btn peq ter" data-addfoto title="Agregar foto">Foto</button><button class="btn peq del x" data-delh title="Quitar">✕</button></div></div>'
+        + '<div class="acc solo-orq"><button type="button" class="btn peq" data-addfoto title="Agregar foto">Foto</button><button class="btn peq del x" data-delh title="Quitar">✕</button></div></div>'
         + '<div class="fotos" data-fotos>' + htmlFotos(h.fotos) + '</div></div>';
     }
 
     function repintarSec(cap, s) {
-      const el = $(sel(s.id)); if (!el) return; const i = secsDe(cap).indexOf(s);
-      const tmp = document.createElement('div'); tmp.innerHTML = htmlSec(cap, s, i); el.replaceWith(tmp.firstChild); enlazar(cap, s); bloquear($(sel(s.id)));
+      if (ruta.v !== 'proc' || ruta.paso !== s.id) return;
+      const y = window.scrollY;
+      $('#foco').innerHTML = htmlSec(cap, s); enlazar(cap, s); bloquear($('#foco'));
+      window.scrollTo(0, y);
     }
 
     // ── Dictado por voz (Web Speech API; si no hay, el botón no aparece) ───
@@ -654,7 +801,6 @@ export const prerender = true;
       try { rec.start(); toast('Dictando… toca otra vez para terminar'); } catch (e) { btn.classList.remove('on'); rec = null; }
     }
     document.addEventListener('click', ev => { const m = ev.target.closest('.mic'); if (m) { ev.preventDefault(); dictar(m); } });
-    document.querySelectorAll('.mic').forEach(m => { if (!m.innerHTML) m.innerHTML = ICO_MIC; });
 
     // ── Fotos: se comprimen en la tableta y se suben a Storage ────────────
     let fotoDestino = null;
@@ -680,7 +826,7 @@ export const prerender = true;
         const fd = new FormData(); fd.append('codigo', codigo); fd.append('file', new File([blob], 'foto.jpg', { type: blob.type || 'image/jpeg' }));
         const r = await fetch(API_FOTO, { method: 'POST', body: fd }); const j = await r.json().catch(() => ({}));
         if (!r.ok || !j.ok) throw new Error(j.error || 'No se pudo subir');
-        const arr = d.arr(); arr.push(j.url); logEv('Agregó una foto · ' + d.donde); d.listo(); cambio();
+        d.arr().push(j.url); logEv('Agregó una foto · ' + d.donde); d.listo(); cambio();
       } catch (e) { toast(e.message || 'No se pudo subir la foto'); const s = caja && caja.querySelector('.subiendo'); if (s) s.remove(); }
     }
     function enlazarFotos(cont, getArr, donde, listo) {
@@ -688,7 +834,7 @@ export const prerender = true;
       const add = cont.querySelector('[data-addfoto]');
       const destino = { caja, arr: getArr, donde, listo };
       if (add) add.onclick = () => pedirFoto(destino);
-      cont.querySelectorAll('[data-quitafoto]').forEach(b => b.onclick = () => { const a = getArr(); a.splice(+b.dataset.quitafoto, 1); logEv('Quitó una foto · ' + donde); listo(); cambio(); });
+      cont.querySelectorAll('[data-quitafoto]').forEach(b => b.onclick = () => { getArr().splice(+b.dataset.quitafoto, 1); logEv('Quitó una foto · ' + donde); listo(); cambio(); });
       // Pegar una captura directo en la nota también la sube.
       cont.querySelectorAll('textarea').forEach(ta => ta.addEventListener('paste', ev => {
         const it = [...((ev.clipboardData && ev.clipboardData.items) || [])].find(x => x.type && x.type.indexOf('image/') === 0);
@@ -697,8 +843,7 @@ export const prerender = true;
     }
 
     function enlazar(cap, s) {
-      const el = $(sel(s.id)); const e = est(s.id);
-      el.querySelector('[data-tog]').onclick = ev => { if (ev.target.closest('input,button,select,textarea')) return; S.cerradas[s.id] = !S.cerradas[s.id]; el.classList.toggle('cerrada'); if (!esCliente()) cambio(); };
+      const el = $(sel(s.id)); if (!el) return; const e = est(s.id);
       el.querySelectorAll('[data-pt]').forEach(row => {
         const key = row.dataset.pt; const extra = key[0] === 'x'; const k = +key.slice(1);
         const obj = () => extra ? e.extra[k] : (e.puntos[k] = e.puntos[k] || {});
@@ -706,8 +851,8 @@ export const prerender = true;
         row.querySelectorAll('[data-e]').forEach(b => b.onclick = () => {
           const p = obj(); p.e = p.e === b.dataset.e ? '' : b.dataset.e;
           logEv(s.nombre + ' · «' + corto(texto()) + '» → ' + RES[p.e || '']);
-          repintarSec(cap, s); prog(s); cambio();
-          if (p.e === 'falla') { const t = $(sel(s.id) + ' [data-pt="' + key + '"] [data-nota]'); if (t) t.focus(); }
+          repintarSec(cap, s); cambio();
+          if (p.e === 'falla') { const t = $(sel(s.id) + ' [data-pt="' + key + '"] [data-nota]'); if (t) t.focus({ preventScroll: true }); }
         });
         const nb = row.querySelector('[data-abrirnota]'); if (nb) nb.onclick = () => { row.classList.toggle('con-nota'); if (row.classList.contains('con-nota')) row.querySelector('[data-nota]').focus(); };
         row.querySelector('[data-nota]').oninput = ev => { obj().n = ev.target.value; cambio(); };
@@ -743,43 +888,45 @@ export const prerender = true;
       });
       const addh = el.querySelector('[data-addh]');
       if (addh) addh.onclick = () => { e.hall.push({ tipo: '', que: '', uso: '', prio: '', deci: 'Pendiente', resp: '', fecha: '', fotos: [] }); logEv(s.nombre + ' · agregó un hallazgo'); repintarSec(cap, s); cambio(); const t = document.querySelectorAll(sel(s.id) + ' [data-hf="que"]'); if (t.length) t[t.length - 1].focus(); };
-      enlazarFirma(el.querySelector('[data-firma]'), s.id, () => huella(e), () => { repintarSec(cap, s); pintarResumen(); pintarHist(); });
-      const ren = el.querySelector('[data-ren]'); if (ren) ren.oninput = () => { s.nombre = ren.value; el.querySelector('h2').textContent = ren.value; cambio(); };
+      enlazarFirma(el.querySelector('[data-firma]'), s.id, () => huella(e), () => { repintarSec(cap, s); pintarPasos(); });
+      const ren = el.querySelector('[data-ren]'); if (ren) ren.oninput = () => { s.nombre = ren.value; cambio(); };
       const don = el.querySelector('[data-donde]'); if (don) don.oninput = () => { s.donde = don.value; cambio(); };
       const del = el.querySelector('[data-delsec]');
       if (del) del.onclick = () => {
-        if (del.dataset.arm !== '1') { del.dataset.arm = '1'; del.textContent = '¿Seguro? Sí, quitar'; setTimeout(() => { del.dataset.arm = ''; del.textContent = 'Quitar'; }, 3500); return; }
-        logEv('Quitó la etapa «' + s.nombre + '»'); S.extras = S.extras.filter(x => x !== s); delete S.sec[s.id]; pintarCap(); cambio();
+        if (del.dataset.arm !== '1') { del.dataset.arm = '1'; del.textContent = '¿Seguro? Sí, quitar'; setTimeout(() => { del.dataset.arm = ''; del.textContent = 'Quitar etapa'; }, 3500); return; }
+        logEv('Quitó la etapa «' + s.nombre + '»'); S.extras = S.extras.filter(x => x !== s); delete S.sec[s.id]; cambio(); ir('#/p/' + cap.id);
       };
     }
 
-    function prog(s) {
-      const c = conteo(s); const box = $(sel(s.id)); if (!box) return; const el = box.querySelector('[data-prog]');
-      el.textContent = c.hechos + '/' + c.tot; el.classList.toggle('done', c.tot > 0 && c.hechos === c.tot);
-      box.classList.toggle('completa', c.tot > 0 && c.hechos === c.tot && !c.fallas);
+    function agregarEtapa(cap) {
+      const esRep = cap.id === 'rep';
+      const s = { id: 'x' + Date.now().toString(36), cap: cap.id, nombre: esRep ? 'Pantalla o reporte nuevo' : 'Etapa nueva', donde: '', para: '', puntos: [], sugerencias: [], editable: true };
+      S.extras.push(s); logEv('Agregó una ' + (esRep ? 'pantalla' : 'etapa') + ' al proceso «' + cap.nombre + '»'); cambio();
+      ir('#/p/' + cap.id + '/' + s.id);
+      setTimeout(() => { const r = $('[data-ren]'); if (r) { r.focus(); r.select(); } }, 50);
     }
 
     // ── Firma de enterado y aceptado ───────────────────────────────────────
     // El trazo se guarda como trayectoria SVG (unos cuantos KB). Las firmas
     // viven aparte (F) y solo las escribe la acción «firmar» del servidor.
     // La huella dice si la etapa cambió después de firmarla.
-    const LEY_ETAPA = 'Revisé esta etapa con el consultor. Estoy enterado y de acuerdo con lo validado y con los hallazgos anotados.';
-    const LEY_CIERRE = 'Revisé con el consultor los procesos de esta sesión. Estoy enterado y de acuerdo con lo validado, los hallazgos y los acuerdos anotados.';
+    const LEY_ETAPA = 'Revisé esta etapa con el orquestador. Estoy enterado y de acuerdo con lo validado y con los hallazgos anotados.';
+    const LEY_CIERRE = 'Revisé con el orquestador los procesos de esta sesión. Estoy enterado y de acuerdo con lo validado, los hallazgos y los acuerdos anotados.';
     function hashTxt(t) { let h = 5381; for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
     function huella(e) { return hashTxt(JSON.stringify([e.puntos, e.extra, e.hall])); }
     function huellaTodo() { return hashTxt(JSON.stringify([Object.keys(S.sec).sort().map(k => [S.sec[k].puntos, S.sec[k].extra, S.sec[k].hall]), S.cierre.acuerdos || ''])); }
     function fechaFirma(iso) { try { return new Date(iso).toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) { return iso; } }
     function htmlFirma(titulo, ley, f, cambioTras) {
       if (f) return '<div class="firma-box" data-firma><h4>' + esc(titulo) + '</h4><div class="firmado">'
-        + '<svg viewBox="0 0 600 150" preserveAspectRatio="xMidYMid meet"><path d="' + esc(f.d) + '" fill="none" stroke="#1d1b2e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+        + '<svg viewBox="0 0 600 150" preserveAspectRatio="xMidYMid meet"><path d="' + esc(f.d) + '" fill="none" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
         + '<div class="q"><b>' + esc(f.nombre) + '</b>' + (f.puesto ? ' · ' + esc(f.puesto) : '') + '<br>Enterado y aceptado · ' + esc(fechaFirma(f.at)) + (f.desde === 'cliente' ? ' · desde su liga' : '') + '</div>'
-        + '<button class="btn peq del no-print solo-consultor" data-quitarfirma style="margin-left:auto">Quitar firma</button></div>'
+        + '<button class="btn peq del solo-orq" data-quitarfirma style="margin-left:auto">Quitar firma</button></div>'
         + '<div class="aviso-cambio' + (cambioTras ? '' : ' oculto') + '" data-aviso>⚠️ Hubo cambios después de la firma. Revísenlos con el cliente y vuelvan a firmar si hace falta.</div></div>';
       return '<div class="firma-box" data-firma><h4>' + esc(titulo) + '</h4><p class="ley">' + esc(ley) + '</p>'
         + '<div class="grid"><label class="f">Nombre de quien firma<input type="text" data-fnom autocomplete="off" /></label><label class="f">Puesto<input type="text" data-fpue autocomplete="off" /></label></div>'
-        + '<div class="pad" data-pad style="margin-top:10px"><svg viewBox="0 0 600 150" preserveAspectRatio="none"><path d="" fill="none" stroke="#1d1b2e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ph">Firma aquí con el dedo o el lápiz</span></div>'
+        + '<div class="pad" data-pad style="margin-top:12px"><svg viewBox="0 0 600 150" preserveAspectRatio="none"><path d="" fill="none" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ph">Firma aquí con el dedo o el lápiz</span></div>'
         + '<label class="chk"><input type="checkbox" data-facepto /><span>Enterado y aceptado.</span></label>'
-        + '<div class="acciones"><button class="btn peq ter" data-flimpiar>Borrar trazo</button><button class="btn pri" data-ffirmar disabled>Firmar</button></div></div>';
+        + '<div class="acciones"><button class="btn peq" data-flimpiar>Borrar trazo</button><button class="btn pri" data-ffirmar disabled>Firmar</button></div></div>';
     }
     async function guardarFirma(id, firma) {
       const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ accion: 'firmar', id, firma }, esCliente() ? { cc } : { codigo })) });
@@ -812,111 +959,77 @@ export const prerender = true;
         btn.disabled = true; btn.textContent = 'Firmando…';
         try {
           await guardarFirma(id, { nombre: nom.value.trim(), puesto: pue.value.trim(), d, h: huellaFn ? huellaFn() : '' });
-          repinta(); pintarResumen(); toast('Firmado: enterado y aceptado');
+          repinta(); toast('Firmado: enterado y aceptado');
         } catch (e) { btn.disabled = false; btn.textContent = 'Firmar'; toast(e.message); }
       };
-    }
-    function pintarFirmaCierre() {
-      const f = F.__cierre;
-      $('#firmaCierre').innerHTML = htmlFirma('Firma del cliente · cierre de la sesión', LEY_CIERRE, f, f && f.h !== huellaTodo());
-      enlazarFirma($('#firmaCierre [data-firma]'), '__cierre', huellaTodo, () => { pintarFirmaCierre(); pintarHist(); });
     }
     // Si algo cambia en una etapa ya firmada, se avisa en el momento.
     function avisosFirma() {
       if (!S) return;
-      secsDe(capActual()).forEach(s => {
-        const e = S.sec[s.id]; if (!e || !F[s.id]) return;
-        const a = document.querySelector(sel(s.id) + ' [data-aviso]'); if (a) a.classList.toggle('oculto', F[s.id].h === huella(e));
-      });
+      if (ruta.v === 'proc' && ruta.paso !== '__mapa') {
+        const e = S.sec[ruta.paso]; const a = document.querySelector('#foco [data-aviso]');
+        if (e && F[ruta.paso] && a) a.classList.toggle('oculto', F[ruta.paso].h === huella(e));
+      }
       const ac = document.querySelector('#firmaCierre [data-aviso]');
       if (F.__cierre && ac) ac.classList.toggle('oculto', F.__cierre.h === huellaTodo());
     }
 
-    // ── Resumen ────────────────────────────────────────────────────────────
-    function todosHall() {
-      const out = [];
-      GUIA.capitulos.forEach((cap, i) => secsDe(cap).forEach(s => est(s.id).hall.forEach(h => out.push(Object.assign({ cap: cap.id, proceso: (cap.id === 'rep' ? '' : (i + 1) + '. ') + cap.nombre, pantalla: s.nombre }, h)))));
-      const o = { Alta: 0, Media: 1, Baja: 2, '': 3 };
-      return out.sort((a, b) => (o[a.prio || ''] - o[b.prio || '']));
-    }
-    function totales() {
-      let tot = 0, hechos = 0, fallas = 0, firm = 0, nsec = 0;
-      GUIA.capitulos.forEach(cap => { const c = conteoCap(cap); tot += c.tot; hechos += c.hechos; fallas += c.fallas; firm += c.firm; nsec += c.secs; });
+    // ── CIERRE ─────────────────────────────────────────────────────────────
+    function pintarCierre() {
       const H = todosHall();
-      return { tot, hechos, fallas, firm, nsec, H, altas: H.filter(h => h.prio === 'Alta').length };
-    }
-
-    function pintarResumen() {
-      const T = totales(); const H = T.H;
-      $('#kpis').innerHTML =
-        '<div class="kpi"><span class="l">Avance total</span><span class="c">' + (T.tot ? Math.round(T.hechos * 100 / T.tot) : 0) + '%</span><span class="s">' + T.hechos + ' de ' + T.tot + ' puntos revisados</span></div>'
-        + '<div class="kpi ve"><span class="l">Etapas firmadas</span><span class="c">' + T.firm + '/' + T.nsec + '</span><span class="s">enterado y aceptado</span></div>'
-        + '<div class="kpi rj"><span class="l">Con falla</span><span class="c">' + T.fallas + '</span><span class="s">puntos que no pasaron</span></div>'
-        + '<div class="kpi am"><span class="l">Hallazgos anotados</span><span class="c">' + H.length + '</span><span class="s">' + T.altas + ' de prioridad alta</span></div>';
-      $('#caps').innerHTML = GUIA.capitulos.map((cap, i) => {
-        const c = conteoCap(cap); const pct = c.tot ? Math.round(c.hechos * 100 / c.tot) : 0;
-        return '<button class="cap' + (cap.id === S.cap ? ' on' : '') + (c.tot && c.hechos === c.tot ? ' done' : '') + '" data-cap="' + esc(cap.id) + '">'
-          + '<span class="k">' + (cap.id === 'rep' ? 'Revisión' : 'Proceso ' + (i + 1)) + '</span><span class="nm">' + esc(cap.nombre) + '</span>'
-          + '<span class="pie"><span class="bar"><i style="width:' + pct + '%"></i></span>' + c.hechos + '/' + c.tot + (c.firm ? ' · ' + c.firm + '/' + c.secs + ' firm.' : '') + (c.hall ? ' · ' + c.hall + ' anot.' : '') + '</span></button>';
-      }).join('');
-      $('#caps').querySelectorAll('[data-cap]').forEach(b => b.onclick = () => irACap(b.dataset.cap));
-      const cap = capActual();
-      // Navegación: un solo selector (no satura la barra). Cada proceso con
-      // su %, y debajo sus etapas con su avance; elegir otra etapa cambia de
-      // proceso y lleva directo a ella.
-      const pct = (a, b) => (b ? Math.round(a * 100 / b) : 0) + '%';
-      let o = '<option value="">Ir a…</option><option value="__caps">Procesos (inicio)</option>';
-      GUIA.capitulos.forEach((cp, i) => {
-        const cc2 = conteoCap(cp);
-        o += '<optgroup label="' + esc((cp.id === 'rep' ? 'Revisión · ' : 'Proceso ' + (i + 1) + ' · ') + cp.nombre + ' — ' + pct(cc2.hechos, cc2.tot) + (cc2.firm ? ' · ' + cc2.firm + '/' + cc2.secs + ' firmadas' : '')) + '">';
-        if (cp.diagrama) o += '<option value="' + esc(cp.id) + '|__mapa">Mapa del proceso</option>';
-        secsDe(cp).forEach(sx => {
-          const c = conteo(sx); const n = secsDe(cp).filter(x => !x.clave).indexOf(sx) + 1;
-          o += '<option value="' + esc(cp.id) + '|' + esc(sx.id) + '">' + (sx.clave ? 'Puntos clave' : n + '. ' + esc(sx.nombre.replace(/^Etapa \d+ · /, ''))) + ' — ' + pct(c.hechos, c.tot) + (F[sx.id] ? ' · firmada' : '') + '</option>';
-        });
-        o += '</optgroup>';
-      });
-      o += '<option value="__cierre">Resumen y cierre</option>';
-      const cTot = conteoCap(cap);
-      $('#nav').innerHTML = '<select id="irA" aria-label="Ir a una etapa">' + o + '</select><span class="nav-prog">' + esc((cap.id === 'rep' ? 'Revisión' : 'Proceso ' + (GUIA.capitulos.indexOf(cap) + 1)) + ' · ' + pct(cTot.hechos, cTot.tot)) + '</span>';
-      $('#irA').onchange = ev => {
-        const v = ev.target.value; ev.target.value = ''; if (!v) return;
-        let id = v;
-        if (v.indexOf('|') > 0) { const pr = v.split('|'); if (pr[0] !== S.cap) { S.cap = pr[0]; pintarCap(); if (!esCliente()) cambio(); } id = pr[1]; }
-        const el = id === '__cierre' ? $('#cierre') : id === '__caps' ? $('#caps') : id === '__mapa' ? $('#mapa') : $(sel(id));
-        if (!el) return;
-        if (id[0] !== '_' && S.cerradas[id]) { S.cerradas[id] = false; el.classList.remove('cerrada'); }
-        setTimeout(() => window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 110, behavior: 'smooth' }), 30);
-      };
-      $('#filtroRes').innerHTML = '<button class="pill' + (!filtroRes ? ' on' : '') + '" data-fr="">Todos</button>' + GUIA.capitulos.map((c, i) => '<button class="pill' + (filtroRes === c.id ? ' on' : '') + '" data-fr="' + esc(c.id) + '">' + (c.id === 'rep' ? 'Reportes' : 'Proceso ' + (i + 1)) + '</button>').join('');
-      $('#filtroRes').querySelectorAll('[data-fr]').forEach(b => b.onclick = () => { filtroRes = b.dataset.fr; pintarResumen(); });
+      $('#filtroRes').innerHTML = '<button class="pill' + (!filtroRes ? ' on' : '') + '" data-fr="">Todos</button>' + GUIA.capitulos.map(c => '<button class="pill' + (filtroRes === c.id ? ' on' : '') + '" data-fr="' + esc(c.id) + '">' + esc(etiquetaCap(c)) + '</button>').join('');
+      $('#filtroRes').querySelectorAll('[data-fr]').forEach(b => b.onclick = () => { filtroRes = b.dataset.fr; pintarCierre(); });
       const Fh = filtroRes ? H.filter(h => h.cap === filtroRes) : H;
       $('#resumen').innerHTML = Fh.length
         ? '<table class="resumen-t"><thead><tr><th>Prioridad</th><th>Proceso · etapa</th><th>Tipo</th><th>Hallazgo</th><th>Propuesta / para qué</th><th>Responsable</th><th>Compromiso</th><th>Decisión</th></tr></thead><tbody>'
           + Fh.map(h => '<tr><td>' + (h.prio ? '<span class="tag ' + esc(h.prio) + '">' + esc(h.prio) + '</span>' : '—') + '</td><td class="pr">' + esc(h.proceso) + '<br>' + esc(h.pantalla) + '</td><td>' + esc(h.tipo || '—') + '</td><td>' + esc(h.que) + (h.fotos && h.fotos.length ? ' <span class="pr">(' + h.fotos.length + ' foto' + (h.fotos.length > 1 ? 's' : '') + ')</span>' : '') + '</td><td>' + esc(h.uso) + '</td><td>' + esc(h.resp || '—') + '</td><td>' + esc(h.fecha || '—') + '</td><td>' + esc(h.deci || 'Pendiente') + '</td></tr>').join('')
           + '</tbody></table>'
         : '<div class="vacio">Todavía no hay anotaciones.</div>';
+      pintarFirmaCierre();
+      pintarHist();
+    }
+    function pintarFirmaCierre() {
+      const f = F.__cierre;
+      $('#firmaCierre').innerHTML = htmlFirma('Firma del cliente · cierre de la sesión', LEY_CIERRE, f, f && f.h !== huellaTodo());
+      enlazarFirma($('#firmaCierre [data-firma]'), '__cierre', huellaTodo, () => { pintarFirmaCierre(); pintarHist(); });
     }
 
     // ── Barra ──────────────────────────────────────────────────────────────
     function ligaCliente() { return cc ? location.origin + location.pathname + '?c=' + cc : ''; }
-    $('#btnLiga').onclick = async () => {
-      const url = location.origin + location.pathname + '?s=' + codigo;
-      try { await navigator.clipboard.writeText(url); toast('Tu liga de consultor está copiada (no la compartas con el cliente)'); } catch (e) { toast(url); }
-    };
     $('#btnPend').onclick = () => {
       const on = document.body.classList.toggle('pend'); $('#btnPend').classList.toggle('on', on);
       toast(on ? 'Solo se ven los puntos sin revisar y las fallas' : 'Se ven todos los puntos');
     };
-    $('#btnPdf').onclick = () => {
-      document.body.classList.remove('pend'); $('#btnPend').classList.remove('on');
-      document.querySelectorAll('.sec.cerrada').forEach(x => x.classList.remove('cerrada')); setTimeout(() => window.print(), 100);
+    $('#btnMas').onclick = ev => { ev.stopPropagation(); $('#menuMas').classList.toggle('oculto'); };
+    document.addEventListener('click', ev => { if (!ev.target.closest('.menu')) $('#menuMas').classList.add('oculto'); });
+    $('#menuMas').onclick = ev => {
+      const b = ev.target.closest('[data-acc]'); if (!b) return; $('#menuMas').classList.add('oculto');
+      ({ pdf: imprimir, csv: exportarCsv, liga: copiarLiga, cierre: () => ir('#/cierre') })[b.dataset.acc]();
     };
-    $('#btnCsv').onclick = () => {
+    async function copiarLiga() {
+      const url = location.origin + location.pathname + '?s=' + codigo;
+      try { await navigator.clipboard.writeText(url); toast('Tu liga de orquestador está copiada (no la compartas con el cliente)'); } catch (e) { toast(url); }
+    }
+    // Imprimir / PDF: todo el documento, proceso por proceso, sin botones.
+    function imprimir() {
+      const T = totales();
+      let h = '<div class="marca">Sacscloud · Checklist de entrega</div><h1 style="margin-top:6px">Suite de Consignación</h1>'
+        + '<p class="sub">' + esc(S.meta.cliente) + ' · ' + esc(S.meta.cuenta) + ' · Orquestador: ' + esc(S.meta.consultor) + ' · ' + esc(S.meta.fecha) + ' · ' + esc(S.meta.ambiente) + '</p>'
+        + '<p class="sub">' + T.hechos + ' de ' + T.tot + ' puntos revisados · ' + T.fallas + ' con falla · ' + T.H.length + ' hallazgos · ' + T.firm + '/' + T.nsec + ' etapas firmadas</p>';
+      GUIA.capitulos.forEach(cap => {
+        h += '<section class="imp-cap"><h2 style="margin-top:24px">' + esc(etiquetaCap(cap) + ' · ' + cap.nombre) + '</h2>' + (cap.diagrama ? htmlMapa(cap.diagrama) : '');
+        secsDe(cap).forEach(s => { h += htmlSec(cap, s, true); });
+        h += '</section>';
+      });
+      $('#imprimir').innerHTML = h;
+      setTimeout(() => window.print(), 150);
+    }
+    window.addEventListener('afterprint', () => { $('#imprimir').innerHTML = ''; });
+    function exportarCsv() {
       const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
       const filas = [['Proceso', 'Etapa / pantalla', 'Renglón', 'Tipo', 'Punto / hallazgo', 'Resultado', 'Nota / propuesta', 'Prioridad', 'Responsable', 'Fecha compromiso', 'Decisión', 'Fotos']];
-      GUIA.capitulos.forEach((cap, i) => {
-        const pn = (cap.id === 'rep' ? '' : (i + 1) + '. ') + cap.nombre;
+      GUIA.capitulos.forEach(cap => {
+        const pn = etiquetaCap(cap) + ' · ' + cap.nombre;
         secsDe(cap).forEach(s => {
           const e = est(s.id);
           s.puntos.forEach((t, k) => { const p = e.puntos[k] || {}; filas.push([pn, s.nombre, 'Punto a validar', '', t, RES[p.e || ''], p.n || '', '', '', '', '', (p.fotos || []).join(' ')]); });
@@ -927,9 +1040,9 @@ export const prerender = true;
       });
       const csv = '﻿' + filas.map(f => f.map(q).join(',')).join('\r\n');
       const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-      a.download = 'checklist-consignacion-' + (S.meta.cliente || 'cliente').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-') + '-' + (S.meta.fecha || '') + '.csv';
+      a.download = 'checklist-consignacion-vendetucloset-' + (S.meta.fecha || '') + '.csv';
       a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    };
+    }
 
     // Enviar al cliente: su liga (solo lectura + firma) con el resumen, por
     // WhatsApp o correo. El PDF sale de esa misma liga con «Imprimir / PDF».
@@ -945,23 +1058,16 @@ export const prerender = true;
       const lista = T.H.slice(0, 20).map(h => '• [' + (h.prio || 'Sin prioridad') + '] ' + h.pantalla + ': ' + corto(h.que, 120) + (h.resp ? ' (responsable: ' + h.resp + (h.fecha ? ', ' + h.fecha : '') + ')' : '')).join('\n');
       const cuerpo = txt + '\n\nHallazgos principales:\n' + (lista || '• Sin hallazgos') + (S.cierre.acuerdos ? '\n\nAcuerdos:\n' + S.cierre.acuerdos : '') + '\n\nSacscloud';
       const m = document.createElement('div'); m.className = 'modal-fondo';
-      m.innerHTML = '<div class="modal"><h2>Enviar al cliente</h2><p class="sub" style="margin-top:4px">El cliente recibe su propia liga: ve todo lo revisado, lo descarga en PDF y firma de enterado. No puede editar nada.</p>'
+      m.innerHTML = '<div class="modal"><h2>Enviar al cliente</h2><p class="sub">El cliente recibe su propia liga: ve todo lo revisado, lo descarga en PDF y firma de enterado. No puede editar nada.</p>'
         + '<div class="liga">' + esc(url) + '</div>'
         + '<div class="acciones"><a class="btn pri" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(txt) + '">WhatsApp</a>'
-        + '<a class="btn" href="mailto:?subject=' + encodeURIComponent('Revisión de la Suite de Consignación · ' + (S.meta.cliente || '') + ' · ' + fecha) + '&body=' + encodeURIComponent(cuerpo) + '">Correo</a>'
-        + '<button class="btn" data-copiar>Copiar liga</button><a class="btn ter" target="_blank" rel="noopener" href="' + esc(url) + '">Ver como cliente</a></div>'
-        + '<div class="acciones"><button class="btn ter" data-cerrar>Cerrar</button></div></div>';
+        + '<a class="btn" href="mailto:?subject=' + encodeURIComponent('Revisión de la Suite de Consignación · ' + S.meta.cliente + ' · ' + fecha) + '&body=' + encodeURIComponent(cuerpo) + '">Correo</a>'
+        + '<button class="btn" data-copiar>Copiar liga</button><a class="btn" target="_blank" rel="noopener" href="' + esc(url) + '">Ver como cliente</a></div>'
+        + '<div class="acciones"><button class="btn" data-cerrar>Cerrar</button></div></div>';
       document.body.appendChild(m);
       m.onclick = ev => { if (ev.target === m || ev.target.closest('[data-cerrar]')) m.remove(); };
       m.querySelector('[data-copiar]').onclick = async () => { try { await navigator.clipboard.writeText(url); toast('Liga del cliente copiada'); } catch (e) { toast(url); } };
       logEv('Preparó el envío del resumen al cliente'); cambio();
-    };
-
-    $('#btnOtra').onclick = () => {
-      const cap = capActual(); const esRep = cap.id === 'rep';
-      const s = { id: 'x' + Date.now().toString(36), cap: cap.id, nombre: esRep ? 'Pantalla o reporte nuevo' : 'Etapa nueva', donde: '', para: '', puntos: [], sugerencias: [], editable: true };
-      S.extras.push(s); logEv('Agregó una ' + (esRep ? 'pantalla' : 'etapa') + ' al proceso «' + cap.nombre + '»'); pintarCap(); cambio();
-      const el = $(sel(s.id)); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); const r = el.querySelector('[data-ren]'); if (r) { r.focus(); r.select(); }
     };
 
     arrancar();
