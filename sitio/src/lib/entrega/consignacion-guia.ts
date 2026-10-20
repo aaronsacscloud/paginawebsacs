@@ -706,6 +706,190 @@ export const GUIA = {
         }
       ]
     },
+    // «Buscar en SACS» como acceso rápido (lista de Aaron Herzberg, 20-oct-2026):
+    // los 10 puntos clave son las 10 etapas. En cada una se busca, se revisa la
+    // vista previa sin abrir nada y se da clic para confirmar que lleva directo
+    // al detalle.
+    {
+      id: 'p8',
+      nombre: 'Buscar en SACS: acceso rápido',
+      resumen: 'Confirmar que «Buscar en SACS» (la lupa junto al nombre de la cuenta, o Ctrl/⌘ + K) resuelve las consultas diarias de Vende Tu Closet con la Suite de Consignación prendida.',
+      tipos: TIPOS_FLUJO, cols: COLS_FLUJO,
+      diagrama: {
+        titulo: 'Cada búsqueda se resuelve en la vista previa o con un clic al detalle',
+        lectura: 'Se abre el buscador con la lupa o Ctrl/⌘ + K, se escribe o se escanea, la vista previa responde sin abrir nada y el clic lleva directo al detalle. Cada usuario solo ve los grupos de resultados de los módulos a los que tiene acceso.',
+        nodos: [
+          { id: 'a', c: 0, r: 0, t: 'Abrir', s: 'lupa o Ctrl/⌘ + K', sec: 'p8-clave' },
+          { id: 'b', c: 1, r: 0, t: 'Buscar', s: 'texto o escáner', sec: 'p8-marca' },
+          { id: 'c', c: 2, r: 0, t: 'Vista previa', s: 'sin abrir nada', sec: 'p8-consignataria' },
+          { id: 'd', c: 3, r: 0, t: 'Clic', s: 'botón o renglón', sec: 'p8-permisos' },
+          { id: 'e', c: 4, r: 0, t: 'Detalle', s: 'resaltado', sec: 'p8-permisos', fin: true },
+          { id: 'f', c: 1, r: 1, t: 'Filtros', s: 'en la frase', sec: 'p8-marca' },
+          { id: 'g', c: 3, r: 1, t: 'Permisos', s: 'por rol', sec: 'p8-permisos' }
+        ],
+        flechas: [
+          { de: 'a', a: 'b' }, { de: 'b', a: 'c' }, { de: 'c', a: 'd' }, { de: 'd', a: 'e' },
+          { de: 'b', a: 'f', et: 'marca, precio…' }, { de: 'd', a: 'g', et: 'según usuario' }
+        ]
+      },
+      secciones: [
+        {
+          id: 'p8-clave', clave: true,
+          nombre: 'Puntos clave del proceso',
+          donde: 'La lupa junto al nombre de la cuenta, o Ctrl/⌘ + K, en app.sacscloud.com',
+          para: 'Antes de la sesión, las mejoras del buscador deben estar publicadas en app.sacscloud.com. En cada etapa se busca, se revisa la vista previa sin abrir nada y se da clic para confirmar que lleva directo al detalle.',
+          nota: 'Límite conocido: al buscar una venta por ticket, si sus piezas ya se le pagaron a la consignataria, solo aparecen las que siguen pendientes. El manual del buscador (botón «Manual» arriba del buscador) explica cada término y forma de búsqueda.',
+          puntos: [
+            'Las mejoras del buscador están publicadas en app.sacscloud.com.',
+            'La lupa junto al nombre de la cuenta abre el buscador.',
+            'Ctrl/⌘ + K abre el buscador desde cualquier pantalla.',
+            'El botón «Manual» arriba del buscador abre la guía y el equipo sabe consultarla.',
+            'El equipo entiende el límite de la búsqueda por ticket con piezas ya pagadas.'
+          ]
+        },
+        {
+          id: 'p8-consignataria',
+          nombre: 'Etapa 1 · Encontrar a una consignataria',
+          donde: 'Buscar en SACS › nombre, teléfono, correo, Instagram o folio CONS-',
+          para: 'La vista previa muestra piezas en tienda, vendidas, saldo a favor, lo que se le debe, su próximo pago, su contrato vigente y sus retiros pendientes. Clic → su perfil.',
+          nota: 'Caso de Vende Tu Closet: buscar a una consignataria activa por su nombre y luego por su teléfono; comparar los números con su perfil.',
+          puntos: [
+            'La encuentra por nombre.',
+            'La encuentra por teléfono, correo, Instagram y folio CONS-.',
+            'La vista previa muestra piezas en tienda, vendidas, saldo a favor, lo que se le debe, próximo pago, contrato vigente y retiros pendientes.',
+            'Los números de la vista previa coinciden con su perfil.',
+            'El clic abre su perfil.',
+            'Se decidió con el cliente qué datos necesita ver la tienda en la tarjeta para no tener que abrir el perfil.'
+          ]
+        },
+        {
+          id: 'p8-codigo',
+          nombre: 'Etapa 2 · Encontrar una pieza por código',
+          donde: 'Buscar en SACS › SKU o código de barras con el lector',
+          para: 'El SKU o el código de barras abre la ficha directo, con fotos, precio, comisión, lo que le toca a la consignataria y días a la venta; funciona aunque la pieza ya se haya pagado o devuelto.',
+          nota: 'Caso de Vende Tu Closet: escanear la etiqueta de una pieza que está en tienda y de una que ya se vendió.',
+          puntos: [
+            'Escanear la etiqueta de una pieza en tienda abre su ficha directo.',
+            'Escanear una pieza ya vendida también la encuentra.',
+            'Una pieza pagada o devuelta también aparece.',
+            'La ficha muestra fotos, precio, comisión, lo que le toca a la consignataria y días a la venta.',
+            'Se confirmó qué código trae la etiqueta de la tienda y si el lector manda Enter al final.'
+          ]
+        },
+        {
+          id: 'p8-marca',
+          nombre: 'Etapa 3 · Encontrar piezas por marca con filtros en la frase',
+          donde: 'Buscar en SACS › marca + precio, estado y sucursal en la misma búsqueda',
+          para: 'Ejemplos: «gucci menos de 15000 polanco», «chanel entre 10 mil y 20 mil», «vendidas», «apartadas».',
+          nota: 'Caso de Vende Tu Closet: repetir las 3 búsquedas que más hace el equipo de piso y comparar contra el inventario.',
+          puntos: [
+            '«gucci menos de 15000 polanco» filtra por marca, precio y sucursal.',
+            '«chanel entre 10 mil y 20 mil» entiende el rango de precio escrito así.',
+            '«vendidas» y «apartadas» filtran por estado.',
+            'Las 3 búsquedas más comunes del equipo de piso coinciden con el inventario.',
+            'Se anotaron las búsquedas reales del día a día y los nombres de sucursal que usa el equipo.'
+          ]
+        },
+        {
+          id: 'p8-deuda',
+          nombre: 'Etapa 4 · Lo que se le debe a las consignatarias',
+          donde: 'Buscar en SACS › «vencido», «por pagar», «esta semana» o folio LIQ-',
+          para: 'Muestra montos, vencimiento y pagos hechos. «Ir a pagar» abre esa liquidación en Cuentas por pagar.',
+          nota: 'Caso de Vende Tu Closet: buscar «vencido» y abrir el pago de una liquidación vencida.',
+          puntos: [
+            '«vencido» muestra las liquidaciones vencidas con monto y vencimiento.',
+            '«por pagar» y «esta semana» muestran lo que corresponde.',
+            'Un folio LIQ- encuentra esa liquidación con sus pagos hechos.',
+            '«Ir a pagar» abre esa liquidación en Cuentas por pagar.',
+            'Se decidió quién del equipo paga y si esos montos los puede ver cualquier usuario.'
+          ]
+        },
+        {
+          id: 'p8-comprador',
+          nombre: 'Etapa 5 · Cliente comprador y sus apartados',
+          donde: 'Buscar en SACS › nombre o teléfono del cliente comprador',
+          para: 'Muestra compras, último ticket y apartados con saldo y vencimiento. Clic en un apartado → ese apartado.',
+          nota: 'Caso de Vende Tu Closet: buscar a una clienta con un apartado activo y abrirlo desde la vista previa.',
+          puntos: [
+            'La encuentra por nombre y por teléfono.',
+            'La vista previa muestra compras, último ticket y apartados con saldo y vencimiento.',
+            'El clic en un apartado abre ese apartado.',
+            'Se decidió si el cajero debe ver el historial de compras de la clienta.'
+          ]
+        },
+        {
+          id: 'p8-lote',
+          nombre: 'Etapa 6 · Lote y contrato',
+          donde: 'Buscar en SACS › folio LOTE-',
+          para: 'Muestra la consignataria, sus piezas por estado y su contrato (comisión, vence en N días). «Ver contrato» abre ese contrato y el botón de PDF lo descarga.',
+          nota: 'Caso de Vende Tu Closet: buscar el lote de una consignataria con contrato por vencer y descargar su PDF.',
+          puntos: [
+            'El folio LOTE- muestra la consignataria y sus piezas por estado.',
+            'Se ve el contrato con su comisión y los días para vencer.',
+            '«Ver contrato» abre ese contrato.',
+            'El botón de PDF descarga el contrato.',
+            'Se decidió qué folio de lote usa la tienda hoy y si el contrato debe salir de aquí o solo del perfil.'
+          ]
+        },
+        {
+          id: 'p8-preparacion',
+          nombre: 'Etapa 7 · Piezas en preparación',
+          donde: 'Buscar en SACS › «por autenticar», «por limpiar», «por fotografiar», «por reparar», «por etiquetar» o «en proceso»',
+          para: 'Muestra cuántos días lleva cada pieza y si ya pasó su meta. «Ver en la cola» abre la cola con la pieza resaltada.',
+          nota: 'Caso de Vende Tu Closet: buscar «por autenticar» y confirmar que coincide con la cola de proceso.',
+          puntos: [
+            '«por autenticar» coincide con la cola de proceso.',
+            'Las demás búsquedas por etapa («por limpiar», «por fotografiar», «por reparar», «por etiquetar», «en proceso») responden.',
+            'Cada pieza muestra los días que lleva y si ya pasó su meta.',
+            '«Ver en la cola» abre la cola con la pieza resaltada.',
+            'Se definieron los días meta de cada etapa que la tienda va a exigir.'
+          ]
+        },
+        {
+          id: 'p8-estancadas',
+          nombre: 'Etapa 8 · Piezas estancadas',
+          donde: 'Buscar en SACS › «estancadas» o «louis vuitton +60 días»',
+          para: 'Muestra las piezas que no se mueven, cuántos días llevan y la acción sugerida (rebajar o devolver).',
+          nota: 'Caso de Vende Tu Closet: buscar «estancadas» y revisar si la lista coincide con lo que el equipo ya identifica.',
+          puntos: [
+            '«estancadas» muestra las piezas que no se mueven con sus días.',
+            '«louis vuitton +60 días» combina marca y días.',
+            'Cada pieza trae la acción sugerida (rebajar o devolver).',
+            'La lista coincide con lo que el equipo ya identifica como estancado.',
+            'Se definió cuántos días sin venderse hacen estancada a una pieza en Vende Tu Closet.'
+          ]
+        },
+        {
+          id: 'p8-hoy',
+          nombre: 'Etapa 9 · Lo que hay que atender hoy',
+          donde: 'Buscar en SACS › «retiros», «incidentes», «recuperaciones», «lives», folios DIN-, INC-, REC- o ticket (V-/VEN-)',
+          para: 'Muestra el registro con su estado; el clic abre su pantalla con ese registro resaltado.',
+          nota: 'Caso de Vende Tu Closet: buscar el ticket de una venta con piezas consignadas y luego «retiros».',
+          puntos: [
+            'El folio de un ticket (V-/VEN-) con piezas consignadas muestra la venta y sus piezas.',
+            '«retiros» muestra las solicitudes con su estado.',
+            '«incidentes», «recuperaciones» y «lives» responden.',
+            'Los folios DIN-, INC- y REC- encuentran su registro.',
+            'El clic abre la pantalla con ese registro resaltado.',
+            'Se decidió quién atiende retiros e incidentes, para que solo esa persona vea esos accesos.'
+          ]
+        },
+        {
+          id: 'p8-permisos',
+          nombre: 'Etapa 10 · Cada clic lleva al detalle, con los permisos de cada usuario',
+          donde: 'Buscar en SACS › con un usuario de caja y con uno administrador',
+          para: 'El resultado, sus botones, los renglones de la vista previa, las fotos de las piezas y «Ver más» abren el detalle de esa cosa; un usuario sin acceso a un módulo no ve ese grupo de resultados.',
+          nota: 'Caso de Vende Tu Closet: repetir los puntos 1 a 9 con un usuario de caja y con uno administrador.',
+          puntos: [
+            'El resultado, sus botones, los renglones de la vista previa, las fotos y «Ver más» abren el detalle.',
+            'Con el usuario de caja, los puntos 1 a 9 se comportan según sus permisos.',
+            'Con el usuario administrador, los puntos 1 a 9 muestran todo.',
+            'Un usuario sin acceso a un módulo no ve ese grupo de resultados.',
+            'Se decidió qué ve cada rol en el buscador (montos por pagar, datos de contacto, contratos).'
+          ]
+        }
+      ]
+    },
     {
       id: "rep",
       nombre: "Dashboard y reportes",
