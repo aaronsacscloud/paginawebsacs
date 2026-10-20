@@ -287,6 +287,14 @@ export const prerender = true;
     .dec .q:first-child { border-top: 0; }
     .dec .q .t { font-size: .9375rem; font-weight: 600; }
     .dec .q.listo .t::after { content: '  ✓'; color: var(--ve); }
+    .docs { margin-top: 18px; }
+    .docs .lbl { display: block; font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--tx3); margin-bottom: 8px; }
+    .docs-l { display: flex; gap: 10px; flex-wrap: wrap; }
+    .doc { display: flex; gap: 12px; align-items: center; border: 1px solid var(--ln); border-radius: 12px; padding: 12px 16px; background: #fff; color: var(--tx); text-decoration: none; min-width: 240px; }
+    .doc:hover { background: var(--bg2); }
+    .doc .ic { flex: none; width: 38px; height: 44px; border-radius: 6px; background: var(--rja); color: var(--rjt); font-size: .6875rem; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
+    .doc b { display: block; font-size: .9375rem; }
+    .doc small { display: block; font-size: .8125rem; color: var(--tx2); margin-top: 2px; }
     .nohace { border: 1px solid #f2dfb8; background: var(--ama); border-radius: 12px; padding: 14px 16px; }
     .nohace .tit { font-size: .8125rem; color: var(--amt); font-weight: 700; }
     .nohace .tit span { font-weight: 500; }
@@ -901,6 +909,15 @@ export const prerender = true;
       return '<div class="caso-mini">' + ks.map(k => { const c = CASO.find(x => x.k === k); return '<span class="' + (S.caso[k] ? '' : 'vacio-c') + '">' + esc(c.l.split(' · ')[0]) + ': <b>' + esc(S.caso[k] || 'por anotar') + '</b></span>'; }).join('') + '</div>';
     }
 
+    // PDF adjuntos a la etapa (p. ej. el resumen de la migración). Se abren por
+    // la API con la liga de la sesión: sin liga válida no se descargan.
+    function htmlDocs(s) {
+      if (!(s.docs || []).length) return '';
+      const llave = esCliente() ? 'c=' + encodeURIComponent(cc || '') : 's=' + encodeURIComponent(codigo || '');
+      return '<div class="docs"><span class="lbl">Documentos para consultar</span><div class="docs-l">'
+        + s.docs.map(d => '<a class="doc" target="_blank" rel="noopener" href="/api/entrega/doc?d=' + encodeURIComponent(d.d) + '&' + llave + '"><span class="ic">PDF</span><span><b>' + esc(d.t) + '</b><small>' + esc(d.s || '') + '</small></span></a>').join('')
+        + '</div></div>';
+    }
     function htmlSec(cap, s, imprimir) {
       const e = est(s.id); const c = conteo(s);
       const esRep = cap.id === 'rep';
@@ -913,6 +930,7 @@ export const prerender = true;
         + (s.caso ? '' : '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">' + (c.tot ? '<span class="etiqueta">' + c.hechos + ' de ' + c.tot + ' demostrados</span>' : '') + (c.dec ? '<span class="etiqueta">' + c.decOk + ' de ' + c.dec + ' decisiones</span>' : '') + (c.fallas ? '<span class="etiqueta" style="background:var(--rja);color:var(--rjt)">' + c.fallas + ' con falla</span>' : '') + (c.dudas ? '<span class="etiqueta" style="background:var(--ama);color:var(--amt)">' + c.dudas + ' dudas abiertas</span>' : '') + '</div>')
         + '<div class="foco-meta">' + (s.donde ? '<div><b>Dónde:</b> ' + esc(s.donde) + '</div>' : '') + (s.para ? '<div><b>Qué pasa:</b> ' + esc(s.para) + '</div>' : '') + '</div>'
         + chipsCaso(s.pieza) + '</div>'
+        + htmlDocs(s)
         + (s.pitch ? '<div class="pitch"><span class="lbl">Pitch para el cliente · léelo en voz alta</span>' + esc(s.pitch) + '</div>' : '')
         + (s.nota ? '<div class="nota-calc">' + esc(s.nota) + '</div>' : '')
         + (hoy ? '<h3>Lo que muestra hoy</h3><div class="chips">' + hoy + '</div>' : '');
