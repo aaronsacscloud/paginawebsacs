@@ -192,7 +192,7 @@ export const prerender = true;
     .hall textarea { min-height: 48px; }
     .lbl { display: block; font-size: .75rem; font-weight: 600; color: var(--tx3); margin-bottom: 4px; }
     .hall .acc { display: flex; gap: 6px; }
-    .hall .x { width: 44px; padding: 0; }
+    .hall .x, .ctrl .x { width: 40px; padding: 0; }
 
     /* Firma */
     .firma-box { margin-top: 28px; border: 1px solid var(--ln); border-radius: 12px; padding: 18px; background: var(--bg2); }
@@ -394,7 +394,9 @@ export const prerender = true;
     function vacio() { return { meta: { cliente: FIJOS.cliente, cuenta: FIJOS.cuenta, fecha: hoyLocal(), consultor: FIJOS.consultor, responsable: '', ambiente: FIJOS.ambiente }, sec: {}, extras: [], cierre: { acuerdos: '', firmaSacs: FIJOS.consultor }, cap: GUIA.capitulos[0].id, log: [], _ts: Date.now() }; }
     function capDe(id) { return GUIA.capitulos.find(c => c.id === id) || GUIA.capitulos[0]; }
     function secsDe(cap) { return cap.secciones.concat((S.extras || []).filter(x => x.cap === cap.id)); }
-    function est(id) { if (!S.sec[id]) S.sec[id] = { puntos: {}, extra: [], hall: [], usadas: {} }; return S.sec[id]; }
+    function est(id) { if (!S.sec[id]) S.sec[id] = { puntos: {}, extra: [], hall: [], usadas: {} }; if (!S.sec[id].ocultos) S.sec[id].ocultos = {}; return S.sec[id]; }
+    // Los puntos base que el orquestador quitó no cuentan, no se imprimen y el cliente no los ve.
+    function visible(e, k) { return !e.ocultos[k]; }
     function secPorId(id) { for (const c of GUIA.capitulos) { const s = secsDe(c).find(x => x.id === id); if (s) return { cap: c, s }; } return null; }
     function corto(t, n) { t = String(t || ''); return t.length > (n || 60) ? t.slice(0, (n || 60) - 1) + '…' : t; }
     function etiquetaCap(cap) { const i = GUIA.capitulos.indexOf(cap); return cap.id === 'rep' ? 'Revisión' : 'Proceso ' + (i + 1); }
@@ -596,8 +598,8 @@ export const prerender = true;
 
     // ── Conteos ────────────────────────────────────────────────────────────
     function conteo(s) {
-      const e = est(s.id); const tot = s.puntos.length + e.extra.length; let hechos = 0, fallas = 0;
-      s.puntos.forEach((_, i) => { const p = e.puntos[i]; if (p && p.e) { hechos++; if (p.e === 'falla') fallas++; } });
+      const e = est(s.id); let tot = e.extra.length, hechos = 0, fallas = 0;
+      s.puntos.forEach((_, i) => { if (!visible(e, i)) return; tot++; const p = e.puntos[i]; if (p && p.e) { hechos++; if (p.e === 'falla') fallas++; } });
       e.extra.forEach(p => { if (p.e) { hechos++; if (p.e === 'falla') fallas++; } });
       return { tot, hechos, fallas, hall: e.hall.length, firm: F[s.id] ? 1 : 0 };
     }
@@ -729,7 +731,8 @@ export const prerender = true;
       const e = est(s.id); const c = conteo(s);
       const hoy = (s.hoy || []).map(x => '<span class="chip">' + esc(x) + '</span>').join('');
       const fil = (s.filtros || []).map(x => '<span class="chip fil">' + esc(x) + '</span>').join('');
-      const pts = s.puntos.map((t, k) => htmlPunto('b' + k, t, e.puntos[k] || {}, false)).join('') + e.extra.map((p, k) => htmlPunto('x' + k, p.t, p, true)).join('');
+      const nOcultos = s.puntos.filter((_, k) => !visible(e, k)).length;
+      const pts = s.puntos.map((t, k) => visible(e, k) ? htmlPunto('b' + k, t, e.puntos[k] || {}, false) : '').join('') + e.extra.map((p, k) => htmlPunto('x' + k, p.t, p, true)).join('');
       const sug = (s.sugerencias || []).map((g, k) => '<div class="sug' + (e.usadas[k] ? ' usada' : '') + '"><span class="tp">' + esc(g.tipo) + '</span><span class="tx">' + esc(g.texto) + '</span><button class="btn peq" data-sug="' + k + '"' + (e.usadas[k] ? ' disabled' : '') + '>' + (e.usadas[k] ? 'En la tabla' : 'Agregar') + '</button></div>').join('');
       const esRep = cap.id === 'rep';
       const f = F[s.id];
@@ -742,7 +745,7 @@ export const prerender = true;
         + (hoy || fil ? '<h3>Lo que muestra hoy</h3><div class="chips">' + hoy + fil + '</div>' : '')
         + (s.editable ? '<h3>' + (esRep ? 'Pantalla' : 'Etapa') + '</h3><div class="grid"><label class="f">Nombre<input type="text" data-ren value="' + esc(s.nombre) + '" /></label><label class="f">Dónde está<input type="text" data-donde value="' + esc(s.donde || '') + '" /></label></div>' : '')
         + '<h3>' + (s.clave ? 'Pruebas de punta a punta' : 'Puntos a validar') + '</h3><div class="lista">' + (pts || '<div class="pt"><div class="vacio">Agrega los puntos que se van a revisar.</div></div>') + '</div>'
-        + '<div class="acciones solo-orq"><button class="btn peq" data-addpt>Agregar punto a validar</button></div>'
+        + '<div class="acciones solo-orq"><button class="btn peq" data-addpt>Agregar punto a validar</button>' + (nOcultos ? '<button class="btn peq" data-restaurar>Restaurar ' + nOcultos + (nOcultos === 1 ? ' punto quitado' : ' puntos quitados') + '</button>' : '') + '</div>'
         + (sug ? '<div class="solo-orq"><h3>Sugerencias para revisar con el cliente</h3>' + sug + '</div>' : '')
         + '<h3>' + (esRep ? 'Lo que le falta (campo, dato, filtro…)' : 'Hallazgos: mejoras, reglas y fallas') + '</h3>'
         + '<div>' + (e.hall.length ? e.hall.map((h, k) => htmlHall(cap, h, k)).join('') : '<div class="vacio">Sin anotaciones.</div>') + '</div>'
@@ -755,7 +758,7 @@ export const prerender = true;
       const b = (v, l) => '<button class="' + v + (p.e === v ? ' on' : '') + '" data-e="' + v + '">' + l + '</button>';
       const abierta = p.e === 'falla' || !!p.n || (p.fotos && p.fotos.length);
       return '<div class="pt' + (abierta ? ' con-nota' : '') + (p.e === 'ok' || p.e === 'na' ? ' hecho' : '') + '" data-pt="' + key + '"><div class="txt">' + (extra ? '<input type="text" data-ptt value="' + esc(t) + '" placeholder="Qué se valida" />' : esc(t)) + '</div>'
-        + '<div class="ctrl"><div class="seg">' + b('ok', 'Correcto') + b('falla', 'Falla') + b('na', 'No aplica') + '</div><button class="btn peq solo-orq" data-abrirnota title="Nota o foto">Nota</button></div>'
+        + '<div class="ctrl"><div class="seg">' + b('ok', 'Correcto') + b('falla', 'Falla') + b('na', 'No aplica') + '</div><button class="btn peq solo-orq" data-abrirnota title="Nota o foto">Nota</button><button class="btn peq del x solo-orq" data-quitarpt title="Quitar este punto" aria-label="Quitar este punto">✕</button></div>'
         + '<div class="nota">' + htmlTxt('data-nota', p.n || '', 'Qué se vio / comentario del cliente')
         + '<div class="nrs solo-orq">' + NOTAS_RAPIDAS.map(x => '<button type="button" class="nr" data-nr="' + esc(x) + '">' + esc(x) + '</button>').join('') + '</div>'
         + '<div class="fotos" data-fotos>' + htmlFotos(p.fotos) + '</div>'
@@ -858,6 +861,12 @@ export const prerender = true;
         row.querySelector('[data-nota]').oninput = ev => { obj().n = ev.target.value; cambio(); };
         row.querySelectorAll('[data-nr]').forEach(b => b.onclick = () => { const p = obj(); p.n = (p.n ? p.n.replace(/\s+$/, '') + ' · ' : '') + b.dataset.nr; row.querySelector('[data-nota]').value = p.n; cambio(); });
         const tt = row.querySelector('[data-ptt]'); if (tt) tt.oninput = ev => { obj().t = ev.target.value; cambio(); };
+        const qp = row.querySelector('[data-quitarpt]');
+        if (qp) qp.onclick = () => {
+          logEv(s.nombre + ' · quitó el punto «' + corto(texto()) + '»');
+          if (extra) e.extra.splice(k, 1); else e.ocultos[k] = true;
+          repintarSec(cap, s); cambio(); toast(extra ? 'Punto quitado' : 'Punto quitado · se puede restaurar abajo de la lista');
+        };
         enlazarFotos(row.querySelector('.nota'), () => { const p = obj(); p.fotos = p.fotos || []; return p.fotos; }, s.nombre, () => repintarSec(cap, s));
         const ahz = row.querySelector('[data-ahz]');
         if (ahz) ahz.onclick = () => {
@@ -866,6 +875,8 @@ export const prerender = true;
           logEv(s.nombre + ' · pasó a hallazgos «' + corto(texto()) + '»'); repintarSec(cap, s); cambio(); toast('Pasado a hallazgos: ponle prioridad y responsable');
         };
       });
+      const rest = el.querySelector('[data-restaurar]');
+      if (rest) rest.onclick = () => { e.ocultos = {}; logEv(s.nombre + ' · restauró los puntos quitados'); repintarSec(cap, s); cambio(); toast('Puntos restaurados'); };
       const addpt = el.querySelector('[data-addpt]');
       if (addpt) addpt.onclick = () => { e.extra.push({ t: '', e: '', n: '' }); logEv(s.nombre + ' · agregó un punto a validar'); repintarSec(cap, s); cambio(); const ins = document.querySelectorAll(sel(s.id) + ' [data-ptt]'); if (ins.length) ins[ins.length - 1].focus(); };
       el.querySelectorAll('[data-sug]').forEach(b => b.onclick = () => {
@@ -913,7 +924,7 @@ export const prerender = true;
     const LEY_ETAPA = 'Revisé esta etapa con el orquestador. Estoy enterado y de acuerdo con lo validado y con los hallazgos anotados.';
     const LEY_CIERRE = 'Revisé con el orquestador los procesos de esta sesión. Estoy enterado y de acuerdo con lo validado, los hallazgos y los acuerdos anotados.';
     function hashTxt(t) { let h = 5381; for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
-    function huella(e) { return hashTxt(JSON.stringify([e.puntos, e.extra, e.hall])); }
+    function huella(e) { const o = e.ocultos && Object.keys(e.ocultos).length ? [e.ocultos] : []; return hashTxt(JSON.stringify([e.puntos, e.extra, e.hall].concat(o))); }
     function huellaTodo() { return hashTxt(JSON.stringify([Object.keys(S.sec).sort().map(k => [S.sec[k].puntos, S.sec[k].extra, S.sec[k].hall]), S.cierre.acuerdos || ''])); }
     function fechaFirma(iso) { try { return new Date(iso).toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) { return iso; } }
     function htmlFirma(titulo, ley, f, cambioTras) {
@@ -1032,7 +1043,7 @@ export const prerender = true;
         const pn = etiquetaCap(cap) + ' · ' + cap.nombre;
         secsDe(cap).forEach(s => {
           const e = est(s.id);
-          s.puntos.forEach((t, k) => { const p = e.puntos[k] || {}; filas.push([pn, s.nombre, 'Punto a validar', '', t, RES[p.e || ''], p.n || '', '', '', '', '', (p.fotos || []).join(' ')]); });
+          s.puntos.forEach((t, k) => { if (!visible(e, k)) return; const p = e.puntos[k] || {}; filas.push([pn, s.nombre, 'Punto a validar', '', t, RES[p.e || ''], p.n || '', '', '', '', '', (p.fotos || []).join(' ')]); });
           e.extra.forEach(p => filas.push([pn, s.nombre, 'Punto a validar', '', p.t, RES[p.e || ''], p.n || '', '', '', '', '', (p.fotos || []).join(' ')]));
           e.hall.forEach(h => filas.push([pn, s.nombre, 'Hallazgo', h.tipo, h.que, '', h.uso, h.prio, h.resp || '', h.fecha || '', h.deci || 'Pendiente', (h.fotos || []).join(' ')]));
           const f = F[s.id]; if (f) filas.push([pn, s.nombre, 'Firma', '', f.nombre + (f.puesto ? ' · ' + f.puesto : ''), 'Enterado y aceptado', fechaFirma(f.at) + (f.h !== huella(e) ? ' · con cambios después de la firma' : ''), '', '', '', '', '']);
