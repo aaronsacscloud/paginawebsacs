@@ -1920,20 +1920,23 @@ function PopProgramar({ soloRecordatorio, onCerrar, onProgramar }: { soloRecorda
  * detiene ahí, dice cuál fue, y «Reintentar» sigue desde ese mismo paso: nada
  * de lo que ya salió se vuelve a mandar.
  *
- * El paso «Acceso a la prueba» crea la cuenta con la misma alta del 🎁 (POST
- * /api/crm/sacs-prueba) justo antes de mandar sus datos. Si el contacto ya
- * tiene una prueba activa, ese paso se salta y se avisa: no se crean dos.
+ * El paso «Acceso a la prueba» NO crea la cuenta (22-oct-2026, pedido del
+ * dueño): quien atiende escribe aquí el correo y la contraseña de la cuenta que
+ * ya le dio de alta, y el link es siempre el mismo (sacs5.sacscloud.com, se
+ * cambia en el paso si algún día cambia). El correo se propone con el del
+ * contacto. Sin correo y contraseña no arranca el envío: descubrirlo en el
+ * mensaje 8 deja al cliente con el paquete completo y sin con qué entrar.
  */
 const ETIQ_PASO: Record<string, string> = { texto: '📝 Texto', documento: '📎 Documento', imagen: '🖼️ Imagen', acceso_prueba: '🔑 Acceso a la prueba' };
+/** El link de entrada de las cuentas (pedido del dueño: «siempre es el mismo»). */
+const URL_SACS = 'https://sacs5.sacscloud.com';
 const pausa = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 export function ModalSecuencia({ snippet, contacto, telefono, canales, api, resolver, onCerrar }: { snippet: any; contacto?: any; telefono: string; canales?: any; api: any; resolver: (t: string) => string; onCerrar: () => void }) {
   const pasos: any[] = snippet.pasos || [];
   const conAcceso = pasos.some(p => p.tipo === 'acceso_prueba');
-  const yaTiene = contacto?.prueba_estado === 'activa';
-  const sugerido = String(contacto?.empresa || contacto?.nombre || '')
-    .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '').slice(0, 24);
-  const [cuenta, setCuenta] = useState(sugerido);
+  const [correo, setCorreo] = useState(String(contacto?.email || ''));
+  const [contrasena, setContrasena] = useState('');
   const [estado, setEstado] = useState<('pendiente' | 'enviando' | 'ok' | 'error' | 'saltado')[]>(pasos.map(() => 'pendiente'));
   const [desde, setDesde] = useState(0);            // el paso donde sigue (para reintentar)
   const [corriendo, setCorriendo] = useState(false);
@@ -1941,9 +1944,8 @@ export function ModalSecuencia({ snippet, contacto, telefono, canales, api, reso
   const terminado = estado.every(e => e === 'ok' || e === 'saltado');
 
   // Qué falta ANTES de mandar nada: descubrirlo en el paso 8 deja al cliente con medio paquete.
-  const faltaAcceso = conAcceso && !yaTiene && (!contacto?.contact_id ? 'Esta conversación no está ligada a un contacto del CRM: no se puede crear la cuenta.'
-    : !contacto?.email ? 'El contacto no tiene correo, y Sacs lo pide para crear el acceso. Agrégalo en su ficha.'
-    : cuenta.trim().length < 3 ? 'Escribe el identificador de la cuenta (mínimo 3 letras).' : null);
+  const faltaAcceso = conAcceso && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim()) ? 'Escribe el correo de su cuenta.'
+    : !contrasena.trim() ? 'Escribe la contraseña de su cuenta.' : null);
 
   const marcar = (i: number, e: any) => setEstado(prev => prev.map((x, j) => (j === i ? e : x)));
 
@@ -1962,18 +1964,8 @@ export function ModalSecuencia({ snippet, contacto, telefono, canales, api, reso
       if (p.tipo === 'texto') r = await api.enviarTexto(resolver(p.texto), null);
       else if (p.tipo === 'documento' || p.tipo === 'imagen') r = await mandarMedia(p);
       else if (p.tipo === 'acceso_prueba') {
-        if (yaTiene) { marcar(i, 'saltado'); continue; }
-        const a = await fetch('/api/crm/sacs-prueba', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contact_id: contacto.contact_id, cuenta: cuenta.trim().toLowerCase(), dias: p.dias || 7 }) })
-          .then(x => x.json()).catch(() => ({ error: 'Sin conexión' }));
-        if (a?.error) r = { error: `No se pudo crear la cuenta: ${a.error}` };
-        else {
-          const datos: Record<string, string> = { url: a.url || 'app.sacscloud.com', cuenta: a.cuenta, correo: a.email, contrasena: a.password_temporal, dias: String(a.dias || p.dias || 7) };
-          const txt = resolver(String(p.texto).replace(/\{\{(url|cuenta|correo|contrasena|dias)\}\}/g, (_m, k) => datos[k] ?? ''));
-          r = await api.enviarTexto(txt, null);
-          // La cuenta YA existe: aunque el mensaje falle, reintentar no debe crear otra.
-          if (r?.error) r = { error: `La cuenta ${a.cuenta} se creó, pero el mensaje con el acceso no salió: ${r.error}. Mándale los datos a mano (Usuario ${a.email} · Contraseña ${a.password_temporal}).`, fatal: true };
-        }
+        const datos: Record<string, string> = { url: p.url || URL_SACS, correo: correo.trim(), contrasena: contrasena.trim(), dias: String(p.dias || 7) };
+        r = await api.enviarTexto(resolver(String(p.texto).replace(/\{\{(url|correo|contrasena|dias)\}\}/g, (_m, k) => datos[k] ?? '')), null);
       }
       if (r?.ventana_cerrada) r = { error: 'La ventana de 24 h de WhatsApp está cerrada: primero hay que reabrir con una plantilla.' };
       if (r?.error) { marcar(i, 'error'); setDesde(r.fatal ? i + 1 : i); setErr(r.fatal ? r.error : `No salió el mensaje ${i + 1} (${ETIQ_PASO[p.tipo] || p.tipo}): ${r.error}`); setCorriendo(false); return; }
@@ -1985,7 +1977,7 @@ export function ModalSecuencia({ snippet, contacto, telefono, canales, api, reso
 
   const color = (e: string) => (e === 'ok' ? '#0E8A5F' : e === 'error' ? '#C0554E' : e === 'enviando' ? C.moradoTinta : C.g400);
   const icono = (e: string) => (e === 'ok' ? '✓' : e === 'error' ? '!' : e === 'enviando' ? '…' : e === 'saltado' ? '–' : '');
-  const resumen = (p: any) => p.tipo === 'texto' ? resolver(p.texto).slice(0, 80) : p.tipo === 'acceso_prueba' ? (yaTiene ? 'Ya tiene una prueba activa: se salta' : `Crea la cuenta (${p.dias || 7} días) y manda sus datos`) : (p.nombre || p.url.split('/').pop());
+  const resumen = (p: any) => p.tipo === 'texto' ? resolver(p.texto).slice(0, 80) : p.tipo === 'acceso_prueba' ? `Link ${p.url || URL_SACS}, su correo y su contraseña` : (p.nombre || p.url.split('/').pop());
 
   return (
     <div onClick={corriendo ? undefined : onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', zIndex: 960, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
@@ -2008,12 +2000,13 @@ export function ModalSecuencia({ snippet, contacto, telefono, canales, api, reso
             </li>
           ))}
         </ol>
-        {conAcceso && !yaTiene && !terminado && (
-          <div style={{ padding: '4px 16px 0' }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.g400, marginBottom: 3 }}>IDENTIFICADOR DE SU CUENTA</div>
-            <input value={cuenta} disabled={corriendo || desde > 0} onChange={e => setCuenta(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-              placeholder="mimarca" style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 8, padding: '7px 9px', fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
-            {contacto?.email && <div style={{ fontSize: 10.5, color: C.g400, marginTop: 4 }}>El acceso se crea con {contacto.email}</div>}
+        {conAcceso && !terminado && (
+          <div style={{ padding: '4px 16px 0', display: 'grid', gap: 6 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.g400 }}>SU ACCESO · {pasos.find(p => p.tipo === 'acceso_prueba')?.url || URL_SACS}</div>
+            <input value={correo} disabled={corriendo} onChange={e => setCorreo(e.target.value)} placeholder="Correo de su cuenta" type="email"
+              style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 8, padding: '7px 9px', fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
+            <input value={contrasena} disabled={corriendo} onChange={e => setContrasena(e.target.value)} placeholder="Contraseña de su cuenta"
+              style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 8, padding: '7px 9px', fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
           </div>
         )}
         {(err || faltaAcceso) && !terminado && <div style={{ margin: '10px 16px 0', fontSize: 11.5, color: '#C0554E', lineHeight: 1.5 }}>{err || faltaAcceso}</div>}

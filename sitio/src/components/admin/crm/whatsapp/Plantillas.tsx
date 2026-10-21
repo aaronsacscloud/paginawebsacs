@@ -619,8 +619,8 @@ function EditorSnippet({ form, setForm, onGuardado, onCancelar }: { form: any; s
  * Pasos de un snippet que manda VARIOS mensajes con un clic (21-oct-2026).
  * Pedido del dueño: «cuando me pidan una prueba gratis, con un clic: el texto,
  * el PDF con el link, las imágenes en mensajes separados y al final su acceso».
- * Cada paso es un mensaje y salen en este orden. El paso «Acceso a la prueba»
- * crea la cuenta (la misma alta de 🎁 Prueba gratis) y manda sus datos.
+ * Cada paso es un mensaje y salen en este orden. En el paso «Acceso a la prueba»
+ * quien envía escribe el correo y la contraseña de la cuenta; el link es fijo.
  */
 const TIPOS_PASO = [
   { v: 'texto', l: '📝 Texto' },
@@ -628,7 +628,8 @@ const TIPOS_PASO = [
   { v: 'imagen', l: '🖼️ Imagen' },
   { v: 'acceso_prueba', l: '🔑 Acceso a la prueba' },
 ];
-const TEXTO_ACCESO = '🔑 *Tu acceso a Sacs*\n\nEntra en: {{url}}\nCuenta: {{cuenta}}\nCorreo: {{correo}}\nContraseña: {{contrasena}}\n\nTu prueba dura {{dias}} días. La contraseña la puedes cambiar en cuanto entres.';
+const URL_SACS = 'https://sacs5.sacscloud.com';
+const TEXTO_ACCESO = '🔑 *Tu acceso a Sacs*\n\nEntra en: {{url}}\nCorreo: {{correo}}\nContraseña: {{contrasena}}\n\nTu prueba dura {{dias}} días. La contraseña la puedes cambiar en cuanto entres.';
 
 export function errorPaso(p: any): string | null {
   if (p.tipo === 'texto' && !String(p.texto || '').trim()) return 'falta el texto';
@@ -640,7 +641,7 @@ export function errorPaso(p: any): string | null {
 export function EditorPasos({ pasos, onCambio }: { pasos: any[]; onCambio: (p: any[]) => void }) {
   const cambiar = (i: number, cambio: any) => onCambio(pasos.map((p, j) => (j === i ? { ...p, ...cambio } : p)));
   const mover = (i: number, d: number) => { const j = i + d; if (j < 0 || j >= pasos.length) return; const n = [...pasos]; [n[i], n[j]] = [n[j], n[i]]; onCambio(n); };
-  const agregar = (tipo: string) => onCambio([...pasos, tipo === 'acceso_prueba' ? { tipo, dias: 7, texto: TEXTO_ACCESO } : { tipo }]);
+  const agregar = (tipo: string) => onCambio([...pasos, tipo === 'acceso_prueba' ? { tipo, dias: 7, url: URL_SACS, texto: TEXTO_ACCESO } : { tipo }]);
   const yaHayAcceso = pasos.some(p => p.tipo === 'acceso_prueba');
   return (
     <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.g100}` }}>
@@ -667,13 +668,15 @@ export function EditorPasos({ pasos, onCambio }: { pasos: any[]; onCambio: (p: a
             {p.tipo === 'imagen' && /^https:\/\//.test(p.url || '') && <img src={p.url} alt="" style={{ marginTop: 6, height: 70, borderRadius: 6, border: `1px solid ${C.g100}` }} />}
           </>)}
           {p.tipo === 'acceso_prueba' && (<>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 12, color: C.g500 }}>
-              Crea la cuenta de prueba por
+            <div style={{ fontSize: 11.5, color: C.g500, marginTop: 8, lineHeight: 1.5 }}>Al enviar, la ventana pide el <b>correo</b> y la <b>contraseña</b> de su cuenta y los pone en este mensaje.</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, fontSize: 12, color: C.g500 }}>
+              Link
+              <input value={p.url || URL_SACS} onChange={e => cambiar(i, { url: e.target.value.trim() })} style={{ ...inp, flex: 1 }} />
+              Días
               <input type="number" min={1} max={60} value={p.dias || 7} onChange={e => cambiar(i, { dias: Number(e.target.value) })} style={{ ...inp, width: 64 }} />
-              días y manda:
             </div>
             <textarea style={{ ...inp, marginTop: 6, minHeight: 110, resize: 'vertical' }} value={p.texto || ''} onChange={e => cambiar(i, { texto: e.target.value })} />
-            <div style={{ fontSize: 10.5, color: C.g400, marginTop: 4 }}>Datos de la cuenta: {'{{url}} {{cuenta}} {{correo}} {{contrasena}} {{dias}}'}</div>
+            <div style={{ fontSize: 10.5, color: C.g400, marginTop: 4 }}>Datos de la cuenta: {'{{url}} {{correo}} {{contrasena}} {{dias}}'}</div>
           </>)}
           {errorPaso(p) && <div style={{ fontSize: 11, color: C.rojo500, marginTop: 6 }}>{errorPaso(p)}</div>}
         </div>

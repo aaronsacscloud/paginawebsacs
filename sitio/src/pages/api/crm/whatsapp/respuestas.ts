@@ -21,7 +21,7 @@ function sanearPaso(p: any): any | null {
     case 'imagen': { const u = url(p.url); return u ? { tipo: 'imagen', url: u, caption: t(p.caption, 1024) || undefined } : null; }
     case 'acceso_prueba': {
       const texto = t(p.texto, 4096);
-      return texto ? { tipo: 'acceso_prueba', dias: Math.max(1, Math.min(60, Number(p.dias) || 7)), texto } : null;
+      return texto ? { tipo: 'acceso_prueba', dias: Math.max(1, Math.min(60, Number(p.dias) || 7)), url: t(p.url, 200) || 'https://sacs5.sacscloud.com', texto } : null;
     }
     default: return null;
   }
