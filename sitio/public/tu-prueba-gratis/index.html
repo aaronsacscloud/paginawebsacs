@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Tu prueba gratis de Sacs</title>
+<meta name="description" content="7 días con el plan Fideliza completo y AXO Pro incluido. Qué incluye tu prueba, cómo usar AXO, el 35% de descuento anual y cómo funciona el soporte.">
+<meta property="og:title" content="Tu prueba gratis de Sacs · 7 días">
+<meta property="og:description" content="Plan Fideliza completo + AXO Pro incluido. 35% de descuento anual si contratas en tus 7 días.">
+<meta property="og:image" content="https://www.sacscloud.com/tu-prueba-gratis/og.jpg">
+<link rel="icon" href="/favicon.svg">
+<!--
+  Presentación de la prueba gratis (21-oct-2026). Es a la vez el link que se manda al cliente
+  (www.sacscloud.com/tu-prueba-gratis, fuera del menú y de Google) y la fuente del PDF
+  (Sacs-Prueba-Gratis.pdf, misma carpeta). Cada <section class="sl"> es una lámina 16:9 en
+  escritorio y en el PDF; en el celular se apilan.
+  Precios: los de src/data/plans.ts (mensual de lista y anual = lista −35%). AXO Pro 2x:
+  $3,000/mes + IVA, de sacs3/documentacion/presentaciones/axo/README.md.
+-->
+<style>
+  @font-face { font-family: 'Clash Display'; src: url('/fonts/ClashDisplay-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+  @font-face { font-family: 'Sora'; src: url('/fonts/Sora-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+  @font-face { font-family: 'Sora'; src: url('/fonts/Sora-SemiBold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+  @font-face { font-family: 'Sora'; src: url('/fonts/Sora-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+  @font-face { font-family: 'Sora'; src: url('/fonts/Sora-ExtraBold.woff2') format('woff2'); font-weight: 800; font-display: swap; }
+  @font-face { font-family: 'Jakarta'; src: url('/fonts/PlusJakartaSans-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+  @font-face { font-family: 'Jakarta'; src: url('/fonts/PlusJakartaSans-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+  @font-face { font-family: 'Jakarta'; src: url('/fonts/PlusJakartaSans-SemiBold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+  @font-face { font-family: 'Jakarta'; src: url('/fonts/PlusJakartaSans-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+
+  :root {
+    --azul: #2F5BEA; --azul-claro: #7FA2F0; --tinta: #141414; --gris: rgba(20,20,20,.64); --linea: rgba(20,20,20,.12);
+    --fondo: #F5F5F7; --negro: #0B0B0C; --carbon: #17181B; --rosa: #E879A6; --oro: #E8C84A; --verde: #34D399;
+    --u: calc(min(100vw, 1600px) / 1280);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: #E9EAEE; color: var(--tinta); font-family: 'Jakarta', sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  h1, h2, h3, p, ul, ol { margin: 0; }
+  img { display: block; }
+
+  .sl { position: relative; overflow: hidden; width: min(100vw, 1600px); aspect-ratio: 16 / 9; margin: 0 auto; background: var(--fondo); }
+  .sl + .sl { margin-top: 0; }
+  .in { position: absolute; inset: calc(var(--u)*64) calc(var(--u)*80) calc(var(--u)*56); display: flex; flex-direction: column; }
+  .oscuro { background: var(--negro); color: #fff; }
+
+  .marca { font: 700 calc(var(--u)*26)/1 'Clash Display', sans-serif; letter-spacing: -0.01em; display: inline-flex; align-items: center; }
+  .marca small { font: 700 calc(var(--u)*15)/1 'Clash Display', sans-serif; margin-left: calc(var(--u)*10); padding-left: calc(var(--u)*10); border-left: 1.5px solid currentColor; }
+  .kicker { font: 600 calc(var(--u)*13)/1.3 'Sora', sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--azul); }
+  .oscuro .kicker { color: var(--azul-claro); }
+  .h { margin-top: calc(var(--u)*14); font: 700 calc(var(--u)*58)/0.98 'Clash Display', sans-serif; letter-spacing: -0.015em; word-spacing: .12em; }
+  .h em { font-style: normal; color: var(--azul); }
+  .oscuro .h em { color: var(--azul-claro); }
+  .bajada { margin-top: calc(var(--u)*16); font: 400 calc(var(--u)*19)/1.5 'Jakarta', sans-serif; color: var(--gris); max-width: 58ch; }
+  .oscuro .bajada { color: rgba(255,255,255,.72); }
+  .num { position: absolute; right: calc(var(--u)*80); bottom: calc(var(--u)*26); font: 600 calc(var(--u)*11)/1 'Sora', sans-serif; letter-spacing: .14em; color: rgba(20,20,20,.4); }
+  .oscuro .num, .foto-bg .num { color: rgba(255,255,255,.5); }
+  .pieM { position: absolute; left: calc(var(--u)*80); bottom: calc(var(--u)*22); color: rgba(20,20,20,.55); }
+  .pieM .marca { font-size: calc(var(--u)*15); } .pieM .marca small { font-size: calc(var(--u)*9); }
+  .oscuro .pieM, .foto-bg .pieM { color: rgba(255,255,255,.7); }
+
+  /* fondos de foto */
+  .foto-bg > img.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .velo { position: absolute; inset: 0; }
+
+  /* 1 · portada */
+  .s1 .velo { background: linear-gradient(90deg, rgba(11,11,12,.9) 0%, rgba(11,11,12,.72) 38%, rgba(11,11,12,.1) 70%), linear-gradient(0deg, rgba(11,11,12,.5), transparent 40%); }
+  .s1 { color: #fff; }
+  .s1 .top { display: flex; justify-content: space-between; align-items: center; }
+  .s1 .top .marca { font-size: calc(var(--u)*34); } .s1 .top .marca small { font-size: calc(var(--u)*18); }
+  .chip { font: 600 calc(var(--u)*12)/1 'Sora', sans-serif; letter-spacing: .14em; text-transform: uppercase; padding: calc(var(--u)*10) calc(var(--u)*14); border-radius: 99px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.3); }
+  .s1 .centro { margin-top: auto; max-width: calc(var(--u)*640); }
+  .s1 h1 { font: 700 calc(var(--u)*74)/0.94 'Clash Display', sans-serif; letter-spacing: -0.02em; word-spacing: .12em; }
+  .s1 h1 span { color: var(--azul-claro); display: block; }
+  .s1 .sub { margin-top: calc(var(--u)*20); font: 400 calc(var(--u)*20)/1.5 'Jakarta', sans-serif; color: rgba(255,255,255,.82); }
+  .s1 .tres { display: flex; gap: calc(var(--u)*10); margin-top: calc(var(--u)*28); flex-wrap: wrap; }
+  .s1 .tres span { padding: calc(var(--u)*12) calc(var(--u)*16); border-radius: calc(var(--u)*12); background: #fff; color: var(--tinta); font: 700 calc(var(--u)*15)/1.2 'Sora', sans-serif; }
+  .s1 .tres span b { color: var(--azul); }
+
+  /* 2 · qué plan es */
+  .dos { display: grid; grid-template-columns: 1fr calc(var(--u)*470); gap: calc(var(--u)*48); height: 100%; }
+  .dos .foto { border-radius: calc(var(--u)*24); overflow: hidden; height: 100%; }
+  .dos .foto img { width: 100%; height: 100%; object-fit: cover; }
+  .capas { margin-top: calc(var(--u)*30); display: grid; gap: calc(var(--u)*10); }
+  .capa { display: grid; grid-template-columns: calc(var(--u)*150) 1fr; gap: calc(var(--u)*16); align-items: center; padding: calc(var(--u)*16) calc(var(--u)*20); border-radius: calc(var(--u)*16); background: #fff; border: 1px solid var(--linea); }
+  .capa b { font: 700 calc(var(--u)*20)/1.1 'Sora', sans-serif; }
+  .capa span { font: 400 calc(var(--u)*15)/1.45 'Jakarta', sans-serif; color: var(--gris); }
+  .capa.top3 { background: var(--azul); color: #fff; border-color: var(--azul); }
+  .capa.top3 span { color: rgba(255,255,255,.85); }
+  .nota-chica { margin-top: calc(var(--u)*16); font: 500 calc(var(--u)*14)/1.5 'Jakarta', sans-serif; color: var(--gris); }
+
+  /* 3 · módulos */
+  .mods { margin-top: calc(var(--u)*30); display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(var(--u)*14); flex: 1; }
+  .mod { padding: calc(var(--u)*20) calc(var(--u)*22); border-radius: calc(var(--u)*18); background: #fff; border: 1px solid var(--linea); display: flex; flex-direction: column; }
+  .mod i { font: 700 calc(var(--u)*12)/1 'Sora', sans-serif; font-style: normal; letter-spacing: .12em; color: var(--azul); }
+  .mod b { margin-top: calc(var(--u)*10); font: 700 calc(var(--u)*21)/1.15 'Sora', sans-serif; }
+  .mod ul { list-style: none; padding: 0; margin-top: calc(var(--u)*10); }
+  .mod li { position: relative; padding: calc(var(--u)*4) 0 0 calc(var(--u)*16); font: 500 calc(var(--u)*14.5)/1.4 'Jakarta', sans-serif; color: rgba(20,20,20,.78); }
+  .mod li::before { content: ''; position: absolute; left: 0; top: calc(var(--u)*12); width: calc(var(--u)*8); height: 2px; background: var(--azul); }
+  .mod.fz { background: var(--negro); color: #fff; border-color: var(--negro); }
+  .mod.fz i { color: var(--azul-claro); } .mod.fz li { color: rgba(255,255,255,.82); } .mod.fz li::before { background: var(--azul-claro); }
+
+  /* 4 · AXO incluido */
+  .s4 .velo { background: radial-gradient(ellipse at 75% 55%, rgba(47,91,234,.35), transparent 60%); }
+  .axo-fig { position: absolute; right: calc(var(--u)*110); bottom: 0; height: 92%; width: auto; }
+  .precio-axo { margin-top: calc(var(--u)*34); display: inline-flex; flex-direction: column; padding: calc(var(--u)*22) calc(var(--u)*26); border-radius: calc(var(--u)*20); background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.16); max-width: calc(var(--u)*560); }
+  .precio-axo small { font: 600 calc(var(--u)*12)/1 'Sora', sans-serif; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.6); }
+  .precio-axo .linea { display: flex; flex-wrap: wrap; align-items: baseline; gap: calc(var(--u)*6) calc(var(--u)*18); white-space: nowrap; margin-top: calc(var(--u)*12); }
+  .precio-axo s { font: 700 calc(var(--u)*38)/1 'Sora', sans-serif; color: rgba(255,255,255,.45); text-decoration-thickness: 3px; }
+  .precio-axo s em { font-size: .4em; font-style: normal; }
+  .precio-axo b { font: 700 calc(var(--u)*42)/1 'Clash Display', sans-serif; color: var(--verde); }
+  .precio-axo p { margin-top: calc(var(--u)*12); font: 400 calc(var(--u)*15)/1.5 'Jakarta', sans-serif; color: rgba(255,255,255,.72); }
+
+  /* 5 · usos de AXO */
+  .usos { display: grid; grid-template-columns: calc(var(--u)*380) 1fr; gap: calc(var(--u)*36); margin-top: calc(var(--u)*28); flex: 1; min-height: 0; }
+  .usos .foto { border-radius: calc(var(--u)*22); overflow: hidden; }
+  .usos .foto img { width: 100%; height: 100%; object-fit: cover; }
+  .usos-g { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u)*12); align-content: start; }
+  .uso { padding: calc(var(--u)*16) calc(var(--u)*18); border-radius: calc(var(--u)*16); background: #fff; border: 1px solid var(--linea); }
+  .uso b { display: block; font: 700 calc(var(--u)*17)/1.2 'Sora', sans-serif; }
+  .uso span { display: block; margin-top: calc(var(--u)*6); font: 400 calc(var(--u)*13.5)/1.45 'Jakarta', sans-serif; color: var(--gris); }
+  .uso q { display: block; margin-top: calc(var(--u)*8); font: 600 calc(var(--u)*13)/1.4 'Jakarta', sans-serif; color: var(--azul); quotes: '«' '»'; }
+
+  /* 6 · oferta */
+  .s6 { background: linear-gradient(135deg, #0B0B0C 0%, #121A3A 100%); color: #fff; }
+  .oferta-top { display: flex; justify-content: space-between; align-items: flex-end; gap: calc(var(--u)*30); }
+  .sello { flex: none; width: calc(var(--u)*170); height: calc(var(--u)*170); border-radius: 50%; background: var(--oro); color: var(--negro); display: flex; flex-direction: column; align-items: center; justify-content: center; transform: rotate(-8deg); }
+  .sello b { font: 700 calc(var(--u)*60)/0.9 'Clash Display', sans-serif; }
+  .sello span { font: 700 calc(var(--u)*13)/1.2 'Sora', sans-serif; text-transform: uppercase; letter-spacing: .08em; text-align: center; }
+  .precios { margin-top: calc(var(--u)*30); display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(var(--u)*14); }
+  .pl { padding: calc(var(--u)*22); border-radius: calc(var(--u)*18); background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); }
+  .pl.hl { background: #fff; color: var(--tinta); border-color: #fff; }
+  .pl .n { display: flex; justify-content: space-between; align-items: center; font: 700 calc(var(--u)*20)/1 'Sora', sans-serif; }
+  .pl .n em { font: 700 calc(var(--u)*10.5)/1 'Sora', sans-serif; font-style: normal; letter-spacing: .1em; text-transform: uppercase; padding: calc(var(--u)*6) calc(var(--u)*9); border-radius: 99px; background: var(--azul); color: #fff; }
+  .pl .antes { margin-top: calc(var(--u)*18); font: 500 calc(var(--u)*14)/1 'Jakarta', sans-serif; color: rgba(255,255,255,.55); }
+  .pl.hl .antes { color: rgba(20,20,20,.5); }
+  .pl .antes s { font-weight: 700; }
+  .pl .ahora { margin-top: calc(var(--u)*8); font: 700 calc(var(--u)*46)/1 'Clash Display', sans-serif; }
+  .pl .ahora small { font: 600 calc(var(--u)*15)/1 'Jakarta', sans-serif; }
+  .pl .tot { margin-top: calc(var(--u)*8); font: 500 calc(var(--u)*13.5)/1.4 'Jakarta', sans-serif; color: rgba(255,255,255,.65); }
+  .pl.hl .tot { color: var(--gris); }
+  .pl .mas { margin-top: calc(var(--u)*14); padding-top: calc(var(--u)*12); border-top: 1px solid rgba(255,255,255,.14); font: 700 calc(var(--u)*14)/1.35 'Sora', sans-serif; color: var(--verde); }
+  .pl.hl .mas { border-color: var(--linea); color: #0E8A5F; }
+  .letra { margin-top: auto; font: 400 calc(var(--u)*12.5)/1.5 'Jakarta', sans-serif; color: rgba(255,255,255,.55); }
+
+  /* 7 · academia */
+  .s7 .velo { background: linear-gradient(90deg, rgba(245,245,247,1) 0%, rgba(245,245,247,.97) 46%, rgba(245,245,247,0) 72%); }
+  .tres-v { margin-top: calc(var(--u)*30); display: grid; gap: calc(var(--u)*12); max-width: calc(var(--u)*600); }
+  .v { display: grid; grid-template-columns: calc(var(--u)*46) 1fr; gap: calc(var(--u)*14); align-items: start; padding: calc(var(--u)*16) calc(var(--u)*18); border-radius: calc(var(--u)*16); background: #fff; border: 1px solid var(--linea); }
+  .v i { width: calc(var(--u)*46); height: calc(var(--u)*46); border-radius: calc(var(--u)*12); background: #E7EEFF; color: var(--azul); display: flex; align-items: center; justify-content: center; font: 700 calc(var(--u)*16)/1 'Sora', sans-serif; font-style: normal; }
+  .v b { display: block; font: 700 calc(var(--u)*18)/1.2 'Sora', sans-serif; }
+  .v span { display: block; margin-top: calc(var(--u)*5); font: 400 calc(var(--u)*14.5)/1.45 'Jakarta', sans-serif; color: var(--gris); }
+
+  /* 8 · soporte */
+  .sop { display: grid; grid-template-columns: 1fr calc(var(--u)*460); gap: calc(var(--u)*44); height: 100%; }
+  .sop .foto { border-radius: calc(var(--u)*24); overflow: hidden; position: relative; }
+  .sop .foto img { width: 100%; height: 100%; object-fit: cover; }
+  .burbuja { position: absolute; left: calc(var(--u)*18); right: calc(var(--u)*18); bottom: calc(var(--u)*18); padding: calc(var(--u)*14) calc(var(--u)*16); border-radius: calc(var(--u)*14); background: rgba(255,255,255,.97); color: var(--tinta); font: 500 calc(var(--u)*13.5)/1.45 'Jakarta', sans-serif; }
+  .burbuja b { display: block; font: 700 calc(var(--u)*11)/1 'Sora', sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--azul); margin-bottom: calc(var(--u)*6); }
+  .pasos-r { margin-top: calc(var(--u)*8); padding-left: calc(var(--u)*18); }
+  .pasos-r li { font-weight: 600; }
+  .sop-l { display: grid; gap: calc(var(--u)*12); margin-top: calc(var(--u)*26); }
+  .sop-l div { padding: calc(var(--u)*16) calc(var(--u)*20); border-radius: calc(var(--u)*16); background: var(--carbon); border: 1px solid rgba(255,255,255,.1); }
+  .sop-l b { display: block; font: 700 calc(var(--u)*18)/1.2 'Sora', sans-serif; }
+  .sop-l span { display: block; margin-top: calc(var(--u)*5); font: 400 calc(var(--u)*14.5)/1.45 'Jakarta', sans-serif; color: rgba(255,255,255,.7); }
+  .alerta { margin-top: calc(var(--u)*14); padding: calc(var(--u)*16) calc(var(--u)*20); border-radius: calc(var(--u)*16); background: #3A2A06; border: 1px solid rgba(232,200,74,.5); }
+  .alerta b { display: block; font: 700 calc(var(--u)*16)/1.2 'Sora', sans-serif; color: var(--oro); }
+  .alerta span { display: block; margin-top: calc(var(--u)*5); font: 400 calc(var(--u)*14)/1.45 'Jakarta', sans-serif; color: rgba(255,255,255,.82); }
+
+  /* 9 · los 7 días */
+  .dias { margin-top: calc(var(--u)*40); display: grid; grid-template-columns: repeat(7, 1fr); gap: calc(var(--u)*10); }
+  .d { position: relative; padding: calc(var(--u)*16) calc(var(--u)*14); border-radius: calc(var(--u)*16); background: #fff; border: 1px solid var(--linea); min-height: calc(var(--u)*190); }
+  .d i { font: 700 calc(var(--u)*11)/1 'Sora', sans-serif; font-style: normal; letter-spacing: .12em; text-transform: uppercase; color: var(--azul); }
+  .d b { display: block; margin-top: calc(var(--u)*6); font: 700 calc(var(--u)*30)/1 'Clash Display', sans-serif; }
+  .d span { display: block; margin-top: calc(var(--u)*10); font: 500 calc(var(--u)*13)/1.4 'Jakarta', sans-serif; color: var(--gris); }
+  .d.ultimo { background: var(--negro); color: #fff; border-color: var(--negro); }
+  .d.ultimo i { color: var(--oro); } .d.ultimo span { color: rgba(255,255,255,.8); }
+  .barra-dias { position: relative; margin-top: calc(var(--u)*18); height: calc(var(--u)*8); border-radius: 99px; background: linear-gradient(90deg, var(--azul) 0%, var(--azul-claro) 80%, var(--oro) 100%); }
+  .avisos2 { margin-top: calc(var(--u)*26); display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u)*14); }
+  .avisos2 div { padding: calc(var(--u)*18) calc(var(--u)*20); border-radius: calc(var(--u)*16); background: #fff; border: 1px solid var(--linea); }
+  .avisos2 div.f { background: #FFF6DB; border-color: #F1D98A; }
+  .avisos2 b { display: block; font: 700 calc(var(--u)*17)/1.2 'Sora', sans-serif; }
+  .avisos2 span { display: block; margin-top: calc(var(--u)*6); font: 400 calc(var(--u)*14.5)/1.5 'Jakarta', sans-serif; color: rgba(20,20,20,.72); }
+
+  /* 10 · cierre */
+  .s10 .velo { background: linear-gradient(0deg, rgba(11,11,12,.95) 0%, rgba(11,11,12,.7) 40%, rgba(11,11,12,.15) 75%); }
+  .s10 { color: #fff; }
+  .s10 .abajo { margin-top: auto; }
+  .s10 h2 { font: 700 calc(var(--u)*72)/0.96 'Clash Display', sans-serif; letter-spacing: -0.02em; word-spacing: .12em; }
+  .s10 h2 span { color: var(--azul-claro); }
+  .cierre-g { margin-top: calc(var(--u)*26); display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(var(--u)*10); }
+  .cierre-g div { padding: calc(var(--u)*16) calc(var(--u)*18); border-radius: calc(var(--u)*14); background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); }
+  .cierre-g div.w { background: #fff; color: var(--tinta); }
+  .cierre-g small { display: block; font: 600 calc(var(--u)*11)/1.2 'Sora', sans-serif; letter-spacing: .12em; text-transform: uppercase; opacity: .65; }
+  .cierre-g b { display: block; margin-top: calc(var(--u)*8); font: 700 calc(var(--u)*17)/1.25 'Sora', sans-serif; }
+
+  /* barra de descarga (solo web) */
+  .descarga { position: fixed; right: 16px; bottom: 16px; z-index: 10; display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 99px; background: var(--azul); color: #fff; font: 700 14px/1 'Sora', sans-serif; text-decoration: none; box-shadow: 0 8px 30px rgba(47,91,234,.4); }
+
+  /* ── celular: las láminas se apilan ── */
+  @media (max-width: 860px) {
+    :root { --u: 1px; }
+    .sl { aspect-ratio: auto; width: 100%; }
+    .in { position: relative; inset: auto; padding: 56px 20px 64px; }
+    .h { font-size: 36px; }
+    .bajada { font-size: 16px; }
+    .s1 { min-height: 100svh; display: flex; }
+    .s1 .in { min-height: 100svh; }
+    .s1 h1 { font-size: 46px; }
+    .s1 .sub { font-size: 16px; }
+    .s1 .velo { background: linear-gradient(0deg, rgba(11,11,12,.95) 0%, rgba(11,11,12,.75) 50%, rgba(11,11,12,.3) 100%); }
+    .s1 .top .marca { font-size: 26px; } .s1 .top .marca small { font-size: 14px; }
+    .chip { display: none; }
+    .dos, .sop, .usos { grid-template-columns: 1fr; height: auto; }
+    .dos .foto, .sop .foto { height: 260px; }
+    .usos .foto { height: 220px; }
+    .capa { grid-template-columns: 1fr; gap: 4px; }
+    .mods, .precios, .cierre-g, .avisos2 { grid-template-columns: 1fr; }
+    .usos-g { grid-template-columns: 1fr; }
+    .axo-fig { position: relative; right: auto; height: 300px; margin: 24px auto 0; }
+    .oferta-top { flex-direction: column; align-items: flex-start; }
+    .sello { width: 130px; height: 130px; } .sello b { font-size: 46px; }
+    .dias { grid-template-columns: 1fr 1fr; }
+    .d { min-height: 0; }
+    .d.ultimo { grid-column: span 2; }
+    .s7 .velo { background: rgba(245,245,247,.93); }
+    .s10 { min-height: 90svh; } .s10 .in { min-height: 90svh; }
+    .s10 h2 { font-size: 40px; }
+    .num, .pieM { display: none; }
+    .letra { margin-top: 16px; }
+  }
+
+  /* ── PDF: 16:9 exacto, sin barra ── */
+  @page { size: 13.333in 7.5in; margin: 0; }
+  @media print {
+    :root { --u: 1px; }
+    body { background: #fff; }
+    .sl { width: 1280px; height: 720px; aspect-ratio: auto; page-break-after: always; break-after: page; }
+    .sl:last-of-type { page-break-after: auto; break-after: auto; }
+    .descarga { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 1 · PORTADA -->
+<section class="sl s1 foto-bg">
+  <img class="bg" src="/tu-prueba-gratis/img/hero-multi.jpg" alt="La dueña de una boutique revisa su tienda en una tablet entre racks de ropa" style="object-position:72% 40%">
+  <div class="velo"></div>
+  <div class="in">
+    <div class="top"><span class="marca">Sacs<small>Fashion OS</small></span><span class="chip">Tu prueba gratis · 7 días</span></div>
+    <div class="centro">
+      <p class="kicker" style="color:var(--azul-claro)">Te damos la bienvenida</p>
+      <h1>7 días con todo Sacs. <span>Y con AXO a tu lado.</span></h1>
+      <p class="sub">Tu prueba gratis abre el plan Fideliza completo, con AXO Pro incluido para que te explique, te capacite y te ayude a cargar tu tienda. Aquí está todo lo que incluye y cómo aprovecharla.</p>
+      <div class="tres"><span><b>Plan Fideliza</b> completo</span><span><b>AXO Pro</b> incluido</span><span><b>Soporte 24/7</b> en la plataforma</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 · QUÉ PLAN ES -->
+<section class="sl">
+  <div class="in">
+    <div class="dos">
+      <div>
+        <p class="kicker">01 · Tu prueba</p>
+        <h2 class="h">Ves todos los módulos: <em>el plan más completo.</em></h2>
+        <p class="bajada">Tu prueba es del plan Fideliza, que trae todo lo del plan Vende y del plan Controla, más todo lo de Fideliza.</p>
+        <div class="capas">
+          <div class="capa"><b>Vende</b><span>Punto de venta, tienda en línea, redes, tus prendas por talla y color, y facturación.</span></div>
+          <div class="capa"><b>Controla</b><span>Varias tiendas: inventario en cada una, traspasos, conteos, compras, gastos, comisiones y 50+ reportes.</span></div>
+          <div class="capa top3"><b>Fideliza</b><span>Que tu cliente regrese: ficha de cliente, puntos, monedero, tarjetas de regalo, WhatsApp, correo y membresías.</span></div>
+        </div>
+        <p class="nota-chica">Usuarios, dispositivos y modelos ilimitados. Sin contratos de permanencia.</p>
+      </div>
+      <div class="foto"><img src="/tu-prueba-gratis/img/hero-moda.jpg" alt="Dueña de una tienda de ropa sonriendo con su tablet"></div>
+    </div>
+  </div>
+  <span class="pieM"><span class="marca">Sacs<small>Fashion OS</small></span></span><span class="num">02</span>
+</section>
+
+<!-- 3 · LO MÁS IMPORTANTE -->
+<section class="sl">
+  <div class="in">
+    <p class="kicker">02 · Lo que vas a probar</p>
+    <h2 class="h">Las partes más importantes <em>del sistema.</em></h2>
+    <div class="mods">
+      <div class="mod"><i>01</i><b>Punto de venta</b><ul><li>Cobra con y sin internet</li><li>Cambios de talla y devoluciones</li><li>Cortes de caja, arqueos y corte ciego</li><li>Ticket por WhatsApp</li></ul></div>
+      <div class="mod"><i>02</i><b>Tienda en línea y redes</b><ul><li>Tu tienda en línea con el mismo inventario</li><li>Facebook, Instagram, WhatsApp y TikTok Shop</li><li>Tus prendas visibles en Google y ChatGPT</li></ul></div>
+      <div class="mod"><i>03</i><b>Inventario en todas tus tiendas</b><ul><li>Qué talla hay en cada tienda, al momento</li><li>Traspasos y reparto desde tu CEDIS</li><li>Conteos sin cerrar la tienda y kardex</li></ul></div>
+      <div class="mod"><i>04</i><b>Compras, gastos y facturación</b><ul><li>Pedidos a proveedor y lo que le debes</li><li>Recibes contra lo que pediste</li><li>Control de gastos y facturación</li></ul></div>
+      <div class="mod"><i>05</i><b>Reportes y equipo</b><ul><li>50+ reportes y 20+ indicadores</li><li>Lo que se vende y lo que se queda, por talla y tienda</li><li>Metas, comisiones y permisos por persona</li></ul></div>
+      <div class="mod fz"><i>06 · FIDELIZA</i><b>Clientes que regresan</b><ul><li>Puntos, monedero y niveles de cliente</li><li>Tarjetas de regalo y membresías</li><li>Avisos por WhatsApp y correos a tus clientes</li></ul></div>
+    </div>
+  </div>
+  <span class="pieM"><span class="marca">Sacs<small>Fashion OS</small></span></span><span class="num">03</span>
+</section>
+
+<!-- 4 · AXO INCLUIDO -->
+<section class="sl oscuro s4">
+  <div class="velo"></div>
+  <img class="axo-fig" src="/tu-prueba-gratis/img/axo-mascota.png" alt="AXO, el asistente de inteligencia artificial de Sacs">
+  <div class="in">
+    <p class="kicker">03 · AXO, tu asistente con IA</p>
+    <h2 class="h" style="max-width:calc(var(--u)*700)">AXO Pro viene <em>incluido en tu prueba.</em></h2>
+    <p class="bajada" style="max-width:calc(var(--u)*640)">AXO es la inteligencia artificial de Sacs. Le escribes o le hablas con tus palabras, contesta con los datos de tu tienda y hace el trabajo dentro del sistema, siempre con tu confirmación.</p>
+    <div class="precio-axo">
+      <small>AXO Pro 2x</small>
+      <div class="linea"><s>$3,000<em> al mes + IVA</em></s><b>$0 en tu prueba</b></div>
+      <p>Úsalo todo lo que quieras en tus 7 días. Y si contratas dentro de esos 7 días, AXO sigue incluido sin pagar nada extra.</p>
+    </div>
+  </div>
+  <span class="pieM"><span class="marca">Sacs<small>Fashion OS</small></span></span><span class="num">04</span>
+</section>
+
+<!-- 5 · CÓMO USAR AXO -->
+<section class="sl">
+  <div class="in">
+    <p class="kicker">04 · Qué le puedes pedir a AXO</p>
+    <h2 class="h">Tu guía, tu maestro <em>y tu ayudante.</em></h2>
+    <div class="usos">
+      <div class="foto"><img src="/tu-prueba-gratis/img/axo-copiloto-ia-hero.jpg" alt="Dueña de una boutique consultando a AXO en su tablet"></div>
+      <div class="usos-g">
+        <div class="uso"><b>Tu onboarding</b><span>Te arma un plan para arrancar, paso a paso, según tu negocio.</span><q>¿Por dónde empiezo?</q></div>
+        <div class="uso"><b>Te explica</b><span>Cualquier pantalla o proceso, con tus palabras y sin tecnicismos.</span><q>¿Cómo hago un traspaso?</q></div>
+        <div class="uso"><b>Te capacita a ti y a tu equipo</b><span>Practican en un entorno de prueba hasta dominarlo.</span><q>Capacita a mi vendedora en caja</q></div>
+        <div class="uso"><b>Importa tus productos</b><span>Le pasas tu Excel, la lista del proveedor o tu sistema anterior y lo deja cargado.</span><q>Sube este Excel de productos</q></div>
+        <div class="uso"><b>Consulta cualquier cosa</b><span>Ventas, inventario, clientes: te contesta con tus datos reales.</span><q>¿Cuánto vendí hoy?</q></div>
+        <div class="uso"><b>Hace el trabajo contigo</b><span>Altas, precios, promociones y traspasos, siempre con tu confirmación.</span><q>Pon 20% en la colección de verano</q></div>
+      </div>
+    </div>
+  </div>
+  <span class="pieM"><span class="marca">Sacs<small>Fashion OS</small></span></span><span class="num">05</span>
+</section>
+
+<!-- 6 · OFERTA 7 DÍAS -->
+<section class="sl s6 oscuro">
+  <div class="in">
+    <div class="oferta-top">
+      <div>
+        <p class="kicker" style="color:var(--oro)">05 · Solo durante tus 7 días</p>
+        <h2 class="h">35% de descuento anual <em>y AXO sin pagar nada extra.</em></h2>
+        <p class="bajada">Si contratas cualquier plan dentro de tus 7 días de prueba, te llevas el 35% de descuento en el plan anual y AXO incluido. Pasando el día 7, el beneficio ya no aplica.</p>
+      </div>
+      <div class="sello"><b>35%</b><span>Solo en tus<br>7 días</span></div>
+    </div>
+    <div class="precios">
+      <div class="pl"><div class="n">Vende</div><p class="antes">Precio de lista <s>$810</s> al mes</p><p class="ahora">$527<small> al mes</small></p><p class="tot">Pagando el año: $6,318</p><p class="mas">+ AXO Pro incluido</p></div>
+      <div class="pl"><div class="n">Controla</div><p class="antes">Precio de lista <s>$1,215</s> al mes</p><p class="ahora">$790<small> al mes</small></p><p class="tot">Pagando el año: $9,477</p><p class="mas">+ AXO Pro incluido</p></div>
+      <div class="pl hl"><div class="n">Fideliza <em>El de tu prueba</em></div><p class="antes">Precio de lista <s>$1,890</s> al mes</p><p class="ahora">$1,229<small> al mes</small></p><p class="tot">Pagando el año: $14,742</p><p class="mas">+ AXO Pro incluido</p></div>
+    </div>
+    <p class="letra">Precios en pesos mexicanos por mes, con el 35% de descuento del plan anual aplicado. AXO Pro tiene un valor de $3,000 al mes + IVA.</p>
+  </div>
+  <span class="pieM"><span class="marca">Sacs<small>Fashion OS</small></span></span><span class="num">06</span>
+</section>
+
+<!-- 7 · ACADEMIA -->
+<section class="sl s7 foto-bg">
+  <img class="bg" src="/tu-prueba-gratis/img/hero-moda-boutique.jpg" alt="Vendedora de una boutique mostrando una prenda junto a la pantalla de Sacs" style="object-position:right center">
+  <div class="velo"></div>
+  <div class="in">
+    <p class="kicker">06 · Aprende a tu ritmo</p>
+    <h2 class="h" style="max-width:calc(var(--u)*620)">¿Prefieres verlo? <em>Está la Academia.</em></h2>
+    <p class="bajada" style="max-width:calc(var(--u)*560)">Si te gusta más aprender con algo gráfico o en video, la Academia de Sacs tiene toda la información del sistema, dentro de la plataforma.</p>
+    <div class="tres-v">
+      <div class="v"><i>▶</i><div><b>Videos y guías</b><span>Cada módulo explicado paso a paso, para verlo cuando quieras.</span></div></div>
+      <div class="v"><i>AX</i><div><b>Con AXO al lado</b><span>Si algo de la Academia no te queda claro, pregúntale a AXO y te lo explica.</span></div></div>
+      <div class="v"><i>24</i><div><b>A cualquier hora</b><span>Tú decides cuándo aprender: de noche, en fin de semana o entre clientes.</span></div></div>
+    </div>
+  </div>
+  <span class="pieM"><span class="marca">Sacs<small>Fashion OS</small></span></span><span class="num">07</span>
+</section>
+
+<!-- 8 · SOPORTE -->
+<section class="sl oscuro">
+  <div class="in">
+    <div class="sop">
+      <div style="display:flex;flex-direction:column">
+        <p class="kicker">07 · Soporte 24/7</p>
+        <h2 class="h">Preguntas a cualquier hora. <em>Te decimos cómo hacerlo.</em></h2>
+        <div class="sop-l">
+          <div><b>AXO y asesores, 24/7</b><span>Dentro de la plataforma, cualquier día y a cualquier hora.</span></div>
+          <div><b>No solo te contestamos</b><span>Te respondemos con la forma de ejecutarlo, paso a paso, para que lo hagas en ese momento.</span></div>
+        </div>
+        <div class="alerta"><b>Importante: el chat de ventas no es soporte</b><span>Por el chat de ventas no se resuelven dudas del sistema. Todo el soporte es únicamente a través de la plataforma.</span></div>
+      </div>
+      <div class="foto"><img src="/tu-prueba-gratis/img/ent-ejecutivo-1536.jpg" alt="Asesora de Sacs ayudando a una clienta">
+        <div class="burbuja"><b>Así te contestamos</b>«¿Cómo doy de alta una promoción?»<ol class="pasos-r"><li>Entra a Promociones y toca «Nueva».</li><li>Elige las prendas y el descuento.</li><li>Pon las fechas y guárdala.</li></ol></div>
+      </div>
+    </div>
+  </div>
+  <span class="pieM"><span class="marca">Sacs<small>Fashion OS</small></span></span><span class="num">08</span>
+</section>
+
+<!-- 9 · LOS 7 DÍAS -->
+<section class="sl">
+  <div class="in">
+    <p class="kicker">08 · Tus 7 días</p>
+    <h2 class="h">Así corre <em>tu prueba.</em></h2>
+    <div class="dias">
+      <div class="d"><i>Día 1</i><b>Arranca</b><span>Entras al plan Fideliza completo y AXO te arma tu plan de inicio.</span></div>
+      <div class="d"><i>Día 2</i><b>Carga</b><span>AXO te ayuda a importar tus productos.</span></div>
+      <div class="d"><i>Día 3</i><b>Vende</b><span>Prueba el punto de venta y la tienda en línea.</span></div>
+      <div class="d"><i>Día 4</i><b>Controla</b><span>Inventario, traspasos y reportes.</span></div>
+      <div class="d"><i>Día 5</i><b>Fideliza</b><span>Puntos, monedero y avisos a tus clientes.</span></div>
+      <div class="d"><i>Día 6</i><b>Decide</b><span>Elige tu plan con 35% de descuento anual.</span></div>
+      <div class="d ultimo"><i>Día 7</i><b>Cierre</b><span>Último día del beneficio. Si no hay respuesta, la cuenta se cancela.</span></div>
+    </div>
+    <div class="barra-dias"></div>
+    <div class="avisos2">
+      <div><b>El día 6 es solo una sugerencia</b><span>Puedes contratar cualquier día de tu prueba. El 35% de descuento y AXO sin costo extra aplican hasta el día 7.</span></div>
+      <div class="f"><b>El día 7 exacto se cancela tu cuenta</b><span>Si al día 7 no tenemos respuesta de tu parte, tu cuenta de prueba se cancela ese mismo día.</span></div>
+    </div>
+  </div>
+  <span class="pieM"><span class="marca">Sacs<small>Fashion OS</small></span></span><span class="num">09</span>
+</section>
+
+<!-- 10 · CIERRE -->
+<section class="sl s10 foto-bg">
+  <img class="bg" src="/tu-prueba-gratis/img/ls-mr-merch-equipo.jpg" alt="Tienda llena de clientes cobrando con Sacs" style="object-position:center 35%">
+  <div class="velo"></div>
+  <div class="in">
+    <span class="marca" style="font-size:calc(var(--u)*30)">Sacs<small style="font-size:calc(var(--u)*16)">Fashion OS</small></span>
+    <div class="abajo">
+      <h2>Aprovecha tus 7 días. <span>Te acompañamos en cada uno.</span></h2>
+      <div class="cierre-g">
+        <div class="w"><small>Tu prueba</small><b>Plan Fideliza completo</b></div>
+        <div><small>Incluido</small><b>AXO Pro · valor $3,000/mes</b></div>
+        <div><small>Solo 7 días</small><b>35% anual + AXO sin costo extra</b></div>
+        <div><small>Soporte</small><b>24/7 en la plataforma</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<a class="descarga" href="/tu-prueba-gratis/Sacs-Prueba-Gratis.pdf" download>Descargar PDF</a>
+</body>
+</html>
