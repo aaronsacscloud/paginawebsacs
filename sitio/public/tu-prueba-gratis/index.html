@@ -122,6 +122,45 @@
   .uso span { display: block; margin-top: calc(var(--u)*6); font: 400 calc(var(--u)*13.5)/1.45 'Jakarta', sans-serif; color: var(--gris); }
   .uso q { display: block; margin-top: calc(var(--u)*8); font: 600 calc(var(--u)*13)/1.4 'Jakarta', sans-serif; color: var(--azul); quotes: '«' '»'; }
 
+
+  /* 6 · tienda en línea con AXO */
+  .tienda { display: grid; grid-template-columns: 1fr calc(var(--u)*520); gap: calc(var(--u)*44); height: 100%; }
+  .t30 { margin-top: calc(var(--u)*24); display: flex; align-items: baseline; gap: calc(var(--u)*14); }
+  .t30 b { font: 700 calc(var(--u)*84)/0.9 'Clash Display', sans-serif; color: var(--azul); white-space: nowrap; }
+  .t30 span { font: 600 calc(var(--u)*18)/1.3 'Sora', sans-serif; max-width: calc(var(--u)*200); }
+  .pasos3 { margin-top: calc(var(--u)*24); display: grid; gap: calc(var(--u)*10); counter-reset: p; }
+  .pasos3 > div { display: grid; grid-template-columns: calc(var(--u)*40) 1fr; gap: calc(var(--u)*14); align-items: center; padding: calc(var(--u)*14) calc(var(--u)*18); border-radius: calc(var(--u)*14); background: #fff; border: 1px solid var(--linea); }
+  .pasos3 i { width: calc(var(--u)*36); height: calc(var(--u)*36); border-radius: 50%; background: var(--azul); color: #fff; display: flex; align-items: center; justify-content: center; font: 700 calc(var(--u)*15)/1 'Sora', sans-serif; font-style: normal; }
+  .pasos3 b { display: block; font: 700 calc(var(--u)*17)/1.2 'Sora', sans-serif; }
+  .pasos3 span { display: block; margin-top: calc(var(--u)*3); font: 400 calc(var(--u)*13.5)/1.4 'Jakarta', sans-serif; color: var(--gris); }
+  .tienda .foto { position: relative; border-radius: calc(var(--u)*24); overflow: hidden; }
+  .tienda .foto img { width: 100%; height: 100%; object-fit: cover; }
+  .chat { position: absolute; left: calc(var(--u)*18); right: calc(var(--u)*18); bottom: calc(var(--u)*18); display: grid; gap: calc(var(--u)*8); }
+  .chat p { padding: calc(var(--u)*12) calc(var(--u)*14); border-radius: calc(var(--u)*14); font: 500 calc(var(--u)*13.5)/1.4 'Jakarta', sans-serif; }
+  .chat .yo { justify-self: end; max-width: 88%; background: var(--azul); color: #fff; border-bottom-right-radius: calc(var(--u)*4); }
+  .chat .ax { max-width: 92%; background: rgba(255,255,255,.97); color: var(--tinta); border-bottom-left-radius: calc(var(--u)*4); }
+  .chat .ax b { color: var(--azul); }
+
+  /* 7 · migración (mismo diseño que /planes#migracion) */
+  .mig { display: grid; grid-template-columns: calc(var(--u)*470) 1fr; gap: calc(var(--u)*40); }
+  .mig-eyebrow { display: inline-flex; align-items: center; gap: calc(var(--u)*8); font: 700 calc(var(--u)*12.5)/1 'Sora', sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--azul); }
+  .mig-eyebrow::before { content: ''; width: calc(var(--u)*7); height: calc(var(--u)*7); border-radius: 50%; background: var(--azul); }
+  .mig-title { margin-top: calc(var(--u)*14); font: 800 calc(var(--u)*40)/1.04 'Sora', sans-serif; letter-spacing: -0.035em; }
+  .mig-title span { color: var(--azul); }
+  .mig-sub { margin-top: calc(var(--u)*14); font: 400 calc(var(--u)*16.5)/1.5 'Jakarta', sans-serif; color: var(--gris); }
+  .mig-sub b { color: var(--tinta); }
+  .mig-visual { position: relative; border-radius: calc(var(--u)*24); overflow: hidden; background: #F5F3EE; container-type: inline-size; align-self: start; }
+  .mig-visual img { width: 100%; height: auto; }
+  .mig-logo { position: absolute; left: 80.2%; top: 46.4%; transform: translate(-50%, -50%); font: 700 6.4cqw/1 'Clash Display', sans-serif; letter-spacing: -0.01em; color: var(--tinta); }
+  .mig-datos { margin-top: calc(var(--u)*20); display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(var(--u)*10); }
+  .mig-dato { background: #fff; border-radius: calc(var(--u)*16); padding: calc(var(--u)*16) calc(var(--u)*10); text-align: center; }
+  .mig-dato-num { display: block; font: 800 calc(var(--u)*30)/1 'Sora', sans-serif; letter-spacing: -0.04em; color: var(--azul); }
+  .mig-dato-label { display: block; margin-top: calc(var(--u)*6); font: 600 calc(var(--u)*12)/1.3 'Jakarta', sans-serif; }
+  .mig-que-t { margin-top: calc(var(--u)*22); font: 700 calc(var(--u)*12)/1 'Sora', sans-serif; letter-spacing: .14em; text-transform: uppercase; color: rgba(20,20,20,.5); }
+  .mig-que { list-style: none; padding: 0; margin-top: calc(var(--u)*10); display: grid; grid-template-columns: repeat(4, 1fr); column-gap: calc(var(--u)*22); }
+  .mig-que li { display: flex; align-items: baseline; gap: calc(var(--u)*10); padding: calc(var(--u)*12) 0 calc(var(--u)*13); border-top: 1px solid rgba(0,0,0,.14); font: 700 calc(var(--u)*16)/1.25 'Sora', sans-serif; }
+  .mig-que-n { font: 700 calc(var(--u)*11)/1 'Jakarta', sans-serif; letter-spacing: .06em; color: var(--azul); }
+
   /* 6 · oferta */
   .s6 { background: linear-gradient(135deg, #0B0B0C 0%, #121A3A 100%); color: #fff; }
   .oferta-top { display: flex; justify-content: space-between; align-items: flex-end; gap: calc(var(--u)*30); }
@@ -227,6 +266,13 @@
     .s7 .velo { background: rgba(245,245,247,.93); }
     .s10 { min-height: 90svh; } .s10 .in { min-height: 90svh; }
     .s10 h2 { font-size: 40px; }
+    .tienda, .mig { grid-template-columns: 1fr; height: auto; }
+    .tienda .foto { height: 420px; }
+    .t30 { flex-wrap: wrap; } .t30 b { font-size: 72px; } .t30 span { max-width: none; }
+    .mig-title { font-size: 30px; }
+    .mig-datos { grid-template-columns: 1fr 1fr 1fr; }
+    .mig-dato-num { font-size: 22px; }
+    .mig-que { grid-template-columns: 1fr 1fr; }
     .num, .pieM { display: none; }
     .letra { margin-top: 16px; }
   }
@@ -334,12 +380,66 @@
   <span class="pieM"><span class="marca">Sacs<small>Fashion OS</small></span></span><span class="num">05</span>
 </section>
 
+<!-- 6 · TIENDA EN LÍNEA CON AXO -->
+<section class="sl">
+  <div class="in">
+    <div class="tienda">
+      <div style="display:flex;flex-direction:column">
+        <p class="kicker">05 · Tu tienda en línea</p>
+        <h2 class="h" style="font-size:calc(var(--u)*50)">AXO te hace tu tienda <em>en línea.</em></h2>
+        <div class="t30"><b>&lt;30 min</b><span>y ya está lista para vender.</span></div>
+        <p class="bajada" style="margin-top:calc(var(--u)*12)">Le pides cómo la quieres, con tus palabras, y AXO te la prepara con tus productos y el mismo inventario de tu tienda.</p>
+        <div class="pasos3">
+          <div><i>1</i><div><b>Le dices cómo la quieres</b><span>Tu estilo, tus colores y lo que quieres al frente.</span></div></div>
+          <div><i>2</i><div><b>AXO la prepara</b><span>Con tu catálogo, tus fotos y tu inventario.</span></div></div>
+          <div><i>3</i><div><b>La revisas y la publicas</b><span>Y se vende en línea con las mismas existencias del piso.</span></div></div>
+        </div>
+      </div>
+      <div class="foto"><img src="/tu-prueba-gratis/img/hero-sacs-tablet.jpg" alt="Tienda en línea de Sacs en una tablet, conectada a redes sociales">
+        <div class="chat">
+          <p class="yo">Hazme mi tienda en línea: minimalista, en rosa y negro, con la colección de otoño al frente.</p>
+          <p class="ax"><b>AXO:</b> ¡Va! Te preparo la tienda con todos tus productos y sus existencias. En unos minutos te la enseño para que la revises.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <span class="pieM"><span class="marca">Sacs<small>Fashion OS</small></span></span><span class="num">06</span>
+</section>
+
+<!-- 7 · MIGRACIÓN (diseño de /planes#migracion) -->
+<section class="sl">
+  <div class="in">
+    <div class="mig">
+      <div>
+        <span class="mig-eyebrow">06 · Migración incluida</span>
+        <h2 class="mig-title">Nos traemos todo tu sistema anterior a Sacs. <span>En 24 horas.</span></h2>
+        <p class="mig-sub"><b>Sin formatos raros que llenar.</b> Le pasas a AXO tu base de datos como la tengas (Excel, la exportación de tu sistema anterior) y AXO la migra. Tú no capturas nada y no pierdes un día de venta.</p>
+        <div class="mig-datos">
+          <div class="mig-dato"><span class="mig-dato-num">1K – 1M</span><span class="mig-dato-label">datos, sin importar cuántos</span></div>
+          <div class="mig-dato"><span class="mig-dato-num">24 h</span><span class="mig-dato-label">y ya estás vendiendo</span></div>
+          <div class="mig-dato"><span class="mig-dato-num">$0</span><span class="mig-dato-label">la migración va incluida</span></div>
+        </div>
+      </div>
+      <div class="mig-visual">
+        <img src="/tu-prueba-gratis/img/migracion-sacs.jpg" alt="Los datos del sistema anterior (inventario, ventas, clientes, pedidos y etiquetas) viajando hacia Sacs">
+        <span class="mig-logo" aria-hidden="true">Sacs</span>
+      </div>
+    </div>
+    <p class="mig-que-t">Lo que nos traemos</p>
+    <ol class="mig-que">
+      <li><span class="mig-que-n">01</span>Inventario por tienda</li><li><span class="mig-que-n">02</span>Modelos con tallas y colores</li><li><span class="mig-que-n">03</span>Precios</li><li><span class="mig-que-n">04</span>Historial de ventas</li>
+      <li><span class="mig-que-n">05</span>Clientes</li><li><span class="mig-que-n">06</span>Apartados vivos</li><li><span class="mig-que-n">07</span>Pedidos</li><li><span class="mig-que-n">08</span>Proveedores</li>
+    </ol>
+  </div>
+  <span class="pieM"><span class="marca">Sacs<small>Fashion OS</small></span></span><span class="num">07</span>
+</section>
+
 <!-- 6 · OFERTA 7 DÍAS -->
 <section class="sl s6 oscuro">
   <div class="in">
     <div class="oferta-top">
       <div>
-        <p class="kicker" style="color:var(--oro)">05 · Solo durante tus 7 días</p>
+        <p class="kicker" style="color:var(--oro)">07 · Solo durante tus 7 días</p>
         <h2 class="h">45% de descuento anual <em>y AXO sin pagar nada extra.</em></h2>
         <p class="bajada">Si contratas cualquier plan dentro de tus 7 días de prueba, te llevas el 45% de descuento pagando el año y AXO incluido. Pasando el día 7, el beneficio ya no aplica.</p>
       </div>
@@ -352,7 +452,7 @@
     </div>
     <p class="letra">Precios en pesos mexicanos, pagando el año completo, con el 45% de descuento aplicado sobre el precio de lista. AXO Pro tiene un valor de $3,000 al mes + IVA.</p>
   </div>
-  <span class="pieM"><span class="marca">Sacs<small>Fashion OS</small></span></span><span class="num">06</span>
+  <span class="pieM"><span class="marca">Sacs<small>Fashion OS</small></span></span><span class="num">08</span>
 </section>
 
 <!-- 7 · ACADEMIA -->
@@ -360,7 +460,7 @@
   <img class="bg" src="/tu-prueba-gratis/img/hero-moda-boutique.jpg" alt="Vendedora de una boutique mostrando una prenda junto a la pantalla de Sacs" style="object-position:right center">
   <div class="velo"></div>
   <div class="in">
-    <p class="kicker">06 · Aprende a tu ritmo</p>
+    <p class="kicker">08 · Aprende a tu ritmo</p>
     <h2 class="h" style="max-width:calc(var(--u)*620)">¿Prefieres verlo? <em>Está la Academia.</em></h2>
     <p class="bajada" style="max-width:calc(var(--u)*560)">Si te gusta más aprender con algo gráfico o en video, la Academia de Sacs tiene toda la información del sistema, dentro de la plataforma.</p>
     <div class="tres-v">
@@ -369,7 +469,7 @@
       <div class="v"><i>24</i><div><b>A cualquier hora</b><span>Tú decides cuándo aprender: de noche, en fin de semana o entre clientes.</span></div></div>
     </div>
   </div>
-  <span class="pieM"><span class="marca">Sacs<small>Fashion OS</small></span></span><span class="num">07</span>
+  <span class="pieM"><span class="marca">Sacs<small>Fashion OS</small></span></span><span class="num">09</span>
 </section>
 
 <!-- 8 · SOPORTE -->
@@ -377,7 +477,7 @@
   <div class="in">
     <div class="sop">
       <div style="display:flex;flex-direction:column">
-        <p class="kicker">07 · Soporte 24/7</p>
+        <p class="kicker">09 · Soporte 24/7</p>
         <h2 class="h">Preguntas a cualquier hora. <em>Te decimos cómo hacerlo.</em></h2>
         <div class="sop-l">
           <div><b>AXO y asesores, 24/7</b><span>Dentro de la plataforma, cualquier día y a cualquier hora.</span></div>
@@ -390,13 +490,13 @@
       </div>
     </div>
   </div>
-  <span class="pieM"><span class="marca">Sacs<small>Fashion OS</small></span></span><span class="num">08</span>
+  <span class="pieM"><span class="marca">Sacs<small>Fashion OS</small></span></span><span class="num">10</span>
 </section>
 
 <!-- 9 · LOS 7 DÍAS -->
 <section class="sl">
   <div class="in">
-    <p class="kicker">08 · Tus 7 días</p>
+    <p class="kicker">10 · Tus 7 días</p>
     <h2 class="h">Así corre <em>tu prueba.</em></h2>
     <div class="dias">
       <div class="d"><i>Día 1</i><b>Arranca</b><span>Entras al plan Fideliza completo y AXO te arma tu plan de inicio.</span></div>
@@ -413,7 +513,7 @@
       <div class="f"><b>El día 7 exacto se cancela tu cuenta</b><span>Si al día 7 no tenemos respuesta de tu parte, tu cuenta de prueba se cancela ese mismo día.</span></div>
     </div>
   </div>
-  <span class="pieM"><span class="marca">Sacs<small>Fashion OS</small></span></span><span class="num">09</span>
+  <span class="pieM"><span class="marca">Sacs<small>Fashion OS</small></span></span><span class="num">11</span>
 </section>
 
 <!-- 10 · CIERRE -->
