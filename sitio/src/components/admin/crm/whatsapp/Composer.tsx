@@ -175,8 +175,15 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   const [programados, setProgramados] = useState<any[]>([]);
   const cargarProgramados = () => { api.listarProgramados?.().then((l: any[]) => setProgramados(l || [])); };
   // Elegir un snippet (desde "/" o desde el popup): texto + su adjunto si lo tiene.
+  const [secuencia, setSecuencia] = useState<any>(null);   // snippet con varios mensajes (un clic)
   const usarSnippet = (r: any) => {
     tic();
+    if (Array.isArray(r.pasos) && r.pasos.length) {
+      // Secuencia: no se escribe en la caja; se abre la confirmación de envío.
+      setSecuencia(r); api.marcarUsoRespuesta?.(r.id); setPop(null);
+      if (texto.startsWith('/')) setTexto('');
+      return;
+    }
     setTexto(r.texto);
     if (r.media_url) setRemotos(rs => rs.some(x => x.url === r.media_url) ? rs : [...rs, { url: r.media_url, nombre: r.titulo || r.atajo || 'archivo', clase: r.media_tipo || 'document' }]);
     api.marcarUsoRespuesta?.(r.id); setPop(null); areaRef.current?.focus();
@@ -1098,6 +1105,10 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
         setOcupado(false);
         if (r?.ventana_cerrada) setModalPlantilla(true); else if (r?.error) setError(r.error, r.error_detalle || null); else { setTexto(''); api.refrescar?.(); }
       }} />}
+      {secuencia && (
+        <ModalSecuencia snippet={secuencia} contacto={contacto} telefono={telefono} canales={canales} api={api} resolver={resolver}
+          onCerrar={() => { setSecuencia(null); api.refrescar?.(); }} />
+      )}
       {nuevoSnippet && (
         <ModalSnippetRapido inicial={nuevoSnippet} onClose={() => setNuevoSnippet(null)} onGuardado={() => { setNuevoSnippet(null); cargarSnippets(); }} />
       )}
@@ -1889,6 +1900,133 @@ function PopProgramar({ soloRecordatorio, onCerrar, onProgramar }: { soloRecorda
             style={{ border: 'none', background: custom ? C.morado : C.g200, color: '#fff', borderRadius: 8, padding: '6px 10px', fontSize: 11, fontWeight: 700, cursor: custom ? 'pointer' : 'default', fontFamily: 'inherit' }}>OK</button>
         </div>
         <div style={{ fontSize: 10, color: C.g400, marginTop: 6 }}>{tipo === 'envio' ? 'Si la ventana de 24 h ya cerró a esa hora, no se envía y te avisamos en el hilo.' : 'Se cancela solo si el cliente contesta antes.'}</div>
+      </div>
+    </div>
+  );
+}
+
+// ───────────────────────── 11) Snippet con secuencia ─────────────────────────
+/**
+ * Manda los pasos de un snippet, uno tras otro, con UN clic (21-oct-2026).
+ *
+ * Pedido del dueño: cuando piden una prueba gratis, con un solo clic sale el
+ * texto por puntos, el PDF con el link, las imágenes (cada una en su mensaje)
+ * y al final el acceso con link, correo y contraseña. Los pasos se configuran
+ * en Plantillas → Snippets.
+ *
+ * Se envía EN ORDEN y esperando cada respuesta, con una pausa corta entre
+ * mensajes: si se disparan juntos, WhatsApp los puede entregar revueltos y
+ * las imágenes llegan antes que el texto que las explica. Si un paso falla se
+ * detiene ahí, dice cuál fue, y «Reintentar» sigue desde ese mismo paso: nada
+ * de lo que ya salió se vuelve a mandar.
+ *
+ * El paso «Acceso a la prueba» crea la cuenta con la misma alta del 🎁 (POST
+ * /api/crm/sacs-prueba) justo antes de mandar sus datos. Si el contacto ya
+ * tiene una prueba activa, ese paso se salta y se avisa: no se crean dos.
+ */
+const ETIQ_PASO: Record<string, string> = { texto: '📝 Texto', documento: '📎 Documento', imagen: '🖼️ Imagen', acceso_prueba: '🔑 Acceso a la prueba' };
+const pausa = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+export function ModalSecuencia({ snippet, contacto, telefono, canales, api, resolver, onCerrar }: { snippet: any; contacto?: any; telefono: string; canales?: any; api: any; resolver: (t: string) => string; onCerrar: () => void }) {
+  const pasos: any[] = snippet.pasos || [];
+  const conAcceso = pasos.some(p => p.tipo === 'acceso_prueba');
+  const yaTiene = contacto?.prueba_estado === 'activa';
+  const sugerido = String(contacto?.empresa || contacto?.nombre || '')
+    .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '').slice(0, 24);
+  const [cuenta, setCuenta] = useState(sugerido);
+  const [estado, setEstado] = useState<('pendiente' | 'enviando' | 'ok' | 'error' | 'saltado')[]>(pasos.map(() => 'pendiente'));
+  const [desde, setDesde] = useState(0);            // el paso donde sigue (para reintentar)
+  const [corriendo, setCorriendo] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const terminado = estado.every(e => e === 'ok' || e === 'saltado');
+
+  // Qué falta ANTES de mandar nada: descubrirlo en el paso 8 deja al cliente con medio paquete.
+  const faltaAcceso = conAcceso && !yaTiene && (!contacto?.contact_id ? 'Esta conversación no está ligada a un contacto del CRM: no se puede crear la cuenta.'
+    : !contacto?.email ? 'El contacto no tiene correo, y Sacs lo pide para crear el acceso. Agrégalo en su ficha.'
+    : cuenta.trim().length < 3 ? 'Escribe el identificador de la cuenta (mínimo 3 letras).' : null);
+
+  const marcar = (i: number, e: any) => setEstado(prev => prev.map((x, j) => (j === i ? e : x)));
+
+  const mandarMedia = (p: any) => fetch('/api/crm/whatsapp/enviar', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ conversation_id: canales?.wa_id || undefined, telefono, media_url: p.url,
+      clase: p.tipo === 'imagen' ? 'image' : 'document', nombre: p.nombre || p.url.split('/').pop(),
+      caption: p.caption ? resolver(p.caption) : undefined }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+
+  const correr = async () => {
+    setCorriendo(true); setErr(null);
+    for (let i = desde; i < pasos.length; i++) {
+      const p = pasos[i];
+      if (estado[i] === 'ok' || estado[i] === 'saltado') continue;
+      marcar(i, 'enviando');
+      let r: any;
+      if (p.tipo === 'texto') r = await api.enviarTexto(resolver(p.texto), null);
+      else if (p.tipo === 'documento' || p.tipo === 'imagen') r = await mandarMedia(p);
+      else if (p.tipo === 'acceso_prueba') {
+        if (yaTiene) { marcar(i, 'saltado'); continue; }
+        const a = await fetch('/api/crm/sacs-prueba', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contact_id: contacto.contact_id, cuenta: cuenta.trim().toLowerCase(), dias: p.dias || 7 }) })
+          .then(x => x.json()).catch(() => ({ error: 'Sin conexión' }));
+        if (a?.error) r = { error: `No se pudo crear la cuenta: ${a.error}` };
+        else {
+          const datos: Record<string, string> = { url: a.url || 'app.sacscloud.com', cuenta: a.cuenta, correo: a.email, contrasena: a.password_temporal, dias: String(a.dias || p.dias || 7) };
+          const txt = resolver(String(p.texto).replace(/\{\{(url|cuenta|correo|contrasena|dias)\}\}/g, (_m, k) => datos[k] ?? ''));
+          r = await api.enviarTexto(txt, null);
+          // La cuenta YA existe: aunque el mensaje falle, reintentar no debe crear otra.
+          if (r?.error) r = { error: `La cuenta ${a.cuenta} se creó, pero el mensaje con el acceso no salió: ${r.error}. Mándale los datos a mano (Usuario ${a.email} · Contraseña ${a.password_temporal}).`, fatal: true };
+        }
+      }
+      if (r?.ventana_cerrada) r = { error: 'La ventana de 24 h de WhatsApp está cerrada: primero hay que reabrir con una plantilla.' };
+      if (r?.error) { marcar(i, 'error'); setDesde(r.fatal ? i + 1 : i); setErr(r.fatal ? r.error : `No salió el mensaje ${i + 1} (${ETIQ_PASO[p.tipo] || p.tipo}): ${r.error}`); setCorriendo(false); return; }
+      marcar(i, 'ok');
+      if (i < pasos.length - 1) await pausa(1200);
+    }
+    setDesde(pasos.length); setCorriendo(false);
+  };
+
+  const color = (e: string) => (e === 'ok' ? '#0E8A5F' : e === 'error' ? '#C0554E' : e === 'enviando' ? C.moradoTinta : C.g400);
+  const icono = (e: string) => (e === 'ok' ? '✓' : e === 'error' ? '!' : e === 'enviando' ? '…' : e === 'saltado' ? '–' : '');
+  const resumen = (p: any) => p.tipo === 'texto' ? resolver(p.texto).slice(0, 80) : p.tipo === 'acceso_prueba' ? (yaTiene ? 'Ya tiene una prueba activa: se salta' : `Crea la cuenta (${p.dias || 7} días) y manda sus datos`) : (p.nombre || p.url.split('/').pop());
+
+  return (
+    <div onClick={corriendo ? undefined : onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', zIndex: 960, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: 'min(420px, 94vw)', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 24px 60px rgba(0,0,0,.2)' }}>
+        <div style={{ padding: '14px 16px 4px' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em' }}>Snippet · {pasos.length} mensajes con un clic</div>
+          <b style={{ fontSize: 14 }}>{snippet.titulo || `/${snippet.atajo}`}</b>
+        </div>
+        <ol style={{ listStyle: 'none', margin: 0, padding: '6px 16px' }}>
+          {pasos.map((p, i) => (
+            <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '7px 0', borderTop: i ? `1px solid ${C.g100}` : 'none' }}>
+              {p.tipo === 'imagen'
+                ? <img src={p.url} alt="" style={{ width: 34, height: 42, objectFit: 'cover', borderRadius: 6, flex: 'none' }} />
+                : <span style={{ width: 34, textAlign: 'center', fontSize: 11, fontWeight: 700, color: C.g400, flex: 'none', paddingTop: 2 }}>{i + 1}</span>}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 700 }}>{ETIQ_PASO[p.tipo] || p.tipo}</div>
+                <div style={{ fontSize: 11, color: C.g500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{resumen(p)}</div>
+              </div>
+              <b style={{ fontSize: 13, color: color(estado[i]), width: 14, textAlign: 'center' }}>{icono(estado[i])}</b>
+            </li>
+          ))}
+        </ol>
+        {conAcceso && !yaTiene && !terminado && (
+          <div style={{ padding: '4px 16px 0' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.g400, marginBottom: 3 }}>IDENTIFICADOR DE SU CUENTA</div>
+            <input value={cuenta} disabled={corriendo || desde > 0} onChange={e => setCuenta(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+              placeholder="mimarca" style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 8, padding: '7px 9px', fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
+            {contacto?.email && <div style={{ fontSize: 10.5, color: C.g400, marginTop: 4 }}>El acceso se crea con {contacto.email}</div>}
+          </div>
+        )}
+        {(err || faltaAcceso) && !terminado && <div style={{ margin: '10px 16px 0', fontSize: 11.5, color: '#C0554E', lineHeight: 1.5 }}>{err || faltaAcceso}</div>}
+        {terminado && <div style={{ margin: '10px 16px 0', fontSize: 12, color: '#0E8A5F', fontWeight: 700 }}>Listo: se mandaron todos los mensajes.</div>}
+        <div style={{ display: 'flex', gap: 8, padding: '12px 16px 16px' }}>
+          {!terminado && (
+            <button onClick={correr} disabled={corriendo || !!faltaAcceso}
+              style={{ flex: 1, border: 'none', borderRadius: 8, padding: '9px 10px', background: C.moradoTinta, color: '#fff', fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit', cursor: corriendo || faltaAcceso ? 'default' : 'pointer', opacity: corriendo || faltaAcceso ? .55 : 1 }}>
+              {corriendo ? `Enviando ${Math.min(estado.filter(e => e === 'ok' || e === 'saltado').length + 1, pasos.length)} de ${pasos.length}…` : err ? 'Reintentar desde aquí' : `Enviar todo (${pasos.length} mensajes)`}
+            </button>
+          )}
+          <button onClick={onCerrar} disabled={corriendo} style={{ flex: terminado ? 1 : 'none', border: `1px solid ${C.g200}`, borderRadius: 8, padding: '9px 14px', background: '#fff', fontSize: 12, fontWeight: 600, color: C.g700, cursor: corriendo ? 'default' : 'pointer', fontFamily: 'inherit' }}>{terminado ? 'Cerrar' : 'Cancelar'}</button>
+        </div>
       </div>
     </div>
   );

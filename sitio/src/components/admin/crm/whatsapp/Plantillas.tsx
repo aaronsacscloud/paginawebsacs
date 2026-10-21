@@ -531,6 +531,7 @@ export function Snippets() {
                 <b style={{ fontSize: 13 }}>{s.titulo || s.atajo}</b>
                 <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 10, color: C.moradoTinta, background: C.moradoAgua, borderRadius: 4, padding: '1px 6px' }}>/{s.atajo}</span>
                 {s.categoria && <Tag tono="gris">{s.categoria}</Tag>}
+                {Array.isArray(s.pasos) && s.pasos.length > 0 && <Tag tono="ok">Secuencia · {s.pasos.length} mensajes</Tag>}
                 {(s.usage_count || 0) >= 10 && <Tag tono="ok">Popular</Tag>}
                 <span style={{ marginLeft: 'auto', fontSize: 10, color: C.g400 }}>{s.usage_count || 0} usos</span>
               </div>
@@ -557,6 +558,8 @@ function EditorSnippet({ form, setForm, onGuardado, onCancelar }: { form: any; s
   if ((form.texto || '').length > LIM.cuerpo) errs.push(`Texto excede ${LIM.cuerpo}`);
   if ((form.header || '').length > LIM.header) errs.push(`Encabezado excede ${LIM.header}`);
   if ((form.footer || '').length > LIM.footer) errs.push(`Pie excede ${LIM.footer}`);
+  (form.pasos || []).forEach((p: any, i: number) => { const e = errorPaso(p); if (e) errs.push(`Paso ${i + 1}: ${e}`); });
+  if ((form.pasos || []).filter((p: any) => p.tipo === 'acceso_prueba').length > 1) errs.push('Solo puede haber un paso de acceso a la prueba');
   const puede = !errs.length;
   const TIPOS = [{ v: 'text', l: '📝 Texto' }, { v: 'image', l: '🖼️ Imagen' }, { v: 'document', l: '📎 Documento' }, { v: 'video', l: '🎬 Video' }];
   return (
@@ -592,6 +595,7 @@ function EditorSnippet({ form, setForm, onGuardado, onCancelar }: { form: any; s
         {vars.length > 0 && <div style={{ marginTop: 6, fontSize: 11, color: C.g500, display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>Variables: {vars.map(v => <span key={v} style={{ fontSize: 10, fontWeight: 700, background: C.azulAgua, color: C.azulTinta, borderRadius: 999, padding: '1px 7px' }}>{`{{${v}}}`}</span>)}</div>}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 12 }}><label style={label()}>Pie</label><Contador n={(form.footer || '').length} max={LIM.footer} /></div>
         <input style={{ ...inp, borderColor: (form.footer || '').length > LIM.footer ? C.rojo300 : C.g200 }} value={form.footer || ''} onChange={e => setForm({ ...form, footer: e.target.value })} />
+        <EditorPasos pasos={form.pasos || []} onCambio={pasos => setForm({ ...form, pasos })} />
         {errs.length > 0 && (form.atajo || form.texto) && <ul style={{ margin: '12px 0 0', paddingLeft: 18, fontSize: 11, color: C.rojo500 }}>{errs.map(e => <li key={e}>{e}</li>)}</ul>}
         <div style={{ display: 'flex', gap: 8, marginTop: 15 }}>
           <button style={{ ...S.btnP, flex: 1, opacity: puede ? 1 : .5 }} disabled={!puede || guardando} onClick={async () => {
@@ -605,6 +609,79 @@ function EditorSnippet({ form, setForm, onGuardado, onCancelar }: { form: any; s
       <div style={{ position: 'sticky', top: 20 }}>
         <div style={{ ...label(10), textAlign: 'center', marginBottom: 10 }}>Vista previa</div>
         <MockupWhatsApp header={form.header} cuerpo={form.texto || ''} footer={form.footer} botones={form.botones || []} />
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════ Secuencia de un snippet ═══════════════════════
+/**
+ * Pasos de un snippet que manda VARIOS mensajes con un clic (21-oct-2026).
+ * Pedido del dueño: «cuando me pidan una prueba gratis, con un clic: el texto,
+ * el PDF con el link, las imágenes en mensajes separados y al final su acceso».
+ * Cada paso es un mensaje y salen en este orden. El paso «Acceso a la prueba»
+ * crea la cuenta (la misma alta de 🎁 Prueba gratis) y manda sus datos.
+ */
+const TIPOS_PASO = [
+  { v: 'texto', l: '📝 Texto' },
+  { v: 'documento', l: '📎 Documento' },
+  { v: 'imagen', l: '🖼️ Imagen' },
+  { v: 'acceso_prueba', l: '🔑 Acceso a la prueba' },
+];
+const TEXTO_ACCESO = '🔑 *Tu acceso a Sacs*\n\nEntra en: {{url}}\nCuenta: {{cuenta}}\nCorreo: {{correo}}\nContraseña: {{contrasena}}\n\nTu prueba dura {{dias}} días. La contraseña la puedes cambiar en cuanto entres.';
+
+export function errorPaso(p: any): string | null {
+  if (p.tipo === 'texto' && !String(p.texto || '').trim()) return 'falta el texto';
+  if ((p.tipo === 'documento' || p.tipo === 'imagen') && !/^https:\/\//.test(String(p.url || '').trim())) return 'falta la URL (https://…)';
+  if (p.tipo === 'acceso_prueba' && !String(p.texto || '').trim()) return 'falta el texto del acceso';
+  return null;
+}
+
+export function EditorPasos({ pasos, onCambio }: { pasos: any[]; onCambio: (p: any[]) => void }) {
+  const cambiar = (i: number, cambio: any) => onCambio(pasos.map((p, j) => (j === i ? { ...p, ...cambio } : p)));
+  const mover = (i: number, d: number) => { const j = i + d; if (j < 0 || j >= pasos.length) return; const n = [...pasos]; [n[i], n[j]] = [n[j], n[i]]; onCambio(n); };
+  const agregar = (tipo: string) => onCambio([...pasos, tipo === 'acceso_prueba' ? { tipo, dias: 7, texto: TEXTO_ACCESO } : { tipo }]);
+  const yaHayAcceso = pasos.some(p => p.tipo === 'acceso_prueba');
+  return (
+    <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.g100}` }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+        <label style={label()}>Secuencia</label>
+        <span style={{ fontSize: 11, color: C.g400 }}>{pasos.length ? `${pasos.length} mensajes, uno tras otro, con un clic` : 'Opcional: varios mensajes seguidos con un clic'}</span>
+      </div>
+      {pasos.length > 0 && <div style={{ fontSize: 11, color: C.g500, margin: '4px 0 0', lineHeight: 1.5 }}>Con secuencia, el snippet manda estos pasos en orden (el texto de arriba solo sirve como descripción en la lista).</div>}
+      {pasos.map((p, i) => (
+        <div key={i} style={{ marginTop: 8, border: `1px solid ${errorPaso(p) ? C.rojo300 : C.g200}`, borderRadius: 10, padding: 10, background: '#fff' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <b style={{ fontSize: 11, color: C.g400, width: 18 }}>{i + 1}</b>
+            <b style={{ fontSize: 12 }}>{TIPOS_PASO.find(t => t.v === p.tipo)?.l || p.tipo}</b>
+            <span style={{ flex: 1 }} />
+            <button title="Subir" style={{ ...S.btnG, padding: '2px 8px' }} disabled={i === 0} onClick={() => mover(i, -1)}>↑</button>
+            <button title="Bajar" style={{ ...S.btnG, padding: '2px 8px' }} disabled={i === pasos.length - 1} onClick={() => mover(i, 1)}>↓</button>
+            <button title="Quitar" style={{ ...S.btnG, padding: '2px 8px', color: C.rojo500 }} onClick={() => onCambio(pasos.filter((_, j) => j !== i))}>✕</button>
+          </div>
+          {p.tipo === 'texto' && <textarea style={{ ...inp, marginTop: 8, minHeight: 80, resize: 'vertical' }} value={p.texto || ''} onChange={e => cambiar(i, { texto: e.target.value })} placeholder="Hola {{primer_nombre}}…" />}
+          {(p.tipo === 'documento' || p.tipo === 'imagen') && (<>
+            <input style={{ ...inp, marginTop: 8 }} value={p.url || ''} onChange={e => cambiar(i, { url: e.target.value.trim() })} placeholder="https://… (URL pública del archivo)" />
+            {p.tipo === 'documento' && <input style={{ ...inp, marginTop: 6 }} value={p.nombre || ''} onChange={e => cambiar(i, { nombre: e.target.value })} placeholder="Nombre del archivo (ej. Sacs-Prueba-Gratis.pdf)" />}
+            <input style={{ ...inp, marginTop: 6 }} value={p.caption || ''} onChange={e => cambiar(i, { caption: e.target.value })} placeholder="Texto que acompaña (opcional)" />
+            {p.tipo === 'imagen' && /^https:\/\//.test(p.url || '') && <img src={p.url} alt="" style={{ marginTop: 6, height: 70, borderRadius: 6, border: `1px solid ${C.g100}` }} />}
+          </>)}
+          {p.tipo === 'acceso_prueba' && (<>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 12, color: C.g500 }}>
+              Crea la cuenta de prueba por
+              <input type="number" min={1} max={60} value={p.dias || 7} onChange={e => cambiar(i, { dias: Number(e.target.value) })} style={{ ...inp, width: 64 }} />
+              días y manda:
+            </div>
+            <textarea style={{ ...inp, marginTop: 6, minHeight: 110, resize: 'vertical' }} value={p.texto || ''} onChange={e => cambiar(i, { texto: e.target.value })} />
+            <div style={{ fontSize: 10.5, color: C.g400, marginTop: 4 }}>Datos de la cuenta: {'{{url}} {{cuenta}} {{correo}} {{contrasena}} {{dias}}'}</div>
+          </>)}
+          {errorPaso(p) && <div style={{ fontSize: 11, color: C.rojo500, marginTop: 6 }}>{errorPaso(p)}</div>}
+        </div>
+      ))}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+        {TIPOS_PASO.filter(t => t.v !== 'acceso_prueba' || !yaHayAcceso).map(t => (
+          <button key={t.v} style={{ ...S.btnG, fontSize: 11 }} onClick={() => agregar(t.v)}>+ {t.l}</button>
+        ))}
       </div>
     </div>
   );
