@@ -19,9 +19,13 @@ import { P } from '../../../lib/crm/paleta';
 import Cargando, { Corazones } from './ui/Cargando';
 import { confirmar } from '../../../lib/ui/confirmar';
 
+/** 'axo': los planes de AXO, la IA de SACS, son un producto aparte de las licencias. */
+type Cat = 'plan' | 'plugin' | 'axo';
+const NUEVO: Record<Cat, string> = { plan: 'licencia', plugin: 'plugin', axo: 'plan AXO' };
+
 type Plan = {
   id: string; slug: string; nombre: string; descripcion: string | null;
-  categoria: 'plan' | 'plugin'; modalidades: string[];
+  categoria: Cat; modalidades: string[];
   precio_mensual: number | null; precio_anual: number | null; precio_vitalicio: number | null;
   a_la_medida: boolean; activo: boolean; orden: number | null; usos?: number;
 };
@@ -53,7 +57,7 @@ const TONO: Record<string, { bg: string; fg: string }> = {
   vitalicio: { bg: P.verdeAgua, fg: P.verdeTinta },
 };
 
-const vacio = (categoria: 'plan' | 'plugin'): Partial<Plan> => ({
+const vacio = (categoria: Cat): Partial<Plan> => ({
   nombre: '', descripcion: '', categoria, modalidades: ['anual'],
   precio_mensual: null, precio_anual: null, precio_vitalicio: null, activo: true,
 });
@@ -61,7 +65,7 @@ const vacio = (categoria: 'plan' | 'plugin'): Partial<Plan> => ({
 export default function PlanesConfig({ sinTitulo }: { sinTitulo?: boolean } = {}) {
   const [filas, setFilas] = useState<Plan[]>([]);
   const [cargando, setCargando] = useState(true);
-  const [cat, setCat] = useState<'plan' | 'plugin'>('plugin');
+  const [cat, setCat] = useState<Cat>('plugin');
   const [edita, setEdita] = useState<string | null>(null);   // id, o 'nuevo'
   const [f, setF] = useState<any>({});
   const [homologar, setHomologar] = useState(false);
@@ -169,7 +173,7 @@ export default function PlanesConfig({ sinTitulo }: { sinTitulo?: boolean } = {}
 
       {/* Pestañas */}
       <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${P.linea}`, marginBottom: 14 }}>
-        {([['plan', 'Licencias'], ['plugin', 'Plugins']] as const).map(([v, l]) => {
+        {([['plan', 'Licencias'], ['plugin', 'Plugins'], ['axo', 'AXO']] as const).map(([v, l]) => {
           const on = cat === v;
           return (
             <button key={v} onClick={() => { setCat(v); cerrar(); }} style={{
@@ -186,7 +190,7 @@ export default function PlanesConfig({ sinTitulo }: { sinTitulo?: boolean } = {}
         })}
         <div style={{ flex: 1 }} />
         <button onClick={abrirNuevo} style={{ ...E.btn, marginBottom: 6 }}>
-          {esPlugin ? 'Agregar plugin' : 'Agregar licencia'}
+          Agregar {NUEVO[cat]}
         </button>
       </div>
 
@@ -249,7 +253,7 @@ export default function PlanesConfig({ sinTitulo }: { sinTitulo?: boolean } = {}
 
       {!lista.length && (
         <div style={{ ...E.card, textAlign: 'center', color: P.gris, fontSize: '0.82rem' }}>
-          Todavía no hay {esPlugin ? 'plugins' : 'licencias'} en el catálogo.
+          Todavía no hay {cat === 'axo' ? 'planes AXO' : esPlugin ? 'plugins' : 'licencias'} en el catálogo.
         </div>
       )}
     </div>
@@ -269,7 +273,7 @@ function Editor({ f, setF, toggleModalidad, guardar, cerrar, busy, usos = 0, nom
   return (
     <div style={nuevo ? { background: '#fff', border: `1px solid ${P.violetaBorde}`, borderRadius: 12, padding: 16, marginBottom: 12 } : undefined}>
       {nuevo && <div style={{ fontSize: '0.85rem', fontWeight: 800, color: P.violetaTinta, marginBottom: 12 }}>
-        {f.categoria === 'plugin' ? 'Nuevo plugin' : 'Nueva licencia'}
+        {f.categoria === 'plugin' ? 'Nuevo plugin' : f.categoria === 'axo' ? 'Nuevo plan AXO' : 'Nueva licencia'}
       </div>}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 12 }}>

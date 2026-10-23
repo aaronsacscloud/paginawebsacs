@@ -2,6 +2,8 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { supabase } from '../../lib/supabase';
 import { plans } from '../../data/plans';
+import { esPlanAxo } from '../../data/axo-planes';
+import { planDelCatalogo, areasDePlan } from '../../lib/quotes/plan-catalogo';
 import ImplementacionContent from '../../components/ImplementacionContent.astro';
 import QuoteSidebar from '../../components/quote/QuoteSidebar.astro';
 import QuoteMobilePills from '../../components/quote/QuoteMobilePills.astro';
@@ -243,28 +245,18 @@ const promoItems = items.filter((i: any) => i.es_promocion);
 // el título solo cambia cómo se presenta al cliente.
 const planDisplayName = (i: any) => {
   if (i.titulo) return i.titulo;
-  const pd = plans.find((p) => p.id === String(i.nombre || '').toLowerCase());
-  return `Plan ${pd?.name || i.nombre}`;
+  const pd = planDelCatalogo(i.nombre);
+  // AXO no es «Plan AXO…»: su nombre ya dice qué es.
+  return pd && esPlanAxo(pd.id) ? pd.name : `Plan ${pd?.name || i.nombre}`;
 };
 
 // Build plan features for "Qué incluye tu plan" section
 const planFeatures = planItems.map((pi: any) => {
-  const planData = plans.find(p => p.id === pi.nombre?.toLowerCase());
+  const planData = planDelCatalogo(pi.nombre);
   if (!planData) return null;
   // Collect features from this plan + all inherited plans
-  const allFeatures: { category: string; items: string[] }[] = [];
-  let current: typeof planData | undefined = planData;
-  const visited = new Set<string>();
-  while (current && !visited.has(current.id)) {
-    visited.add(current.id);
-    for (const f of current.features) {
-      if (typeof f === 'object' && 'category' in f) {
-        allFeatures.push(f);
-      }
-    }
-    current = current.inheritsFrom ? plans.find(p => p.name === current!.inheritsFrom) : undefined;
-  }
-  return { planName: planData.name, titulo: pi.titulo || null, features: allFeatures.reverse(), services: planData.services };
+  // Mismo recorrido que el acuse (plan base primero, cada plan en su orden).
+  return { planName: planData.name, titulo: pi.titulo || null, features: areasDePlan(planData), services: planData.services };
 }).filter(Boolean);
 
 // Calculate payment breakdown
@@ -1521,7 +1513,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
         {planFeatures.map((pf: any) => (
           <div class="quote-plan-features">
             <div class="quote-plan-name">{pf.titulo || `Plan ${pf.planName}`}</div>
-            {pf.titulo && <div style="font-size:12px;color:#8a94a6;margin:-4px 0 10px">Incluye todo el Plan {pf.planName}</div>}
+            {pf.titulo && <div style="font-size:12px;color:#8a94a6;margin:-4px 0 10px">Incluye todo {esPlanAxo(pf.planName) ? '' : 'el Plan '}{pf.planName}</div>}
             <div class="quote-features-grid">
               {pf.features.map((cat: any) => (
                 <div class="quote-feature-cat">

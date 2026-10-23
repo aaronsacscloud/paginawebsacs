@@ -48,7 +48,10 @@ export function slugDe(nombre: string, categoria: string): string {
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 48);
   if (!base) return '';
-  return categoria === 'plugin' && !base.startsWith('plugin_') ? 'plugin_' + base : base;
+  if (categoria === 'plugin' && !base.startsWith('plugin_')) return 'plugin_' + base;
+  // Los planes de AXO (la IA de SACS) llevan su prefijo: «Super Power» → axo_super_power.
+  if (categoria === 'axo' && !base.startsWith('axo_')) return 'axo_' + base;
+  return base;
 }
 
 /** Normaliza las modalidades que manda el formulario. Nunca deja el arreglo vacío. */
@@ -104,7 +107,8 @@ export const GET: APIRoute = async ({ url }) => {
 /** Campos editables. `slug` no se toca al editar: es la llave con la que se
  *  ligan las suscripciones y renombrarlo las dejaría huérfanas. */
 function cuerpo(b: any) {
-  const categoria = b.categoria === 'plugin' ? 'plugin' : 'plan';
+  // 'axo': los planes de AXO son un producto aparte de las licencias (23-oct-2026).
+  const categoria = b.categoria === 'plugin' ? 'plugin' : b.categoria === 'axo' ? 'axo' : 'plan';
   const num = (v: any) => (v === '' || v === null || v === undefined ? null : Number(v));
   const precio_mensual = num(b.precio_mensual);
   const precio_anual = num(b.precio_anual);
@@ -137,7 +141,7 @@ export const POST: APIRoute = async ({ request }) => {
   if (c.orden == null) {
     const { data: ult } = await supabase.from('plans').select('orden')
       .eq('categoria', c.categoria).order('orden', { ascending: false }).limit(1).maybeSingle();
-    c.orden = (Number(ult?.orden) || (c.categoria === 'plugin' ? 100 : 0)) + 1;
+    c.orden = (Number(ult?.orden) || (c.categoria === 'plugin' ? 100 : c.categoria === 'axo' ? 200 : 0)) + 1;
   }
 
   const { data, error } = await supabase.from('plans').insert({ ...c, slug }).select().single();

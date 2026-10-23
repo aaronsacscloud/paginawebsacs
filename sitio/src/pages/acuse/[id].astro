@@ -2,7 +2,8 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { supabase } from '../../lib/supabase';
 import { plans } from '../../data/plans';
-import { detectaPlan, areasDePlan } from '../../lib/quotes/plan-catalogo';
+import { detectaPlan, areasDePlan, planDelCatalogo } from '../../lib/quotes/plan-catalogo';
+import { esPlanAxo } from '../../data/axo-planes';
 
 export const prerender = false;
 
@@ -117,7 +118,9 @@ const fmtCorto = (d?: string | null) => {
 // una suscripción sin cotización, se toma de ahí.
 const planItem = quoteItems.find((i: any) => i.tipo === 'plan') || null;
 const planKey = String(planItem?.nombre || sub?.nombre_plan || '').toLowerCase();
-const planData = plans.find(p => p.id === planKey) || detectaPlan(planItem?.titulo || sub?.nombre_plan);
+const planData = planDelCatalogo(planKey) || detectaPlan(planItem?.titulo || sub?.nombre_plan);
+// AXO no se cobra por sucursal sino por usuarios: su chip dice «Hasta 5 usuarios».
+const planEsAxo = !!planData && esPlanAxo(planData.id);
 const sucursalesPlan = Number(planItem?.sucursales || company?.sucursales || 1) || 1;
 const cicloPlan = planItem?.periodo || sub?.ciclo || '';
 
@@ -181,11 +184,23 @@ if (quote && saldoRestante > 0.5) {
     prox = {
       fecha: String(subRenov.proxima_factura).slice(0, 10),
       monto: Number(subRenov.monto_proximo || monto),
-      concepto: `Renovación ${subRenov.ciclo === 'mensual' ? 'mensual' : 'anual'}${planData ? ' del Plan ' + planData.name : ''}`,
+      concepto: `Renovación ${subRenov.ciclo === 'mensual' ? 'mensual' : 'anual'}${planData ? (esPlanAxo(planData.id) ? ' de ' : ' del Plan ') + planData.name : ''}`,
     };
   }
 }
 const proxLimite = prox ? masDias(prox.fecha, DIAS_PARA_PAGAR) : '';
+
+/* Desde cuándo cubre el pago. Normalmente es el día del pago, pero si se pagó
+   ANTES de que arranque el servicio (pago el viernes, acceso desde el lunes),
+   el periodo empieza en el inicio del ciclo: la próxima renovación menos un ciclo. */
+function menosUnCiclo(iso: string, ciclo: string): string {
+  const d = new Date(String(iso).slice(0, 10) + 'T12:00:00');
+  if (ciclo === 'anual') d.setFullYear(d.getFullYear() - 1); else d.setMonth(d.getMonth() - 1);
+  return d.toISOString().slice(0, 10);
+}
+const fechaPago = String(payment.fecha || '').slice(0, 10);
+const inicioCiclo = prox && (cicloPlan === 'mensual' || cicloPlan === 'anual') ? menosUnCiclo(prox.fecha, cicloPlan) : '';
+const inicioCubre = inicioCiclo && inicioCiclo > fechaPago ? inicioCiclo : payment.fecha;
 ---
 
 <BaseLayout
@@ -299,7 +314,7 @@ const proxLimite = prox ? masDias(prox.fecha, DIAS_PARA_PAGAR) : '';
           {payment.referencia && <tr><td>Referencia</td><td class="acuse-mono">{payment.referencia}</td></tr>}
           {totalPagos > 0 && <tr><td>Pago</td><td>{numeroPago} de {totalPagos}</td></tr>}
           {prox && saldoRestante <= 0.5 && (
-            <tr><td>Cubre el periodo</td><td>{fmtCorto(payment.fecha)} — {fmtCorto(masDias(prox.fecha, -1))}</td></tr>
+            <tr><td>Cubre el periodo</td><td>{fmtCorto(inicioCubre)} — {fmtCorto(masDias(prox.fecha, -1))}</td></tr>
           )}
         </tbody>
       </table>
@@ -330,10 +345,12 @@ const proxLimite = prox ? masDias(prox.fecha, DIAS_PARA_PAGAR) : '';
         {planData ? (
           <>
             <div class="acuse-plan-nom">
-              Plan {planData.name}{cicloPlan ? ` · ${cicloPlan === 'anual' ? 'Anual' : cicloPlan === 'mensual' ? 'Mensual' : cicloPlan}` : ''}
+              {planEsAxo ? '' : 'Plan '}{planData.name}{cicloPlan ? ` · ${cicloPlan === 'anual' ? 'Anual' : cicloPlan === 'mensual' ? 'Mensual' : cicloPlan}` : ''}
             </div>
             <div class="acuse-chips">
-              <span class="acuse-chip">{sucursalesPlan} sucursal{sucursalesPlan > 1 ? 'es' : ''} cubierta{sucursalesPlan > 1 ? 's' : ''}</span>
+              {planEsAxo
+                ? <span class="acuse-chip">{planData.services?.[0]}</span>
+                : <span class="acuse-chip">{sucursalesPlan} sucursal{sucursalesPlan > 1 ? 'es' : ''} cubierta{sucursalesPlan > 1 ? 's' : ''}</span>}
               {acompLabel && <span class="acuse-chip acuse-chip--rosa">Acompañamiento: {acompLabel}</span>}
               {prox && saldoRestante <= 0.5 && <span class="acuse-chip acuse-chip--verde">Vigente hasta {fmtCorto(masDias(prox.fecha, -1))}</span>}
             </div>
@@ -377,9 +394,9 @@ const proxLimite = prox ? masDias(prox.fecha, DIAS_PARA_PAGAR) : '';
           <table class="acuse-table acuse-table--items" style={planData ? 'margin-top:18px' : ''}>
             <tbody>
               {coveredItems.map((it: any) => {
-                const pdItem = it.tipo === 'plan' ? plans.find(p => p.id === String(it.nombre || '').toLowerCase()) : null;
+                const pdItem = it.tipo === 'plan' ? planDelCatalogo(it.nombre) : null;
                 const label = it.tipo === 'plan'
-                  ? `${it.titulo || `Plan ${pdItem?.name || it.nombre}`}${it.sucursales ? ` · ${it.sucursales} sucursal${Number(it.sucursales) > 1 ? 'es' : ''}` : ''}`
+                  ? `${it.titulo || `Plan ${pdItem?.name || it.nombre}`}${it.sucursales && !(pdItem && esPlanAxo(pdItem.id)) ? ` · ${it.sucursales} sucursal${Number(it.sucursales) > 1 ? 'es' : ''}` : ''}`
                   : it.nombre || 'Concepto';
                 const sub2 = it.tipo === 'plan'
                   ? (it.periodo === 'anual' ? 'Renovación anual' : it.periodo === 'mensual' ? 'Suscripción mensual' : '')

@@ -3214,7 +3214,8 @@ function PlanPickerModal({ planes, ciclo, actual, onPick, onClose }: { planes: a
   const grupos: [string, any[]][] = [
     ['Planes y licencias', lista.filter(p => (p.categoria || 'plan') === 'plan')],
     ['Plugins y módulos', lista.filter(p => p.categoria === 'plugin')],
-    ['Otros', lista.filter(p => p.categoria && p.categoria !== 'plan' && p.categoria !== 'plugin')],
+    ['AXO', lista.filter(p => p.categoria === 'axo')],
+    ['Otros', lista.filter(p => p.categoria && !['plan', 'plugin', 'axo'].includes(p.categoria))],
   ];
   // Una vitalicia tiene su propio precio en el catálogo. Antes se le enseñaba el
   // ANUAL, así que un plugin de pago único se cotizaba con la cifra equivocada.
