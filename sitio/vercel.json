@@ -250,8 +250,8 @@
       "schedule": "0 8 1 * *"
     },
     {
-      "path": "/api/cron/axo-seguimiento",
-      "schedule": "15 15 * * 1-6"
+      "path": "/api/cron/axo-perfil",
+      "schedule": "40 14 * * *"
     }
   ],
   "headers": [
