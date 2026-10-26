@@ -248,6 +248,10 @@
     {
       "path": "/api/cron/de-ciclo?tipo=mensual",
       "schedule": "0 8 1 * *"
+    },
+    {
+      "path": "/api/cron/axo-seguimiento",
+      "schedule": "15 15 * * 1-6"
     }
   ],
   "headers": [
