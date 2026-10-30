@@ -13,7 +13,7 @@ Documentos de consultoría de Sacs × Andy Araujo Consultorías para Vende Tu Cl
 
 ## Regenerar
 
-Versión para firma: `build_v3.py` (portada y firmas) sobre la v2 luego `build_v4.py` (mejoras de T, A y P) `build_v5.py` (por área, sin duplicados, tablero y checks) y `build_v6.py` (revisión por puntos; reemplaza a build_v5), cada uno sobre la salida completa del anterior.
+Versión para firma: `build_v3.py` (portada y firmas) sobre la v2 luego `build_v4.py` (mejoras de T, A y P) `build_v5.py` (por área, sin duplicados, tablero y checks) y `build_v7.py` (revisión por puntos con panel y avance por área; reemplaza a build_v5 y build_v6), cada uno sobre la salida completa del anterior.
 
 ### v2
 
