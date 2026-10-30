@@ -1,0 +1,23 @@
+# Vende Tu Clóset — Flujos de trabajo por área
+
+Documentos de consultoría de Sacs × Andy Araujo Consultorías para Vende Tu Clóset
+(cuenta `vendetucloset`). Son páginas HTML autocontenidas: se abren directo en el navegador.
+
+| Archivo | Qué es |
+|---|---|
+| `flujos-por-area-v2-2026-10-30.html` | **Versión vigente.** La v1 + el modelo integral de 60 flujos, 13 decisiones de dirección, 7 criterios de aceptación y el anexo de los 77 hallazgos. |
+| `flujos-por-area-v1-2026-10-21.html` | Versión anterior (reuniones del 20 y 21 de octubre): 7 áreas, 56 mejoras, 16 reglas por confirmar. Copia de lo que estaba publicado en `claude.ai/artifact/X2Krr8v6cLo6J3detjo6Ty`. |
+| `fuente-modelo-integral-flujos-v1.0-2026-10-29.pdf` | PDF fuente del modelo integral (versión consolidada 1.0, 29 oct 2026). |
+| `generador/` | Cómo se arma la v2 desde la v1 y el PDF, para no transcribir a mano. |
+
+## Regenerar la v2
+
+```bash
+pdftotext generador/../fuente-modelo-integral-flujos-v1.0-2026-10-29.pdf /tmp/plano.txt
+python3 generador/parse.py /tmp/plano.txt /tmp/flujos.json   # 60 flujos, 13 decisiones, 7 criterios
+# (los 77 hallazgos del anexo ya vienen en generador/modelo-integral-flujos.json)
+python3 generador/build.py <v1 con la línea del runtime> generador/modelo-integral-flujos.json salida.html
+```
+
+`build.py` espera la v1 tal como la devuelve el artefacto publicado (la línea 1 es el runtime de la
+plataforma y se descarta). Para cambios de contenido, lo directo es editar el HTML de la versión vigente.

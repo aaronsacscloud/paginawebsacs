@@ -1,0 +1,1615 @@
+{
+ "bloques": [
+  {
+   "num": "I",
+   "titulo": "CONSIGNANTES, RECEPCIÓN Y PROPUESTAS",
+   "flujos": [
+    {
+     "n": "01",
+     "titulo": "Alta y actualización del expediente del consignante",
+     "disparador": "una persona entrega artículos o regresa con un expediente previo; personal de consignación registra y valida.",
+     "problema": "",
+     "pasos": [
+      "Buscar por teléfono, correo o identificador antes de crear un perfil; si ya existe, abrir el registro sin duplicarlo.",
+      "Capturar o actualizar nombre, contacto, identificación, dirección de devolución, beneficiario autorizado, datos bancarios cuando corresponda y preferencias de comunicación.",
+      "Aplicar la configuración de campos obligatorios, opcionales u ocultos según la política vigente; mostrar de forma explícita qué dato falta.",
+      "Para perfiles antiguos, permitir edición posterior y generar un filtro de expedientes incompletos para regularizarlos gradualmente.",
+      "Registrar fecha, sucursal, usuario, cambios sensibles y estado del expediente; conservar documentos con permisos limitados."
+     ],
+     "control": "el beneficiario autorizado para cobrar o recoger artículos requiere definición contractual; en la reunión se propuso incorporarlo al contrato, pero quedó sujeto a revisión de VTC. El formulario debe guardar la configuración realmente aplicada, no solo mostrarla como guardada.",
+     "resultado": "expediente único, actualizable y utilizable en recepción, pagos y devoluciones.",
+     "origen": "reunión de consignación; revisión adicional A 17:16–23:22; revisión C 02:25–14:11; F01/F28/F48."
+    },
+    {
+     "n": "02",
+     "titulo": "Prerregistro de un lote antes de dar de alta inventario",
+     "disparador": "llegada presencial, paquetería o recolección; responsable de recepción, Ivonne o equipo de sucursal.",
+     "problema": "",
+     "pasos": [
+      "Crear lote provisional ligado al consignante y a la sucursal, incluso cuando aún no pueda fijarse precio.",
+      "Registrar fecha, cantidad recibida, condición de embalaje y observaciones; capturar evidencia del paquete sellado, apertura y contenido cuando provenga de envío.",
+      "Asignar a cada pieza un identificador temporal y diferenciarla de inventario aceptado, etiquetado y vendible.",
+      "Guardar la recepción aunque esté incompleta y reanudarla después desde borradores, mostrando el punto exacto pendiente.",
+      "Al completar datos mínimos, enviar la recepción a clasificación y valuación, sin activar venta ni generar etiquetas comerciales todavía."
+     ],
+     "control": "recibir muchas piezas en horas pico no obliga a valorarlas frente al cliente; se puede registrar con fotos y completar evaluación en corporativo. Un lote abierto no debe desaparecer ni duplicarse.",
+     "resultado": "lote con responsable y cadena inicial de custodia.",
+     "origen": "R1/F01; revisión A 17:16–18:51 y 25:48–26:55; revisión C 26:03–33:16."
+    },
+    {
+     "n": "03",
+     "titulo": "Toma de fotografías, agrupación e inclusiones",
+     "disparador": "recepción de una o varias piezas; equipo receptor.",
+     "problema": "",
+     "pasos": [
+      "Capturar fotografías generales de recepción de forma continua en tableta o cámara conectada, minimizando clics.",
+      "Incluir frente, reverso, laterales, base, interior, desgaste, daños, números/etiquetas y accesorios (caja, dust bag, correas, cadenas, etc.).",
+      "Terminar la sesión y agrupar fotografías por artículo, permitiendo añadir imágenes específicas desde su ficha si después se detecta un detalle.",
+      "Relacionar cada grupo al identificador temporal, sin mezclar dos artículos en un mismo expediente.",
+      "Registrar diferencias de condición respecto a declaraciones del cliente y conservar las fotos de origen aun después de editar fotos comerciales."
+     ],
+     "control": "revisar límites artificiales de número de fotos y botones pequeños difíciles de usar en tablet; la pantalla debe permitir selección y agrupación verificables.",
+     "resultado": "evidencia por pieza y accesorios verificables en cualquier devolución o incidencia.",
+     "origen": "R1/F01; revisión A 17:54–19:21; revisión B 04:21–08:46; revisión C 15:45–18:48."
+    },
+    {
+     "n": "04",
+     "titulo": "Clasificación, taxonomía y homologación de artículos",
+     "disparador": "lote recibido pendiente de clasificación; equipo de valuación/consignación.",
+     "problema": "",
+     "pasos": [
+      "Seleccionar categoría, marca, género, color, talla, material/composición, estilo/tipo de bolso y condición según el tipo de producto.",
+      "Mostrar solo atributos relevantes a la categoría: por ejemplo, tallas de bolsos de lujo y estilos como tote; calzado y prendas usan sus propias listas.",
+      "Consultar coincidencias del catálogo inteligente y del histórico de artículos vendidos para homologar nombres comerciales; permitir revisión manual de coincidencias erróneas.",
+      "Si falta un valor válido de catálogo, solicitar agregarlo o escalar su autorización sin reemplazarlo por una descripción genérica incorrecta.",
+      "Señalar campos requeridos incompletos y permitir completarlos de forma guiada y agrupada antes de pasar a contrato."
+     ],
+     "control": "la IA o la coincidencia sugerida no deben sustituir la validación humana; una coincidencia incorrecta de modelo de lujo distorsiona precios, búsquedas y analítica. La ampliación estructural de taxonomía se discutió como trabajo separado, no se presume liberada.",
+     "resultado": "ficha estandarizada y comparable con ventas históricas.",
+     "origen": "F02/F61; revisión A 19:21–26:55; revisión B 18:22–38:35; revisión C 34:53–35:11."
+    },
+    {
+     "n": "05",
+     "titulo": "Evaluación de condición y propuesta de precio",
+     "disparador": "artículo prerregistrado; valuación/consignación.",
+     "problema": "",
+     "pasos": [
+      "Revisar físicamente condición, accesorios y reparaciones previsibles; consultar ventas propias históricas de modelos homologados.",
+      "Registrar precio propuesto de venta, comisión aplicable y observaciones; separar precio del artículo de cargos por limpieza, autenticación u otros servicios.",
+      "Determinar si VTC propone el precio al consignante o si dispone de autorización para avanzar según reglas previamente aceptadas.",
+      "Enviar al consignante una propuesta clara por pieza mediante enlace, con foto, monto editable en su negociación y acciones de aceptar, rechazar o contrapropuesta.",
+      "Registrar cada versión enviada, respuesta, fecha, usuario y precio finalmente convenido, evitando sobrescribir sin histórico."
+     ],
+     "control": "el valor propuesto se basa prioritariamente en ventas de VTC; precios de competencia solo cuando exista una regla/enlace externo expresamente configurado. No confundir un precio sugerido con aceptación del cliente.",
+     "resultado": "valuación documentada por pieza.",
+     "origen": "F02/F15/F61; revisión A 19:49–21:53; revisión B 00:03–13:21 y revisión C 19:16–22:56."
+    },
+    {
+     "n": "06",
+     "titulo": "Negociación, estatus de valuación y decisión por pieza",
+     "disparador": "recepción de respuesta a propuesta; consignación y consignante.",
+     "problema": "",
+     "pasos": [
+      "Marcar inicialmente los artículos con precio como se propone, salvo regla distinta autorizada.",
+      "Recibir en el enlace respuesta por pieza: aceptación, contrapropuesta o rechazo; aceptar que un lote tenga resultados mixtos.",
+      "Si se propone otro importe, revisar y confirmar la decisión de VTC y comunicar la nueva propuesta sin cambiarla unilateralmente.",
+      "Mantener en el mismo lote estados claros: *evaluación pendiente*, *evaluación con cambios* y *evaluación confirmada*.",
+      "Permitir continuar a contrato únicamente con piezas acordadas; enviar las rechazadas al proceso de devolución."
+     ],
+     "control": "el estatus de valuación confirmado no debe confundirse con contrato firmado ni autenticación aprobada; mostrar estatus y filtros sin duplicar pestañas irrelevantes.",
+     "resultado": "conjunto de piezas aceptadas y piezas a retirar, con historial de negociación.",
+     "origen": "F02/F03/F15; revisión B 08:12–14:46 y 10:30–11:36; revisión C 26:03–29:09."
+    },
+    {
+     "n": "07",
+     "titulo": "Rechazo previo a contrato y retorno de piezas no aceptadas",
+     "disparador": "consignante o VTC rechaza precio/artículo; consignación y logística si hay envío.",
+     "problema": "",
+     "pasos": [
+      "Señalar cada pieza no aceptada con motivo (precio, condición, criterio comercial u otro), sin convertirla en stock comercial.",
+      "Programar retiro o devolución, validar que las fotos y accesorios coincidan con la recepción.",
+      "Asignar ubicación física temporal y responsable de preparación; avisar al consignante fecha y condiciones de entrega.",
+      "Obtener acuse de recepción presencial o prueba de entrega de paquetería y cerrar el expediente provisional."
+     ],
+     "control": "si parte del lote sí fue aceptada, conservar el lote y avanzar solo esas piezas, sin cerrar ni extraviar el historial de las rechazadas.",
+     "resultado": "devolución rastreable del artículo rechazado.",
+     "origen": "F03/F11/F27; revisión A 07:10–11:25."
+    },
+    {
+     "n": "08",
+     "titulo": "Generación del contrato digital y firma verificable",
+     "disparador": "precio confirmado y ficha mínima completa; consignación y consignante.",
+     "problema": "",
+     "pasos": [
+      "Generar contrato a partir del lote y datos del expediente, mostrando solo las piezas aceptadas, precios, condiciones, comisiones y cargos pactados.",
+      "Confirmar datos bancarios, beneficiario y dirección de devolución según los campos efectivamente requeridos por la política contractual vigente.",
+      "Entregar enlace de firma por WhatsApp/correo o permitir firma presencial; registrar acceso, envío, apertura, firma y versión del documento.",
+      "Dejar la operación en contrato pendiente hasta que la firma válida quede guardada; habilitar la siguiente etapa al confirmarse.",
+      "Conservar PDF y firma ligados a cada SKU, permitiendo consultar contrato desde consignación y portal correspondiente."
+     ],
+     "control": "la propuesta de incluir el beneficiario como facultado para cobro/retiro debe revisarse legal y operativamente. La navegación, al abrir contratos desde un proceso, debe regresar al mismo contexto de trabajo.",
+     "resultado": "aceptación contractual demostrable.",
+     "origen": "F04; revisión A 22:38–29:08; revisión B 43:09–53:29; revisión C 11:43–12:35."
+    },
+    {
+     "n": "09",
+     "titulo": "Generación, visualización e impresión de etiquetas",
+     "disparador": "contrato firmado; consignación/etiquetado.",
+     "problema": "",
+     "pasos": [
+      "Convertir las piezas contratadas en artículos con SKU único y mantener la relación con lote, propietario y fotografías.",
+      "Mostrar previamente las piezas que se imprimirán y permitir selección masiva por lote, con imágenes y cantidad de etiquetas.",
+      "Imprimir y colocar la etiqueta física; marcar por SKU fecha, impresora o estación y responsable.",
+      "Reimprimir cuando corresponda con registro de auditoría, sin crear nuevas unidades de inventario.",
+      "Entregar a autenticación las piezas etiquetadas y con contrato disponible."
+     ],
+     "control": "no permitir etiquetado definitivo ni salida a autenticación sin firma; evitar listas tan largas que hagan difícil seleccionar piezas correctas.",
+     "resultado": "identificación física y digital única del artículo.",
+     "origen": "F04; revisión B 43:28–45:12 y 55:54–56:56."
+    }
+   ]
+  },
+  {
+   "num": "II",
+   "titulo": "AUTENTICACIÓN Y PENALIZACIONES",
+   "flujos": [
+    {
+     "n": "10",
+     "titulo": "Autenticación con resultado trazable y segunda opinión",
+     "disparador": "artículo contratado/etiquetado; certificación (Leonardo/equipo correspondiente).",
+     "problema": "",
+     "pasos": [
+      "Recibir cola de artículos pendientes con SKU, fotos y documentos; seleccionar proveedor o método apropiado.",
+      "Registrar fecha, resultado, plataforma, vínculo y copia de certificado; separar *auténtico*, *no concluyente*, *requiere revisión* y *fake confirmado*.",
+      "Si hay duda, solicitar al consignante ticket/procedencia y ejecutar una revisión alternativa autorizada, conservando ambas evidencias.",
+      "Liberar piezas auténticas al siguiente proceso; retener las dudosas y falsas como no vendibles.",
+      "Al cerrar, dejar accesible el certificado para ventas, logística y auditoría según permisos."
+     ],
+     "control": "se mencionaron diferentes prestadores de autenticación según categoría/valor; mantener catálogo configurable y evitar asumir una sola certificadora.",
+     "resultado": "resultado sustentado y visible, nunca solo un check genérico.",
+     "origen": "F05/F24/F25; revisión A 15:45–16:19; revisión B 57:28–59:10."
+    },
+    {
+     "n": "11",
+     "titulo": "Penalización por artículo falso y salida controlada",
+     "disparador": "resultado fake confirmado tras el proceso de revisión aplicable; consignación, caja y finanzas.",
+     "problema": "",
+     "pasos": [
+      "Generar incidencia y cargo de penalización por SKU con tarifa y motivo autorizados.",
+      "Notificar al consignante resultado, evidencia, importe, medios de pago y procedimiento para recuperar la pieza.",
+      "Registrar cobro por caja, terminal o aplicación de saldo a favor, según política; conciliar importe con movimiento real.",
+      "Programar devolución de la pieza falsa, verificar identidad del receptor, entregar con acuse y dejar inactivo el artículo.",
+      "Llevar el cargo al reporte de penalizaciones y cotejarlo con el costo facturado por la certificadora."
+     ],
+     "control": "el resultado *no concluyente* no equivale a fake definitivo; definir quién autoriza descuento/condonación y si la entrega se bloquea hasta pagar.",
+     "resultado": "pieza fuera de inventario vendible con resultado y tratamiento financiero documentados.",
+     "origen": "F05/F06/F26/F71; revisión A 10:06–10:32."
+    },
+    {
+     "n": "12",
+     "titulo": "Control de costos de autenticación y documentos de origen",
+     "disparador": "servicio de verificación efectuado; certificación y finanzas.",
+     "problema": "",
+     "pasos": [
+      "Guardar método de autenticación, tarifa de proveedor, tipo de resultado y referencia a la factura.",
+      "Diferenciar costo absorbido por VTC, costo recuperable del consignante y penalización por fake.",
+      "Adjuntar tickets o certificados previos solo cuando correspondan al tratamiento especial permitido; validar documentación sensible por rol.",
+      "Conciliar mensualmente cantidad y tipo de verificaciones facturadas contra artículos y cobros asociados."
+     ],
+     "control": "evitar que un precio global de limpieza/certificación o una certificación preexistente elimine la trazabilidad del costo real.",
+     "resultado": "control verificable del servicio y de las recuperaciones de gastos.",
+     "origen": "F25/F71; revisión B 36:19–38:35."
+    }
+   ]
+  },
+  {
+   "num": "III",
+   "titulo": "TALLER, LIMPIEZA Y SERVICIOS",
+   "flujos": [
+    {
+     "n": "13",
+     "titulo": "Determinación de servicio requerido y omisión válida de taller",
+     "disparador": "precio convenido y autenticación aprobada; consignación/taller.",
+     "problema": "",
+     "pasos": [
+      "Evaluar si cada artículo requiere limpieza, reparación, certificación complementaria u otro servicio; no asumir que todos deben pasar por taller.",
+      "Registrar servicio opcional en el momento de la evaluación o posteriormente, diferenciando costo a VTC de cargo al consignante.",
+      "Si no requiere trabajo, marcar etapa no aplicable y continuar sin generar una orden ficticia ni bloquear la publicación.",
+      "Si requiere trabajo, abrir orden ligada al SKU, responsable, prioridad, costo estimado y condiciones del cobro."
+     ],
+     "control": "no mostrar servicios por defecto que nadie solicitó; definir si se informan/cobran al consignante durante la negociación o después.",
+     "resultado": "enrutamiento correcto a taller o salto legítimo de etapa.",
+     "origen": "F07/F24; revisión B 01:01:56–01:03:50; revisión C 19:16–22:53."
+    },
+    {
+     "n": "14",
+     "titulo": "Ejecución de limpieza con evidencia y verificación de calidad",
+     "disparador": "orden de limpieza asignada; Dani u operador de taller y revisor de entrega.",
+     "problema": "",
+     "pasos": [
+      "Mostrar al operario únicamente mi trabajo, con imagen grande, ubicación, instrucciones y condición original.",
+      "Confirmar recepción y comenzar; registrar trabajo realizado, materiales, tiempo, costos y fotografías de antes/después.",
+      "Permitir pausa motivada o avance si aplica, sin imponer porcentajes de progreso confusos cuando el operario necesita una interacción simple.",
+      "Registrar la finalización e inspección final; solo entonces marcar la limpieza como completada.",
+      "Notificar a consignación/contenido si existe algún detalle que ventas deba revelar."
+     ],
+     "control": "no puede registrarse “limpio/entregado” si no existe trabajo finalizado y evidencia mínima. Taller ve los costos reales de ejecución; el cobro al consignante es otro dato sujeto a permiso.",
+     "resultado": "limpieza trazable, con calidad y responsabilidades verificables.",
+     "origen": "F18/F22; revisión C 42:09–48:51; revisión B 01:05:38–01:07:16."
+    },
+    {
+     "n": "15",
+     "titulo": "Reparación y cambios de condición del artículo",
+     "disparador": "artículo requiere intervención; taller y autorización según el riesgo.",
+     "problema": "",
+     "pasos": [
+      "Generar orden con diagnóstico, daños existentes y acción solicitada (restauración, pintado, cambio de piedra, reparación o limpieza especializada).",
+      "Registrar autorización cuando implique alterar características, asumir riesgo o generar costo extraordinario.",
+      "Documentar intervención exacta, materiales originales/no originales, proveedor, costo, imágenes y responsable.",
+      "Realizar control de calidad; si se agravó el daño, abrir incidencia/merma con evidencia y ruta de recuperación.",
+      "Transferir descripción real del trabajo a ficha comercial y equipo de ventas antes de publicar."
+     ],
+     "control": "ningún cambio de piedra o repintado debe quedar oculto para ventas; una fotografía comercial no sustituye el historial del taller.",
+     "resultado": "artículo reparado con descripción transparente y riesgos controlados.",
+     "origen": "F19/F21/F66; revisión A 06:09–06:34."
+    },
+    {
+     "n": "16",
+     "titulo": "Transferencias de taller y especialistas externos",
+     "disparador": "el taller no puede realizar la tarea localmente; supervisor, logística y taller receptor.",
+     "problema": "",
+     "pasos": [
+      "Solicitar derivación con causa concreta: especialidad, error previo, daño, falta de equipo o proveedor externo.",
+      "Aprobar cuando proceda; seleccionar sucursal/proveedor, costo estimado y fecha objetivo.",
+      "Registrar salida con guía, fotografías y custodio; el receptor confirma llegada y estado.",
+      "Mantener tiempos por etapa: espera de envío, tránsito, estancia en taller, ejecución y regreso; registrar costos separados.",
+      "Cerrar la transferencia cuando se recibe y valida trabajo, sin reiniciar artificialmente la antigüedad total del artículo."
+     ],
+     "control": "no indicar simplemente “está en Xalapa” si está en tintorería o en camino; notificar a ventas y al consignante cuando afecte una promesa.",
+     "resultado": "rastreo integral, tiempo total y costos por trabajo externo o intersucursal.",
+     "origen": "F19/F20/F22; revisión A 13:12–14:29."
+    },
+    {
+     "n": "17",
+     "titulo": "Servicios de limpieza de artículos que NO son consignación",
+     "disparador": "cliente entrega pieza solo para limpieza/reparación; taller o recepción.",
+     "problema": "",
+     "pasos": [
+      "Crear una orden de servicio independiente, con dueño, fotografía, estado, accesorios y presupuesto; identificar físicamente la pieza.",
+      "Registrar anticipo, saldo, fecha prometida, responsable, servicio y costo sin darle precio de venta cero ni ponerla disponible.",
+      "Procesar la orden en el mismo tablero operativo de taller, pero bajo un inventario de custodia no comercializable.",
+      "Confirmar calidad, cobrar saldo, entregar con acuse y cerrar la orden.",
+      "Medir ingresos y costos de esta línea de negocio por separado."
+     ],
+     "control": "la pieza solo para limpieza nunca debe aparecer en catálogo comercial, ni generar comisión de consignación.",
+     "resultado": "servicio cobrable, con trazabilidad de responsabilidad sobre artículos ajenos.",
+     "origen": "F23; revisión B 01:05:10–01:06:10."
+    },
+    {
+     "n": "18",
+     "titulo": "Registro y recuperación de cargos de servicios",
+     "disparador": "se ejecutó limpieza/certificación/reparación; consignación, taller y finanzas.",
+     "problema": "",
+     "pasos": [
+      "Registrar costo real del servicio y determinar el importe que corresponde cobrar, sin asumir que son iguales.",
+      "Identificar forma de cobro: inmediato en caja, deducción futura al pagar venta o condonación autorizada.",
+      "Evitar cobrar nuevamente una limpieza pagada por adelantado; mantener comprobante y saldo pendiente por artículo.",
+      "Si hay retiro antes de venta, mostrar cargos todavía abiertos y aplicar la regla formalmente aprobada de exigibilidad y descuento.",
+      "Reflejar cada servicio en utilidad y conciliación, aunque no se haya recuperado el costo del consignante."
+     ],
+     "control": "existe diferencia entre lo descrito en reuniones: a veces no se cobra limpieza de pieza no vendida, pero se propuso controlar adeudos. No bloquear automáticamente devoluciones hasta resolver política con VTC.",
+     "resultado": "costo y recuperación por servicio, sin cargos omitidos o duplicados.",
+     "origen": "F07/F26/F59/F69/F75; revisión C 19:16–22:53 y 43:59–45:31."
+    }
+   ]
+  },
+  {
+   "num": "IV",
+   "titulo": "INVENTARIOS, CUSTODIA Y LIBERACIÓN",
+   "flujos": [
+    {
+     "n": "19",
+     "titulo": "Ubicación física, movimientos y trazabilidad por pieza",
+     "disparador": "todo ingreso o desplazamiento; almacén, consignación, taller o logística.",
+     "problema": "",
+     "pasos": [
+      "Asignar ubicación concreta: sucursal, zona, anaquel, rack, nivel, caja, apartado, bodega, taller, proveedor o paquete en tránsito.",
+      "Registrar cada cambio con fecha, usuario, motivo y origen/destino; si hay transferencia, separar solicitada, enviada, en tránsito, recibida y cerrada.",
+      "Validar recepción por destinatario, incluyendo accesorios y condición física.",
+      "Mantener consulta desde SKU y desde propietario sin obligar a organizar físicamente por consignante; la operación puede organizar por categoría.",
+      "Alertar movimientos sin recepción, ubicaciones vacías o diferencias entre sistema y ubicación real."
+     ],
+     "control": "nunca utilizar el campo de guía de envío como sustituto de ubicación, y no dar por recibido automáticamente algo solo por haberse transferido.",
+     "resultado": "localización confiable y cadena de custodia.",
+     "origen": "F08/F19/F20/F29/F30."
+    },
+    {
+     "n": "20",
+     "titulo": "Inventarios cíclicos, auditoría y mermas por ubicación",
+     "disparador": "calendario de conteo o incidencia; inventarios, sucursal y auditoría.",
+     "problema": "",
+     "pasos": [
+      "Generar tareas de conteo por sucursal, rack, categoría o muestra aleatoria, con piezas esperadas.",
+      "Contar/escanear los artículos físicamente y comparar con stock registrado sin forzar ajustes automáticos.",
+      "Crear discrepancia con investigación, evidencias, custodios, transferencias y movimientos recientes.",
+      "Resolver con reubicación, regularización justificada, merma o recuperación económica autorizada.",
+      "Reportar diferencias recurrentes, porcentaje de exactitud y tiempos de resolución."
+     ],
+     "control": "RFID puede evaluarse después; la fase inicial requiere ubicación y conteos consistentes, con permisos por función.",
+     "resultado": "inventario validado y discrepancias auditables.",
+     "origen": "F29/F30/F31/F66."
+    },
+    {
+     "n": "21",
+     "titulo": "Fotografía profesional y preparación de contenido comercial",
+     "disparador": "pieza apta para fotografiar/publicar; foto, contenido y ecommerce.",
+     "problema": "",
+     "pasos": [
+      "Asignar la pieza al fotógrafo con acceso acotado; la ficha de consignación y sus fotos de estado permanecen protegidas.",
+      "Tomar y cargar fotografías profesionales, detalles y video; asociarlos al SKU y canal comercial.",
+      "Seleccionar imagen principal y publicar ficha completa con marca/modelo homologado, condición, medidas, reparaciones y accesorios.",
+      "Revisar que la fotografía de venta no reemplace ni elimine la evidencia de ingreso.",
+      "Al aprobar contenido, enviar pieza a publicación sujeta a autenticación y taller completos."
+     ],
+     "control": "el personal de fotografía puede editar imágenes y campos autorizados, pero no alterar precio, condición certificada ni dueño sin permiso.",
+     "resultado": "contenido comercial listo sin pérdida de historia del artículo.",
+     "origen": "F08/F21; revisión B 01:03:33–01:04:30."
+    },
+    {
+     "n": "22",
+     "titulo": "Liberación a venta y prevención de doble disponibilidad",
+     "disparador": "todas las etapas obligatorias aprobadas; sistema, consignación y ventas.",
+     "problema": "",
+     "pasos": [
+      "Comprobar precio confirmado, contrato firmado, autenticación aprobada, taller terminado/no aplicable y ficha comercial válida.",
+      "Colocar estado disponible y sincronizar existencia, precio y condición entre tienda física, web y canales habilitados.",
+      "Si aparece un apartado, venta, retiro, incidencia o traslado con restricción, bloquear disponibilidad en los canales aplicables al mismo SKU.",
+      "Registrar lugar donde está la pieza y responsable de preparación; verificar que se puede recoger o enviar antes de prometer entrega.",
+      "Registrar fecha de primera publicación, cambios de precio y antigüedad sin venta."
+     ],
+     "control": "los interesados en artículo no disponible se registran como lista de aviso, no como venta confirmada ni como reserva obligatoria.",
+     "resultado": "inventario sincronizado y libre de ventas contradictorias.",
+     "origen": "F04/F08/F32/F34/F39; caso adicional de interesados."
+    },
+    {
+     "n": "23",
+     "titulo": "Seguimiento a artículos sin venta y curaduría comercial",
+     "disparador": "artículo acumula antigüedad o baja rotación; dirección comercial y consignación.",
+     "problema": "",
+     "pasos": [
+      "Generar alertas por días desde publicación, contrato próximo a vencer, piezas inmóviles o volumen sin rotación por sucursal.",
+      "Revisar ventas comparables, condición, costos hundidos y oportunidad de dinámica/traslado o ajuste.",
+      "Proponer al consignante un precio final concreto cuando sea necesario, con evidencia de su consentimiento.",
+      "Programar campaña o recolocación con límites de descuento y autorización; sincronizar precio con web/POS.",
+      "Medir venta, conversión o regreso a espera y documentar acciones de seguimiento."
+     ],
+     "control": "antigüedad por sí sola no autoriza modificar precio pactado; definir cuándo requiere contrato nuevo y quién puede aprobar descuentos.",
+     "resultado": "gestión activa de inventario envejecido.",
+     "origen": "F10/F12–F16/F33/F60."
+    }
+   ]
+  },
+  {
+   "num": "V",
+   "titulo": "VENTAS, INTERESADOS, APARTADOS Y CLIENTES",
+   "flujos": [
+    {
+     "n": "24",
+     "titulo": "Cliente interesado en un artículo todavía no disponible",
+     "disparador": "cliente ve una pieza recibida en tienda y pide “avísame cuando esté lista”; vendedor, consignación y sistema.",
+     "problema": "el artículo no tiene precio, contrato o autenticación; los vendedores prometen aviso, pero lo pierden en WhatsApp. Otra persona termina comprándolo al salir a venta y se genera un reclamo.",
+     "pasos": [
+      "Desde ficha de artículo o lote provisional, registrar interés sin reserva: cliente, teléfono/WhatsApp, vendedor, fecha, sucursal y canal.",
+      "Marcar estado de seguimiento *espera de liberación*, con motivo específico: sin precio, contrato pendiente, autenticación pendiente, taller o publicación.",
+      "Permitir varios interesados por SKU con historial cronológico, sin alterar reglas de autenticación ni fingir que hay disponibilidad.",
+      "Cuando cambie a disponible, crear aviso para vendedor y supervisión; asignar tarea con fecha límite y escalar si no se atiende.",
+      "El vendedor contacta al cliente, documenta mensaje/llamada y resultado: notificado, no responde, interesado, compra, ya no desea o cierre por venta ajena.",
+      "Consultar desde ventas qué personas están esperando la pieza antes de cerrar una venta; el sistema debe mostrar advertencia de seguimientos pendientes."
+     ],
+     "control": "definir con dirección si habrá orden de aviso, exclusividad temporal, reserva por anticipo o solo notificación; no prometer prioridad automática sin política. Si la pieza es rechazada/fake, notificar imposibilidad de venta sin exponer información confidencial.",
+     "resultado": "cada promesa de aviso tiene responsable, plazo, trazabilidad y cierre verificable.",
+     "origen": "problemática comunicada por equipo de ventas en el mensaje adicional del 29/10/2026."
+    },
+    {
+     "n": "25",
+     "titulo": "Registro de venta omnicanal y atribución real",
+     "disparador": "comprador concreta operación en tienda, web, Instagram, WhatsApp, live o referido; ventas y ecommerce.",
+     "problema": "",
+     "pasos": [
+      "Identificar al comprador y seleccionar artículo; registrar canal de origen y, cuando corresponda, vendedora o campaña.",
+      "Validar disponibilidad única por SKU y el precio vigente autorizado.",
+      "Registrar venta, forma de pago y modalidad de entrega; conservar el canal en que se originó sin confundirlo con el de cobro.",
+      "Enviar automáticamente la orden al tablero de preparación (recolección en tienda, envío o custodia solicitada).",
+      "Reflejar venta, abonos, descuento, comisión y responsable en paneles sin rehacerlos en Excel."
+     ],
+     "control": "para ventas sociales con PayPal, verificar transacción y pedido existente antes de entregar; no dejar pagos sin venta asignada. TikTok u otros canales nuevos necesitan política de catálogo/cobro antes de activarse.",
+     "resultado": "venta reconciliable atribuida a canal y responsable.",
+     "origen": "F39–F41/F46/F56/F63."
+    },
+    {
+     "n": "26",
+     "titulo": "Lives, unboxing, campañas y venta nocturna",
+     "disparador": "programación comercial; contenido, consignación y ventas.",
+     "problema": "",
+     "pasos": [
+      "Crear campaña/dinámica con fecha, tipo, canales y responsables; definir selección de piezas y prioridad de exhibición.",
+      "Reservar temporalmente artículos para preparación, validando su disponibilidad y ubicación.",
+      "Si hay descuento, gestionar por SKU autorización del nuevo precio final y registrar cambios con vigencia.",
+      "Publicar/cargar precios de forma masiva controlada para POS y ecommerce y ejecutar live o dinámica.",
+      "Registrar piezas mostradas, apartadas, vendidas y pendientes; vincular ventas posteriores atribuibles al evento cuando sea posible.",
+      "Compartir resultados con dirección y, desde portal, la información permitida al consignante."
+     ],
+     "control": "un artículo apartado, retirado o aún no auténtico no debe promocionarse como disponible.",
+     "resultado": "campañas medibles y sincronizadas con inventario.",
+     "origen": "F12/F13/F14/F15/F16; revisión C 54:53–55:36."
+    },
+    {
+     "n": "27",
+     "titulo": "Apartados en tienda y ecommerce, con abonos",
+     "disparador": "comprador decide apartar; ventas o cliente web.",
+     "problema": "",
+     "pasos": [
+      "Requerir registro del comprador en web e identificar de forma única SKU, precio, anticipo, saldo y plazos aplicables por categoría.",
+      "Mostrar al cliente reglas vigentes antes de pagar y registrar cada abono con transacción, medio y fecha.",
+      "Marcar producto como apartado y evitar venta simultánea; definir cómo se muestra en ecommerce sin inducir a comprarlo como disponible.",
+      "Permitir consulta y abono desde la cuenta del comprador; notificar vencimientos y saldo pendiente.",
+      "Con la liquidación verificada, pasar a preparación de entrega; no habilitar pago al consignante si el artículo aún no se entregó."
+     ],
+     "control": "los plazos mencionados para bolsas y calzado no se deben aplicar universalmente; parametrizar por producto/política.",
+     "resultado": "apartado íntegro y rastreable con calendario de abonos.",
+     "origen": "F09/F42/F62."
+    },
+    {
+     "n": "28",
+     "titulo": "Vencimiento, extensión y cobranza de apartados",
+     "disparador": "saldo no liquidado dentro del plazo; cobranza de sucursal y ventas.",
+     "problema": "",
+     "pasos": [
+      "Generar cartera por sucursal/vendedora con monto pendiente, antigüedad y próximos vencimientos.",
+      "Enviar recordatorios antes del vencimiento; documentar contacto y respuesta.",
+      "Solicitar aprobación si se pide extensión y registrar nueva fecha sin borrar vencimiento original.",
+      "Cuando vence sin liquidarse, ejecutar la política aprobada sobre recuperación de la pieza, destino del anticipo y disponibilidad del SKU.",
+      "Conciliar abonos y saldos de comprador contra caja/banco y registrar toda cancelación o devolución."
+     ],
+     "control": "la retención de anticipos y el plazo de liberación deben estar definidos por política/contrato, no deducirse de casos narrados.",
+     "resultado": "cobranza activa y cierres de apartados verificables.",
+     "origen": "F43/F44/F45/F62."
+    },
+    {
+     "n": "29",
+     "titulo": "Perfil comprador, segmentación y fidelización",
+     "disparador": "cada compra, apartado, interacción y campaña; comercial/CRM.",
+     "problema": "",
+     "pasos": [
+      "Consolidar comprador entre sucursales, web y redes, sin duplicarlo cuando también es consignante.",
+      "Registrar frecuencia, ticket, rangos de gasto, preferencia de producto, método de financiación y canal.",
+      "Segmentar por capacidad de compra real, no solo por número de artículos (distinguir cliente de ofertas frecuentes vs comprador de piezas de alto valor).",
+      "Permitir campañas dirigidas a intereses y eventos, con consentimiento de comunicación aplicable.",
+      "Reportar recompra y resultado de promociones, puntos/cashback o beneficios si el programa se aprueba."
+     ],
+     "control": "no inferir capacidad de gasto definitiva solo por compras previas; las acciones conversacionales de WhatsApp/Instagram son etapa posterior si aún no están implementadas.",
+     "resultado": "seguimiento comercial y fidelización basados en información consistente.",
+     "origen": "F57/F64; R5 Monterrey."
+    },
+    {
+     "n": "30",
+     "titulo": "Venta o apartado solicitado antes de liberación: gestión de compromiso",
+     "disparador": "comprador pretende pagar o reservar una pieza físicamente recibida aún no liberada; vendedor y gerente.",
+     "problema": "",
+     "pasos": [
+      "Consultar estado de consignación/autenticación desde ventas antes de ofrecer cobro o entrega.",
+      "Si no está disponible, abrir seguimiento interesado en espera (flujo 24), explicando por qué todavía no puede venderse.",
+      "Si VTC contempla preventa o anticipo excepcional, exigir autorización, términos escritos y bloqueo condicionado; hasta aprobar esa política, no procesar como venta normal.",
+      "Al liberarse, avisar al interesado y continuar con venta común solo si sigue disponible y cumple la regla de prioridad."
+     ],
+     "control": "la intención de compra no suplanta contrato/autenticación ni constituye garantía de reserva; se evita promesa informal de “ya es tuyo”.",
+     "resultado": "atención a demanda anticipada sin quebrar la cadena de cumplimiento.",
+     "origen": "F32/F34 y mensaje nuevo de ventas."
+    }
+   ]
+  },
+  {
+   "num": "VI",
+   "titulo": "LOGÍSTICA, ENTREGAS Y DEVOLUCIONES",
+   "flujos": [
+    {
+     "n": "31",
+     "titulo": "Preparación de pedidos y tablero por modalidad",
+     "disparador": "venta liquidada o instrucción de entrega; logística (Carlos, equipo) y sucursal.",
+     "problema": "",
+     "pasos": [
+      "Clasificar orden por envío nacional/internacional, recolección en tienda o retención autorizada.",
+      "Mostrar cliente, piezas, ubicación, medio de pago validado, fechas y alertas de entrega en un tablero único.",
+      "Preparar producto y accesorios; validar SKU/estado y generar evidencia de salida.",
+      "Pasar por estados *pendiente → en preparación → listo → enviado / recogido → entregado*, con fecha y responsable.",
+      "Actualizar la venta y habilitar pago a consignante solo tras confirmación de entrega y reglas del negocio."
+     ],
+     "control": "no dejar el pedido solo como mensaje de WhatsApp; identificar compras pagadas sin orden asignada.",
+     "resultado": "todo pago con producto tiene una entrega controlada.",
+     "origen": "F39/F40/F47."
+    },
+    {
+     "n": "32",
+     "titulo": "Envío con DHL, guía, seguro y tracking",
+     "disparador": "modalidad envío seleccionada; logística/paquetería.",
+     "problema": "",
+     "pasos": [
+      "Cotizar transporte y seguro según política; distinguir cobro al comprador, tarifa real DHL y costos absorbidos.",
+      "Preparar paquete y generar guía ligada a la venta y a cada SKU incluido.",
+      "Integrar estados DHL de recolección, tránsito, intento y entrega, conservando prueba de entrega y destino.",
+      "Actualizar automáticamente en SACS el estado del pedido y del artículo sin obligar a abrir un enlace externo.",
+      "Confrontar guías usadas y facturadas con cobros a compradores y traspasos internos."
+     ],
+     "control": "no todas las guías generadas son utilizadas/cobradas; distinguir retorno y servicio asegurado, sin asumir que cada artículo usa una caja individual.",
+     "resultado": "entrega trazable con costo comprobado.",
+     "origen": "F37/F38/F70."
+    },
+    {
+     "n": "33",
+     "titulo": "Compras acumuladas y envíos consolidados de una misma clienta",
+     "disparador": "clienta pide guardar compras hasta solicitar envío; ventas, almacén y logística.",
+     "problema": "",
+     "pasos": [
+      "Registrar instrucción de custodia temporal por cliente con fecha, piezas y sucursales de origen.",
+      "Reservar las piezas ya vendidas en áreas específicas, sin mantenerlas como stock vendible; mostrar antigüedad de custodia.",
+      "Al solicitar envío, agrupar las piezas que estén en distintas sucursales y generar traspasos internos controlados.",
+      "Planificar uno o varios paquetes finales, costos por traslado, seguro y guía externa; indicar quién absorbe cada cargo.",
+      "Confirmar entrega conjunta y asignar gasto total a pedido y piezas según criterio contable aprobado."
+     ],
+     "control": "informar costos reales del proceso, incluso traspasos desde otras ciudades; definir límites de tiempo de custodia.",
+     "resultado": "compras acumuladas entregadas sin perder costo ni localización.",
+     "origen": "F36/F37/F70."
+    },
+    {
+     "n": "34",
+     "titulo": "Recolección presencial y validación de identidad",
+     "disparador": "cliente o beneficiario recoge venta o devolución; sucursal/almacén.",
+     "problema": "",
+     "pasos": [
+      "Generar cita/orden de recolección con SKU, titular, persona autorizada y ubicación.",
+      "Verificar pago y datos del receptor antes de liberar la pieza.",
+      "Comprobar artículo/accesorios en presencia del receptor y documentar entrega/acuse.",
+      "Actualizar inmediatamente estatus físico y comercial y notificar a las áreas pertinentes."
+     ],
+     "control": "para cobro/retiro por beneficiario del consignante, validar facultades y documento contractual antes de entregar.",
+     "resultado": "entrega presencial con cadena final de custodia.",
+     "origen": "F11/F27/F35/F40."
+    },
+    {
+     "n": "35",
+     "titulo": "Devolución postventa, guía de retorno y reintegro",
+     "disparador": "comprador solicita devolución/cambio conforme a política; atención, logística, caja/finanzas.",
+     "problema": "",
+     "pasos": [
+      "Registrar solicitud ligada a transacción y SKU, motivo, fecha límite y procedencia según categoría.",
+      "Generar y compartir guía de retorno o cita, con instrucciones y alertas sobre vencimiento.",
+      "Detectar activación y seguimiento de guía de devolución desde DHL; registrar el artículo en retorno sin declararlo ya recibido.",
+      "A la recepción, verificar condición, autorización del retorno y forma de reintegro: mismo medio o saldo a favor conforme a reglas.",
+      "Reflejar reversa contable y comercial; reponer a venta solo tras inspección y ajuste de stock."
+     ],
+     "control": "evitar devolución registrada como dinero recibido/venta intacta o como artículo disponible antes de recibirlo.",
+     "resultado": "devolución financiera y física sincronizada.",
+     "origen": "F38/F73/F74."
+    },
+    {
+     "n": "36",
+     "titulo": "Retiro de consignación por vencimiento o solicitud del propietario",
+     "disparador": "terminó periodo contratado o consignante solicita retirar; consignación y almacén.",
+     "problema": "",
+     "pasos": [
+      "Generar solicitud por titular y seleccionar exactamente los SKUs; registrar si pide uno, varios o todos.",
+      "Validar situación actual (no vendido, no apartado según regla, en taller, en tránsito, cargos pendientes), ubicación y accesorios.",
+      "Programar preparación con fecha de visita o envío y tareas visibles para cada sucursal.",
+      "Cambiar estados: *solicitado → por localizar → encontrado → preparado → listo para entregar → entregado*.",
+      "Obtener firma/acuse por piezas y desactivar inventario comercial de manera simultánea al cierre real de entrega."
+     ],
+     "control": "el contrato mencionado fue de 45 días y se refiere una preparación con aviso previo; parametrizar plazos vigentes. No retirar una pieza comprometida sin aplicar política de apartado.",
+     "resultado": "retiro ordenado sin vender artículos ya devueltos.",
+     "origen": "F10/F11/F27/F34; revisión A 07:10–11:43 y 10:46–11:25."
+    },
+    {
+     "n": "37",
+     "titulo": "Devolución de piezas rechazadas, fake o dañadas",
+     "disparador": "pieza no aceptada, falsa o afectada; consignación, certificación y sucursal.",
+     "problema": "",
+     "pasos": [
+      "Abrir devolución por motivo específico y asociarla al expediente del artículo y al cliente correcto.",
+      "Revisar cargo exigible, daños, inclusiones y evidencia de ingreso vs entrega.",
+      "Programar localización y preparación por persona/fecha; notificar cualquier restricción o incidente.",
+      "Registrar retiro o envío con identificación, acuse, fotos y cierre de stock.",
+      "Si se trata de daño asumido por VTC, conectar al proceso de indemnización/recuperación y merma financiera."
+     ],
+     "control": "un fake no debe volver accidentalmente a venta por corregir un estado de almacén; diferenciar pieza no aceptada sin contrato de pieza ya contratada.",
+     "resultado": "caso terminado y trazable hasta su solución económica.",
+     "origen": "F03/F06/F11/F27/F66; revisión A 08:56–10:32."
+    },
+    {
+     "n": "38",
+     "titulo": "Devolución del consignante por paquetería",
+     "disparador": "el propietario solicita envío de sus artículos; consignación y logística.",
+     "problema": "",
+     "pasos": [
+      "Abrir devolución y confirmar destino, titular, cantidad de piezas y condición en que se regresarán.",
+      "Cotizar seguro, cargo y transporte; autorizar costos y solicitar cobro previo cuando corresponda.",
+      "Empacar con evidencia y lista de piezas; generar guía por paquete y asociar SKUs.",
+      "Dar seguimiento DHL hasta entrega; actualizar estatus y cerrar con comprobante."
+     ],
+     "control": "si hay piezas en diferentes sucursales, el traspaso y sus costos deben quedar separados de envío final al consignante.",
+     "resultado": "devolución remota con entrega comprobada.",
+     "origen": "F17/F36/F37/F70."
+    }
+   ]
+  },
+  {
+   "num": "VII",
+   "titulo": "PAGOS A CONSIGNANTES Y SALDOS",
+   "flujos": [
+    {
+     "n": "39",
+     "titulo": "Habilitación del pago al consignante",
+     "disparador": "artículo vendido, cobrado y entregado; consignación y tesorería (Juli/Sofía según cuenta).",
+     "problema": "",
+     "pasos": [
+      "Confirmar venta, entrega verificada, importe cobrado real, comisión, descuentos pactados y cargos por servicio.",
+      "Calcular neto a consignante y separar cualquier saldo retenido por política de devoluciones/apartados.",
+      "Cambiar estatus a *elegible para pago*; bloquear artículos no entregados o devoluciones abiertas.",
+      "Generar propuesta por consignante con desglose de todos sus SKUs elegibles, fecha de venta y antigüedad.",
+      "Autorizar lote de pago y registrar reserva de recursos, sin marcar pagado antes de ejecución bancaria."
+     ],
+     "control": "el operador no debe poder forzar pago de pieza sin entrega ni ocultar servicios pendientes; posibles excepciones requieren autorización registrada.",
+     "resultado": "pasivo líquido, correctamente soportado.",
+     "origen": "F09/F35/F47/F49."
+    },
+    {
+     "n": "40",
+     "titulo": "Verificación y cambios de cuenta bancaria/beneficiario",
+     "disparador": "antes de dispersar o al cambiar datos bancarios; consignación, consignante y tesorería.",
+     "problema": "",
+     "pasos": [
+      "Mostrar cuenta registrada y solicitar confirmación formal al consignante por canal seguro.",
+      "Si solicita cambio, registrar nuevo beneficiario/CLABE, documento o comprobación requeridos y motivo.",
+      "Someter cambio sensible a aprobación según perfiles; mantener la cuenta anterior en histórico sin reemplazo silencioso.",
+      "Tras validar la cuenta, habilitar pago y bloquear solicitudes no verificadas o incompatibles con la política del titular."
+     ],
+     "control": "repetidos cambios a cuentas de familiares o terceros provocan retrasos y riesgos; definir quién puede cobrar a nombre de otro y qué evidencia es suficiente.",
+     "resultado": "dato bancario confirmado y auditable.",
+     "origen": "F35/F48; revisión C 56:40–56:52."
+    },
+    {
+     "n": "41",
+     "titulo": "Programación de pagos por sucursal, antigüedad y banco",
+     "disparador": "cartera de pagos elegibles; Juli/Sofía.",
+     "problema": "",
+     "pasos": [
+      "Filtrar obligaciones por sucursal, consignante, días desde entrega, importe y estado; ordenar pendientes antiguos primero según política.",
+      "Consolidar importes por persona para planear pagos y decidir banco/cuenta de salida.",
+      "Formar lotes de dispersión masiva cuando el banco lo permite y individuales para medios que obligan uno a uno (como Mercado Pago en operación reportada).",
+      "Verificar límites bancarios, disponibilidad, datos validados y autorizaciones; enviar para ejecución.",
+      "Registrar referencia de lote, fecha, monto, entidad y responsable por cada transferencia."
+     ],
+     "control": "no asumir que Mercado Pago permite pagos masivos; en reunión se reportó límite diario de 500 mil pesos para esa operación, sujeto a cambios de cuenta/plataforma.",
+     "resultado": "pagos priorizados y ejecutados sin rehacer listados manuales por sucursal.",
+     "origen": "F49/F50."
+    },
+    {
+     "n": "42",
+     "titulo": "Confirmación bancaria, comprobantes y consulta de SPEI",
+     "disparador": "un pago fue enviado o consignante reclama no haberlo recibido; tesorería y consignación.",
+     "problema": "",
+     "pasos": [
+      "Registrar respuesta real del banco: enviado, procesado, acreditado, rechazado o en investigación.",
+      "Adjuntar comprobante bancario y, cuando aplique, CEP/SPEI verificable; asociarlo a uno o varios SKUs liquidados.",
+      "Permitir a consignación descargar el comprobante sin solicitar repetidamente captura a Juli.",
+      "Mostrar el movimiento al consignante en portal con monto, fecha, estado y referencias suficientes.",
+      "Al recibir reclamo, consultar operación y abrir seguimiento, sin asumir que la orden bancaria equivale a depósito acreditado."
+     ],
+     "control": "respetar restricciones de datos bancarios; si varios artículos fueron pagados juntos, mostrar desglose bajo un mismo movimiento.",
+     "resultado": "comprobantes consultables y menos reenvíos manuales.",
+     "origen": "F51/F52; revisión C 55:36–56:52."
+    },
+    {
+     "n": "43",
+     "titulo": "Rechazo, duplicación y depuración de pasivos de consignación",
+     "disparador": "rechazo bancario, pago duplicado o saldo histórico dudoso; tesorería/finanzas.",
+     "problema": "",
+     "pasos": [
+      "Identificar retorno de fondos, cuenta incorrecta, transferencia duplicada o pago marcado pero no ejecutado.",
+      "Reabrir pasivo solo cuando proceda, con conciliación del banco y referencia al pago anterior.",
+      "Reprogramar bajo cuenta confirmada y proteger contra pagos simultáneos por dos operadores.",
+      "Depurar obligaciones migradas sin titular claro mediante investigación y soporte, no por cancelación masiva ciega.",
+      "Cerrar con soporte contable y bitácora de corrección."
+     ],
+     "control": "cada SKU solo puede liquidarse una vez por obligación; excepciones requieren reversa claramente vinculada, nunca duplicación sin rastro.",
+     "resultado": "pasivos reales y pagos no repetidos.",
+     "origen": "F52/F53/F54/F55."
+    },
+    {
+     "n": "44",
+     "titulo": "Saldo a favor como cuenta corriente transversal",
+     "disparador": "devolución, pago de consignación compensable, penalización o compra con saldo; caja, consignación y finanzas.",
+     "problema": "",
+     "pasos": [
+      "Registrar origen del saldo: devolución de venta, consignación u otro concepto autorizado.",
+      "Aplicar total o parcial a nueva compra o servicio, con referencia al artículo y consentimiento/regla correspondiente.",
+      "Mantener historial de cargos y abonos, saldo anterior/nuevo y usuario, en vez de dejar dinero sin conciliar.",
+      "Controlar vencimientos o restricciones solo si están definidas contractualmente y mostrar cuenta corriente al titular.",
+      "Reintegrar al medio correspondiente cuando proceda y conciliar la salida."
+     ],
+     "control": "no utilizar saldo de consignante indiscriminadamente si la cuenta del comprador está a nombre distinto o faltan autorizaciones.",
+     "resultado": "dinero del cliente trazable en cada operación.",
+     "origen": "F59/F73/F74."
+    }
+   ]
+  },
+  {
+   "num": "VIII",
+   "titulo": "FINANZAS, GASTOS Y RESULTADOS",
+   "flujos": [
+    {
+     "n": "45",
+     "titulo": "Conciliación diaria de ingresos por medio, venta y sucursal",
+     "disparador": "cobranza por POS, web, transferencia, terminal, Mercado Pago, PayPal o efectivo; finanzas/Sofía y caja.",
+     "problema": "",
+     "pasos": [
+      "Obtener movimientos por cada cuenta bancaria/procesador, fecha, referencia e importe.",
+      "Conciliar cada ingreso contra venta/apartado/penalización/envío/servicio, no solo contra un total del día.",
+      "Identificar pagos sin referencia, diferencias de monto, ventas duplicadas y comprobantes reutilizados.",
+      "Enviar anomalía a responsable de sucursal para clasificación/corrección con evidencia y plazo.",
+      "Cerrar conciliación con pendientes explícitos y reportes de ingresos no identificados."
+     ],
+     "control": "nunca registrar como ganancia un depósito desconocido ni esperar hasta que alguien reclame para investigarlo.",
+     "resultado": "cada peso recibido tiene operación y origen claros.",
+     "origen": "F67/F68/F69/F77; Sofía R6."
+    },
+    {
+     "n": "46",
+     "titulo": "Conciliación de DHL: guías, facturas y traspasos",
+     "disparador": "factura de paquetería del mes; logística y finanzas.",
+     "problema": "",
+     "pasos": [
+      "Descargar facturas/desgloses de guías efectivamente utilizadas.",
+      "Clasificar cada guía como venta al comprador, devolución, traspaso entre sucursales, taller externo o recolección.",
+      "Comparar costo real, importe cobrado y seguro, relacionándolo a pedido/SKU y sucursales.",
+      "Investigar guías sin operación, costos duplicados, servicios no cobrados o cargos extraordinarios.",
+      "Ajustar utilidad y reportar gasto logístico por causa, sin mezclar traspasos con envíos comerciales."
+     ],
+     "control": "no estimar el costo de un envío consolidado solo a partir de tarifa fija por artículo.",
+     "resultado": "factura DHL explicada y utilidad logística confiable.",
+     "origen": "F36/F37/F70; R6."
+    },
+    {
+     "n": "47",
+     "titulo": "Conciliación de autenticaciones, fakes y penalizaciones",
+     "disparador": "factura del proveedor autenticador; certificación y finanzas.",
+     "problema": "",
+     "pasos": [
+      "Comparar cada línea facturada con un SKU/método/resultado.",
+      "Verificar que verificaciones adicionales se autorizaron y se incluyeron en el costo real.",
+      "Comparar resultados fake confirmados con penalizaciones emitidas, pagadas o pendientes.",
+      "Investigar divergencias, condonaciones y cargos sin registro.",
+      "Reportar costo, recuperaciones y pérdidas por autenticación."
+     ],
+     "control": "costo de autenticar y multa por fake son conceptos diferentes; no compensarlos fuera de sistema.",
+     "resultado": "servicios de autenticación auditables económicamente.",
+     "origen": "F06/F25/F71."
+    },
+    {
+     "n": "48",
+     "titulo": "Registro de gastos recurrentes, compras y tarjetas",
+     "disparador": "vencimiento o compra corporativa; Sofía, dirección y pagadores designados.",
+     "problema": "",
+     "pasos": [
+      "Configurar catálogo de gastos por sucursal: renta, nómina, servicios, materiales, embalaje, papelería, publicidad, seguridad y otros.",
+      "Definir quién solicita, autoriza, paga y comprueba; distinguir pagos domiciliados y pagos realizados por terceros/dirección.",
+      "Registrar factura/comprobante, centro de costo, importe, impuestos y medio de pago.",
+      "Conciliar contra banco/tarjeta y clasificar adecuadamente gastos recurrentes vs extraordinarios.",
+      "Mostrar calendario de vencimientos, aprobaciones y desglose por sede."
+     ],
+     "control": "algunas cuentas son pagadas por personas distintas; no asumir que Sofía tiene acceso o hace todos los pagos.",
+     "resultado": "gasto por sucursal y cuenta con responsable identificable.",
+     "origen": "F65/F76/F77; Sofía R6."
+    },
+    {
+     "n": "49",
+     "titulo": "Registro de daños, mermas e indemnización a consignantes",
+     "disparador": "artículo extraviado o dañado bajo custodia; sucursal, taller, dirección y finanzas.",
+     "problema": "",
+     "pasos": [
+      "Crear incidente con estado de recepción, fotografías, ubicación, custodios, fecha y causa investigada.",
+      "Determinar responsabilidad, valor acordado y necesidad de indemnización a propietario; obtener aprobación.",
+      "Registrar egreso a consignante sin tratarlo como venta ordinaria que genere comisión ficticia.",
+      "Si VTC conserva/recupera la pieza, crear inventario de recuperación propio y venderla sin comisión de consignante, vinculada a la pérdida original.",
+      "Medir costo de reparación, indemnización, recuperación, diferencia y repetición de daños por sucursal."
+     ],
+     "control": "separar merma, devolución y fake; el reporte de utilidad debe captar pérdida real y no esconderla bajo descuentos.",
+     "resultado": "pérdida cuantificada y posibilidad de recuperación documentada.",
+     "origen": "F19/F21/F66/F75; autorizaciones revisión A 00:57–06:34."
+    },
+    {
+     "n": "50",
+     "titulo": "Compra de artículos por empleados con crédito interno",
+     "disparador": "colaborador desea adquirir producto; gerente, caja, nómina/tesorería.",
+     "problema": "",
+     "pasos": [
+      "Solicitar compra con SKU, precio, descuento permitido, plazo y datos del colaborador; requerir autorización y revisar alteraciones previas de precio.",
+      "Registrar venta a colaborador y cuenta por cobrar real, aunque VTC liquide de inmediato su obligación con el consignante.",
+      "Recibir abonos efectivos y/o descuentos de nómina autorizados, con fechas y comprobantes.",
+      "Mostrar saldo restante y vencimientos; impedir contabilizar un pago ficticio “en efectivo” como dinero recibido.",
+      "Liquidar y cerrar el expediente cuando se haya pagado; mantener alertas sobre morosidad y compras de empleados."
+     ],
+     "control": "en la reunión se refirió un plazo aproximado de dos meses; validar política vigente, límites y descuentos. Registrar cambios de valuación para evitar compras a precios manipulados.",
+     "resultado": "artículos de colaboradores y sus cuentas por cobrar transparentes.",
+     "origen": "F72; revisión A 02:14–04:00."
+    },
+    {
+     "n": "51",
+     "titulo": "Reembolsos y correcciones que impactan utilidad",
+     "disparador": "devolución, cancelación, error de importe o doble cobro; caja/finanzas y operación.",
+     "problema": "",
+     "pasos": [
+      "Relacionar la solicitud con transacción original, motivo y SKU.",
+      "Aprobar según monto/riesgo y calcular reversa de pago, comisión, impuestos, costo de envío y saldo a favor.",
+      "Ejecutar devolución real al medio autorizado y registrar fecha/referencia.",
+      "Reflejar el ajuste en venta, pasivo a consignante, stock y resultado del periodo, sin borrar transacción original.",
+      "Cerrar el caso solo cuando banco y sistema coincidan."
+     ],
+     "control": "un ingreso que sigue en banco por devolución no registrada no se debe considerar utilidad.",
+     "resultado": "resultados históricos sin ventas o cobros artificiales.",
+     "origen": "F67/F68/F73/F74."
+    },
+    {
+     "n": "52",
+     "titulo": "Estado de resultados real por artículo, servicio y sucursal",
+     "disparador": "cierre de periodo o revisión ejecutiva; contabilidad, dirección y comercial.",
+     "problema": "",
+     "pasos": [
+      "Consolidar ingresos reales por venta, servicios, multas y logística, excluyendo depósitos sin conciliar.",
+      "Restar costo del consignante, comisiones, reparaciones, certificaciones, materiales, transporte, mermas, cargos financieros y reembolsos.",
+      "Permitir análisis por SKU, categoría, marca, sucursal, canal, periodo y línea de servicio.",
+      "Diferenciar utilidad bruta de ventas, contribución después de costos directos y resultado con gastos generales.",
+      "Mostrar excepciones que impiden confiabilidad total del reporte hasta su conciliación."
+     ],
+     "control": "no prometer que un tablero constituye utilidad contable exacta mientras existan cuentas/movimientos sin identificar.",
+     "resultado": "medición financiera defendible y accionable.",
+     "origen": "F66/F67/F69/F70/F71/F75."
+    }
+   ]
+  },
+  {
+   "num": "IX",
+   "titulo": "AUTORIZACIONES, ALERTAS, REPORTES Y EXPERIENCIA",
+   "flujos": [
+    {
+     "n": "53",
+     "titulo": "Matriz de autorizaciones para operaciones sensibles",
+     "disparador": "usuario solicita una acción fuera de reglas ordinarias; gerente o dirección designada.",
+     "problema": "",
+     "pasos": [
+      "Identificar solicitud y su fuente: descuento extraordinario, pago anticipado a consignante, indemnización, compra de colaborador, retiro de efectivo, recolección costosa o traslado por daño.",
+      "Enviar solicitud con motivo, SKU/cliente, monto estimado, evidencia y plazo requerido al aprobador según sucursal/tipo.",
+      "Registrar autorización, rechazo o solicitud de información con usuario, fecha y comentario.",
+      "Desbloquear únicamente la operación autorizada y ejecutar con registro del resultado.",
+      "Alertar solicitudes vencidas, repetidas o ejecutadas fuera de límites."
+     ],
+     "control": "no todas las acciones requieren dirección; definir por rol, importe y operación, y distinguir autorización de simple aviso informativo.",
+     "resultado": "decisiones excepcionales sin WhatsApp como única evidencia.",
+     "origen": "revisión A 00:25–07:02; F15/F35/F49/F50/F76."
+    },
+    {
+     "n": "54",
+     "titulo": "Alertas operativas, compromisos y tiempos entre etapas",
+     "disparador": "se crea tarea o supera umbral de tiempo; responsables de etapa, supervisión y dirección.",
+     "problema": "",
+     "pasos": [
+      "Al abrir una etapa registrar responsable, fecha de inicio, siguiente acción y fecha objetivo.",
+      "Generar avisos por contrato pendiente de firma, lote incompleto, autenticación atrasada, taller detenido, devolución por localizar, apartado por vencer o pago sin comprobante.",
+      "Permitir confirmar atención, reagendar con motivo o escalar por incumplimiento.",
+      "Medir tiempos entre estados y cuellos de botella por persona, sucursal y tipo de artículo.",
+      "Mostrar alertas tanto en el tablero de trabajo como en la ficha de artículo/cliente, para evitar revisar archivos externos."
+     ],
+     "control": "diferenciar alerta informativa de solicitud que exige aprobación; registrar cuándo realmente se resolvió, no solo cuándo se notificó.",
+     "resultado": "continuidad sin tareas olvidadas.",
+     "origen": "F18/F22/F27/F43/F47; revisión A 00:25–00:57, 07:10–11:43, 14:29–16:01; revisión C 38:59–43:05."
+    },
+    {
+     "n": "55",
+     "titulo": "Perfil, permisos y vistas por rol",
+     "disparador": "ingreso del usuario y ejecución de una acción; administración SACS/VTC.",
+     "problema": "",
+     "pasos": [
+      "Asignar sucursal(es), área y privilegios de lectura/edición/autorizar/ejecutar por proceso.",
+      "Mostrar al operario solo su cola útil: taller visual por SKU; consignación por lotes; certificación por verificar; logística por pedido; tesorería por pago.",
+      "Restringir campos sensibles: banco, beneficiario, precio, costos, autorizaciones, documentos de identidad y cambio de propietario.",
+      "Registrar auditoría de cambios de precio, ubicación, estatus, permisos y cargos; revisar perfiles con periodicidad.",
+      "Evitar que cambiar de una vista a otra pierda contexto o permita ejecutar acción incorrecta."
+     ],
+     "control": "asignar sucursal preseleccionada a quien solo trabaja en una; un fotógrafo no debe tener permisos de cambiar precios o cobrar.",
+     "resultado": "experiencia simple y seguridad por área.",
+     "origen": "F30/F35; revisión A 15:03–15:45; revisión B 01:01:56–01:07:16; revisión C 33:16–33:53 y 43:05–48:51."
+    },
+    {
+     "n": "56",
+     "titulo": "Portal del consignante y comunicación desde una fuente única",
+     "disparador": "consignante consulta historial o actualiza datos; cliente, consignación y aprobadores.",
+     "problema": "",
+     "pasos": [
+      "Invitar al consignante con acceso seguro y contraseña propia; habilitar autenticación adecuada.",
+      "Mostrar artículos por etapa, evidencia permitida, contratos, eventos/dinámicas, importes por cobrar, pagos efectuados y devoluciones.",
+      "Permitir actualización solicitada de datos críticos y dirigir cambios de cuenta/beneficiario a autorización antes de aplicarlos.",
+      "Publicar comprobantes y avisos que eviten búsquedas manuales por WhatsApp.",
+      "Registrar acceso, modificaciones y comunicaciones relevantes sin revelar datos de otros clientes."
+     ],
+     "control": "algunas vistas de portal mostradas durante pruebas requerían revisión de permisos/contenido antes de exponerse a clientes reales; demo no equivale a liberación definitiva.",
+     "resultado": "autoconsulta confiable con información coherente de toda la operación.",
+     "origen": "F09/F28/F51; revisión C 50:41–58:22."
+    },
+    {
+     "n": "57",
+     "titulo": "Dashboard comercial, inventario y operación por sucursal",
+     "disparador": "gerente revisa operación diaria y dirección analiza periodos; gerentes, dirección y áreas.",
+     "problema": "",
+     "pasos": [
+      "Mostrar ventas en dinero y piezas por tienda/web/redes, meta, ticket promedio, sucursal y colaborador.",
+      "Desplegar inventario por categoría/marca, faltantes de datos, etapas del proceso, tiempos de taller y artículos estancados.",
+      "Permitir filtrar por fecha, sucursal, canal, SKU, consignante y rango de antigüedad.",
+      "Incluir medidas de conversión de dinámicas, uso de saldo a favor, cartera de apartados, entregas pendientes y pagos a consignantes.",
+      "Diferenciar métricas operativas de cifras conciliadas para que las decisiones no dependan de exportaciones manuales."
+     ],
+     "control": "los datos migrados con taxonomía incompleta deben marcarse antes de interpretar resultados como comparables.",
+     "resultado": "gestión diaria y análisis histórico accionable.",
+     "origen": "F14/F22/F33/F56/F58/F60/F63/F75; revisión B 01:04:31."
+    },
+    {
+     "n": "58",
+     "titulo": "Configuración y pruebas de experiencia de recepción/consignación",
+     "disparador": "despliegue o cambio de formulario/flujo; desarrollo, QA y usuarios de operación.",
+     "problema": "",
+     "pasos": [
+      "Definir campos requeridos por sucursal/categoría y verificar que la configuración se refleje en los formularios reales.",
+      "Probar recepción de lote con varias piezas, fotos múltiples, agrupación, edición y salida por borrador.",
+      "Probar propuesta mixta (acepta/rechaza/contrapropone), estatus internos del lote y firma digital.",
+      "Probar generación de etiqueta, autenticación y salto de taller cuando es no aplicable; comprobar navegación correcta al regresar.",
+      "Validar en tableta y computadora: botones alcanzables, filtros claros, listas dinámicas con scroll/búsqueda y autoguardado.",
+      "Registrar incidente de pantalla con paso reproducible, evidencia, responsable de ajuste y nueva prueba con usuario real."
+     ],
+     "control": "en las reuniones se observó configuración guardada pero no aplicada, selector pequeño, campos incorrectos y redirecciones no deseadas; cada caso debe cerrar con verificación en producción, no solo con “corregido” durante la llamada.",
+     "resultado": "flujo utilizable en operación de alto volumen con mínimo retrabajo.",
+     "origen": "revisiones A, B y C completas; especialmente B 04:21–08:46 y 20:40–35:32; C 02:19–08:56, 15:45–18:48 y 26:03– 42:09."
+    },
+    {
+     "n": "59",
+     "titulo": "Migración y regularización de catálogos, expedientes y saldos",
+     "disparador": "traslado de sistema histórico o depuración; desarrollo, consignación, inventarios y finanzas.",
+     "problema": "",
+     "pasos": [
+      "Identificar productos sin taxonomía uniforme, clientes duplicados, variantes mal creadas, campos faltantes y pasivos de origen incierto.",
+      "Homologar marcas, modelos, categorías, tamaños y condiciones usando catálogo inteligente con revisión humana.",
+      "Conciliar inventario físico, lotes, consignantes y ventas desde fecha de corte; registrar movimientos hechos durante transición.",
+      "Construir listado de saldos/pagos/abonos pendientes con fuente histórica y responsables de aclaración.",
+      "Bloquear importaciones duplicadas, guardar evidencia y validar indicadores operativos y financieros antes de declarar migración concluida."
+     ],
+     "control": "la IA de homologación presupuestada debe tener criterios de aceptación verificables; no alterar saldos o SKU sin registro.",
+     "resultado": "datos históricos utilizables sin perjudicar inventario ni pagos.",
+     "origen": "F54/F58/F61/F75; hallazgos de regularización en las reuniones y contexto del proyecto VTC."
+    },
+    {
+     "n": "60",
+     "titulo": "Control de caja, compras extraordinarias y recolecciones especiales",
+     "disparador": "operación inusual fuera del ciclo de venta; dirección, administración, tesorería y logística.",
+     "problema": "",
+     "pasos": [
+      "Registrar solicitud de retiro de efectivo, pago con tarjeta corporativa, compra adicional o recolección de consignaciones que requiera traslado/vuelo.",
+      "Incorporar propósito, monto, presupuesto, cliente/artículos afectados, solicitante y evidencia.",
+      "Solicitar autorización según matriz antes de comprometer recursos.",
+      "Ejecutar, registrar comprobante y asociar gasto a sucursal/cliente/lote cuando aplique.",
+      "Conciliar el gasto y cerrar la solicitud, informando desviaciones."
+     ],
+     "control": "una recolección de lujo de otra ciudad no debe quedar como gasto genérico sin vínculo al lote o al costo de captar esa consignación.",
+     "resultado": "costos extraordinarios medidos y aprobados.",
+     "origen": "F65/F76; revisión A 04:29–06:09."
+    }
+   ]
+  }
+ ],
+ "decisiones": [
+  "Interesados antes de liberación: prioridad de contacto, si existe exclusividad temporal y si se permiten anticipos o preventas condicionadas.",
+  "Cargos de limpieza de piezas que no se venden: si se cobran al retirar, bajo qué concepto, qué excepciones se condonan y quién autoriza la salida.",
+  "Contratos y beneficiarios: qué derechos debe otorgar el contrato a persona autorizada para recoger o cobrar y qué validación de identidad requiere.",
+  "Descuentos: porcentaje/monto de aprobación, vigencia, si se firma nuevo contrato o basta aceptación digital del nuevo precio.",
+  "Apartados: plazos específicos por categoría, prórrogas, destino de abonos cuando vencen y reactivación comercial.",
+  "Devoluciones de compradores: categorías aplicables, plazo, costos de guía, reintegro vs saldo a favor y tratamiento de piezas en retorno.",
+  "Fakes: quién autoriza segundas verificaciones, importes vigentes de multa y entrega de piezas con cargos no liquidados.",
+  "Compras de empleados: descuento permitido, precio base, plazo, abonos/descuentos de nómina y aprobación.",
+  "Taller: qué reparaciones o cambios exigen autorización previa y qué incidentes vuelven un artículo no comercializable.",
+  "Pagos a consignantes: antigüedad prioritaria, pagos anticipados, cambios de cuenta a terceros y casos que necesitan firma.",
+  "Costos logísticos: criterios de cobro de seguros, envíos consolidados y traspasos internos; quién asume cada gasto.",
+  "Mermas: regla de indemnización, precio de recuperación, propiedad de artículo recuperado y contabilización de pérdida.",
+  "Migración: fecha de corte, controles para nuevas ventas durante transición y aceptación de homologación de IA."
+ ],
+ "criterios": [
+  "Cada artículo debe poder recorrerse desde foto inicial y lote hasta venta, devolución, liquidación o merma, con historial inalterable de cambios.",
+  "Cada transición debe registrar responsable y fecha, y validar prerrequisitos; los saltos válidos deben ser explícitos, no marcados artificialmente como “completados”.",
+  "Un pago de comprador nunca puede quedar sin pedido, y un pago a consignante nunca debe marcarse acreditado por el simple hecho de ordenar la transferencia.",
+  "Todo movimiento físico debe indicar custodio y ubicación, con recepción y evidencia cuando se cambia de manos.",
+  "Todo cargo de servicio, seguro, penalización, reembolso o gasto debe tener concepto propio y relación con operación de origen.",
+  "La acción “avisar cuando esté disponible” debe crear tarea con responsable; no se considera cumplida hasta registrar la notificación o el cierre motivado.",
+  "Cuando el equipo reportó una mejora demostrada durante pruebas, confirmar en ambiente y cuenta operativa antes de etiquetarla como implementada."
+ ],
+ "hallazgos": [
+  {
+   "f": "F01",
+   "t": "Recepción física de artículos y apertura de lote con evidencia",
+   "flujos": [
+    "02",
+    "03"
+   ]
+  },
+  {
+   "f": "F02",
+   "t": "Evaluación, clasificación y propuesta de precio inicial",
+   "flujos": [
+    "04",
+    "05",
+    "06"
+   ]
+  },
+  {
+   "f": "F03",
+   "t": "Rechazo de propuesta y devolución de artículos no aceptados",
+   "flujos": [
+    "07"
+   ]
+  },
+  {
+   "f": "F04",
+   "t": "Contrato digital como requisito anterior al etiquetado",
+   "flujos": [
+    "08",
+    "09"
+   ]
+  },
+  {
+   "f": "F05",
+   "t": "Autenticación y tratamiento de resultados distintos",
+   "flujos": [
+    "10"
+   ]
+  },
+  {
+   "f": "F06",
+   "t": "Cobro de multa por artículo fake",
+   "flujos": [
+    "11",
+    "47"
+   ]
+  },
+  {
+   "f": "F07",
+   "t": "Limpieza asociada a consignación y momento de cobro",
+   "flujos": [
+    "13",
+    "18"
+   ]
+  },
+  {
+   "f": "F08",
+   "t": "Liberación comercial y organización por tipo de artículo",
+   "flujos": [
+    "19",
+    "22"
+   ]
+  },
+  {
+   "f": "F09",
+   "t": "Avisos de avance, venta y programación del pago al consignante",
+   "flujos": [
+    "39",
+    "56"
+   ]
+  },
+  {
+   "f": "F10",
+   "t": "Vencimiento contractual y solicitud de retiro",
+   "flujos": [
+    "23",
+    "36"
+   ]
+  },
+  {
+   "f": "F11",
+   "t": "Devolución presencial de consignación e inclusiones",
+   "flujos": [
+    "34",
+    "36"
+   ]
+  },
+  {
+   "f": "F12",
+   "t": "Curaduría de piezas para unboxing, lives y otras dinámicas",
+   "flujos": [
+    "26"
+   ]
+  },
+  {
+   "f": "F13",
+   "t": "Prioridad “no negociable” de exhibición en dinámicas",
+   "flujos": [
+    "26"
+   ]
+  },
+  {
+   "f": "F14",
+   "t": "Medición del resultado de cada dinámica",
+   "flujos": [
+    "26",
+    "57"
+   ]
+  },
+  {
+   "f": "F15",
+   "t": "Negociación de reducciones de precio con consignantes",
+   "flujos": [
+    "05",
+    "23",
+    "26"
+   ]
+  },
+  {
+   "f": "F16",
+   "t": "Preparación anticipada de ventas nocturnas y rebajas masivas",
+   "flujos": [
+    "26"
+   ]
+  },
+  {
+   "f": "F17",
+   "t": "Devolución a domicilio del consignante",
+   "flujos": [
+    "38"
+   ]
+  },
+  {
+   "f": "F18",
+   "t": "Orden de trabajo de limpieza y evidencia de calidad",
+   "flujos": [
+    "14"
+   ]
+  },
+  {
+   "f": "F19",
+   "t": "Reparación intersucursal por especialidad y escalamiento",
+   "flujos": [
+    "15",
+    "16"
+   ]
+  },
+  {
+   "f": "F20",
+   "t": "Proveedores de taller externos (tintorería, especialistas)",
+   "flujos": [
+    "16"
+   ]
+  },
+  {
+   "f": "F21",
+   "t": "Transparencia comercial sobre reparaciones y alteraciones",
+   "flujos": [
+    "15"
+   ]
+  },
+  {
+   "f": "F22",
+   "t": "Medición del tiempo y productividad de taller",
+   "flujos": [
+    "14",
+    "54"
+   ]
+  },
+  {
+   "f": "F23",
+   "t": "Servicio de limpieza para artículos no consignados",
+   "flujos": [
+    "17"
+   ]
+  },
+  {
+   "f": "F24",
+   "t": "Separación formal de limpieza y certificación",
+   "flujos": [
+    "10",
+    "13"
+   ]
+  },
+  {
+   "f": "F25",
+   "t": "Repositorio multicanal de certificaciones y documentos",
+   "flujos": [
+    "10",
+    "12"
+   ]
+  },
+  {
+   "f": "F26",
+   "t": "Control de cargos pendientes antes del retiro",
+   "flujos": [
+    "18",
+    "36"
+   ]
+  },
+  {
+   "f": "F27",
+   "t": "Rechazo/devolución digital con firma y salida simultánea",
+   "flujos": [
+    "36",
+    "37"
+   ]
+  },
+  {
+   "f": "F28",
+   "t": "Portal de consignante con historial verificable",
+   "flujos": [
+    "56"
+   ]
+  },
+  {
+   "f": "F29",
+   "t": "Ubicación física detallada por rack, nivel y custodio",
+   "flujos": [
+    "19"
+   ]
+  },
+  {
+   "f": "F30",
+   "t": "Acceso restringido a almacén y registro de movimientos",
+   "flujos": [
+    "19",
+    "20",
+    "55"
+   ]
+  },
+  {
+   "f": "F31",
+   "t": "Conteos cíclicos, auditoría aleatoria y eventual RFID",
+   "flujos": [
+    "20"
+   ]
+  },
+  {
+   "f": "F32",
+   "t": "Apartado o preventa solicitada sin pago confirmado",
+   "flujos": [
+    "30"
+   ]
+  },
+  {
+   "f": "F33",
+   "t": "Detección de artículos inactivos y salida comercial",
+   "flujos": [
+    "23"
+   ]
+  },
+  {
+   "f": "F34",
+   "t": "Regla contractual de retiro cuando ya hubo apartado o venta",
+   "flujos": [
+    "30",
+    "36"
+   ]
+  },
+  {
+   "f": "F35",
+   "t": "Roles facultados para pagar a consignantes y aprobar saldo a favor",
+   "flujos": [
+    "39",
+    "40",
+    "53"
+   ]
+  },
+  {
+   "f": "F36",
+   "t": "Almacenamiento y envío consolidado de compras de un mismo cliente",
+   "flujos": [
+    "33"
+   ]
+  },
+  {
+   "f": "F37",
+   "t": "Integración DHL para actualizar entregas y costos",
+   "flujos": [
+    "32"
+   ]
+  },
+  {
+   "f": "F38",
+   "t": "Guía de devolución y regreso de venta",
+   "flujos": [
+    "35"
+   ]
+  },
+  {
+   "f": "F39",
+   "t": "Pedido pagado que no se asigna a cliente ni se prepara para entrega",
+   "flujos": [
+    "25",
+    "31"
+   ]
+  },
+  {
+   "f": "F40",
+   "t": "Tablero de preparación de pedidos por modalidad",
+   "flujos": [
+    "31"
+   ]
+  },
+  {
+   "f": "F41",
+   "t": "Pago en POS/web y verificación integrada contra transacciones",
+   "flujos": [
+    "25",
+    "45"
+   ]
+  },
+  {
+   "f": "F42",
+   "t": "Apartados web, registro de cliente y abonos",
+   "flujos": [
+    "27"
+   ]
+  },
+  {
+   "f": "F43",
+   "t": "Vencimiento de apartados y extensiones autorizadas",
+   "flujos": [
+    "28"
+   ]
+  },
+  {
+   "f": "F44",
+   "t": "Apartado vencido: abonos retenidos y venta posterior",
+   "flujos": [
+    "28"
+   ]
+  },
+  {
+   "f": "F45",
+   "t": "Cartera de cobranza por sucursal y responsables",
+   "flujos": [
+    "28"
+   ]
+  },
+  {
+   "f": "F46",
+   "t": "Definición del canal TikTok y restricciones comerciales",
+   "flujos": [
+    "25"
+   ]
+  },
+  {
+   "f": "F47",
+   "t": "Generación y validación de pagos desde artículo entregado",
+   "flujos": [
+    "39"
+   ]
+  },
+  {
+   "f": "F48",
+   "t": "Alta y confirmación de CLABE/beneficiario con cambios controlados",
+   "flujos": [
+    "40"
+   ]
+  },
+  {
+   "f": "F49",
+   "t": "Selección por sucursal y antigüedad para programar pagos",
+   "flujos": [
+    "41"
+   ]
+  },
+  {
+   "f": "F50",
+   "t": "Ejecución: Mercado Pago individual y banca con dispersión masiva",
+   "flujos": [
+    "41"
+   ]
+  },
+  {
+   "f": "F51",
+   "t": "Descarga y autoservicio de comprobantes de pago",
+   "flujos": [
+    "42"
+   ]
+  },
+  {
+   "f": "F52",
+   "t": "Devoluciones bancarias y pagos que no llegaron",
+   "flujos": [
+    "42",
+    "43"
+   ]
+  },
+  {
+   "f": "F53",
+   "t": "Prevención de pagos duplicados y marcado transaccional",
+   "flujos": [
+    "43"
+   ]
+  },
+  {
+   "f": "F54",
+   "t": "Depuración de pasivos históricos y cuentas genéricas de migración",
+   "flujos": [
+    "43",
+    "59"
+   ]
+  },
+  {
+   "f": "F55",
+   "t": "Pagos en efectivo por sucursal",
+   "flujos": [
+    "43"
+   ]
+  },
+  {
+   "f": "F56",
+   "t": "Tablero ejecutivo de ventas por sucursal y canal",
+   "flujos": [
+    "57"
+   ]
+  },
+  {
+   "f": "F57",
+   "t": "Perfil de compra: hábitos, financiación y capacidad económica",
+   "flujos": [
+    "29"
+   ]
+  },
+  {
+   "f": "F58",
+   "t": "Reporte de stock e información incompleta por categoría",
+   "flujos": [
+    "57",
+    "59"
+   ]
+  },
+  {
+   "f": "F59",
+   "t": "Aplicación de saldo a favor a multas, limpieza, taller o certificación",
+   "flujos": [
+    "44"
+   ]
+  },
+  {
+   "f": "F60",
+   "t": "Candidatos a rebaja por antigüedad y rentabilidad del espacio",
+   "flujos": [
+    "23"
+   ]
+  },
+  {
+   "f": "F61",
+   "t": "Sugerencia de precio basada en historial propio y homologación",
+   "flujos": [
+    "04",
+    "05"
+   ]
+  },
+  {
+   "f": "F62",
+   "t": "Cuenta regresiva, recordatorios y gestión de cobranza de apartados",
+   "flujos": [
+    "28"
+   ]
+  },
+  {
+   "f": "F63",
+   "t": "Reporte de ventas y cobranza por vendedora sin importar sucursal del SKU",
+   "flujos": [
+    "25",
+    "57"
+   ]
+  },
+  {
+   "f": "F64",
+   "t": "Fidelización y comunicaciones basadas en eventos de consumo",
+   "flujos": [
+    "29"
+   ]
+  },
+  {
+   "f": "F65",
+   "t": "Catálogo de gastos recurrentes y responsables de pago",
+   "flujos": [
+    "48"
+   ]
+  },
+  {
+   "f": "F66",
+   "t": "Mermas y daños asumidos por VTC",
+   "flujos": [
+    "49"
+   ]
+  },
+  {
+   "f": "F67",
+   "t": "Conciliación de ingresos por banco, sucursal y transacción",
+   "flujos": [
+    "45"
+   ]
+  },
+  {
+   "f": "F68",
+   "t": "Evitar doble uso de un comprobante y discrepancias de importes",
+   "flujos": [
+    "45"
+   ]
+  },
+  {
+   "f": "F69",
+   "t": "Ingresos complementarios y descuentos bien tipificados",
+   "flujos": [
+    "18",
+    "45"
+   ]
+  },
+  {
+   "f": "F70",
+   "t": "Conciliación de factura DHL, envíos cobrados y traspasos",
+   "flujos": [
+    "46"
+   ]
+  },
+  {
+   "f": "F71",
+   "t": "Conciliación de facturas de autenticación y penalizaciones fake",
+   "flujos": [
+    "47"
+   ]
+  },
+  {
+   "f": "F72",
+   "t": "Compras de artículos por empleados con liquidación posterior",
+   "flujos": [
+    "50"
+   ]
+  },
+  {
+   "f": "F73",
+   "t": "Saldos a favor como cuenta corriente real",
+   "flujos": [
+    "44"
+   ]
+  },
+  {
+   "f": "F74",
+   "t": "Devoluciones, cancelaciones y reintegros reflejados en resultados",
+   "flujos": [
+    "35",
+    "51"
+   ]
+  },
+  {
+   "f": "F75",
+   "t": "Estado de resultados por línea de servicio y utilidad real",
+   "flujos": [
+    "52"
+   ]
+  },
+  {
+   "f": "F76",
+   "t": "Gastos de tarjetas, autorizaciones y comprobación",
+   "flujos": [
+    "48",
+    "53",
+    "60"
+   ]
+  },
+  {
+   "f": "F77",
+   "t": "Actualización de movimientos bancarios sin depender de Sofía",
+   "flujos": [
+    "45",
+    "48"
+   ]
+  }
+ ]
+}
