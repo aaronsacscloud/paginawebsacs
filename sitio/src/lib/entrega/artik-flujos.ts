@@ -1,4 +1,4 @@
-// Flujos de trabajo de ARTIK Snowpark · Cocina y Compras/resurtidos (2-nov-2026).
+// Flujos de trabajo de ARTIK Snowpark · Cocina, Compras/resurtidos y Eventos (2-nov-2026).
 //
 // Sale de tres conversaciones de levantamiento con el área de restaurantes
 // (Chef Mau), compras y resurtidos (Estef) y administración, y de los dos
@@ -39,7 +39,7 @@ export interface Flujo {
 export const AREAS: Record<Area, { nombre: string; quien: string; color: string }> = {
   cocina: { nombre: 'Cocina', quien: 'Chef Mau · insumos de cocina', color: 'cocina' },
   compras: { nombre: 'Compras y resurtidos', quien: 'Estef · abastecimiento y recepción', color: 'compras' },
-  eventos: { nombre: 'Eventos', quien: 'Coordinación de eventos y ventas', color: 'eventos' },
+  eventos: { nombre: 'Eventos', quien: 'Ventas y coordinación de eventos', color: 'eventos' },
   otras: { nombre: 'Otras áreas detectadas', quien: 'Cajas y administración', color: 'otras' },
 };
 
@@ -107,7 +107,7 @@ export const FLUJOS: Flujo[] = [
     area: 'cocina',
     titulo: 'Recetas y costeo de platillos',
     para: 'Que cada platillo descuente lo que de verdad lleva, con el margen de limpieza ya contemplado, y que nada «variable» provoque negativos.',
-    puntos: ['02', '04', 'N9'],
+    puntos: ['02', '04'],
     hoy: [
       { t: 'Todos los platillos son productos compuestos con insumos', q: 'Chef Mau', d: 'En gramos, mililitros o piezas.' },
       { t: 'Las cantidades van en crudo', q: 'Chef Mau', d: 'La papa: 140 g antes de freírse.' },
@@ -135,17 +135,15 @@ export const FLUJOS: Flujo[] = [
     reglas: [
       'Recetas en unidad de consumo (g, ml, pieza), en crudo.',
       'Rendimiento técnico por insumo (limpieza normal) separado de las pérdidas extraordinarias, que van en el flujo F5.',
-      'Pasteles de eventos: producto compuesto por sabor (vainilla y chocolate) con porciones según el número de personas, igual que la pizza (1 pizza completa = 4 niños).',
+      'Pasteles y pizzas de eventos: sus porciones por número de personas se definen en el paquete (F14).',
     ],
     decidir: [
       { p: 'Rendimiento real de cada insumo que se limpia (jitomate, lechuga, cebolla…).', quien: 'Chef Mau' },
       { p: 'Lista de lo que sale de las recetas: mayonesa, cátsup, chiles jalapeños, azúcar, mascabado, sustituto de azúcar…', quien: 'Chef Mau' },
-      { p: 'Tabla de porciones por número de personas para pasteles y pizzas de eventos.', quien: 'Chef Mau y Eventos' },
     ],
     prueba: [
       'Vendo una hamburguesa y se descuenta bollo, carne, 40 g de jitomate y 140 g de papa, sin sobres.',
       'Después de una semana no aparece ningún insumo de receta en negativo.',
-      'Un evento de 10 niños descuenta 3 pizzas completas.',
     ],
   },
   {
@@ -202,7 +200,7 @@ export const FLUJOS: Flujo[] = [
     area: 'cocina',
     titulo: 'De la comanda a la entrega',
     para: 'Que ninguna orden se pierda, que lo entregado quede registrado y que no se entregue dos veces.',
-    puntos: ['06', '07', '30'],
+    puntos: ['06', '07', '20', '21', '30'],
     hoy: [
       { t: 'Caja cobra y manda la comanda', q: 'Caja' },
       { t: 'A veces no aparece en la pantalla de cocina', q: 'Cocina', d: 'O se queda congelada al marcarla como terminada y hay que actualizar. Pasa una o dos veces por semana.' },
@@ -333,7 +331,7 @@ export const FLUJOS: Flujo[] = [
     area: 'cocina',
     titulo: 'Cuadre de inventario de cocina por canal',
     para: 'Comparar lo que compró cocina contra todo lo que consumió, venga de donde venga la venta: restaurante, eventos o combos de taquilla.',
-    puntos: ['03', 'N10'],
+    puntos: ['03', 'N8'],
     hoy: [
       { t: 'Cocina compra para todo', q: 'Compras', d: 'Restaurante, fiestas y combos.' },
       { t: 'Muchos combos se cobran en taquilla', q: 'Taquilla', d: 'La comida va dentro del combo y no aparece como venta de cocina.' },
@@ -492,7 +490,7 @@ export const FLUJOS: Flujo[] = [
       'Periodo de análisis configurable por temporada.',
       'Cobertura en días (10, 20, 30) por familia.',
       'Requerimiento de eventos separado de la venta regular, con vista consolidada.',
-      'Requisito previo: inventario confiable (F2, F5, F7 y F13).',
+      'Requisito previo: inventario confiable (F2, F5, F7 y F18).',
     ],
     decidir: [
       { p: 'Mínimos, tiempo de entrega y día de pedido por proveedor.', quien: 'Estef' },
@@ -510,7 +508,7 @@ export const FLUJOS: Flujo[] = [
     area: 'compras',
     titulo: 'Eventos exprés y compras urgentes',
     para: 'Que un evento vendido de última hora avise de inmediato qué hace falta y si alcanza con lo que hay.',
-    puntos: ['12', '31'],
+    puntos: ['12', '31', '36'],
     hoy: [
       { t: 'Ventas puede vender eventos para el mismo día', q: 'Ventas', d: 'Lo autorizó la Dirección. También llegan corporativos, escuelas y grupos de hasta 600 personas.' },
       { t: 'El pedido semanal ya salió', q: 'Estef' },
@@ -523,7 +521,7 @@ export const FLUJOS: Flujo[] = [
     queda: [
       { t: 'Ventas registra el evento exprés', q: 'Ventas', d: 'Con asistentes, paquete y hora.' },
       { t: 'Aviso inmediato a Cocina y Compras', q: 'Sistema', d: 'Con lo que se necesita: receta × asistentes.' },
-      { t: 'Se compara con lo disponible', q: 'Sistema', d: 'Existencia menos lo ya comprometido para otros eventos.' },
+      { t: 'Se compara con lo disponible', q: 'Sistema', d: 'Existencia menos lo ya comprometido para otros eventos, y espacio libre a esa hora.' },
       { t: 'Cocina confirma si se puede', q: 'Chef Mau', d: 'Idealmente antes de que Ventas cierre la venta.' },
       { t: 'Si falta, compra urgente sugerida', q: 'Estef', d: 'Con el proveedor que pueda entregar a tiempo.' },
     ],
@@ -554,7 +552,7 @@ export const FLUJOS: Flujo[] = [
     area: 'compras',
     titulo: 'Menús especiales y corporativos',
     para: 'Atender menús a la medida sin llenar el sistema de productos que se venden una vez, y saber cuánto se ganó.',
-    puntos: ['29', '31'],
+    puntos: ['18', '29', '31'],
     hoy: [
       { t: 'Ventas ofrece un menú a la medida', q: 'Ventas', d: 'Tacos, salmón a la plancha con arroz, chilaquiles, coffee break, baguettes de arrachera.' },
       { t: 'Cocina compra insumos especiales', q: 'Chef Mau' },
@@ -594,61 +592,355 @@ export const FLUJOS: Flujo[] = [
   },
 
   // ─────────────────────────────── EVENTOS ──────────────────────────────
+  // Sale de las sesiones con ventas y coordinación de eventos y del reporte de
+  // Eventos (puntos 14–22 y 32–50). Los puntos que decían lo mismo se unieron
+  // en un solo flujo (ver VERIFICACION).
   {
-    id: 'evento-produccion',
+    id: 'prospecto-reserva',
     num: 'F13',
     area: 'eventos',
-    titulo: 'Del contrato a la producción: confirmación, extras y cambios',
-    para: 'Que cocina produzca sobre lo confirmado, que todo lo que se entrega en un evento se cobre y se descuente, y que los cambios no generen merma.',
-    puntos: ['03', '30', 'N5', 'N6', 'N7', 'N8'],
+    titulo: 'Del primer contacto a la reserva',
+    para: 'Que cada evento nazca con su tipo, su vendedor y su origen desde el primer contacto, y no solo cuando llega el anticipo.',
+    puntos: ['32', '33', '50'],
     hoy: [
-      { t: 'Se crea la reservación con su paquete', q: 'Ventas', d: 'Desde ese día se aparta el inventario, aunque el evento sea en diciembre y se venda en octubre.' },
-      { t: 'Los extras se anotaban como nota', q: 'Coordinador', d: '«10 hamburguesas» escrito como nota no descuenta nada.' },
-      { t: 'El día del evento piden cambios', q: 'Cliente', d: 'Cinco minutos antes: «ya no hamburguesas, mejor nuggets».' },
-      { t: 'Llegan menos invitados', q: 'Cliente', d: 'Se contrataron 50 y llegaron 40, cuando ya se sacaron los platillos.' },
-      { t: 'Cambiar de paquete obliga a cancelar y crear de nuevo', q: 'Ventas', d: 'Por ejemplo, del paquete de $1,099 al de $999.' },
+      { t: 'El cliente llega por varios canales', q: 'Ventas', d: 'CRM, WhatsApp, teléfono o en persona.' },
+      { t: 'El seguimiento se lleva en Excel', q: 'Ventas' },
+      { t: 'El evento entra al sistema con el primer pago', q: 'Ventas' },
+      { t: 'El tipo de evento se distingue por colores y notas', q: 'Ventas', d: 'Cumpleaños, escolar, corporativo y marketing se mezclan.' },
+      { t: 'Si un vendedor descansa, otro lo captura', q: 'Ventas', d: 'Y la venta queda a nombre de quien la capturó.' },
     ],
     dolor: [
-      'Si un evento no se cierra, su inventario se queda apartado: por ejemplo, 500 hamburguesas que no existen en físico. Eso frena las compras automáticas.',
-      'En una revisión salieron unas 30 cubetas de cerveza de eventos que no se descontaron.',
-      'Lo que se produce y no se usa se pierde, y descuadra costos y utilidad.',
-      'Por pena, no se le cobra al cliente lo que pidió y no usó.',
+      'No se sabe cuántos contactos se pierden ni por qué.',
+      'No se pueden separar las ventas por tipo de evento: cada uno tiene paquetes y precios distintos.',
+      'Las ventas de los vendedores se revuelven.',
     ],
     queda: [
-      { t: 'Contrato con paquete y extras como productos', q: 'Ventas', d: 'Nunca como nota. La reservación muestra el total de extras.' },
-      { t: 'Confirmación con el cliente antes de producir', q: 'Ventas', d: 'El fin de semana previo, y una hora antes de iniciar producción: asistentes y menú.' },
-      { t: 'Cocina produce sobre lo confirmado', q: 'Chef Mau', d: 'Si llegan menos, se cobra lo confirmado.' },
-      { t: 'Extras en el momento, desde la tableta', q: 'Coordinador', d: 'Aparecen en la pantalla de cocina en color de eventos y se suman a la cuenta del evento.' },
-      { t: 'El inventario se aparta pocos días antes', q: 'Sistema', d: 'Con el reporte de eventos de la semana (F10), no desde el día que se vende.' },
-      { t: 'Cambio de paquete sin cancelar', q: 'Ventas', d: 'Se actualiza y se conservan los pagos. Si cocina ya compró, aplica penalización.' },
-      { t: 'Cierre del evento', q: 'Coordinador', d: 'Totales de paquete, extras, consumo y lo descontado.' },
+      { t: 'Se registra el contacto', q: 'Ventas', d: 'Canal, campaña o influencer que lo trajo, y vendedor.' },
+      { t: 'Se clasifica desde el inicio', q: 'Ventas', d: 'Tipo: cumpleaños, escolar, corporativo o marketing; empresa o escuela.' },
+      { t: 'Se arma y se envía la cotización', q: 'Ventas', d: 'Con el paquete de su tipo (flujo F14).' },
+      { t: 'Seguimiento hasta aceptado o perdido', q: 'Ventas', d: 'Si se pierde, con su motivo.' },
+      { t: 'Con el anticipo se convierte en reserva', q: 'Ventas', d: 'Conserva la conversación, las fechas y el vendedor.' },
+      { t: 'El vendedor se puede reasignar', q: 'Coordinación', d: 'Cuando un compañero lo cubre, la venta queda a nombre de quien la cerró.' },
+    ],
+    reglas: [
+      'Catálogo de tipos de evento: cumpleaños, escolar, corporativo, marketing.',
+      'Canal de origen y vendedor obligatorios en cada evento.',
+      'Motivo de pérdida al cerrar una cotización sin venta.',
+    ],
+    decidir: [
+      { p: 'Catálogo oficial de tipos de evento y de canales de origen.', quien: 'Ventas y Dirección' },
+      { p: '¿Quién puede reasignar el vendedor de un evento?', quien: 'Coordinación' },
+    ],
+    prueba: [
+      'Un contacto de WhatsApp pasa a cotización y luego a reserva sin volver a capturarlo.',
+      'El reporte separa ventas por tipo de evento y por vendedor.',
+    ],
+  },
+  {
+    id: 'paquetes',
+    num: 'F14',
+    area: 'eventos',
+    titulo: 'Paquetes por tipo de evento',
+    para: 'Que cada tipo de evento tenga sus propios paquetes, con lo que incluyen por persona, para que el precio salga solo y el inventario se descuente bien.',
+    puntos: ['17', '34', '35', '37', '42', '46'],
+    hoy: [
+      { t: 'Los paquetes escolares y corporativos se mezclan', q: 'Ventas', d: 'En taquilla no se sabe qué precio aplica a una escuela.' },
+      { t: 'El paquete escolar se arma a mano', q: 'Taquilla', d: 'Se cobró el acceso y aparte «hamburguesa $110» y «calcetas $70».' },
+      { t: 'El acceso y la comida se capturan igual', q: 'Ventas', d: 'Como si ambos fueran artículos.' },
+      { t: 'Las calcetas no llevan talla', q: 'Ventas' },
+      { t: 'Los adicionales van en notas o en «cobro extra»', q: 'Ventas', d: 'DJ, karaoke, decoración, globos, pastel, montajes.' },
+    ],
+    dolor: [
+      'Taquilla cobra precios manuales y los cortes no cuadran con el evento.',
+      'No se separa lo que es servicio (acceso, atracciones) de lo que es producto (comida, calcetas).',
+      'Se descuenta la talla equivocada de calcetas.',
+    ],
+    queda: [
+      { t: 'Paquetes separados por tipo', q: 'Dirección', d: 'Taquilla solo ve los precios escolares en un evento escolar.' },
+      { t: 'El acceso se registra como servicio', q: 'Sistema', d: 'Y la comida y las calcetas como productos, cada uno con su precio y su descuento.' },
+      { t: 'Cada paquete dice qué incluye por persona', q: 'Dirección', d: 'Y se multiplica por los asistentes: 1 pizza completa para 4 niños.' },
+      { t: 'Opciones de comida acotadas', q: 'Ventas', d: 'Máximo dos opciones por grupo, por cantidad: 40 hamburguesas y 40 de otra opción.' },
+      { t: 'Calcetas por talla', q: 'Coordinación', d: 'Se elige la talla al entregar y solo se descuenta esa.' },
+      { t: 'Adicionales de catálogo', q: 'Ventas', d: 'DJ, karaoke, decoración, globos, pastel: con precio, costo y responsable.' },
     ],
     ejemplo: {
-      titulo: 'Ejemplo de la sesión: cambio de paquete',
-      lineas: ['Contrato de $64,000 con $50,000 pagados. El cliente pide cambiar de paquete.'],
+      titulo: 'Ejemplo de la sesión: paquete escolar (grupo de 50 a 100)',
+      lineas: ['Acceso a todas las actividades, más el paquete de alimentos opcional. Hoy se ofrece refresco en lugar de jugo.'],
+      cuenta: [
+        ['Acceso por persona', '$449'],
+        ['Hamburguesa con papas y refresco', '$110'],
+        ['Calcetas', '$70'],
+        ['Paquete de alimentos (opcional)', '$180'],
+        ['Total por persona con alimentos', '$629'],
+      ],
+      nota: 'Si la escuela no quiere alimentos, solo se cobran las calcetas ($70) además del acceso. Corporativo: taquiza (alambre de arrachera y de pollo), refresco, agua y agua mineral, rally y coffee break premium.',
+    },
+    reglas: [
+      'Paquetes por tipo de evento (cumpleaños, escolar, corporativo) con escalas por número de personas.',
+      'Acceso y atracciones como servicio; alimentos y calcetas como producto.',
+      'Componentes por persona con multiplicador por asistentes (pasteles, pizzas, bebidas).',
+      'Catálogo de adicionales con precio, costo, proveedor y si consume inventario.',
+    ],
+    decidir: [
+      { p: 'Tabla de precios vigente y contenido de cada paquete por tipo.', quien: 'Dirección' },
+      { p: 'Tabla de porciones por número de personas (pasteles de vainilla y chocolate, pizzas).', quien: 'Chef Mau y Eventos' },
+      { p: '¿Qué adicionales son servicios externos y cuáles consumen inventario?', quien: 'Ventas' },
+    ],
+    prueba: [
+      'Un evento escolar de 80 personas sale a $449 por persona sin capturar precios a mano.',
+      'Con alimentos, descuenta hamburguesas, papas, refrescos y calcetas por talla.',
+    ],
+  },
+  {
+    id: 'reglamento-confirmacion',
+    num: 'F15',
+    area: 'eventos',
+    titulo: 'Liga del evento: reglamento, permisos, confirmación y cambios',
+    para: 'Que el cliente acepte por escrito lo que contrató, las reglas y las penalizaciones, y que cada cambio quede registrado.',
+    puntos: ['15', '16', '44', '45', 'N5', 'N6'],
+    hoy: [
+      { t: 'Se acuerda por teléfono y WhatsApp', q: 'Ventas', d: 'El reglamento se manda en PDF.' },
+      { t: 'Los permisos se dan de palabra', q: 'Ventas', d: 'Meter regalos, adornos o decoración propia, a veces con cobro extra.' },
+      { t: 'Hay un plazo, pero no se cumple', q: 'Ventas', d: 'Horario y alimentos máximo 3 días antes; el cliente cambia el mismo día.' },
+      { t: 'El cliente dice que nunca lo vio', q: 'Cliente', d: '«No lo leí», «nunca me avisaste», aunque esté en la conversación.' },
+      { t: 'Escuelas y empresas ya firman', q: 'Ventas', d: 'Con la cotización en PDF firmada no hay cambios el día del evento. En fiestas no se hace.' },
+    ],
+    dolor: [
+      'Las penalizaciones se dicen (cambio de fecha: 10 %) pero no hay nada firmado para cobrarlas.',
+      'Un cambio de último minuto se puede olvidar entre tantos eventos y descuadra cocina e inventario.',
+      'No se sabe cuánto se ha cobrado en penalizaciones.',
+      'Para cambiar de paquete hay que cancelar y crear el evento de nuevo.',
+    ],
+    queda: [
+      { t: 'Al registrar el evento se genera su liga', q: 'Sistema', d: 'Un portal del cliente con todo lo de su fiesta.' },
+      { t: 'La liga muestra el resumen', q: 'Sistema', d: 'Fecha, invitados, espacio, menú, hora de comida, extras, precio, pagos y lista de invitados.' },
+      { t: 'Muestra el reglamento y los permisos de su evento', q: 'Ventas', d: 'Lo que no se puede hacer y, si se permite, cuánto cuesta (por evento o por persona).' },
+      { t: 'El cliente acepta y firma', q: 'Cliente', d: 'Queda registrado quién aceptó y cuándo.' },
+      { t: 'Cierre de cambios 3 días antes', q: 'Sistema', d: 'Después del corte, todo cambio queda registrado con hora y lo que ya se había preparado; si aplica, con penalización.' },
+      { t: 'Cambio de paquete sin cancelar', q: 'Ventas', d: 'Se conservan los pagos; si cocina ya compró, aplica penalización.' },
+      { t: 'Coordinación ve la conversación con el cliente', q: 'Coordinación', d: 'Para reiterarle lo acordado y ver si confirma.' },
+    ],
+    ejemplo: {
+      titulo: 'Ejemplos de la sesión',
+      lineas: [
+        'Permiso para meter adornos de Halloween: se cobró un adicional, capturado como «cobro extra» en texto.',
+        'Un día antes: «ya no son diez niños, son cinco».',
+        'Cambio de paquete con contrato de $64,000 y $50,000 pagados: hoy obliga a cancelar y crear de nuevo.',
+      ],
       cuenta: [
         ['Contrato', '$64,000'],
         ['Pagado', '$50,000'],
         ['Pendiente', '$14,000'],
       ],
-      nota: 'Con el cambio sin cancelar, los $50,000 se conservan y solo se recalcula el pendiente con el nuevo paquete y, si aplica, la penalización.',
+      nota: 'Con el cambio sin cancelar, los $50,000 se conservan y solo se recalcula el pendiente.',
     },
     reglas: [
-      'Extras siempre como productos en la reservación; las notas no descuentan.',
-      'Apartado de inventario solo dentro de los días previos acordados.',
-      'Cobro sobre lo confirmado; penalización por cambios después del corte.',
-      'Permisos separados: quién captura, quién autoriza, quién prepara y quién entrega.',
+      'Liga por evento con resumen, reglamento, permisos, firma y versión.',
+      'Permisos como conceptos con precio, no como texto.',
+      'Penalizaciones configurables (por ejemplo, cambio de fecha 10 %) y reporte de lo cobrado.',
+      'Corte de cambios configurable (3 días antes) y registro de todo cambio posterior.',
     ],
     decidir: [
-      { p: 'Política de confirmación: cuándo se confirma y cuándo se cobra lo contratado aunque lleguen menos.', quien: 'Dirección y Ventas' },
-      { p: 'Penalización por cambio de menú o de paquete después del corte.', quien: 'Dirección' },
-      { p: '¿Cuántos días antes del evento se aparta el inventario?', quien: 'Chef Mau y Ventas' },
-      { p: '¿Quién captura los extras en la tableta?', quien: 'Coordinación de eventos' },
+      { p: 'Reglamento, permisos, montos de penalización y excepciones para fiestas: hay que revisarlo con la Dirección, porque el formato firmado ya se había propuesto y no avanzó.', quien: 'Dirección' },
+      { p: '¿Qué tipo de firma o aceptación se usa?', quien: 'Dirección y Sacs' },
+      { p: '¿Quién puede autorizar un cambio después del corte?', quien: 'Coordinación' },
     ],
     prueba: [
-      'Evento de prueba con 2 extras capturados en la tableta: aparecen en cocina, se descuentan y suman a la cuenta.',
+      'El cliente abre la liga, ve su resumen y el reglamento, y lo acepta; queda registrado.',
+      'Un cambio después del corte aparece con hora, quién lo pidió y la penalización.',
+      'Un cambio de paquete conserva los pagos.',
+    ],
+  },
+  {
+    id: 'invitados-acceso',
+    num: 'F16',
+    area: 'eventos',
+    titulo: 'Lista de invitados, acceso y capacidad',
+    para: 'Que la entrada se valide contra una lista del sistema y que lo que se agrega en la puerta se cobre dentro del evento.',
+    puntos: ['38', '39', '40', '43'],
+    hoy: [
+      { t: 'El cliente manda la lista', q: 'Cliente', d: 'Por WhatsApp, impresa o de memoria.' },
+      { t: 'En la entrada se valida en una hoja', q: 'Anfitriones', d: 'Se tacha a mano y se anota «+3», «+2», «+5» al margen.' },
+      { t: 'Llegan personas que no estaban', q: 'Cliente', d: '«Es mi sobrino, lo encontré y lo traje».' },
+      { t: 'Adultos y niños no se distinguen bien', q: 'Ventas', d: 'Se cuenta a un adulto como niño si va a usar atracciones.' },
+      { t: 'Las escuelas mandan listas de 150 o 200', q: 'Ventas', d: 'En PDF o foto; se capturan a mano.' },
+    ],
+    dolor: [
+      'Sin lista hay desorden en la entrada y se cuelan personas.',
+      'Los «+3» del papel no siempre se cobran.',
+      'No se sabe cuántos usaron atracciones ni el aforo real.',
+      'Un grupo puede crecer más de lo que cabe en su espacio.',
+    ],
+    queda: [
+      { t: 'La lista se llena en la liga del evento', q: 'Cliente', d: 'A más tardar 3 días antes.' },
+      { t: 'Cada invitado lleva su tipo', q: 'Cliente', d: 'Adulto o menor, con o sin atracciones.' },
+      { t: 'Escuelas: se sube el archivo', q: 'Ventas', d: 'El sistema lee la lista, marca duplicados y alguien la revisa antes del acceso.' },
+      { t: 'En la entrada se palomea en tableta', q: 'Anfitriones', d: 'Llegó o no llegó.' },
+      { t: 'Los extras se cobran dentro del evento', q: 'Taquilla', d: 'Quien no estaba en la lista se agrega y se cobra al evento.' },
+      { t: 'Aforo por espacio', q: 'Sistema', d: 'Si el grupo rebasa la capacidad del área, avisa: cambio de área o tarifa por ampliación.' },
+    ],
+    reglas: [
+      'Lista de invitados por evento con tipo de asistente.',
+      'Importación de listas con revisión humana.',
+      'Capacidad por espacio (VIP y salones) y bloqueo de sobreventa.',
+      'Previstos contra presentes contra extras cobrados al cerrar.',
+    ],
+    decidir: [
+      { p: 'Rangos de edad y tarifa de cada tipo de asistente.', quien: 'Dirección' },
+      { p: '¿Quién palomea en la entrada y en cuántas tabletas?', quien: 'Coordinación' },
+      { p: 'Capacidad oficial de cada espacio y política si llegan más.', quien: 'Dirección' },
+    ],
+    prueba: [
+      'Una lista escolar en foto se convierte en lista revisada en el sistema.',
+      'En la entrada se palomea; un invitado extra se cobra dentro del evento.',
+      'Un grupo que rebasa su espacio da aviso.',
+    ],
+  },
+  {
+    id: 'pagos-evento',
+    num: 'F17',
+    area: 'eventos',
+    titulo: 'Pagos y comprobantes del evento',
+    para: 'Que cada pago quede con su comprobante y su referencia, para que no haya discusión sobre cuánto se depositó.',
+    puntos: ['N7'],
+    hoy: [
+      { t: 'El cliente manda la foto del comprobante', q: 'Cliente', d: 'Por WhatsApp.' },
+      { t: 'El comprobante no se guarda en el sistema', q: 'Ventas' },
+      { t: 'Los pagos grandes esperan a Administración', q: 'Ventas', d: 'Se pide que confirmen el ingreso y luego se registra.' },
+    ],
+    dolor: [
+      'Un cliente dijo que depositó $2,000 y en realidad fueron $1,000; no había cómo demostrarlo a la mano.',
+    ],
+    queda: [
+      { t: 'Se registra el pago en el evento', q: 'Ventas', d: 'Monto, banco, referencia y la imagen del comprobante.' },
+      { t: 'Administración lo confirma', q: 'Administración', d: 'Cuando el dinero ya está en la cuenta.' },
+      { t: 'El cliente lo ve en su liga', q: 'Sistema', d: 'Pagado, pendiente y cada comprobante.' },
+    ],
+    ejemplo: {
+      titulo: 'Ejemplo de la sesión',
+      lineas: ['«Yo deposité $2,000». Con el pago registrado: BBVA, referencia y la imagen. El comprobante dice $1,000.'],
+    },
+    reglas: [
+      'Pago con monto, banco, referencia y archivo adjunto.',
+      'Estado del pago: registrado o confirmado por Administración.',
+    ],
+    decidir: [
+      { p: '¿A partir de qué monto se espera la confirmación de Administración?', quien: 'Norma' },
+    ],
+    prueba: [
+      'Registro un pago con su comprobante y el cliente lo ve en su liga.',
+    ],
+  },
+  {
+    id: 'evento-produccion',
+    num: 'F18',
+    area: 'eventos',
+    titulo: 'Del evento a cocina: horarios, extras y entregas',
+    para: 'Que cocina sepa qué preparar, para cuándo y para quién, sin notas ni grupos de WhatsApp, y que todo lo que sale se registre.',
+    puntos: ['14', '19', '20', '21', '48', '49', '30'],
+    hoy: [
+      { t: 'El horario de comida va en las notas', q: 'Ventas', d: '«A las 3 de la tarde sus alimentos, 40 niños», y también en un grupo de WhatsApp.' },
+      { t: 'Hay un Excel de horarios', q: 'Coordinación', d: 'Para no empalmar cinco fiestas a la 1 de la tarde.' },
+      { t: 'Al crear la reserva se aparta el inventario', q: 'Sistema', d: 'Aunque el evento sea en diciembre y se venda en octubre.' },
+      { t: 'Los extras se piden de palabra o en papel', q: 'Coordinador', d: 'Y antes se anotaban como nota: «10 hamburguesas» no descontaba.' },
+      { t: 'Cualquiera puede mover el evento', q: '—', d: 'No queda quién cambió qué.' },
+    ],
+    dolor: [
+      'Un evento que no se cierra deja inventario apartado que no existe (por ejemplo, 500 hamburguesas) y frena las compras.',
+      'En una revisión salieron unas 30 cubetas de cerveza de eventos sin descontar.',
+      '«Eventos no me avisó»: nadie sabe quién cambió hamburguesas por pizza.',
+    ],
+    queda: [
+      { t: 'La hora de comida se elige al reservar', q: 'Ventas', d: 'Y el calendario muestra las horas ya ocupadas para no empalmar.' },
+      { t: 'El inventario se aparta pocos días antes', q: 'Sistema', d: 'Con el reporte de eventos de la semana (F10), no desde que se vende.' },
+      { t: 'Antes de la hora, la comanda llega a cocina', q: 'Sistema', d: 'A la pantalla de cocina, arriba, en color de eventos, con nombre del evento, hora y responsable.' },
+      { t: 'Los extras se capturan en la tableta', q: 'Coordinador', d: 'Como productos, nunca como nota; llegan a cocina y se suman a la cuenta.' },
+      { t: 'Cocina marca lo entregado por artículo', q: 'Chef Mau', d: 'Pendiente, preparado, entregado (F4).' },
+      { t: 'Cada cambio deja rastro', q: 'Sistema', d: 'Quién, cuándo, por qué y quién lo autorizó: «Pedrito agregó 5 Coca-Cola».' },
+    ],
+    reglas: [
+      'Hora de comida obligatoria en la reserva y visible en el calendario.',
+      'Apartado de inventario solo dentro de los días previos acordados.',
+      'Extras siempre como productos en el evento.',
+      'Permisos: ventas y coordinación agregan o cambian; los anfitriones solo con autorización; cocina entrega.',
+    ],
+    decidir: [
+      { p: 'Matriz de permisos: quién agrega, cambia, entrega o cancela.', quien: 'Coordinación' },
+      { p: 'Responsables de las tabletas de canje (con suplentes para días de descanso).', quien: 'Coordinación' },
+      { p: '¿Cuántos días antes se aparta el inventario y cuánto antes llega la comanda a cocina?', quien: 'Chef Mau y Coordinación' },
+    ],
+    prueba: [
+      'Al reservar, el calendario no deja empalmar otra comida a la misma hora sin aviso.',
       'Un evento de diciembre no aparta inventario en noviembre.',
-      'Cambio de paquete sin cancelar: los pagos se conservan.',
+      'Dos extras capturados en la tableta llegan a cocina, se descuentan y suman a la cuenta.',
+      'El historial muestra quién hizo cada cambio.',
+    ],
+  },
+  {
+    id: 'cortesias-marketing',
+    num: 'F19',
+    area: 'eventos',
+    titulo: 'Cortesías, marketing e influencers',
+    para: 'Registrar lo que se regala como cortesía, con su costo y quién lo autorizó, y cobrar solo lo que se consuma de más.',
+    puntos: ['41'],
+    hoy: [
+      { t: 'Marketing ofrece beneficios a influencers', q: 'Marketing', d: 'Entrada del influencer, cinco niños más y dos adultos de regalo.' },
+      { t: 'Se registra como evento de marketing', q: 'Ventas' },
+      { t: 'El sistema lo muestra como pendiente de cobro', q: 'Sistema', d: 'Y al final hay que aplicar un descuento por el total.' },
+      { t: 'Pasteles o cupcakes de cortesía sin registro', q: 'Cocina' },
+    ],
+    dolor: [
+      'La Dirección preguntó por qué un evento decía $19,900 sin cobrar, cuando era cortesía.',
+      'Lo regalado no se ve como costo de marketing.',
+    ],
+    queda: [
+      { t: 'Evento de tipo marketing o cortesía', q: 'Ventas', d: 'Con beneficiarios y lo que incluye (6 entradas, 2 adultos, pastel).' },
+      { t: 'Autorizado por quien corresponda', q: 'Marketing' },
+      { t: 'No aparece como pendiente de cobro', q: 'Sistema', d: 'Su costo se registra como costo de marketing.' },
+      { t: 'Lo que se consuma de más se cobra', q: 'Coordinación', d: 'Al agotarse la cortesía, operación lo ve bloqueado.' },
+    ],
+    reglas: [
+      'Tipo de evento marketing o cortesía, separado de los descuentos y las devoluciones.',
+      'Costo absorbido por evento y autorizador.',
+    ],
+    decidir: [
+      { p: 'Paquetes reales para influencers y quién los autoriza.', quien: 'Marketing y Dirección' },
+    ],
+    prueba: [
+      'Un evento de influencer no aparece como saldo por cobrar y su costo sale en el reporte de marketing.',
+      'Un adicional fuera de la cortesía sí se cobra.',
+    ],
+  },
+  {
+    id: 'cierre-evento',
+    num: 'F20',
+    area: 'eventos',
+    titulo: 'Cierre y rentabilidad por evento',
+    para: 'Ver en una sola ficha lo que se vendió, lo que se entregó y lo que costó cada evento.',
+    puntos: ['22', '47', '03'],
+    hoy: [
+      { t: 'El ingreso del paquete se ve en ventas', q: 'Sistema' },
+      { t: 'Las salidas de cocina no se reflejan igual', q: 'Cocina' },
+      { t: 'Taquilla, cocina y contabilidad no se cruzan', q: '—' },
+    ],
+    dolor: [
+      'No se sabe si un evento dejó margen.',
+      'Los faltantes de eventos acaban como faltantes de cocina (F7).',
+    ],
+    queda: [
+      { t: 'Ficha del evento', q: 'Sistema', d: 'Vendido, extras, invitados previstos y presentes, cortesías.' },
+      { t: 'Consumo', q: 'Sistema', d: 'Comprometido, preparado, entregado y mermas del evento.' },
+      { t: 'Costo real y margen', q: 'Sistema' },
+      { t: 'Diferencias a revisar', q: 'Coordinación', d: 'Lo cobrado contra lo entregado.' },
+    ],
+    reglas: [
+      'Reporte por evento y tablero por tipo de evento.',
+    ],
+    decidir: [
+      { p: 'Elegir un evento real para cuadrarlo contra taquilla, cocina y contabilidad.', quien: 'Coordinación y Sacs' },
+    ],
+    prueba: [
+      'El evento de prueba muestra vendido, entregado, costo y margen, y cuadra con taquilla.',
     ],
   },
 ];
@@ -659,7 +951,7 @@ export const OTRAS = [
   {
     num: 'A1',
     titulo: 'Cajas: una sesión por persona y cobros por área',
-    puntos: ['N11'],
+    puntos: ['N9'],
     hoy: 'Un cobro de paletas, helados y chocolates de otra área se registró en la caja de cocina: a una caja le faltaron $500 y a la otra le sobraron. Con la cámara se vio que fue un cobro cruzado y la persona tuvo que pagarlo.',
     propuesta: [
       'Que una persona no pueda abrir una segunda caja mientras tiene otra abierta: aviso de «tienes una sesión abierta».',
@@ -672,7 +964,7 @@ export const OTRAS = [
   {
     num: 'A2',
     titulo: 'Cortes que no llegan completos a las cuentas',
-    puntos: ['N12'],
+    puntos: ['N10'],
     hoy: 'El efectivo y los cobros con tarjeta de los cortes no se reflejan completos en las cuentas. Un día de $191,000 tenía $21,000 sin reflejar. Por eso Administración no pudo registrar cuentas por pagar: el saldo decía que no había dinero y sí había. La revisión va desde el 6 de agosto; los cobros en línea (Stripe) se van a manejar aparte.',
     propuesta: [
       'Sesión con Administración para revisar el manejo del efectivo, la caja chica y los bancos.',
@@ -683,46 +975,74 @@ export const OTRAS = [
 ];
 
 // Verificación de los puntos de los reportes PDF contra las conversaciones.
-export const VERIFICACION = [
+// `u` = puntos que decían lo mismo y se unieron en un solo flujo.
+export const VERIFICACION: { n: string; t: string; e: 'completo' | 'complementado'; c: string; f: string; u?: string }[] = [
   { n: '01', t: 'Conversión de unidades en recepción', e: 'complementado', c: 'Precio con impuestos y cuadre al centavo contra la factura; presentaciones por caja y bolsa (bollo: 225 piezas); quién recibe cuando el chef descansa.', f: 'F1' },
-  { n: '02', t: 'Costeo y merma técnica en recetas', e: 'complementado', c: 'Ejemplos reales (jitomate 35 → 40 g, papa 140 g en crudo) y porciones por número de personas para pasteles y pizzas.', f: 'F2' },
-  { n: '03', t: 'Faltantes recurrentes en consumos de eventos', e: 'complementado', c: 'Causas encontradas: extras capturados como nota, cubetas de cerveza no descontadas, inventario apartado desde el día que se vende y combos de taquilla que no cuentan como venta de cocina.', f: 'F7 · F13' },
+  { n: '02', t: 'Costeo y merma técnica en recetas', e: 'complementado', c: 'Ejemplos reales: jitomate 35 → 40 g y papa 140 g en crudo. Las porciones por asistentes pasan al paquete (F14).', f: 'F2' },
+  { n: '03', t: 'Faltantes recurrentes en consumos de eventos', e: 'complementado', c: 'Causas encontradas: extras capturados como nota, cubetas de cerveza no descontadas, inventario apartado desde el día que se vende y combos de taquilla que no cuentan como venta de cocina.', f: 'F7 · F20' },
   { n: '04', t: 'Insumos de libre disposición en mesas', e: 'completo', c: 'Se agrega el método de dotación y conteo con ejemplo, y la lista completa (azúcar, mascabado, sustituto, jalapeños).', f: 'F3' },
   { n: '05', t: 'Control de mermas y pérdidas', e: 'complementado', c: 'Responsable por persona para medir, daño de proveedor detectado al acomodar, sobrantes por cambios o menos invitados y política de cobrar o absorber.', f: 'F5' },
   { n: '06', t: 'Fallos de visualización en KDS', e: 'completo', c: 'Frecuencia reportada (una o dos veces por semana); el pedido del cliente desde la mesa depende de resolver esto primero.', f: 'F4' },
-  { n: '07', t: 'Validación de entrega de pedidos', e: 'completo', c: 'Hoy se hace en papel con firma de caja; un ticket entregado no debe poder entregarse otra vez.', f: 'F4' },
+  { n: '07', t: 'Validación de entrega de pedidos', e: 'completo', c: 'Hoy se hace en papel con firma de caja; un ticket entregado no debe poder entregarse otra vez.', f: 'F4', u: '21' },
   { n: '08', t: 'Compra y recepción como etapas independientes', e: 'complementado', c: 'Faltaba el pago anticipado: Artik siempre paga antes y Administración necesita liberar el pago sin esperar la recepción.', f: 'F8' },
   { n: '09', t: 'Entregas incompletas y diferencias por proveedor', e: 'complementado', c: 'Saldo a favor en la ficha del proveedor, aplicado en el siguiente pedido; acuerdos de pago en partes (calcetas).', f: 'F8 · F9' },
   { n: '10', t: 'Resurtido con base en ventas históricas', e: 'completo', c: 'Temporada alta en noviembre y diciembre; el Excel del chef se sustituye; las órdenes automáticas dependen de un inventario confiable.', f: 'F10' },
   { n: '11', t: 'Separar resurtido normal de eventos', e: 'completo', c: 'Revisión del lunes con dos columnas: eventos confirmados (Mau) y venta normal (Estef).', f: 'F10' },
-  { n: '12', t: 'Compras imprevistas y eventos exprés', e: 'completo', c: 'Magnitud real (hasta 800 hamburguesas, cajas de 72), Ventas autorizada a vender para el mismo día, confirmar con cocina antes de cerrar.', f: 'F11' },
+  { n: '12', t: 'Compras imprevistas y eventos exprés', e: 'complementado', c: 'Magnitud real (hasta 800 hamburguesas, cajas de 72), Ventas autorizada a vender para el mismo día, validar con cocina y espacio antes de cerrar.', f: 'F11', u: '31 · 36' },
   { n: '13', t: 'Tablero de compras y recepción', e: 'completo', c: 'Se agregan las columnas de saldo a favor y abonos programados.', f: 'F8 · F9' },
-  { n: '29', t: 'Menús corporativos y especiales con costo por evento', e: 'completo', c: 'Ejemplo real de margen ($1,600 cobrados contra ≈ $300 de costo por persona) y medir cuáles se repiten.', f: 'F12' },
-  { n: '30', t: 'KDS vinculado a evento y permisos por función', e: 'completo', c: 'Color propio con estrella, nombre del responsable y extras sumados a la cuenta del evento.', f: 'F4 · F13' },
-  { n: '31', t: 'Insumos extraordinarios desde la confirmación comercial', e: 'completo', c: 'Sin cambios; se conecta con el aviso de evento exprés.', f: 'F11 · F12' },
+  { n: '14', t: 'Reservas que afectan existencias antes de tiempo', e: 'complementado', c: 'Ejemplo: 500 hamburguesas apartadas que no existen frenan las compras automáticas. Se aparta con el reporte semanal de eventos.', f: 'F18 · F10' },
+  { n: '15', t: 'Confirmación previa de alimentos', e: 'complementado', c: 'Plazo de 3 días antes para horario y alimentos; el cliente lo acepta por escrito en la liga del evento; escuelas y empresas ya lo firman.', f: 'F15', u: '16 · 44 · 45' },
+  { n: '16', t: 'Registro y responsabilidad por cambios tardíos', e: 'completo', c: 'Penalización mencionada: cambio de fecha 10 %. La política sigue por decidir con la Dirección.', f: 'F15', u: '15' },
+  { n: '17', t: 'Paquetes y productos compuestos', e: 'complementado', c: 'Porciones por asistentes (1 pizza completa = 4 niños) y pasteles de vainilla y chocolate.', f: 'F14', u: '34 · 37 · 42 · 46' },
+  { n: '18', t: 'Menús especiales de evento', e: 'completo', c: 'Dice lo mismo que el 29.', f: 'F12', u: '29' },
+  { n: '19', t: 'Extras y productos adicionales', e: 'complementado', c: 'El coordinador los captura en tableta y llegan a cocina; caso de 30 cubetas de cerveza sin descontar.', f: 'F18' },
+  { n: '20', t: 'Pedidos de eventos en KDS', e: 'completo', c: 'Dice lo mismo que el 30.', f: 'F4 · F18', u: '30' },
+  { n: '21', t: 'Entregas parciales y evitar dobles surtidos', e: 'completo', c: 'Dice lo mismo que el 07.', f: 'F4 · F18', u: '07' },
+  { n: '22', t: 'Conciliación de consumo y rentabilidad', e: 'completo', c: 'Dice lo mismo que el 47.', f: 'F20', u: '47' },
+  { n: '29', t: 'Menús corporativos y especiales con costo por evento', e: 'complementado', c: 'Ejemplo real de margen ($1,600 cobrados contra ≈ $300 de costo por persona) y medir cuáles se repiten.', f: 'F12', u: '18' },
+  { n: '30', t: 'KDS vinculado a evento y permisos por función', e: 'complementado', c: 'Color propio con estrella, nombre del evento y del responsable, hora de entrega y extras sumados a la cuenta.', f: 'F4 · F18', u: '20 · 49' },
+  { n: '31', t: 'Insumos extraordinarios desde la confirmación comercial', e: 'completo', c: 'Se atiende con el aviso de evento exprés y el menú especial.', f: 'F11 · F12', u: '12' },
+  { n: '32', t: 'Prospección y cotizaciones antes del primer anticipo', e: 'complementado', c: 'Se agrega reasignar el vendedor cuando un compañero lo cubre en su descanso.', f: 'F13', u: '33 · 50' },
+  { n: '33', t: 'Clasificar eventos desde su registro', e: 'completo', c: 'Cumpleaños, escolar, corporativo y marketing, con su propio catálogo de paquetes.', f: 'F13' },
+  { n: '34', t: 'Catálogo de paquetes corporativos parametrizados', e: 'complementado', c: 'Contenido real: taquiza (alambre de arrachera y de pollo), refresco, agua y agua mineral, rally y coffee break premium.', f: 'F14' },
+  { n: '35', t: 'Adicionales comerciales como conceptos estructurados', e: 'complementado', c: 'Se suman los permisos con cobro (meter adornos o regalos propios).', f: 'F14 · F15' },
+  { n: '36', t: 'Trazabilidad de eventos exprés', e: 'completo', c: 'Dice lo mismo que el 12.', f: 'F11', u: '12' },
+  { n: '37', t: 'Separar accesos y atracciones de alimentos', e: 'complementado', c: 'Caso real: taquilla cobró el paquete escolar como «hamburguesa $110» y «calcetas $70» por separado.', f: 'F14' },
+  { n: '38', t: 'Asistentes por edad y uso real de atracciones', e: 'completo', c: 'Hoy se cuenta a un adulto como niño si va a usar atracciones.', f: 'F16' },
+  { n: '39', t: 'Lista digital de invitados y check-in', e: 'complementado', c: 'La lista se llena en la liga del evento hasta 3 días antes; los «+3» de la hoja se cobran dentro del evento en taquilla.', f: 'F16', u: '38 · 40 · 43' },
+  { n: '40', t: 'Carga masiva de grupos escolares', e: 'completo', c: 'Listas de 150 a 200 personas en PDF o foto.', f: 'F16' },
+  { n: '41', t: 'Cortesías, acompañantes e influencers', e: 'complementado', c: 'Caso real: un evento de marketing aparecía con $19,900 sin cobrar; pastel de cortesía sin registro.', f: 'F19' },
+  { n: '42', t: 'Calcetas por talla dentro de paquetes', e: 'completo', c: 'Se elige la talla al entregar.', f: 'F14' },
+  { n: '43', t: 'Capacidad, espacios VIP y límite de asistentes', e: 'completo', c: 'Aviso cuando el grupo rebasa el espacio contratado.', f: 'F16' },
+  { n: '44', t: 'Reglamento, permisos y penalizaciones', e: 'complementado', c: 'Caso real: permiso para meter adornos de Halloween con cobro adicional; reporte de penalizaciones cobradas.', f: 'F15' },
+  { n: '45', t: 'Confirmación digital y control de versiones', e: 'complementado', c: 'La misma liga muestra pagos, comprobantes y lista de invitados.', f: 'F15' },
+  { n: '46', t: 'Paquetes escolares y alimentación opcional', e: 'complementado', c: 'Precios dichos: $449 de acceso (50 a 100 personas) y $180 de alimentos ($110 + $70 de calcetas).', f: 'F14' },
+  { n: '47', t: 'Reporte integral de ingresos y consumos por evento', e: 'completo', c: 'Dice lo mismo que el 22.', f: 'F20', u: '22' },
+  { n: '48', t: 'Autorización y auditoría de cambios operativos', e: 'complementado', c: 'Solo ventas y coordinación editan; anfitriones con autorización; responsables de tabletas con suplentes.', f: 'F18' },
+  { n: '49', t: 'Programación de entregas y avisos a cocina', e: 'complementado', c: 'Hora de comida obligatoria en la reserva y calendario de horas ocupadas para no empalmar fiestas.', f: 'F18', u: '30' },
+  { n: '50', t: 'Atribución comercial y conversión', e: 'completo', c: 'Canal, campaña o influencer y vendedor desde el primer contacto.', f: 'F13', u: '32' },
 ];
 
-// Puntos que salieron en las conversaciones y no estaban en los reportes.
+// Puntos que salieron en las conversaciones y no estaban en ningún reporte.
 export const NUEVOS = [
   { n: 'N1', t: 'Pago anticipado como saldo a favor con el proveedor', f: 'F8' },
   { n: 'N2', t: 'Acuerdos de pago en partes con abonos programados', f: 'F9' },
   { n: 'N3', t: 'Precio de la factura con impuestos incluidos en la recepción', f: 'F1' },
   { n: 'N4', t: 'Descuento de colaboradores como tipo de cliente', f: 'F6' },
-  { n: 'N5', t: 'Confirmación de asistentes y menú antes de producir', f: 'F13' },
-  { n: 'N6', t: 'Apartar inventario de eventos solo días antes', f: 'F13' },
-  { n: 'N7', t: 'Cambio de paquete sin cancelar, con penalización', f: 'F13' },
-  { n: 'N8', t: 'Extras de eventos como productos, nunca como nota', f: 'F13' },
-  { n: 'N9', t: 'Porciones por número de personas (pasteles, pizzas)', f: 'F2' },
-  { n: 'N10', t: 'Cuadre de inventario de cocina por canal', f: 'F7' },
-  { n: 'N11', t: 'Cajas: una sesión por persona y cobros por área', f: 'A1' },
-  { n: 'N12', t: 'Cortes que no llegan completos a las cuentas', f: 'A2' },
+  { n: 'N5', t: 'Cambio de paquete sin cancelar el evento', f: 'F15' },
+  { n: 'N6', t: 'Coordinación ve la conversación con el cliente', f: 'F15' },
+  { n: 'N7', t: 'Pagos del evento con comprobante y referencia', f: 'F17' },
+  { n: 'N8', t: 'Cuadre de inventario de cocina por canal', f: 'F7' },
+  { n: 'N9', t: 'Cajas: una sesión por persona y cobros por área', f: 'A1' },
+  { n: 'N10', t: 'Cortes que no llegan completos a las cuentas', f: 'A2' },
 ];
 
 // Próximos pasos: solo lo que se dijo en las sesiones.
 export const PASOS = [
-  { q: 'Sacs', t: 'Se lleva los flujos para definir qué se ajusta en el sistema y regresa en siete días a capacitar con el nuevo proceso.' },
+  { q: 'Sacs', t: 'Se lleva los flujos para definir qué se ajusta en el sistema y la siguiente semana capacita por área con el nuevo proceso.' },
+  { q: 'Eventos', t: 'Compartir el Drive con los Excel y PDF que se usan hoy (horarios, listas de invitados, cotizaciones), sin las pestañas del global.' },
+  { q: 'Eventos', t: 'Mandar dudas y comentarios por el grupo de WhatsApp; ahí Sacs avisa lo que vaya quedando.' },
   { q: 'Compras', t: 'Reunir varias facturas reales de distintos proveedores para probar las reglas de conversión y de cuadre.' },
   { q: 'Cocina', t: 'Anotar dispositivo, hora y folio de la próxima comanda que no aparezca en la pantalla.' },
-  { q: 'Eventos', t: 'Sesión con Eventos y Ventas para el proceso de confirmación con el cliente.' },
   { q: 'Administración', t: 'Sesión para revisar efectivo, caja chica y bancos, para que todo caiga en su cuenta.' },
 ];

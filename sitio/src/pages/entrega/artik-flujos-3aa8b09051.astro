@@ -1,5 +1,5 @@
 ---
-// Flujos de trabajo · ARTIK Snowpark · Cocina y Compras/resurtidos (2-nov-2026).
+// Flujos de trabajo · ARTIK Snowpark · Cocina, Compras/resurtidos y Eventos (2-nov-2026).
 //
 // Documento didáctico para el cliente, con el branding de ARTIK
 // (go.artik.com.mx: Montserrat, azul marino, degradado azul → morado y
@@ -19,6 +19,7 @@ const porArea = (a: Area) => FLUJOS.filter(f => f.area === a);
 const esNuevo = (p: string) => p.startsWith('N');
 const completos = VERIFICACION.filter(v => v.e === 'completo').length;
 const complementados = VERIFICACION.length - completos;
+const unidos = VERIFICACION.filter(v => v.u).length;
 ---
 <!doctype html>
 <html lang="es">
@@ -26,8 +27,8 @@ const complementados = VERIFICACION.length - completos;
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Flujos ARTIK · Cocina y Compras</title>
-  <meta name="description" content="Flujos de trabajo de ARTIK Snowpark para Cocina y Compras y resurtidos: cómo se hace hoy, cómo queda, ejemplos y lo que falta decidir." />
+  <title>Flujos de ARTIK</title>
+  <meta name="description" content="Flujos de trabajo de ARTIK Snowpark para Cocina, Compras y resurtidos y Eventos: cómo se hace hoy, cómo queda, ejemplos y lo que falta decidir." />
   <link rel="icon" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -212,6 +213,7 @@ const complementados = VERIFICACION.length - completos;
     .est { display: inline-block; font: 700 10.5px/1 var(--mono); padding: 5px 8px; border-radius: 999px; white-space: nowrap; }
     .est.completo { background: #e4f6ea; color: #17733a; }
     .est.complementado { background: #fff3c4; color: #7a5600; }
+    .unido { display: block; margin-top: 6px; font: 700 10.5px/1.3 var(--mono); color: var(--morado); white-space: nowrap; }
     .resumen-ver { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 16px; }
     .resumen-ver span { padding: 8px 14px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: 13.5px; font-weight: 600; }
     .resumen-ver strong { font-family: var(--mono); color: var(--morado); margin-right: 4px; }
@@ -291,13 +293,13 @@ const complementados = VERIFICACION.length - completos;
         <img class="sacs" src="/images/sacs-wordmark.png" alt="Sacscloud" width="74" height="22" />
       </div>
       <p class="tag">Levantamiento · Flujos de trabajo</p>
-      <h1>Cocina<br />y Compras</h1>
+      <h1>Cocina, Compras<br />y Eventos</h1>
       <p class="sub">Cómo se trabaja hoy, cómo queda cada proceso dentro de Sacs y qué falta decidir. Explicado paso a paso, con los ejemplos que salieron en las sesiones.</p>
       <div class="meta">
         <div><b>Cliente</b><span>ARTIK Snowpark</span></div>
-        <div><b>Áreas</b><span>Cocina · Compras y resurtidos</span></div>
-        <div><b>Con quién</b><span>Chef Mau · Estef · Administración</span></div>
-        <div><b>Basado en</b><span>3 sesiones y reportes del 26 y 27 de octubre</span></div>
+        <div><b>Áreas</b><span>Cocina · Compras y resurtidos · Eventos</span></div>
+        <div><b>Con quién</b><span>Chef Mau · Estef · Ventas y coordinación de eventos · Administración</span></div>
+        <div><b>Basado en</b><span>Sesiones de levantamiento y reportes del 26 y 27 de octubre</span></div>
         <div><b>Versión</b><span>2 de noviembre de 2026</span></div>
       </div>
       <div class="cifras">
@@ -376,7 +378,7 @@ const complementados = VERIFICACION.length - completos;
     {ORDEN.map(a => (
       <section id={a} class={`a-${a}`}>
         <div class="area-band">
-          <span class="k">{a === 'eventos' ? 'Cruza con Cocina y Compras' : `Área ${ORDEN.indexOf(a) + 1}`}</span>
+          <span class="k">{`Área ${ORDEN.indexOf(a) + 1}`}</span>
           <h2>{AREAS[a].nombre}</h2>
           <p>{AREAS[a].quien} · {porArea(a).length} {porArea(a).length === 1 ? 'flujo' : 'flujos'}</p>
         </div>
@@ -487,11 +489,12 @@ const complementados = VERIFICACION.length - completos;
     <section class="blk" id="verificacion">
       <p class="eyebrow">Control de calidad del levantamiento</p>
       <h2 class="h2">Verificación de los reportes</h2>
-      <p class="lead">Revisamos cada punto de los reportes del 26 y 27 de octubre contra lo que se dijo en las sesiones: si está completo, si le faltaba algo y en qué flujo quedó.</p>
+      <p class="lead">Revisamos cada punto de los reportes del 26 y 27 de octubre contra lo que se dijo en las sesiones: si está completo, si le faltaba algo y en qué flujo quedó. Los puntos que decían lo mismo se unieron en un solo flujo.</p>
       <div class="resumen-ver">
         <span><strong>{VERIFICACION.length}</strong>puntos revisados</span>
         <span><strong>{completos}</strong>completos</span>
         <span><strong>{complementados}</strong>complementados</span>
+        <span><strong>{unidos}</strong>unidos con otro punto</span>
         <span><strong>{NUEVOS.length}</strong>nuevos</span>
       </div>
       <div class="tw">
@@ -502,7 +505,7 @@ const complementados = VERIFICACION.length - completos;
               <tr>
                 <td class="n">{v.n}</td>
                 <td class="t">{v.t}</td>
-                <td><span class={`est ${v.e}`}>{v.e === 'completo' ? 'Completo' : 'Complementado'}</span></td>
+                <td><span class={`est ${v.e}`}>{v.e === 'completo' ? 'Completo' : 'Complementado'}</span>{v.u && <span class="unido">Unido con {v.u}</span>}</td>
                 <td>{v.c}</td>
                 <td class="f">{v.f.split(' · ').map((x, i) => (<>{i > 0 && ' · '}<a href={`#${(FLUJOS.find(f => f.num === x) || { id: x.toLowerCase() }).id}`}>{x}</a></>))}</td>
               </tr>
@@ -512,7 +515,7 @@ const complementados = VERIFICACION.length - completos;
       </div>
 
       <h3 style="margin:34px 0 6px;font-weight:900;text-transform:uppercase;font-size:20px;color:var(--navy)">Puntos nuevos</h3>
-      <p class="lead" style="margin-bottom:14px">Salieron en las conversaciones y no estaban en los reportes.</p>
+      <p class="lead" style="margin-bottom:14px">Salieron en las conversaciones y no estaban en ningún reporte.</p>
       <div class="nuevos">
         {NUEVOS.map(n => (
           <a href={`#${(FLUJOS.find(f => f.num === n.f) || { id: n.f.toLowerCase() }).id}`}><b>{n.n}</b><span>{n.t}</span><i>{n.f}</i></a>
@@ -535,7 +538,7 @@ const complementados = VERIFICACION.length - completos;
   <footer>
     <div class="wrap">
       <img src="/images/clientes/artik-logo.png" alt="ARTIK" width="117" height="22" />
-      <span>ARTIK Snowpark × Sacscloud · Flujos de Cocina y Compras · 2 de noviembre de 2026</span>
+      <span>ARTIK Snowpark × Sacscloud · Flujos de Cocina, Compras y Eventos · 2 de noviembre de 2026</span>
     </div>
   </footer>
 
