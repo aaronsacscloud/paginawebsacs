@@ -1,4 +1,4 @@
-// Flujos de trabajo de ARTIK Snowpark · Cocina, Compras, Eventos, Operación y Dirección (2-nov-2026).
+// Flujos de trabajo de ARTIK Snowpark · Cocina, Compras, Eventos, Operación, Dirección y Administración (2-nov-2026).
 //
 // Sale de tres conversaciones de levantamiento con el área de restaurantes
 // (Chef Mau), compras y resurtidos (Estef) y administración, y de los dos
@@ -12,7 +12,7 @@
 // son los que se dijeron en la sesión. Nada de aquí se presenta como hecho en
 // el sistema: son propuestas a validar con las personas responsables.
 
-export type Area = 'cocina' | 'compras' | 'eventos' | 'operacion' | 'direccion' | 'otras';
+export type Area = 'cocina' | 'compras' | 'eventos' | 'operacion' | 'direccion' | 'administracion' | 'otras';
 
 export interface Paso {
   t: string;   // qué pasa
@@ -43,6 +43,7 @@ export const AREAS: Record<Area, { nombre: string; quien: string; color: string 
   eventos: { nombre: 'Eventos', quien: 'Ventas y coordinación de eventos', color: 'eventos' },
   operacion: { nombre: 'Operación y punto de venta', quien: 'Taquilla, cajas y responsable del parque', color: 'operacion' },
   direccion: { nombre: 'Dirección y finanzas', quien: 'Dirección y Administración', color: 'direccion' },
+  administracion: { nombre: 'Administración y contabilidad', quien: 'Norma y Contabilidad', color: 'administracion' },
   otras: { nombre: 'Otras áreas detectadas', quien: 'Administración', color: 'otras' },
 };
 
@@ -378,7 +379,7 @@ export const FLUJOS: Flujo[] = [
     area: 'compras',
     titulo: 'Orden de compra, pago anticipado, recepción y saldo con el proveedor',
     para: 'Pagar por adelantado sin perder el control: recibir solo lo que de verdad llegó y que lo que falte quede como saldo a favor con el proveedor.',
-    puntos: ['08', '09', '13', 'N1'],
+    puntos: ['08', '09', '13', 'N1', 'N25'],
     dir: 'Su regla: lo que pasa en la realidad se registra en ese momento, ni antes ni después. Si faltaron 10, se reciben 90 y quedan 10 que debe el proveedor. Pagar por adelantado no quita revisar lo que llegó.',
     hoy: [
       { t: 'Hasta hace tres semanas se hacía recepción directa', q: 'Cocina', d: 'Ahora se usa la orden de compra, pero a veces se crea el mismo día que llega la mercancía.' },
@@ -386,21 +387,26 @@ export const FLUJOS: Flujo[] = [
       { t: 'Administración paga siempre por adelantado', q: 'Norma', d: 'Pero sin recepción o sin factura no tiene con qué liberar el pago.' },
       { t: 'Si llega de menos, se recibe completo', q: 'Estef', d: 'Y el proveedor promete descontarlo en el siguiente pedido.' },
       { t: 'Nadie lleva la cuenta de lo prometido', q: '—' },
+      { t: 'Administración paga el martes y la mercancía llega días después', q: 'Norma', d: 'Los desechables se piden hasta 20 días antes. Mientras no se recibe, el sistema no refleja el pago.' },
     ],
     dolor: [
       'Recibir antes de contar da por buena mercancía que no llegó.',
       'Cuando el proveedor nota que no se cuenta, empieza a mandar menos.',
       'Los descuentos prometidos dependen de que alguien se acuerde.',
       'Administración y compras se frenan entre sí: una pide la recepción y la otra no puede recibir lo que no ha llegado.',
+      'Si la mercancía ya se había recibido, para pagarla habría que hacer otra orden y se duplicaría el inventario.',
     ],
     queda: [
-      { t: 'Orden de compra el día del pedido', q: 'Estef', d: 'El lunes, no el martes.' },
+      { t: 'Requisición de compra', q: 'Estef', d: 'Lo que se necesita, con el sugerido (F10).' },
+      { t: 'Revisión y autorización', q: 'Norma y Dirección', d: 'Administración revisa que sea razonable; la Dirección autoriza y comenta (F27).' },
+      { t: 'Orden de compra el día del pedido', q: 'Estef', d: 'El lunes, no el martes. Se le manda al proveedor por correo o WhatsApp desde el sistema.' },
       { t: 'Pago anticipado contra la orden', q: 'Norma', d: 'Queda como saldo a favor con el proveedor.' },
       { t: 'Llega la mercancía y se cuenta', q: 'Cocina', d: 'Contra la orden: pedido contra recibido.' },
       { t: 'Se recibe SOLO lo que llegó bien', q: 'Estef', d: 'Solo eso sube al inventario.' },
       { t: 'Se descuenta del saldo a favor lo entregado', q: 'Sistema' },
       { t: 'Lo que faltó queda como saldo a favor', q: 'Sistema', d: 'Ligado a la factura y visible en la ficha del proveedor.' },
       { t: 'En el siguiente pedido aparece el saldo', q: 'Estef', d: 'Para aplicarlo y avisarle al proveedor.' },
+      { t: 'Seguimiento por etapa', q: 'Sistema', d: 'Pendiente de autorizar, de pagar, de recibir o con saldo a favor; quién hizo cada paso y cuánto tardó.' },
     ],
     ejemplo: {
       titulo: 'Ejemplo de la sesión: proveedor de cerveza',
@@ -1180,12 +1186,13 @@ export const FLUJOS: Flujo[] = [
     area: 'operacion',
     titulo: 'Arqueos, cortes y retiros de efectivo',
     para: 'Revisar la caja durante el día, sacar el efectivo que se acumula con registro y firma, y cerrar con un corte que cuadre.',
-    puntos: ['POS-11', 'POS-12', 'POS-13'],
+    puntos: ['POS-11', 'POS-12', 'POS-13', 'N28'],
     hoy: [
       { t: 'El efectivo se acumula en las cajas', q: 'Cajas', d: 'Sobre todo en fines de semana.' },
       { t: 'Se retira cuando hay mucho', q: 'Supervisor', d: '$10,000 o $20,000; antes no se registraba como movimiento.' },
       { t: 'Todo se cuenta al final del día', q: 'Cajas', d: 'Por eso el cierre se hace tarde.' },
       { t: 'Los gastos de caja chica van por fuera', q: 'Cajas', d: 'Bolsas, jabón: no se registran en Sacs.' },
+      { t: 'Las propinas no se registran aparte', q: 'Cajas', d: 'El sistema ya puede hacerlo, pero no se usa; si se cobran con tarjeta, se mezclan con la venta.' },
     ],
     dolor: [
       'Si al final falta dinero, no se sabe en qué momento del día se perdió.',
@@ -1199,6 +1206,7 @@ export const FLUJOS: Flujo[] = [
       { t: 'Corte final por denominaciones', q: 'Cajas', d: 'Se capturan billetes y monedas; puede ser corte ciego. Se define el fondo que se queda.' },
       { t: 'Corte por cajero', q: 'Sistema', d: 'Si hubo varios en la misma caja.' },
       { t: 'Gastos de caja chica en el sistema', q: 'Cajas', d: 'Con su concepto y comprobante.' },
+      { t: 'Propinas separadas de la venta', q: 'Cajas', d: 'Monto o porcentaje al cobrar; reporte para entregarlas cada semana o quincena.' },
     ],
     ejemplo: {
       titulo: 'Ejemplo de la sesión',
@@ -1264,7 +1272,7 @@ export const FLUJOS: Flujo[] = [
     dir: 'Pidió un paso de autorización: Administración registra el gasto, la Dirección lo aprueba y decide la fecha, y hasta entonces se paga. «A lo mejor está aprobado, pero no quiero que lo pagues hoy, sino en un mes y medio.» Nada se elimina sin avisar.',
     hoy: [
       { t: 'Administración registra el gasto', q: 'Norma', d: 'Por ejemplo, renta: monto, pago y confirmar.' },
-      { t: 'Ella misma lo puede pagar', q: 'Norma' },
+      { t: 'La autorización llega por WhatsApp o correo', q: 'Dirección', d: 'Administración manda el reporte y luego otra persona entra a bancos y paga.' },
       { t: 'También lo puede eliminar', q: 'Norma', d: 'Sin que nadie lo revise.' },
       { t: 'A veces un pago junta conceptos distintos', q: 'Norma', d: 'Renta y mantenimiento en el mismo pago.' },
     ],
@@ -1277,7 +1285,7 @@ export const FLUJOS: Flujo[] = [
       { t: 'Se registra la cuenta por pagar, por factura', q: 'Norma', d: 'Cada concepto con su factura.' },
       { t: 'La Dirección la revisa', q: 'Dirección', d: 'Aprueba, rechaza o reprograma la fecha, con una nota («negócialo», «págalo el 30»).' },
       { t: 'Se programa el pago', q: 'Sistema', d: 'Con su fecha y su monto, completo o en partes (F9).' },
-      { t: 'Se paga', q: 'Norma', d: 'Un solo pago puede cubrir varias facturas del mismo proveedor.' },
+      { t: 'Se paga', q: 'Norma', d: 'Con el comprobante adjunto. Un solo pago puede cubrir varias facturas del mismo proveedor, y un reembolso de caja chica, varias facturas.' },
       { t: 'Ocultar o eliminar, con autorización', q: 'Dirección', d: 'Se oculta lo que ya no se usa; se elimina solo lo que fue un error.' },
     ],
     ejemplo: {
@@ -1325,7 +1333,7 @@ export const FLUJOS: Flujo[] = [
       { t: 'Días de crédito reales', q: 'Norma', d: 'Contado, 7, 15 o 30 días.' },
       { t: 'Tiempo de entrega máximo', q: 'Estef', d: 'Si tarda de 7 a 10 días, se pone 10.' },
       { t: 'Productos por sabor y por talla', q: 'Estef', d: 'Para ver qué se vende y pedir solo eso.' },
-      { t: 'Categoría del proveedor', q: 'Norma', d: 'Alimentos, bebidas, servicios… para separar costo y gasto (F29).' },
+      { t: 'Categoría del proveedor', q: 'Norma', d: 'Costo o gasto, partida y concepto (F31).' },
       { t: 'Historial por proveedor', q: 'Sistema', d: 'Lo que se le ha comprado y su saldo (F8).' },
     ],
     reglas: [
@@ -1347,7 +1355,7 @@ export const FLUJOS: Flujo[] = [
     area: 'direccion',
     titulo: 'Reportes ejecutivos por modelo de negocio',
     para: 'Que la Dirección vea en un tablero cómo va cada negocio (parque, restaurante, eventos, souvenirs) y un estado de resultados con costo y gasto separados.',
-    puntos: ['N18', 'N19'],
+    puntos: ['N19', 'N27', 'N29'],
     dir: 'Quiere que funcione el reporte ejecutivo: un estado de resultados que separe el costo (alimentos, bebidas) del gasto. Hoy no sirve porque los datos de origen están mal. Se deja para el final, cuando los flujos anteriores ya registren bien.',
     hoy: [
       { t: 'El reporte ejecutivo existe, pero no sirve', q: 'Dirección', d: 'Los datos que lo alimentan están mal cargados.' },
@@ -1358,10 +1366,16 @@ export const FLUJOS: Flujo[] = [
     dolor: [
       'No hay un estado de resultados confiable.',
       'Los reportes de eventos solo dicen «vendiste tanto».',
+      'Lo que se come en eventos cuenta como evento, no como alimentos: la Dirección ve que se compró mucho de alimentos y se vendió poco.',
+      'Las comisiones de ventas se pagan sobre el total del evento, incluidos los alimentos, que son costo.',
+      'No se ve qué producto ya no conviene comprar ni qué paquete se vende más.',
     ],
     queda: [
       { t: 'Estado de resultados', q: 'Sistema', d: 'Costo (alimentos, bebidas) separado de gasto, por la categoría del proveedor (F28).' },
       { t: 'Tablero por modelo de negocio', q: 'Sistema', d: 'Parque: accesos y aforo. Restaurante: insumos y margen. Eventos: ventas, saldos, anticipos y vendedores. Souvenirs.' },
+      { t: 'Ventas por categoría y subcategoría', q: 'Sistema', d: 'Alimentos → hamburguesas, alitas…; dulces → cada dulce; atracciones → cada paquete. Así se ve qué dejar de comprar.' },
+      { t: 'Eventos separados en atracciones y alimentos', q: 'Sistema', d: 'Lo que se come en un evento suma a alimentos.' },
+      { t: 'Comisiones de ventas por tipo', q: 'Dirección', d: 'Sobre atracciones o sobre utilidad, no sobre el costo de los alimentos.' },
       { t: 'Cada dato dice qué incluye', q: 'Sistema' },
       { t: 'Se arma al final', q: 'Sacs', d: 'Cuando combos, apartados, eventos y compras ya registren bien.' },
     ],
@@ -1371,7 +1385,8 @@ export const FLUJOS: Flujo[] = [
     ],
     decidir: [
       { p: '¿Qué indicadores quiere ver la Dirección de cada negocio?', quien: 'Dirección' },
-      { p: 'Reglas contables para clasificar costo y gasto.', quien: 'Norma y su contador' },
+      { p: 'Reglas contables para clasificar costo y gasto (F31).', quien: 'Norma y Contabilidad' },
+      { p: '¿Sobre qué se calcula la comisión de los vendedores de eventos?', quien: 'Dirección' },
     ],
     prueba: [
       'El estado de resultados del mes separa costo y gasto, y cuadra con lo registrado.',
@@ -1402,43 +1417,226 @@ export const FLUJOS: Flujo[] = [
     ],
     reglas: [
       'Expediente por colaborador y método de checado.',
+      'Jornadas de lunes a domingo con roles según los eventos; tolerancia de 10 a 15 minutos.',
+      'Tiempo extra con validación antes de pagarse; también permisos y vacaciones.',
+      'Prima dominical para quien trabaja en fin de semana y apoyo de transporte.',
+      'Actas administrativas y contratos subidos al expediente.',
     ],
     decidir: [
       { p: '¿Se implementa ya el checador o al terminar esta etapa?', quien: 'Dirección' },
       { p: 'Método de checado: reconocimiento facial, PIN, huella o teléfono.', quien: 'Norma' },
+      { p: '¿El sistema timbra la nómina? Sacs lo confirma.', quien: 'Sacs' },
     ],
     prueba: [
       'Un colaborador checa entrada y salida, y aparece en su expediente.',
+    ],
+  },
+  // ──────────────────────── ADMINISTRACIÓN Y CONTABILIDAD ────────────────────────
+  // Sale de la sesión con Administración y Contabilidad (sesión 09). Solo los
+  // temas de trabajo; lo personal y los datos del personal se omiten.
+  {
+    id: 'catalogo-gastos',
+    num: 'F31',
+    area: 'administracion',
+    titulo: 'Catálogo de gastos: partida, concepto y centro de costos',
+    para: 'Que cada peso que sale quede clasificado desde que se registra, para que el estado de resultados salga solo y el contador pueda usarlo sin rehacerlo.',
+    puntos: ['N18', 'N24'],
+    hoy: [
+      { t: 'Los gastos entran al sistema sin concepto', q: 'Norma', d: 'Se registran para que cuadre el saldo, no para analizarlos.' },
+      { t: 'La clasificación vive en Excel', q: 'Norma', d: 'Partida, concepto y proveedor, mes por mes, con un tablero propio.' },
+      { t: 'El contador arma el flujo por su lado', q: 'Contabilidad', d: 'Ingresos, costos y gastos con base en lo pagado y lo cobrado.' },
+      { t: 'La tarjeta de crédito se registra como un solo pago', q: 'Norma', d: 'Aunque adentro haya publicidad en redes y otras compras.' },
+    ],
+    dolor: [
+      'Lo que se baja del sistema no le sirve al contador: hay que volver a clasificarlo.',
+      'No se distingue costo de venta de gasto, ni gasto fijo de variable.',
+      'Un pago de crédito mezcla capital (no es gasto) con intereses (sí lo es).',
+    ],
+    queda: [
+      { t: 'Cada proveedor nace clasificado', q: 'Norma', d: 'Costo o gasto, partida y concepto: al registrarle un pago, se clasifica solo.' },
+      { t: 'Partidas', q: 'Contabilidad', d: 'Costo de venta · gastos de venta · administración · operación · gastos bancarios y financieros · créditos · devoluciones · ingresos y aportaciones.' },
+      { t: 'Conceptos dentro de cada partida', q: 'Contabilidad', d: 'Alimentos, bebidas, calcetas, nómina, IMSS, comisiones, publicidad, limpieza, mantenimiento, servicios…' },
+      { t: 'Fijo o variable', q: 'Norma', d: 'Fijos: renta, luz, agua, servicios. Variables: los que se mueven con la operación (apoyos de fin de semana, limpieza, pasajes).' },
+      { t: 'Centro de costos', q: 'Norma', d: 'A qué área pertenece el gasto.' },
+      { t: 'Los pagos se reparten', q: 'Norma', d: 'Tarjeta de crédito por concepto; pago de crédito en capital e intereses.' },
+    ],
+    ejemplo: {
+      titulo: 'Ejemplos de la sesión: dónde va cada cosa',
+      lineas: [
+        'Costo de venta: alimentos, bebidas, calcetas, frozen, ice, nachos, palomitas. Afectan directo a lo que se vende.',
+        'Gasto de venta: brazaletes, stickers, desechables, publicidad, reembolsos del gerente. Se usan para vender, pero no son parte del producto.',
+        'Administración: nóminas, apoyos, aguinaldo, finiquitos, nómina extraordinaria de cursos de verano, impuestos.',
+        'Operación: limpieza, fumigación, mantenimiento, protección civil, servicios, equipo de cocina.',
+      ],
+    },
+    reglas: [
+      'Catálogo de partidas y conceptos, igual al que usa el contador.',
+      'Proveedor con clasificación por defecto; el gasto la hereda.',
+      'Campo de fijo o variable y de centro de costos.',
+    ],
+    decidir: [
+      { p: 'Catálogo final de partidas y conceptos (Administración lo depura con el contador).', quien: 'Norma y Contabilidad' },
+      { p: 'Centros de costos que se van a usar.', quien: 'Norma' },
+    ],
+    prueba: [
+      'Registro un pago a un proveedor de alimentos y queda como costo de venta, concepto alimentos, sin capturarlo.',
+      'El reporte del mes se baja ya clasificado y el contador no lo rehace.',
+    ],
+  },
+  {
+    id: 'bancos-boveda',
+    num: 'F32',
+    area: 'administracion',
+    titulo: 'Bancos, bóveda y caja chica que cuadran',
+    para: 'Que lo vendido llegue completo a su cuenta (bóveda, banco, Stripe), que las comisiones queden separadas y que el saldo del sistema sea el real.',
+    puntos: ['N9', 'N30'],
+    hoy: [
+      { t: 'Lo vendido en efectivo no llega completo a la bóveda', q: 'Sistema', d: 'Hay eventos sin cerrar y cortes que no se hacen.' },
+      { t: 'Las ventas de Stripe caen días después', q: 'Banco', d: 'Entre 5 y 7 días; el tablero las muestra el mismo día.' },
+      { t: 'El banco deposita completo y cobra la comisión aparte', q: 'Banco', d: 'Crédito más alta que débito. Stripe deposita ya sin comisión.' },
+      { t: 'La caja chica del gerente se repone cada semana', q: 'Norma', d: 'Un solo gasto con varias facturas.' },
+      { t: 'Administración cuadra todo en Excel', q: 'Norma', d: 'Día por día, contra el estado de cuenta.' },
+    ],
+    dolor: [
+      'El sistema dice que no hay dinero para registrar pagos, y en el banco sí lo hay.',
+      'La caja chica tiene movimientos que nadie registró.',
+      'La Dirección ve la venta de hoy en el tablero y espera el depósito mañana.',
+      'Corregirlo a mano con ajustes no resuelve nada: el error vuelve al día siguiente.',
+    ],
+    queda: [
+      { t: 'Cada corte cierra y deposita en su cuenta', q: 'Cajas', d: 'Efectivo a bóveda; tarjeta a banco; en línea a «Stripe por depositar» (F25).' },
+      { t: 'Los eventos se cierran', q: 'Coordinación', d: 'Para que su dinero también llegue (F20).' },
+      { t: 'Stripe con fecha de depósito', q: 'Sistema', d: 'Lo vendido queda «por depositar» hasta que cae al banco.' },
+      { t: 'Comisión por medio de pago', q: 'Norma', d: 'Banco: crédito y débito con su porcentaje. Stripe: neto. Van a gastos bancarios.' },
+      { t: 'Caja chica con sus gastos', q: 'Gerente', d: 'Cada reposición con sus facturas.' },
+      { t: 'Conciliación con el estado de cuenta', q: 'Norma', d: 'El saldo del sistema contra el del banco; la diferencia se investiga, no se ajusta.' },
+      { t: 'Arranque limpio', q: 'Sacs', d: 'Cuando los flujos anteriores registren bien, se parte de saldos reales.' },
+    ],
+    ejemplo: {
+      titulo: 'Ejemplos de la sesión',
+      lineas: ['Lo vendido en efectivo contra lo que llegó a la bóveda:'],
+      cuenta: [
+        ['10 de octubre', '$190,000 vendidos · $75,000 en bóveda'],
+        ['11 de octubre', '$88,000 vendidos · $69,000 en bóveda'],
+        ['Caja chica', '$25,000 sin ningún gasto registrado'],
+      ],
+      nota: 'Las cifras son las que se mostraron en la sesión; se van a cuadrar con Administración.',
+    },
+    reglas: [
+      'Cuentas: bóveda, caja chica, bancos y Stripe por depositar.',
+      'Comisión por medio de pago y por banco.',
+      'Ningún ajuste manual para cuadrar: se corrige el origen.',
+    ],
+    decidir: [
+      { p: '¿A partir de qué fecha se arranca con saldos limpios?', quien: 'Norma y Sacs' },
+      { p: 'Porcentajes de comisión de cada banco y de Stripe.', quien: 'Norma' },
+    ],
+    prueba: [
+      'El corte del día llega completo a la bóveda.',
+      'Una venta de Stripe aparece «por depositar» y se concilia cuando cae.',
+      'El saldo del sistema coincide con el estado de cuenta.',
+    ],
+  },
+  {
+    id: 'facturacion-iva',
+    num: 'F33',
+    area: 'administracion',
+    titulo: 'Facturación e IVA correctos',
+    para: 'Que toda factura salga con el IVA correcto, sin que nadie tenga que corregirla, y que el cliente pueda facturar solo.',
+    puntos: ['N14', 'N31'],
+    hoy: [
+      { t: 'Hay productos con IVA en 0 % o exentos', q: 'Sistema', d: 'Por ejemplo, pastas; deberían ir al 16 %.' },
+      { t: 'Los extras de eventos se capturan a mano', q: 'Ventas', d: 'Y a veces sin IVA.' },
+      { t: 'Contabilidad encuentra la diferencia al declarar', q: 'Contabilidad', d: 'Y hay que cancelar y volver a facturar.' },
+      { t: 'Las facturas se le piden a una sola persona', q: 'Administración', d: 'Tardan alrededor de semana y media; el kiosco de autofacturación no se usa.' },
+    ],
+    dolor: [
+      'Diferencias de IVA en todo el año, mes por mes.',
+      'Facturas canceladas y rehechas.',
+    ],
+    queda: [
+      { t: 'Regla general: todo al 16 %', q: 'Sacs', d: 'El restaurante compra insumos sin IVA, pero vende todo con IVA.' },
+      { t: 'Revisión del catálogo', q: 'Sacs', d: 'Ningún producto en 0 % o exento por error.' },
+      { t: 'Extras de eventos desde el catálogo', q: 'Ventas', d: 'Ya traen su IVA (F14).' },
+      { t: 'Kiosco de autofacturación', q: 'Cliente', d: 'En caja o en línea.' },
+    ],
+    ejemplo: {
+      titulo: 'Ejemplos de la sesión',
+      lineas: [],
+      cuenta: [
+        ['Factura de evento por $52,555', 'IVA sobre $35,598 en lugar de $46,860'],
+        ['Factura de evento por $40,700', 'IVA de $2,515 cuando debía ser de alrededor de $5,000'],
+        ['Factura de restaurante por $576', 'IVA sobre $420 en lugar de $549'],
+      ],
+    },
+    reglas: [
+      'IVA al 16 % por defecto en productos y extras.',
+      'Aviso si un producto se da de alta sin IVA.',
+    ],
+    decidir: [
+      { p: '¿Hay algún producto que de verdad vaya sin IVA?', quien: 'Contabilidad' },
+    ],
+    prueba: [
+      'Facturo un evento con extras y el IVA sale sobre el total.',
+      'Un cliente factura solo desde el kiosco.',
+    ],
+  },
+  {
+    id: 'costeo-productos',
+    num: 'F34',
+    area: 'administracion',
+    titulo: 'Costeo de productos y paquetes',
+    para: 'Que cada producto y cada paquete tenga su costo real, con todo lo que lleva, para fijar precios y medir la utilidad.',
+    puntos: ['N26'],
+    hoy: [
+      { t: 'El costeo vive en hojas de cálculo', q: 'Norma', d: 'Producto por producto, con la materia prima actualizada a mano.' },
+      { t: 'Varios productos no tienen costo en el sistema', q: 'Sistema', d: 'Los accesos, entre otros.' },
+      { t: 'El refresco de lata se compra al mismo precio', q: 'Compras', d: 'Pero cada sabor se vende distinto.' },
+    ],
+    dolor: [
+      'Sin costo en el sistema, los reportes no dicen cuánto se gana.',
+      'Sin gramaje en el nombre, una revisión de Profeco puede multar.',
+    ],
+    queda: [
+      { t: 'El costo incluye todo lo que lleva', q: 'Norma', d: 'Producto, empaque, vaso, tapa, popote, bolsita.' },
+      { t: 'Porción contra presentación', q: 'Chef Mau', d: 'Papas: 200 g por orden de una bolsa de 1 kg → 5 órdenes.' },
+      { t: 'Rendimiento esperado', q: 'Chef Mau', d: 'Ice: de cada bolsa de 9 kg salen al menos 200 vasos, hasta 230.' },
+      { t: 'Paquetes costeados por persona', q: 'Norma', d: 'Lo compartido se divide entre los invitados.' },
+      { t: 'Gramaje u onzas en el nombre', q: 'Norma', d: 'Dulcería, alimentos y café.' },
+      { t: 'Cada sabor, su producto', q: 'Estef', d: 'Para saber qué se vende (F28).' },
+    ],
+    ejemplo: {
+      titulo: 'Ejemplos de la sesión: paquete de fiesta por invitado',
+      lineas: ['Mínimo 10 invitados.'],
+      cuenta: [
+        ['Pastel de $350', '÷ 11 (10 invitados y el festejado)'],
+        ['Peluche de $160 (uno por fiesta)', '÷ 10 = $16 por invitado'],
+        ['Piñata de $600', '÷ 10 = $60 por invitado'],
+        ['Velita', '$15'],
+        ['Ice de 24 oz (jarabe, vaso, tapa y popote)', '≈ $45 de costo'],
+      ],
+    },
+    reglas: [
+      'Costo por producto con sus componentes y empaques.',
+      'Gramaje u onzas en el nombre del producto.',
+      'Rendimiento por presentación.',
+    ],
+    decidir: [
+      { p: 'Margen objetivo por categoría.', quien: 'Dirección y Norma' },
+      { p: '¿Quién mantiene actualizado el precio de la materia prima?', quien: 'Estef' },
+    ],
+    prueba: [
+      'Cambio el precio del pan y se actualiza el costo de las hamburguesas.',
+      'El costo de un paquete de fiesta sale por invitado.',
     ],
   },
 ];
 
 // Otras áreas: salieron en las conversaciones de cocina y compras, pero son
 // de otra sesión. Se anotan para no perderlas.
-export const OTRAS = [
-  {
-    num: 'A1',
-    titulo: 'Cortes que no llegan completos a las cuentas',
-    puntos: ['N9'],
-    hoy: 'El efectivo y los cobros con tarjeta de los cortes no se reflejan completos en las cuentas. Un día de $191,000 tenía $21,000 sin reflejar. Por eso Administración no pudo registrar cuentas por pagar: el saldo decía que no había dinero y sí había. La revisión va desde el 6 de agosto; los cobros en línea (Stripe) se van a manejar aparte.',
-    propuesta: [
-      'Sesión con Administración para revisar el manejo del efectivo, la caja chica y los bancos.',
-      'Que cada corte llegue completo a su cuenta y se pueda cerrar el día con el saldo real.',
-    ],
-    quien: 'Norma · Administración',
-  },
-  {
-    num: 'A2',
-    titulo: 'Facturación: el kiosco ya existe y no se usa',
-    puntos: ['N14'],
-    hoy: 'Las facturas se le piden a una sola persona y tardan alrededor de semana y media. El sistema ya tiene un kiosco de autofacturación, en caja o en línea para el cliente, pero no se ha configurado ni explicado.',
-    propuesta: [
-      'Capacitación de facturación con el equipo.',
-      'Activar el kiosco para que el cliente facture solo, o la caja en el momento.',
-    ],
-    quien: 'Administración y cajas',
-  },
-];
+// Las «otras áreas» que salieron antes (cortes y facturación) ya tienen su
+// flujo en Administración (F32 y F33).
+export const OTRAS: { num: string; titulo: string; puntos: string[]; hoy: string; propuesta: string[]; quien: string }[] = [];
 
 // Verificación de los puntos de los reportes PDF contra las conversaciones.
 // `u` = puntos que decían lo mismo y se unieron en un solo flujo.
@@ -1513,21 +1711,29 @@ export const NUEVOS = [
   { n: 'N6', t: 'Coordinación ve la conversación con el cliente', f: 'F15' },
   { n: 'N7', t: 'Pagos del evento con comprobante y referencia', f: 'F17' },
   { n: 'N8', t: 'Cuadre de inventario de cocina por canal', f: 'F7' },
-  { n: 'N9', t: 'Cortes que no llegan completos a las cuentas', f: 'A1' },
+  { n: 'N9', t: 'Cortes que no llegan completos a las cuentas', f: 'F32' },
   { n: 'N10', t: 'Anticipos separados de la venta del mes y desglose por forma de pago', f: 'F17' },
   { n: 'N11', t: 'Responsiva digital con vigencia', f: 'F26' },
   { n: 'N12', t: 'Costo capturado en accesos y productos', f: 'F21' },
   { n: 'N13', t: 'Regalo del festejado y adicionales de eventos en el catálogo', f: 'F14' },
-  { n: 'N14', t: 'Kiosco de autofacturación', f: 'A2' },
+  { n: 'N14', t: 'Kiosco de autofacturación', f: 'F33' },
   { n: 'N15', t: 'Autorización de la Dirección antes de pagar o eliminar un gasto', f: 'F27' },
   { n: 'N16', t: 'Días de crédito y tiempo de entrega reales por proveedor', f: 'F28' },
   { n: 'N17', t: 'Productos por sabor y talla para medir qué se vende', f: 'F28' },
-  { n: 'N18', t: 'Estado de resultados con costo y gasto separados', f: 'F29' },
+  { n: 'N18', t: 'Estado de resultados con costo y gasto separados', f: 'F31' },
   { n: 'N19', t: 'Tablero por modelo de negocio', f: 'F29' },
   { n: 'N20', t: 'Checador de entradas y salidas y expedientes', f: 'F30' },
   { n: 'N21', t: 'Descuento del combo repartido entre sus componentes', f: 'F21' },
   { n: 'N22', t: 'Calcetas como opción en la venta en línea, sin el parche', f: 'F21' },
   { n: 'N23', t: 'Recepción con la foto de la factura (AXO)', f: 'F1' },
+  { n: 'N24', t: 'Gasto fijo o variable y centro de costos', f: 'F31' },
+  { n: 'N25', t: 'Requisición y autorización antes de la orden de compra', f: 'F8' },
+  { n: 'N26', t: 'Costo con empaques y gramaje en el nombre', f: 'F34' },
+  { n: 'N27', t: 'Comisiones de ventas por tipo de venta', f: 'F29' },
+  { n: 'N28', t: 'Propinas separadas de la venta', f: 'F25' },
+  { n: 'N29', t: 'Ventas por categoría y subcategoría', f: 'F29' },
+  { n: 'N30', t: 'Comisiones bancarias por medio de pago y Stripe por depositar', f: 'F32' },
+  { n: 'N31', t: 'IVA correcto en productos y extras', f: 'F33' },
 ];
 
 // Próximos pasos: solo lo que se dijo en las sesiones.
@@ -1537,12 +1743,13 @@ export const PASOS = [
   { q: 'Eventos', t: 'Mandar dudas y comentarios por el grupo de WhatsApp; ahí Sacs avisa lo que vaya quedando.' },
   { q: 'Compras', t: 'Reunir varias facturas reales de distintos proveedores para probar las reglas de conversión y de cuadre.' },
   { q: 'Cocina', t: 'Anotar dispositivo, hora y folio de la próxima comanda que no aparezca en la pantalla.' },
-  { q: 'Administración', t: 'Sesión para revisar efectivo, caja chica y bancos, para que todo caiga en su cuenta.' },
+  { q: 'Administración', t: 'Mandar el catálogo de partidas y conceptos, depurado con el contador, y sus reportes actuales en Excel.' },
+  { q: 'Sacs', t: 'Mandar la base de productos para corregir categorías, subcategorías, costos e IVA; revisar la regla general de IVA al 16 %.' },
+  { q: 'Sacs', t: 'Capacitación con todo el personal operativo, no solo con los líderes, explicando por qué se hace cada paso.' },
   { q: 'Sacs', t: 'Capacitación de facturación y del kiosco de autofacturación con el equipo.' },
   { q: 'Sacs', t: 'Revisar con seguridad abrir el soporte directo para que cada área reporte sus fallas en el momento, sin pasar por una sola persona.' },
   { q: 'Sacs', t: 'Enviar los planes de AXO con la recomendación, y la cotización y presentación del módulo de recursos humanos.' },
   { q: 'Compras y Administración', t: 'Revisar con Sacs a cada proveedor: crédito, tiempo de entrega, productos por sabor o talla y categoría.' },
-  { q: 'Administración', t: 'Involucrar a su contador para las reglas de costo y gasto del estado de resultados.' },
 ];
 
 // ★ Lo que la Dirección marcó como forma de trabajo y como orden de prioridades.
