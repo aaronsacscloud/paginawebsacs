@@ -1,5 +1,6 @@
 ---
-// Flujos de trabajo · ARTIK Snowpark · Cocina, Compras/resurtidos, Eventos y Operación (2-nov-2026).
+// Flujos de trabajo · ARTIK Snowpark · Cocina, Compras, Eventos, Operación y Dirección (2-nov-2026).
+// ★ = flujo que vio la Dirección; el recuadro dorado dice qué opinó o pidió.
 //
 // Documento didáctico para el cliente, con el branding de ARTIK
 // (go.artik.com.mx: Montserrat, azul marino, degradado azul → morado y
@@ -11,10 +12,11 @@
 // internos del cliente (faltantes de caja, cortes, proveedores) y no debe
 // poder adivinarse. Es estático, noindex, y /entrega/ está fuera del sitemap.
 // El contenido vive en lib/entrega/artik-flujos.ts.
-import { FLUJOS, AREAS, OTRAS, VERIFICACION, NUEVOS, PASOS, type Area } from '../../lib/entrega/artik-flujos';
+import { FLUJOS, AREAS, OTRAS, VERIFICACION, NUEVOS, PASOS, DIRECCION, type Area } from '../../lib/entrega/artik-flujos';
 export const prerender = true;
 
-const ORDEN: Area[] = ['cocina', 'compras', 'eventos', 'operacion'];
+const ORDEN: Area[] = ['cocina', 'compras', 'eventos', 'operacion', 'direccion'];
+const conDir = FLUJOS.filter(f => f.dir);
 const porArea = (a: Area) => FLUJOS.filter(f => f.area === a);
 const esNuevo = (p: string) => p.startsWith('N');
 const completos = VERIFICACION.filter(v => v.e === 'completo').length;
@@ -28,7 +30,7 @@ const unidos = VERIFICACION.filter(v => v.u).length;
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Flujos de ARTIK</title>
-  <meta name="description" content="Flujos de trabajo de ARTIK Snowpark para Cocina, Compras y resurtidos, Eventos y Operación: cómo se hace hoy, cómo queda, ejemplos y lo que falta decidir." />
+  <meta name="description" content="Flujos de trabajo de ARTIK Snowpark (Cocina, Compras, Eventos, Operación y Dirección): cómo se hace hoy, cómo queda, lo que dijo la Dirección y lo que falta decidir." />
   <link rel="icon" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -53,7 +55,29 @@ const unidos = VERIFICACION.filter(v => v.u).length;
     .a-compras { --ac: #188bf6; --aca: #e6f2fe; }
     .a-eventos { --ac: #7d16c4; --aca: #f2e8fa; }
     .a-operacion { --ac: #c2620a; --aca: #fdf1e3; }
+    .a-direccion { --ac: #9a6b00; --aca: #fff4d6; }
     .a-otras { --ac: #b02cb0; --aca: #fbe9fb; }
+
+    /* ★ Dirección: dorado, solo para marcar lo que vio la Dirección */
+    .chip.dir { background: #ffe39a; color: #6b4a00; }
+    .flujo.con-dir { border-color: #f1d27a; }
+    .dir-box { margin: 0; padding: 14px 24px 16px; background: linear-gradient(90deg, #fff8e1 0%, #fffdf5 100%); border-bottom: 1px solid #f6e3a8; }
+    .dir-box b { display: flex; align-items: center; gap: 8px; font: 800 12px/1 Montserrat, sans-serif; text-transform: uppercase; letter-spacing: .08em; color: #8a5f00; margin-bottom: 6px; }
+    .dir-box p { margin: 0; font-size: 14.5px; color: #4a3a12; max-width: 900px; }
+    .estrella { color: #e0a800; -webkit-text-fill-color: #e0a800; }
+    .col a .estrella { flex: none; font-size: 12px; line-height: 1.5; }
+    .prios { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+    .prio { display: block; text-decoration: none; background: var(--panel); border: 1px solid #f1d27a; border-radius: 14px; padding: 14px 16px; }
+    .prio:hover { border-color: #e0a800; box-shadow: 0 8px 20px -14px rgba(160,110,0,.6); }
+    .prio .pt { display: flex; gap: 8px; align-items: baseline; font-weight: 800; font-size: 15px; line-height: 1.3; margin-bottom: 6px; }
+    .prio .pt b { font: 700 12px/1 var(--mono); color: #9a6b00; flex: none; }
+    .prio p { margin: 0; font-size: 13.5px; color: var(--ink2); }
+    .principios { list-style: none; margin: 0 0 18px; padding: 18px 20px; display: grid; gap: 8px; background: linear-gradient(120deg, var(--navy) 0%, var(--navy3) 100%); color: #fff; border-radius: 16px; }
+    .principios li { display: flex; gap: 10px; font-weight: 600; font-size: 15px; }
+    .principios li::before { content: '★'; color: #ffd24d; flex: none; }
+    .btn-dir { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 16px; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1.5px solid #e0b84a; background: #fff8e1; color: #6b4a00; font: 700 13px/1 Montserrat, sans-serif; cursor: pointer; }
+    .btn-dir[aria-pressed="true"] { background: #ffd24d; border-color: #ffd24d; color: #3d2a00; }
+    .solo-dir .flujo:not(.con-dir) { display: none; }
 
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; scroll-padding-top: 72px; }
@@ -94,7 +118,7 @@ const unidos = VERIFICACION.filter(v => v.u).length;
     .nav { position: sticky; top: 0; z-index: 20; background: rgba(5,42,84,.97); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-bottom: 1px solid rgba(255,255,255,.12); }
     .nav .wrap { display: flex; gap: 6px; align-items: center; overflow-x: auto; padding-top: 10px; padding-bottom: 10px; scrollbar-width: none; }
     .nav .wrap::-webkit-scrollbar { display: none; }
-    .nav a { flex: none; text-decoration: none; color: #dfe9fb; font-weight: 700; font-size: 13px; padding: 8px 9px; border-radius: 999px; border: 1px solid transparent; white-space: nowrap; }
+    .nav a { flex: none; text-decoration: none; color: #dfe9fb; font-weight: 700; font-size: 13px; padding: 8px 7px; border-radius: 999px; border: 1px solid transparent; white-space: nowrap; }
     .nav a:hover, .nav a:focus-visible { border-color: rgba(54,216,211,.6); color: #fff; outline: none; }
     .nav .imp { flex: none; background: var(--grad); color: #fff; border: 0; border-radius: 999px; padding: 9px 16px; font: 800 13px/1 Montserrat, sans-serif; cursor: pointer; text-transform: uppercase; letter-spacing: .04em; }
 
@@ -123,6 +147,7 @@ const unidos = VERIFICACION.filter(v => v.u).length;
     .col a { display: flex; gap: 8px; align-items: flex-start; text-decoration: none; padding: 7px 9px; border-radius: 10px; background: var(--aca); margin-bottom: 6px; font-size: 13px; font-weight: 600; line-height: 1.35; }
     .col a:hover { outline: 2px solid var(--ac); }
     .col a b { font: 700 11.5px/1.5 var(--mono); color: var(--ac); flex: none; }
+    .col a span { flex: 1; min-width: 0; }
     .col .entrega { font-size: 12.5px; color: var(--ink2); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line2); }
 
     /* Banda de área */
@@ -324,12 +349,12 @@ const unidos = VERIFICACION.filter(v => v.u).length;
         <img class="sacs" src="/images/sacs-wordmark.png" alt="Sacscloud" width="74" height="22" />
       </div>
       <p class="tag">Levantamiento · Flujos de trabajo</p>
-      <h1>Cocina, Compras,<br />Eventos y Operación</h1>
+      <h1>Flujos de<br />trabajo</h1>
       <p class="sub">Cómo se trabaja hoy, cómo queda cada proceso dentro de Sacs y qué falta decidir. Explicado paso a paso, con los ejemplos que salieron en las sesiones.</p>
       <div class="meta">
         <div><b>Cliente</b><span>ARTIK Snowpark</span></div>
-        <div><b>Áreas</b><span>Cocina · Compras · Eventos · Operación y punto de venta</span></div>
-        <div><b>Con quién</b><span>Chef Mau · Estef · Eventos · Taquilla y cajas · Administración</span></div>
+        <div><b>Áreas</b><span>Cocina · Compras · Eventos · Operación · Dirección y finanzas</span></div>
+        <div><b>Con quién</b><span>Dirección · Chef Mau · Estef · Eventos · Taquilla y cajas · Administración</span></div>
         <div><b>Basado en</b><span>Sesiones de levantamiento y reportes del 26 y 27 de octubre</span></div>
         <div><b>Versión</b><span>2 de noviembre de 2026</span></div>
       </div>
@@ -337,18 +362,19 @@ const unidos = VERIFICACION.filter(v => v.u).length;
         <span class="cifra"><strong>{FLUJOS.length}</strong> flujos de trabajo</span>
         <span class="cifra"><strong>{VERIFICACION.length}</strong> puntos del reporte revisados</span>
         <span class="cifra"><strong>{NUEVOS.length}</strong> puntos nuevos</span>
+        <span class="cifra"><strong class="estrella">★ {conDir.length}</strong> vistos con la Dirección</span>
       </div>
     </div>
   </header>
 
   <nav class="nav" aria-label="Secciones">
     <div class="wrap">
-      <a href="#mapa">Mapa</a>
+      <a href="#prioridades">★ Dirección</a>
       <a href="#cocina">Cocina</a>
       <a href="#compras">Compras</a>
       <a href="#eventos">Eventos</a>
       <a href="#operacion">Operación</a>
-      <a href="#otras">Otras</a>
+      <a href="#direccion">Finanzas</a>
       <a href="#verificacion">Verificación</a>
       <a href="#siguientes">Próximos pasos</a>
       <span class="avance" title="Puntos revisados con el equipo"><span class="av-bar"><i id="rev-bar"></i></span><b id="rev-n">0 / 0</b></span>
@@ -369,6 +395,7 @@ const unidos = VERIFICACION.filter(v => v.u).length;
         <div><h4><span class="sw queda"></span>Cómo queda</h4><p>El proceso propuesto, paso a paso, con quién hace cada paso. Se valida con las personas responsables antes de configurarlo.</p></div>
         <div><h4><span class="sw ej"></span>Ejemplo</h4><p>Un caso real de la sesión, con sus números. Si un número es ilustrativo, lo dice.</p></div>
         <div><h4><span class="sw pr"></span>Para dar por buena la prueba</h4><p>Lo que tiene que pasar en el sistema para firmar el flujo. Se puede ir marcando en pantalla.</p></div>
+        <div><h4><span class="estrella">★</span>Lo que dijo la Dirección</h4><p>Los flujos con estrella son los que se vieron con la Dirección. El recuadro dorado dice qué opinó o pidió; «Ver solo lo de la Dirección» deja solo esos.</p></div>
         <div><h4><span class="rev-c" style="width:14px;height:14px;border-width:2px"></span>Revisión con el equipo</h4><p>Cada flujo y cada punto tiene su botón «Marcar revisado» para ir viendo a qué se refiere. El avance está en la barra de arriba; «Solo pendientes» oculta lo ya revisado. <span id="rev-modo">Se guarda en este navegador.</span></p></div>
       </div>
     </section>
@@ -382,35 +409,48 @@ const unidos = VERIFICACION.filter(v => v.u).length;
         <div class="col a-eventos">
           <h4>Eventos</h4>
           <div class="quien">Ventas y coordinación</div>
-          {porArea('eventos').map(f => <a href={`#${f.id}`}><b>{f.num}</b>{f.titulo}</a>)}
+          {porArea('eventos').map(f => <a href={`#${f.id}`}><b>{f.num}</b><span>{f.titulo}</span>{f.dir && <i class="estrella">★</i>}</a>)}
           <div class="entrega">Entrega a Cocina: asistentes confirmados, menú y extras.</div>
         </div>
         <div class="col a-operacion">
           <h4>Operación</h4>
           <div class="quien">Taquilla y cajas</div>
-          {porArea('operacion').map(f => <a href={`#${f.id}`}><b>{f.num}</b>{f.titulo}</a>)}
+          {porArea('operacion').map(f => <a href={`#${f.id}`}><b>{f.num}</b><span>{f.titulo}</span>{f.dir && <i class="estrella">★</i>}</a>)}
           <div class="entrega">Entrega a Cocina: lo que el cliente ya pagó y le falta recibir.</div>
         </div>
         <div class="col a-cocina">
           <h4>Cocina</h4>
           <div class="quien">Chef Mau</div>
-          {porArea('cocina').map(f => <a href={`#${f.id}`}><b>{f.num}</b>{f.titulo}</a>)}
+          {porArea('cocina').map(f => <a href={`#${f.id}`}><b>{f.num}</b><span>{f.titulo}</span>{f.dir && <i class="estrella">★</i>}</a>)}
           <div class="entrega">Entrega a Compras: consumo real y lo que hace falta.</div>
         </div>
         <div class="col a-compras">
           <h4>Compras</h4>
           <div class="quien">Estef</div>
-          {porArea('compras').map(f => <a href={`#${f.id}`}><b>{f.num}</b>{f.titulo}</a>)}
+          {porArea('compras').map(f => <a href={`#${f.id}`}><b>{f.num}</b><span>{f.titulo}</span>{f.dir && <i class="estrella">★</i>}</a>)}
           <div class="entrega">Entrega a Administración: órdenes, recepciones y saldos.</div>
         </div>
-        <div class="col a-otras">
-          <h4>Administración</h4>
-          <div class="quien">Norma</div>
+        <div class="col a-direccion">
+          <h4>Dirección</h4>
+          <div class="quien">Dirección y Norma</div>
+          {porArea('direccion').map(f => <a href={`#${f.id}`}><b>{f.num}</b><span>{f.titulo}</span>{f.dir && <i class="estrella">★</i>}</a>)}
           <a href="#compra-pago-recepcion"><b>F8</b>Pago anticipado y saldo a favor</a>
           <a href="#pagos-parciales"><b>F9</b>Abonos programados</a>
           {OTRAS.map(o => <a href={`#${o.num.toLowerCase()}`}><b>{o.num}</b>{o.titulo}</a>)}
           <div class="entrega">Cierra el ciclo: lo pagado contra lo recibido.</div>
         </div>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────── ★ Dirección ─────────────────────────── -->
+    <section class="blk" id="prioridades">
+      <p class="eyebrow">Sesión con la Dirección</p>
+      <h2 class="h2"><span class="estrella">★</span> Lo que dijo la Dirección</h2>
+      <p class="lead">La Dirección revisó los flujos uno por uno. Estas son sus reglas para trabajar, y los {conDir.length} flujos en los que opinó o pidió algo.</p>
+      <ul class="principios">{DIRECCION.principios.map(t => <li>{t}</li>)}</ul>
+      <button class="btn-dir" id="btn-dir" type="button" aria-pressed="false"><span class="estrella">★</span> Ver solo lo de la Dirección</button>
+      <div class="prios">
+        {conDir.map(f => <a class={`prio a-${f.area}`} href={`#${f.id}`}><div class="pt"><b>{f.num}</b><span>{f.titulo}</span></div><p>{f.dir}</p></a>)}
       </div>
     </section>
 
@@ -424,12 +464,13 @@ const unidos = VERIFICACION.filter(v => v.u).length;
         </div>
 
         {porArea(a).map(f => (
-          <article class="flujo" id={f.id} data-rev-box>
+          <article class:list={['flujo', f.dir && 'con-dir']} id={f.id} data-rev-box>
             <div class="f-top">
               <div class="f-num">{f.num}</div>
               <h3>{f.titulo}</h3>
               <p class="f-para">{f.para}</p>
               <div class="chips">
+                {f.dir && <span class="chip dir">★ Dirección</span>}
                 <span class="chip area">{AREAS[f.area].nombre}</span>
                 {f.puntos.map(p => <span class={esNuevo(p) ? 'chip nuevo' : 'chip'}>{esNuevo(p) ? `Nuevo · ${p}` : `Punto ${p}`}</span>)}
               </div>
@@ -438,6 +479,7 @@ const unidos = VERIFICACION.filter(v => v.u).length;
                 <span class="rev-quien"></span>
               </div>
             </div>
+            {f.dir && <div class="dir-box"><b><span class="estrella">★</span> Lo que dijo la Dirección</b><p>{f.dir}</p></div>}
 
             <div class="f-cols">
               <div class="f-hoy">
@@ -590,7 +632,7 @@ const unidos = VERIFICACION.filter(v => v.u).length;
   <footer>
     <div class="wrap">
       <img src="/images/clientes/artik-logo.png" alt="ARTIK" width="117" height="22" />
-      <span>ARTIK Snowpark × Sacscloud · Flujos de Cocina, Compras, Eventos y Operación · 2 de noviembre de 2026</span>
+      <span>ARTIK Snowpark × Sacscloud · Flujos de trabajo · 2 de noviembre de 2026</span>
     </div>
   </footer>
 
@@ -662,6 +704,13 @@ const unidos = VERIFICACION.filter(v => v.u).length;
 
       botones.forEach(function (b) {
         b.addEventListener('click', function () { alternar(b.getAttribute('data-rev')); });
+      });
+      var bdir = document.getElementById('btn-dir');
+      if (bdir) bdir.addEventListener('click', function () {
+        var on = !document.body.classList.contains('solo-dir');
+        document.body.classList.toggle('solo-dir', on);
+        bdir.setAttribute('aria-pressed', on ? 'true' : 'false');
+        bdir.lastChild.textContent = on ? ' Ver todos los flujos' : ' Ver solo lo de la Dirección';
       });
       var pend = document.getElementById('rev-pend');
       if (pend) pend.addEventListener('click', function () {

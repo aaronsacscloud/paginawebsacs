@@ -1,4 +1,4 @@
-// Flujos de trabajo de ARTIK Snowpark · Cocina, Compras/resurtidos, Eventos y Operación (2-nov-2026).
+// Flujos de trabajo de ARTIK Snowpark · Cocina, Compras, Eventos, Operación y Dirección (2-nov-2026).
 //
 // Sale de tres conversaciones de levantamiento con el área de restaurantes
 // (Chef Mau), compras y resurtidos (Estef) y administración, y de los dos
@@ -12,7 +12,7 @@
 // son los que se dijeron en la sesión. Nada de aquí se presenta como hecho en
 // el sistema: son propuestas a validar con las personas responsables.
 
-export type Area = 'cocina' | 'compras' | 'eventos' | 'operacion' | 'otras';
+export type Area = 'cocina' | 'compras' | 'eventos' | 'operacion' | 'direccion' | 'otras';
 
 export interface Paso {
   t: string;   // qué pasa
@@ -26,7 +26,8 @@ export interface Flujo {
   area: Area;
   titulo: string;
   para: string;
-  puntos: string[];    // referencias a los PDF (01–13, 29–31) y nuevos (N1…)
+  puntos: string[];    // referencias a los PDF (01–50, POS-01…) y nuevos (N1…)
+  dir?: string;        // ★ lo que dijo o pidió la Dirección sobre este flujo
   hoy: Paso[];
   dolor: string[];
   queda: Paso[];
@@ -41,6 +42,7 @@ export const AREAS: Record<Area, { nombre: string; quien: string; color: string 
   compras: { nombre: 'Compras y resurtidos', quien: 'Estef · abastecimiento y recepción', color: 'compras' },
   eventos: { nombre: 'Eventos', quien: 'Ventas y coordinación de eventos', color: 'eventos' },
   operacion: { nombre: 'Operación y punto de venta', quien: 'Taquilla, cajas y responsable del parque', color: 'operacion' },
+  direccion: { nombre: 'Dirección y finanzas', quien: 'Dirección y Administración', color: 'direccion' },
   otras: { nombre: 'Otras áreas detectadas', quien: 'Administración', color: 'otras' },
 };
 
@@ -52,7 +54,8 @@ export const FLUJOS: Flujo[] = [
     area: 'cocina',
     titulo: 'Recepción de insumos con conversión de unidades',
     para: 'Recibir como viene del proveedor (galones, cajas, garrafones) y que el inventario quede en la unidad en que se usa (ml, g, piezas), con el costo correcto y cuadrado contra la factura.',
-    puntos: ['01', '08', 'N3'],
+    puntos: ['01', '08', 'N3', 'N23'],
+    dir: 'Están pensando en usar AXO. Con AXO la recepción se hace mandando la foto de la factura: el sistema entiende cómo viene cada producto y lo convierte (litros a mililitros); la persona solo valida. Sacs ya tomó fotos de varias facturas para configurarlo.',
     hoy: [
       { t: 'Llega el proveedor', q: 'Cocina', d: 'Casi todos entregan el martes.' },
       { t: 'Se cuenta lo que llegó', q: 'Cocina', d: 'La mayoría viene en caja sellada. El bollo llega en caja de 225 piezas (9 bolsas de 25).' },
@@ -68,7 +71,7 @@ export const FLUJOS: Flujo[] = [
     ],
     queda: [
       { t: 'La recepción parte de la orden de compra', q: 'Compras', d: 'Ya trae proveedor, productos y cantidades pedidas.' },
-      { t: 'Se captura tal como viene', q: 'Cocina', d: '12 galones, 1 caja, 2 garrafones: la presentación del proveedor.' },
+      { t: 'Se captura tal como viene', q: 'Cocina', d: '12 galones, 1 caja, 2 garrafones: la presentación del proveedor. Con AXO, basta mandar la foto de la factura.' },
       { t: 'El sistema convierte solo', q: 'Sistema', d: 'Con el factor guardado por presentación: 1 galón = 3,790 ml.' },
       { t: 'Se captura el precio de la factura, con impuestos', q: 'Compras', d: 'El sistema separa subtotal e impuestos y calcula el costo por ml, g o pieza.' },
       { t: 'Se valida contra la factura', q: 'Compras', d: 'Es una revisión, no una captura: el total debe coincidir al centavo.' },
@@ -95,6 +98,7 @@ export const FLUJOS: Flujo[] = [
       { p: 'Lista de presentaciones por proveedor con su equivalencia (galón, caja, bolsa, garrafón).', quien: 'Chef Mau y Estef' },
       { p: '¿Quién recibe y valida el conteo los martes que el chef descansa?', quien: 'Cocina' },
       { p: '¿Qué insumos se pesan al recibir (los que vienen en bolsa)?', quien: 'Chef Mau' },
+      { p: '¿Se usa AXO para las recepciones? Sacs envía los planes con su recomendación (el básico alcanza para recepciones, reportes, costeo y mínimos y máximos).', quien: 'Dirección' },
     ],
     prueba: [
       'Capturo 12 galones y el inventario sube 45,480 ml.',
@@ -109,6 +113,7 @@ export const FLUJOS: Flujo[] = [
     titulo: 'Recetas y costeo de platillos',
     para: 'Que cada platillo descuente lo que de verdad lleva, con el margen de limpieza ya contemplado, y que nada «variable» provoque negativos.',
     puntos: ['02', '04'],
+    dir: 'Está de acuerdo con cómo costea el chef: el margen de limpieza va en la receta y no se registra como merma. Merma es lo que se pierde por completo.',
     hoy: [
       { t: 'Todos los platillos son productos compuestos con insumos', q: 'Chef Mau', d: 'En gramos, mililitros o piezas.' },
       { t: 'Las cantidades van en crudo', q: 'Chef Mau', d: 'La papa: 140 g antes de freírse.' },
@@ -154,6 +159,7 @@ export const FLUJOS: Flujo[] = [
     titulo: 'Consumibles de mesa por dotación',
     para: 'Medir lo que de verdad se consume de sobres y condimentos sin registrarlo en cada venta y sin cargarlo a la receta.',
     puntos: ['04'],
+    dir: 'Sí hay que controlarlos, como un producto aparte con su propia lógica y sin cargarlos a la receta. Sumó el azúcar y la Nutella de las crepas de la temporada navideña.',
     hoy: [
       { t: 'Los sobres se ponen en el despachador y en mesas', q: 'Cocina', d: 'Cada quien toma; con 800 o 900 personas un sábado es imposible entregarlos uno por uno.' },
       { t: 'También salen a las mesas de los eventos', q: 'Eventos' },
@@ -182,7 +188,7 @@ export const FLUJOS: Flujo[] = [
       nota: 'Con el dato real se puede decidir cuántos sobres poner y cuánto cuesta la cortesía por visitante.',
     },
     reglas: [
-      'Lista de consumibles por dotación: mayonesa, cátsup, chiles jalapeños, azúcar, mascabado, sustituto de azúcar y los que se agreguen.',
+      'Lista de consumibles por dotación: mayonesa, cátsup, chiles jalapeños, azúcar, mascabado, sustituto de azúcar, Nutella de las crepas de temporada y los que se agreguen.',
       'Frecuencia de conteo: por día o por fin de semana.',
     ],
     decidir: [
@@ -244,6 +250,7 @@ export const FLUJOS: Flujo[] = [
     titulo: 'Mermas y pérdidas con motivo y responsable',
     para: 'Que toda pérdida quede registrada con su causa, su costo y quién la generó, para poder medirla y corregirla.',
     puntos: ['05'],
+    dir: 'Preguntó dónde están las pérdidas más grandes. Todavía no se sabe porque no se registran; lo que se vio es que vienen más de cambios de menú y accidentes que del proveedor, cuya merma es poca.',
     hoy: [
       { t: 'Se cae una charola', q: 'Meseros de eventos', d: 'La mayoría son chicos nuevos.' },
       { t: 'Llega producto dañado del proveedor', q: 'Cocina', d: 'Se descubre al acomodar: una lata ponchada, un empaque inflado o roto. Es poco, alrededor del 2 %.' },
@@ -372,6 +379,7 @@ export const FLUJOS: Flujo[] = [
     titulo: 'Orden de compra, pago anticipado, recepción y saldo con el proveedor',
     para: 'Pagar por adelantado sin perder el control: recibir solo lo que de verdad llegó y que lo que falte quede como saldo a favor con el proveedor.',
     puntos: ['08', '09', '13', 'N1'],
+    dir: 'Su regla: lo que pasa en la realidad se registra en ese momento, ni antes ni después. Si faltaron 10, se reciben 90 y quedan 10 que debe el proveedor. Pagar por adelantado no quita revisar lo que llegó.',
     hoy: [
       { t: 'Hasta hace tres semanas se hacía recepción directa', q: 'Cocina', d: 'Ahora se usa la orden de compra, pero a veces se crea el mismo día que llega la mercancía.' },
       { t: 'Se pide el lunes y se entrega el martes', q: 'Estef' },
@@ -428,6 +436,7 @@ export const FLUJOS: Flujo[] = [
     titulo: 'Acuerdos de pago en partes',
     para: 'Recibir el pedido completo y pagarlo en abonos acordados, sabiendo en todo momento qué se debe y para cuándo.',
     puntos: ['09', '13', 'N2'],
+    dir: 'Con proveedores a crédito, como el de refrescos, los abonos se deciden según el flujo de cada semana; lo único es no dejar facturas vencidas más de un mes.',
     hoy: [
       { t: 'El proveedor ya tiene la producción para Artik', q: 'Proveedor', d: 'Calcetas.' },
       { t: 'Entrega el 100 % en un solo viaje', q: 'Proveedor', d: 'Para no pagar dos fletes.' },
@@ -447,7 +456,7 @@ export const FLUJOS: Flujo[] = [
     ],
     ejemplo: {
       titulo: 'Ejemplo de la sesión',
-      lineas: ['Factura de $10,000: se pagan $8,000 y los $2,000 restantes el mes siguiente. Para Artik no cambia nada en la gestión de facturas: el complemento de pago lo emite el proveedor.'],
+      lineas: ['Factura de $10,000: se pagan $8,000 y los $2,000 restantes el mes siguiente. Para Artik no cambia nada en la gestión de facturas: el complemento de pago lo emite el proveedor.', 'Ejemplo de la Dirección: un evento grande pide $200,000 de refresco; hay $50,000 en bancos; se abonan $20,000 y el resto cuando el evento paga.'],
     },
     reglas: [
       'Abonos programados por cuenta por pagar.',
@@ -468,6 +477,7 @@ export const FLUJOS: Flujo[] = [
     titulo: 'Resurtido semanal: venta del parque y eventos por separado',
     para: 'Que cada lunes el sistema diga cuánto pedir, separando la venta del día a día de lo que piden los eventos ya confirmados.',
     puntos: ['10', '11'],
+    dir: 'Sacs le explicó que el resurtido debe ver solo la venta del día a día y los eventos confirmados por separado. La Dirección pidió considerar en cada periodo el tiempo de entrega de cada proveedor.',
     hoy: [
       { t: 'El chef manda su pedido en Excel', q: 'Chef Mau → Estef' },
       { t: 'Las existencias del sistema no son confiables', q: '—', d: 'Lo de eventos no se descuenta bien.' },
@@ -491,7 +501,8 @@ export const FLUJOS: Flujo[] = [
       'Periodo de análisis configurable por temporada.',
       'Cobertura en días (10, 20, 30) por familia.',
       'Requerimiento de eventos separado de la venta regular, con vista consolidada.',
-      'Requisito previo: inventario confiable (F2, F5, F7 y F18).',
+      'Tiempo de entrega real de cada proveedor en el cálculo (F28).',
+      'Requisito previo: inventario confiable (F2, F5, F7 y F23).',
     ],
     decidir: [
       { p: 'Mínimos, tiempo de entrega y día de pedido por proveedor.', quien: 'Estef' },
@@ -704,6 +715,7 @@ export const FLUJOS: Flujo[] = [
     titulo: 'Liga del evento: reglamento, permisos, confirmación y cambios',
     para: 'Que el cliente acepte por escrito lo que contrató, las reglas y las penalizaciones, y que cada cambio quede registrado.',
     puntos: ['15', '16', '44', '45', 'N5', 'N6'],
+    dir: 'Propuso que el cliente confirme lo que va a pedir 24 horas antes: «si no me confirmas, no te puedo garantizar la hora de tu comida».',
     hoy: [
       { t: 'Se acuerda por teléfono y WhatsApp', q: 'Ventas', d: 'El reglamento se manda en PDF.' },
       { t: 'Los permisos se dan de palabra', q: 'Ventas', d: 'Meter regalos, adornos o decoración propia, a veces con cobro extra.' },
@@ -750,6 +762,7 @@ export const FLUJOS: Flujo[] = [
       { p: 'Reglamento, permisos, montos de penalización y excepciones para fiestas: hay que revisarlo con la Dirección, porque el formato firmado ya se había propuesto y no avanzó.', quien: 'Dirección' },
       { p: '¿Qué tipo de firma o aceptación se usa?', quien: 'Dirección y Sacs' },
       { p: '¿Quién puede autorizar un cambio después del corte?', quien: 'Coordinación' },
+      { p: 'Corte de cambios a 3 días y confirmación final 24 horas antes, como propuso la Dirección: ¿quedan las dos?', quien: 'Dirección y Ventas' },
     ],
     prueba: [
       'El cliente abre la liga, ve su resumen y el reglamento, y lo acepta; queda registrado.',
@@ -853,6 +866,7 @@ export const FLUJOS: Flujo[] = [
     titulo: 'Del evento a cocina: horarios, extras y entregas',
     para: 'Que cocina sepa qué preparar, para cuándo y para quién, sin notas ni grupos de WhatsApp, y que todo lo que sale se registre.',
     puntos: ['19', '20', '21', '48', '49', '30'],
+    dir: 'Para cocina propuso una pantalla aparte para eventos, junto a la del restaurante. Hoy el chef valida lo de eventos pidiendo los tickets y haciendo su propio corte.',
     hoy: [
       { t: 'El horario de comida va en las notas', q: 'Ventas', d: '«A las 3 de la tarde sus alimentos, 40 niños», y también en un grupo de WhatsApp.' },
       { t: 'Hay un Excel de horarios', q: 'Coordinación', d: 'Para no empalmar cinco fiestas a la 1 de la tarde.' },
@@ -868,7 +882,7 @@ export const FLUJOS: Flujo[] = [
     queda: [
       { t: 'La hora de comida se elige al reservar', q: 'Ventas', d: 'Y el calendario muestra las horas ya ocupadas para no empalmar.' },
       { t: 'El inventario se aparta pocos días antes', q: 'Sistema', d: 'No desde que se vende (F23).' },
-      { t: 'Antes de la hora, la comanda llega a cocina', q: 'Sistema', d: 'A la pantalla de cocina, arriba, en color de eventos, con nombre del evento, hora y responsable.' },
+      { t: 'Antes de la hora, la comanda llega a cocina', q: 'Sistema', d: 'Arriba, en color de eventos, con nombre del evento, hora y responsable; o en una pantalla aparte solo para eventos.' },
       { t: 'Los extras se capturan en la tableta', q: 'Coordinador', d: 'Como productos, nunca como nota; llegan a cocina y se suman a la cuenta.' },
       { t: 'Cocina marca lo entregado por artículo', q: 'Chef Mau', d: 'Pendiente, preparado, entregado (F4).' },
       { t: 'El canje se confirma una sola vez', q: 'Coordinador', d: 'Hoy pide confirmar en dos pantallas.' },
@@ -967,7 +981,8 @@ export const FLUJOS: Flujo[] = [
     area: 'operacion',
     titulo: 'Accesos y combos en taquilla',
     para: 'Que cada acceso y cada combo diga lo que de verdad incluye, para que se descuente lo entregado y los reportes digan cuánta gente entró y cuánto se vendió de cada cosa.',
-    puntos: ['POS-01', 'POS-02', '37', '38', 'N12'],
+    puntos: ['POS-01', 'POS-02', '37', '38', 'N12', 'N21', 'N22'],
+    dir: 'Explicó por qué los accesos traen calcetas: la página de venta en línea, propia y con Stripe, necesitaba la entrada ligada a las calcetas para ofrecerlas; fue un parche. Propuso repartir el descuento del combo entre sus componentes y confirmó que el aforo no cuadra: un sábado con 418 ventas, el reporte de visitas daba 258 personas.',
     hoy: [
       { t: 'Taquilla cobra el acceso por persona', q: 'Taquilla', d: '$599 con atracciones, $199 si solo acompaña; calcetas antiderrapantes $70 si no trae.' },
       { t: 'El acceso de acompañante trae calcetas configuradas', q: 'Taquilla', d: 'Se le da «omitir paso» para no entregarlas.' },
@@ -989,6 +1004,8 @@ export const FLUJOS: Flujo[] = [
       { t: 'Cada combo lleva sus componentes', q: 'Dirección', d: 'Accesos por persona, calcetas, palomitas, aguas: cada uno se descuenta.' },
       { t: 'El reporte desglosa el combo', q: 'Sistema', d: 'Combos vendidos → accesos, calcetas, alimentos y personas que entraron.' },
       { t: 'Cada acceso y producto tiene su costo', q: 'Administración', d: 'Para ver el margen.' },
+      { t: 'El descuento del combo se reparte', q: 'Sistema', d: 'Si el combo sale 20 % más barato, cada componente se registra 20 % abajo: acceso, comida y calcetas.' },
+      { t: 'La venta en línea deja de necesitar el parche', q: 'Sacs', d: 'La página ofrece las calcetas como opción sin que el acceso las traiga adentro.' },
     ],
     ejemplo: {
       titulo: 'Ejemplo de la sesión: combo Artik y accesos',
@@ -1011,6 +1028,7 @@ export const FLUJOS: Flujo[] = [
     decidir: [
       { p: '¿Qué combos son paquetes con componentes y cuáles solo un precio comercial?', quien: 'Dirección' },
       { p: 'Costo de cada acceso.', quien: 'Administración' },
+      { p: '¿Producto distinto para la venta en línea y para taquilla, o el mismo con las calcetas como opción?', quien: 'Dirección y Sacs' },
     ],
     prueba: [
       'Vendo un combo Artik: se descuentan 4 calcetas, palomitas y 4 aguas, y el aforo sube 4.',
@@ -1072,6 +1090,7 @@ export const FLUJOS: Flujo[] = [
     titulo: 'Apartados de inventario y calcetas',
     para: 'Que el inventario se aparte solo cuando de verdad se va a entregar, para que no aparezca «no hay» cuando sí hay en la bodega.',
     puntos: ['POS-03', '14', '42'],
+    dir: 'Sacs le señaló los apartados como uno de los errores principales: le quitan disponible al inventario y descuadran las compras.',
     hoy: [
       { t: 'Cada evento aparta su inventario desde que se crea', q: 'Sistema', d: 'Aunque la fiesta sea meses después.' },
       { t: 'Las calcetas se apartan por talla y por evento', q: 'Sistema', d: 'Por ejemplo, 20 de cada talla aunque no se usen.' },
@@ -1232,6 +1251,166 @@ export const FLUJOS: Flujo[] = [
       'Un visitante que firmó hace un mes se encuentra por nombre y no vuelve a firmar.',
     ],
   },
+  // ──────────────────────── DIRECCIÓN Y FINANZAS ────────────────────────
+  // Sale de la sesión con la Dirección y Administración (sesión 08). No hay
+  // reporte PDF de esta área: todo lo de aquí son puntos nuevos.
+  {
+    id: 'cuentas-por-pagar',
+    num: 'F27',
+    area: 'direccion',
+    titulo: 'Cuentas por pagar con autorización',
+    para: 'Que ningún gasto se pague ni se borre sin que la Dirección lo autorice, y que se pueda decidir cuándo pagarlo.',
+    puntos: ['N15'],
+    dir: 'Pidió un paso de autorización: Administración registra el gasto, la Dirección lo aprueba y decide la fecha, y hasta entonces se paga. «A lo mejor está aprobado, pero no quiero que lo pagues hoy, sino en un mes y medio.» Nada se elimina sin avisar.',
+    hoy: [
+      { t: 'Administración registra el gasto', q: 'Norma', d: 'Por ejemplo, renta: monto, pago y confirmar.' },
+      { t: 'Ella misma lo puede pagar', q: 'Norma' },
+      { t: 'También lo puede eliminar', q: 'Norma', d: 'Sin que nadie lo revise.' },
+      { t: 'A veces un pago junta conceptos distintos', q: 'Norma', d: 'Renta y mantenimiento en el mismo pago.' },
+    ],
+    dolor: [
+      'No hay autorización antes de pagar.',
+      'Un gasto eliminado puede ser uno que sí se debía, o uno que solo había que reprogramar.',
+      'Si se juntan conceptos, después no se sabe cuánto fue de cada uno.',
+    ],
+    queda: [
+      { t: 'Se registra la cuenta por pagar, por factura', q: 'Norma', d: 'Cada concepto con su factura.' },
+      { t: 'La Dirección la revisa', q: 'Dirección', d: 'Aprueba, rechaza o reprograma la fecha, con una nota («negócialo», «págalo el 30»).' },
+      { t: 'Se programa el pago', q: 'Sistema', d: 'Con su fecha y su monto, completo o en partes (F9).' },
+      { t: 'Se paga', q: 'Norma', d: 'Un solo pago puede cubrir varias facturas del mismo proveedor.' },
+      { t: 'Ocultar o eliminar, con autorización', q: 'Dirección', d: 'Se oculta lo que ya no se usa; se elimina solo lo que fue un error.' },
+    ],
+    ejemplo: {
+      titulo: 'Ejemplos de la sesión',
+      lineas: [
+        'Renta y mantenimiento: conceptos distintos, cada uno con su factura, aunque se paguen el mismo día.',
+        'FEMSA: un solo pago que amarra dos facturas, ambas de bebidas.',
+      ],
+    },
+    reglas: [
+      'Flujo: registrar → autorizar → programar → pagar.',
+      'Cuenta por pagar por factura y por concepto.',
+      'Eliminar u ocultar solo con autorización.',
+    ],
+    decidir: [
+      { p: '¿Todo gasto pasa por autorización o solo a partir de cierto monto?', quien: 'Dirección' },
+      { p: '¿Quién más puede autorizar cuando la Dirección no está?', quien: 'Dirección' },
+    ],
+    prueba: [
+      'Registro un gasto y no se puede pagar hasta que la Dirección lo aprueba.',
+      'La Dirección lo reprograma y aparece en la fecha nueva.',
+      'Intento eliminar un gasto y pide autorización.',
+    ],
+  },
+  {
+    id: 'proveedores',
+    num: 'F28',
+    area: 'direccion',
+    titulo: 'Proveedores: crédito, tiempo de entrega y catálogo',
+    para: 'Que cada proveedor tenga sus días de crédito y su tiempo de entrega reales, y sus productos separados por sabor o talla, para comprar a tiempo y saber qué se vende.',
+    puntos: ['N16', 'N17'],
+    dir: 'Revisó proveedor por proveedor: hay proveedores en «contado» que en realidad dan 7 días (el sistema los marcaría como atrasados), tiempos de entrega que no son los reales, y productos que se compran como uno solo aunque tengan varios sabores. Pidió revisarlos con Compras y Administración.',
+    hoy: [
+      { t: 'Hay proveedores en «contado» que dan crédito', q: 'Norma', d: 'Por ejemplo, 7 días.' },
+      { t: 'El tiempo de entrega no es el real', q: 'Estef', d: 'Las calcetas tardan hasta 3 semanas y se llegaron a acabar.' },
+      { t: 'Hay productos con varios sabores como uno solo', q: 'Estef', d: 'Un proveedor de congelados: un producto con 7 sabores.' },
+      { t: 'Los proveedores no tienen categoría', q: 'Norma', d: 'No se sabe cuáles son de alimentos.' },
+    ],
+    dolor: [
+      'El sistema avisaría de pagos atrasados que no lo están.',
+      'El sugerido de compra no llega a tiempo si no conoce la entrega real.',
+      'No se sabe qué sabor o qué talla se vende y cuál no: se pide de todo y sobra XS.',
+    ],
+    queda: [
+      { t: 'Días de crédito reales', q: 'Norma', d: 'Contado, 7, 15 o 30 días.' },
+      { t: 'Tiempo de entrega máximo', q: 'Estef', d: 'Si tarda de 7 a 10 días, se pone 10.' },
+      { t: 'Productos por sabor y por talla', q: 'Estef', d: 'Para ver qué se vende y pedir solo eso.' },
+      { t: 'Categoría del proveedor', q: 'Norma', d: 'Alimentos, bebidas, servicios… para separar costo y gasto (F29).' },
+      { t: 'Historial por proveedor', q: 'Sistema', d: 'Lo que se le ha comprado y su saldo (F8).' },
+    ],
+    reglas: [
+      'Días de crédito y tiempo de entrega por proveedor.',
+      'Variantes por sabor y talla.',
+      'Categoría contable por proveedor.',
+    ],
+    decidir: [
+      { p: 'Revisar proveedor por proveedor: crédito, entrega, productos y categoría.', quien: 'Estef y Norma' },
+    ],
+    prueba: [
+      'Un proveedor a 7 días no aparece como atrasado al día 3.',
+      'El reporte muestra cuántas calcetas se vendieron de cada talla.',
+    ],
+  },
+  {
+    id: 'reportes-ejecutivos',
+    num: 'F29',
+    area: 'direccion',
+    titulo: 'Reportes ejecutivos por modelo de negocio',
+    para: 'Que la Dirección vea en un tablero cómo va cada negocio (parque, restaurante, eventos, souvenirs) y un estado de resultados con costo y gasto separados.',
+    puntos: ['N18', 'N19'],
+    dir: 'Quiere que funcione el reporte ejecutivo: un estado de resultados que separe el costo (alimentos, bebidas) del gasto. Hoy no sirve porque los datos de origen están mal. Se deja para el final, cuando los flujos anteriores ya registren bien.',
+    hoy: [
+      { t: 'El reporte ejecutivo existe, pero no sirve', q: 'Dirección', d: 'Los datos que lo alimentan están mal cargados.' },
+      { t: 'No separa costo de gasto', q: 'Sistema' },
+      { t: 'No dice qué incluye cada número', q: 'Sistema', d: '¿Los visitantes incluyen los de fiestas y escuelas?' },
+      { t: 'Para saber algo hay que abrir varios reportes', q: 'Dirección' },
+    ],
+    dolor: [
+      'No hay un estado de resultados confiable.',
+      'Los reportes de eventos solo dicen «vendiste tanto».',
+    ],
+    queda: [
+      { t: 'Estado de resultados', q: 'Sistema', d: 'Costo (alimentos, bebidas) separado de gasto, por la categoría del proveedor (F28).' },
+      { t: 'Tablero por modelo de negocio', q: 'Sistema', d: 'Parque: accesos y aforo. Restaurante: insumos y margen. Eventos: ventas, saldos, anticipos y vendedores. Souvenirs.' },
+      { t: 'Cada dato dice qué incluye', q: 'Sistema' },
+      { t: 'Se arma al final', q: 'Sacs', d: 'Cuando combos, apartados, eventos y compras ya registren bien.' },
+    ],
+    reglas: [
+      'Categoría contable en proveedores y gastos.',
+      'Tablero por modelo de negocio, con definición de cada indicador.',
+    ],
+    decidir: [
+      { p: '¿Qué indicadores quiere ver la Dirección de cada negocio?', quien: 'Dirección' },
+      { p: 'Reglas contables para clasificar costo y gasto.', quien: 'Norma y su contador' },
+    ],
+    prueba: [
+      'El estado de resultados del mes separa costo y gasto, y cuadra con lo registrado.',
+      'El tablero de eventos muestra ventas, saldos y anticipos sin abrir otro reporte.',
+    ],
+  },
+  {
+    id: 'recursos-humanos',
+    num: 'F30',
+    area: 'direccion',
+    titulo: 'Recursos humanos: checador y expedientes',
+    para: 'Registrar entradas y salidas del personal y tener el expediente de cada colaborador en el sistema.',
+    puntos: ['N20'],
+    dir: 'La prioridad es terminar esta etapa en dos o tres semanas; el módulo completo de recursos humanos va después. Administración pidió avanzar ya con el registro de entradas y salidas. Sacs envía la cotización y la presentación del módulo.',
+    hoy: [
+      { t: 'No hay checador', q: '—' },
+      { t: 'Las altas y bajas se revisan a mano', q: 'Norma', d: 'Contra el IMSS.' },
+    ],
+    dolor: [
+      'No hay registro de quién llegó temprano o tarde.',
+      'Los expedientes no están en un solo lugar.',
+    ],
+    queda: [
+      { t: 'Expediente por colaborador', q: 'Norma', d: 'Puesto, salario, tipo (eventual o de planta).' },
+      { t: 'Checador de entradas y salidas', q: 'Colaboradores', d: 'Con reconocimiento facial, PIN o huella; puede ser desde su teléfono, limitado a la red del parque.' },
+      { t: 'Vacaciones, permisos y actas', q: 'Norma' },
+      { t: 'Se conecta con el descuento de colaboradores', q: 'Sistema', d: 'F6.' },
+    ],
+    reglas: [
+      'Expediente por colaborador y método de checado.',
+    ],
+    decidir: [
+      { p: '¿Se implementa ya el checador o al terminar esta etapa?', quien: 'Dirección' },
+      { p: 'Método de checado: reconocimiento facial, PIN, huella o teléfono.', quien: 'Norma' },
+    ],
+    prueba: [
+      'Un colaborador checa entrada y salida, y aparece en su expediente.',
+    ],
+  },
 ];
 
 // Otras áreas: salieron en las conversaciones de cocina y compras, pero son
@@ -1340,6 +1519,15 @@ export const NUEVOS = [
   { n: 'N12', t: 'Costo capturado en accesos y productos', f: 'F21' },
   { n: 'N13', t: 'Regalo del festejado y adicionales de eventos en el catálogo', f: 'F14' },
   { n: 'N14', t: 'Kiosco de autofacturación', f: 'A2' },
+  { n: 'N15', t: 'Autorización de la Dirección antes de pagar o eliminar un gasto', f: 'F27' },
+  { n: 'N16', t: 'Días de crédito y tiempo de entrega reales por proveedor', f: 'F28' },
+  { n: 'N17', t: 'Productos por sabor y talla para medir qué se vende', f: 'F28' },
+  { n: 'N18', t: 'Estado de resultados con costo y gasto separados', f: 'F29' },
+  { n: 'N19', t: 'Tablero por modelo de negocio', f: 'F29' },
+  { n: 'N20', t: 'Checador de entradas y salidas y expedientes', f: 'F30' },
+  { n: 'N21', t: 'Descuento del combo repartido entre sus componentes', f: 'F21' },
+  { n: 'N22', t: 'Calcetas como opción en la venta en línea, sin el parche', f: 'F21' },
+  { n: 'N23', t: 'Recepción con la foto de la factura (AXO)', f: 'F1' },
 ];
 
 // Próximos pasos: solo lo que se dijo en las sesiones.
@@ -1352,4 +1540,16 @@ export const PASOS = [
   { q: 'Administración', t: 'Sesión para revisar efectivo, caja chica y bancos, para que todo caiga en su cuenta.' },
   { q: 'Sacs', t: 'Capacitación de facturación y del kiosco de autofacturación con el equipo.' },
   { q: 'Sacs', t: 'Revisar con seguridad abrir el soporte directo para que cada área reporte sus fallas en el momento, sin pasar por una sola persona.' },
+  { q: 'Sacs', t: 'Enviar los planes de AXO con la recomendación, y la cotización y presentación del módulo de recursos humanos.' },
+  { q: 'Compras y Administración', t: 'Revisar con Sacs a cada proveedor: crédito, tiempo de entrega, productos por sabor o talla y categoría.' },
+  { q: 'Administración', t: 'Involucrar a su contador para las reglas de costo y gasto del estado de resultados.' },
 ];
+
+// ★ Lo que la Dirección marcó como forma de trabajo y como orden de prioridades.
+export const DIRECCION = {
+  principios: [
+    'Los procesos se trabajan como queremos que queden, no como están hoy.',
+    'Lo que pasa en la realidad se registra en ese momento: ni antes ni después.',
+    'La prioridad es terminar esta etapa en dos o tres semanas. Recursos humanos y los módulos nuevos (pedido desde la mesa, tienda de souvenirs en línea) van después.',
+  ],
+};
