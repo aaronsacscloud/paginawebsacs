@@ -82,6 +82,9 @@ export const NO_INDEXABLES: (string | RegExp)[] = [
   '/pagar/embed',
   '/email/',            // bajas y vistas de correo
   '/acuse/', '/minuta/', '/cotizacion/', '/propuesta/', '/reporte/', '/estado-cuenta/',
+  // Documentos de entrega para un cliente (checklist de VTC, flujos de ARTIK):
+  // llevan noindex y temas internos del cliente; no van al sitemap.
+  '/entrega/',
 ];
 
 /** ¿Va esta URL en el sitemap? */

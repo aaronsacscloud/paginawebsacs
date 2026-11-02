@@ -1,0 +1,560 @@
+---
+// Flujos de trabajo · ARTIK Snowpark · Cocina y Compras/resurtidos (2-nov-2026).
+//
+// Documento didáctico para el cliente, con el branding de ARTIK
+// (go.artik.com.mx: Montserrat, azul marino, degradado azul → morado y
+// turquesa). Mismo espíritu que el de Vende Tu Clóset y el de Ruben's: cada
+// flujo explicado paso a paso (hoy → cómo queda), con ejemplo de la sesión,
+// lo que falta decidir y cómo se da por buena la prueba.
+//
+// La ruta lleva un sufijo aleatorio a propósito: el documento trae temas
+// internos del cliente (faltantes de caja, cortes, proveedores) y no debe
+// poder adivinarse. Es estático, noindex, y /entrega/ está fuera del sitemap.
+// El contenido vive en lib/entrega/artik-flujos.ts.
+import { FLUJOS, AREAS, OTRAS, VERIFICACION, NUEVOS, PASOS, type Area } from '../../lib/entrega/artik-flujos';
+export const prerender = true;
+
+const ORDEN: Area[] = ['cocina', 'compras', 'eventos'];
+const porArea = (a: Area) => FLUJOS.filter(f => f.area === a);
+const esNuevo = (p: string) => p.startsWith('N');
+const completos = VERIFICACION.filter(v => v.e === 'completo').length;
+const complementados = VERIFICACION.length - completos;
+---
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Flujos ARTIK · Cocina y Compras</title>
+  <meta name="description" content="Flujos de trabajo de ARTIK Snowpark para Cocina y Compras y resurtidos: cómo se hace hoy, cómo queda, ejemplos y lo que falta decidir." />
+  <link rel="icon" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,800;1,900&family=JetBrains+Mono:wght@500;700&display=swap" />
+  <style is:inline>
+    /* Branding ARTIK (go.artik.com.mx): Montserrat pesada en mayúsculas,
+       azul marino de fondo, degradado azul → morado en títulos y turquesa
+       como acento. El color de cada área solo identifica el área. */
+    :root {
+      --navy: #07386e; --navy2: #052a54; --navy3: #031c3a;
+      --azul: #188bf6; --azul2: #4389fa; --morado: #7d16c4; --morado2: #572880;
+      --turq: #36d8d3; --turq2: #0e9e99; --mag: #e03de0;
+      --ink: #0b1b33; --ink2: #3c4b63; --mute: #6a7891;
+      --bg: #f3f6fb; --panel: #ffffff; --line: #dce3ee; --line2: #eef2f8;
+      --rojo: #c8324a; --rojoa: #fdeef1;
+      --grad: linear-gradient(90deg, var(--azul) 0%, var(--morado) 100%);
+      --gradt: linear-gradient(90deg, var(--turq) 0%, #ffffff 100%);
+      --r: 14px;
+      --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    }
+    .a-cocina { --ac: #0e9e99; --aca: #e3f8f7; }
+    .a-compras { --ac: #188bf6; --aca: #e6f2fe; }
+    .a-eventos { --ac: #7d16c4; --aca: #f2e8fa; }
+    .a-otras { --ac: #b02cb0; --aca: #fbe9fb; }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15.5px/1.6 Montserrat, system-ui, -apple-system, 'Segoe UI', sans-serif; -webkit-text-size-adjust: 100%; }
+    a { color: inherit; }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+    .mono { font-family: var(--mono); }
+    .up { text-transform: uppercase; letter-spacing: .06em; }
+
+    /* ── Portada ─────────────────────────────────────────────── */
+    .hero { position: relative; overflow: hidden; color: #fff; background:
+      radial-gradient(1200px 500px at 85% -10%, rgba(125,22,196,.55), transparent 60%),
+      radial-gradient(900px 420px at -10% 110%, rgba(54,216,211,.28), transparent 60%),
+      linear-gradient(160deg, var(--navy) 0%, var(--navy3) 100%); }
+    .hero::before { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .5; background-image:
+      radial-gradient(2px 2px at 12% 22%, #fff 50%, transparent 51%), radial-gradient(1.5px 1.5px at 32% 68%, #fff 50%, transparent 51%),
+      radial-gradient(2px 2px at 58% 18%, #fff 50%, transparent 51%), radial-gradient(1.5px 1.5px at 74% 52%, #fff 50%, transparent 51%),
+      radial-gradient(2px 2px at 88% 30%, #fff 50%, transparent 51%), radial-gradient(1.5px 1.5px at 44% 88%, #fff 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 6% 78%, #fff 50%, transparent 51%), radial-gradient(2px 2px at 94% 84%, #fff 50%, transparent 51%); }
+    .hero .wrap { position: relative; padding-top: 32px; padding-bottom: 40px; }
+    .marcas { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .marcas img.artik { height: 34px; width: auto; }
+    .marcas .x { font-weight: 800; color: var(--turq); font-size: 18px; }
+    .marcas img.sacs { height: 22px; width: auto; filter: brightness(0) invert(1); opacity: .9; }
+    .hero .tag { margin: 36px 0 10px; font: 700 12px/1 var(--mono); letter-spacing: .14em; color: var(--turq); text-transform: uppercase; }
+    .hero h1 { margin: 0; font-weight: 900; font-style: italic; text-transform: uppercase; line-height: .98; font-size: clamp(38px, 8vw, 84px); letter-spacing: -.01em;
+      background: var(--gradt); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .hero .sub { margin: 14px 0 0; font-size: clamp(17px, 2.4vw, 22px); font-weight: 600; color: #dfe9fb; max-width: 760px; }
+    .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1px; margin-top: 30px; border-radius: 12px; overflow: hidden; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.14); }
+    .meta div { background: rgba(3,28,58,.55); padding: 12px 16px; min-width: 0; }
+    .meta b { display: block; font: 700 10.5px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--turq); margin-bottom: 6px; }
+    .meta span { font-weight: 600; font-size: 14px; }
+    .cifras { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+    .cifra { display: inline-flex; align-items: baseline; gap: 8px; padding: 8px 14px; border-radius: 999px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); font-size: 13.5px; font-weight: 600; }
+    .cifra strong { font: 700 18px/1 var(--mono); color: var(--turq); }
+
+    /* ── Navegación ──────────────────────────────────────────── */
+    .nav { position: sticky; top: 0; z-index: 20; background: rgba(5,42,84,.97); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-bottom: 1px solid rgba(255,255,255,.12); }
+    .nav .wrap { display: flex; gap: 6px; align-items: center; overflow-x: auto; padding-top: 10px; padding-bottom: 10px; scrollbar-width: none; }
+    .nav .wrap::-webkit-scrollbar { display: none; }
+    .nav a { flex: none; text-decoration: none; color: #dfe9fb; font-weight: 700; font-size: 13px; padding: 8px 12px; border-radius: 999px; border: 1px solid transparent; white-space: nowrap; }
+    .nav a:hover, .nav a:focus-visible { border-color: rgba(54,216,211,.6); color: #fff; outline: none; }
+    .nav .imp { margin-left: auto; flex: none; background: var(--grad); color: #fff; border: 0; border-radius: 999px; padding: 9px 16px; font: 800 13px/1 Montserrat, sans-serif; cursor: pointer; text-transform: uppercase; letter-spacing: .04em; }
+
+    /* ── Secciones ───────────────────────────────────────────── */
+    section.blk { padding: 48px 0 8px; }
+    .h2 { margin: 0 0 6px; font-weight: 900; text-transform: uppercase; font-size: clamp(26px, 4vw, 40px); line-height: 1.05; letter-spacing: -.005em;
+      background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; display: inline-block; }
+    .lead { margin: 6px 0 22px; color: var(--ink2); font-size: 16.5px; max-width: 760px; }
+    .eyebrow { font: 700 11.5px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--mute); margin: 0 0 10px; }
+
+    /* Cómo leer */
+    .leer { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    .leer div { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px; }
+    .leer h4 { margin: 0 0 6px; font-weight: 800; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+    .leer p { margin: 0; color: var(--ink2); font-size: 14px; }
+    .sw { width: 14px; height: 14px; border-radius: 4px; flex: none; }
+    .sw.hoy { background: #c9d2e0; } .sw.queda { background: var(--grad); } .sw.ej { background: var(--turq); } .sw.pr { background: var(--navy); }
+
+    /* Mapa */
+    .mapa { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 18px; position: relative; }
+    .col { padding: 6px 12px 10px; position: relative; }
+    .col + .col { border-left: 1px dashed var(--line); padding-left: 22px; }
+    .col + .col::before { content: '›'; position: absolute; left: -11px; top: 8px; width: 22px; height: 22px; border-radius: 50%; background: var(--grad); color: #fff; font: 800 15px/21px Montserrat, sans-serif; text-align: center; }
+    .col h4 { margin: 0 0 2px; font-weight: 900; text-transform: uppercase; font-size: 15px; color: var(--ac); letter-spacing: .02em; }
+    .col .quien { font-size: 12.5px; color: var(--mute); margin-bottom: 10px; }
+    .col a { display: flex; gap: 8px; align-items: flex-start; text-decoration: none; padding: 7px 9px; border-radius: 10px; background: var(--aca); margin-bottom: 6px; font-size: 13px; font-weight: 600; line-height: 1.35; }
+    .col a:hover { outline: 2px solid var(--ac); }
+    .col a b { font: 700 11.5px/1.5 var(--mono); color: var(--ac); flex: none; }
+    .col .entrega { font-size: 12.5px; color: var(--ink2); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line2); }
+
+    /* Banda de área */
+    .area-band { margin: 56px 0 18px; border-radius: 18px; padding: 22px 24px; color: #fff; position: relative; overflow: hidden; background: linear-gradient(120deg, var(--navy) 0%, var(--navy3) 100%); }
+    .area-band::after { content: ''; position: absolute; right: -40px; top: -40px; width: 220px; height: 220px; border-radius: 50%; background: var(--ac); opacity: .35; filter: blur(30px); }
+    .area-band .k { font: 700 11.5px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--turq); }
+    .area-band h2 { margin: 8px 0 4px; font-weight: 900; font-style: italic; text-transform: uppercase; font-size: clamp(28px, 5vw, 46px); line-height: 1; }
+    .area-band p { margin: 0; color: #cfdcf2; font-weight: 600; position: relative; z-index: 1; }
+
+    /* Tarjeta de flujo */
+    .flujo { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; margin: 0 0 22px; overflow: hidden; box-shadow: 0 1px 0 rgba(11,27,51,.03), 0 10px 30px -18px rgba(7,56,110,.25); }
+    .f-top { padding: 22px 24px 18px; border-bottom: 1px solid var(--line2); display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 16px; align-items: start; }
+    .f-num { grid-row: span 3; width: 58px; height: 58px; border-radius: 16px; background: var(--grad); color: #fff; display: grid; place-items: center; font: 800 19px/1 var(--mono); box-shadow: 0 8px 18px -8px rgba(125,22,196,.6); }
+    .f-top h3 { margin: 0; font-weight: 800; font-size: clamp(19px, 2.6vw, 24px); line-height: 1.2; }
+    .f-para { margin: 0; color: var(--ink2); font-size: 15px; max-width: 820px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .chip { font: 700 11px/1 var(--mono); letter-spacing: .04em; padding: 6px 8px; border-radius: 6px; background: var(--line2); color: var(--ink2); }
+    .chip.nuevo { background: #fff3c4; color: #7a5600; }
+    .chip.area { background: var(--aca); color: var(--ac); }
+
+    .f-cols { display: grid; grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); }
+    .f-hoy { padding: 20px 24px 22px; background: #f7f9fc; border-right: 1px solid var(--line2); }
+    .f-queda { padding: 20px 24px 22px; }
+    .colt { display: flex; align-items: center; gap: 8px; font: 800 12.5px/1 Montserrat, sans-serif; text-transform: uppercase; letter-spacing: .08em; margin: 0 0 14px; }
+    .f-hoy .colt { color: var(--mute); }
+    .f-queda .colt { color: var(--morado); }
+    .pasos { list-style: none; margin: 0; padding: 0; position: relative; }
+    .pasos li { position: relative; padding: 0 0 14px 40px; }
+    .pasos li::before { content: ''; position: absolute; left: 13px; top: 28px; bottom: 0; width: 2px; background: var(--line); }
+    .pasos li:last-child::before { display: none; }
+    .pasos .n { position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font: 700 12.5px/1 var(--mono); background: #dfe5ee; color: var(--ink2); }
+    .f-queda .pasos .n { background: var(--grad); color: #fff; }
+    .f-queda .pasos li::before { background: linear-gradient(var(--azul), var(--morado)); opacity: .35; }
+    .pasos .pt { font-weight: 700; font-size: 15px; line-height: 1.35; }
+    .pasos .q { display: inline-block; margin-left: 6px; font: 700 10.5px/1 var(--mono); letter-spacing: .04em; padding: 4px 7px; border-radius: 999px; vertical-align: 2px; background: var(--line2); color: var(--ink2); }
+    .f-queda .pasos .q { background: var(--aca); color: var(--ac); }
+    .pasos .pd { color: var(--ink2); font-size: 14px; margin-top: 2px; }
+    .dolor { margin: 8px 0 0; padding: 14px 16px; border-radius: 12px; background: var(--rojoa); border: 1px solid #f6d3da; }
+    .dolor .colt { color: var(--rojo); margin-bottom: 8px; }
+    .dolor ul { margin: 0; padding-left: 18px; }
+    .dolor li { font-size: 14px; margin: 3px 0; color: #5a2430; }
+
+    .f-bajo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--line2); }
+    .f-bajo > div { padding: 18px 24px 20px; min-width: 0; }
+    .f-bajo > div + div { border-left: 1px solid var(--line2); }
+    .f-bajo .ancho { grid-column: 1 / -1; border-left: 0 !important; border-top: 1px solid var(--line2); }
+    .f-bajo h5 { margin: 0 0 10px; font: 800 12px/1 Montserrat, sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--navy); display: flex; align-items: center; gap: 8px; }
+    .f-bajo ul { margin: 0; padding-left: 18px; }
+    .f-bajo li { font-size: 14.5px; margin: 4px 0; }
+
+    .ejemplo { margin: 0; padding: 16px 18px; border-radius: 14px; background: linear-gradient(135deg, #e7fbfa 0%, #eef3ff 100%); border: 1px solid #c7eeec; }
+    .ejemplo .et { font-weight: 800; font-size: 14.5px; margin-bottom: 6px; color: var(--navy); }
+    .ejemplo p { margin: 4px 0; font-size: 14.5px; color: var(--ink2); }
+    .cuenta { margin: 10px 0 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; border-top: 1px solid rgba(7,56,110,.12); }
+    .cuenta dt, .cuenta dd { margin: 0; padding: 8px 0; border-bottom: 1px solid rgba(7,56,110,.12); font-size: 14px; }
+    .cuenta dt { color: var(--ink2); padding-right: 14px; }
+    .cuenta dd { font: 700 14px/1.4 var(--mono); color: var(--navy); text-align: right; }
+    .cuenta dd:last-of-type, .cuenta dt:last-of-type { border-bottom: 0; }
+    .ejemplo .nota { font-size: 13px; color: var(--mute); margin-top: 8px; }
+
+    table.dec { width: 100%; border-collapse: collapse; font-size: 14px; }
+    table.dec td { padding: 8px 0; border-bottom: 1px solid var(--line2); vertical-align: top; }
+    table.dec tr:last-child td { border-bottom: 0; }
+    table.dec td.qn { white-space: nowrap; padding-left: 12px; text-align: right; }
+    table.dec td.qn span { font: 700 10.5px/1 var(--mono); padding: 4px 7px; border-radius: 999px; background: var(--aca); color: var(--ac); display: inline-block; }
+
+    .prueba { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+    .prueba label { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; font-size: 14.5px; background: #fff; }
+    .prueba input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--morado); flex: none; }
+    .prueba label:has(input:checked) { background: #f1fbf4; border-color: #b9e4c6; }
+
+    /* Otras áreas */
+    .otras { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+    .otra { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 20px 22px; border-top: 4px solid var(--ac); }
+    .otra h3 { margin: 6px 0 8px; font-weight: 800; font-size: 19px; line-height: 1.25; }
+    .otra p { margin: 0 0 10px; color: var(--ink2); font-size: 14.5px; }
+    .otra ul { margin: 0; padding-left: 18px; font-size: 14.5px; }
+    .otra .quien { margin-top: 12px; font: 700 11px/1 var(--mono); color: var(--ac); }
+
+    /* Tablas de verificación */
+    .tw { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; }
+    table.ver { width: 100%; border-collapse: collapse; min-width: 720px; font-size: 14px; }
+    table.ver th { text-align: left; font: 700 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: #fff; background: var(--navy); padding: 13px 14px; }
+    table.ver td { padding: 12px 14px; border-top: 1px solid var(--line2); vertical-align: top; }
+    table.ver td.n { font: 700 13px/1.4 var(--mono); color: var(--morado); white-space: nowrap; }
+    table.ver td.t { font-weight: 700; min-width: 190px; }
+    table.ver td.f { font: 700 12px/1.4 var(--mono); white-space: nowrap; }
+    table.ver td.f a { color: var(--azul); text-decoration: none; }
+    .est { display: inline-block; font: 700 10.5px/1 var(--mono); padding: 5px 8px; border-radius: 999px; white-space: nowrap; }
+    .est.completo { background: #e4f6ea; color: #17733a; }
+    .est.complementado { background: #fff3c4; color: #7a5600; }
+    .resumen-ver { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 16px; }
+    .resumen-ver span { padding: 8px 14px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: 13.5px; font-weight: 600; }
+    .resumen-ver strong { font-family: var(--mono); color: var(--morado); margin-right: 4px; }
+
+    .nuevos { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+    .nuevos a { display: flex; gap: 12px; align-items: center; text-decoration: none; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+    .nuevos a:hover { border-color: var(--morado); }
+    .nuevos b { font: 700 12px/1 var(--mono); background: #fff3c4; color: #7a5600; padding: 6px 8px; border-radius: 6px; flex: none; }
+    .nuevos span { font-weight: 600; font-size: 14px; line-height: 1.35; flex: 1; }
+    .nuevos i { font: 700 11px/1 var(--mono); font-style: normal; color: var(--azul); flex: none; }
+
+    .pasos-sig { counter-reset: s; list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+    .pasos-sig li { counter-increment: s; display: grid; grid-template-columns: 44px 150px minmax(0, 1fr); gap: 12px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; }
+    .pasos-sig li::before { content: counter(s); width: 36px; height: 36px; border-radius: 12px; background: var(--grad); color: #fff; display: grid; place-items: center; font: 800 15px/1 var(--mono); }
+    .pasos-sig b { font-weight: 800; text-transform: uppercase; font-size: 13px; letter-spacing: .04em; color: var(--navy); }
+
+    .aviso { margin: 22px 0 0; padding: 14px 18px; border-radius: 12px; background: #eef3ff; border: 1px solid #d4e1fb; color: var(--ink2); font-size: 14px; }
+
+    footer { margin-top: 56px; background: var(--navy3); color: #b9c8e2; }
+    footer .wrap { padding-top: 24px; padding-bottom: 32px; display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: space-between; align-items: center; font-size: 13px; }
+    footer img { height: 22px; width: auto; }
+
+    /* Tableta y teléfono */
+    @media (max-width: 920px) {
+      .mapa { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 16px; }
+      .col:nth-child(3) { border-left: 0; }
+      .col:nth-child(3)::before { display: none; }
+      .f-cols { grid-template-columns: minmax(0, 1fr); }
+      .f-hoy { border-right: 0; border-bottom: 1px solid var(--line2); }
+    }
+    @media (max-width: 640px) {
+      .mapa { grid-template-columns: minmax(0, 1fr); padding: 12px; }
+      .col + .col { border-left: 0; border-top: 1px dashed var(--line); padding-top: 18px; }
+      .col + .col::before { left: 50%; top: -11px; transform: translateX(-50%) rotate(90deg); display: block !important; }
+      .f-top { padding: 18px 16px 14px; grid-template-columns: minmax(0, 1fr); }
+      .f-num { grid-row: auto; width: 48px; height: 48px; font-size: 16px; border-radius: 13px; }
+      .f-hoy, .f-queda, .f-bajo > div { padding-left: 16px; padding-right: 16px; }
+      .f-bajo { grid-template-columns: minmax(0, 1fr); }
+      .f-bajo > div + div { border-left: 0; border-top: 1px solid var(--line2); }
+      .pasos-sig li { grid-template-columns: 40px minmax(0, 1fr); }
+      .pasos-sig li span { grid-column: 2; }
+      .area-band { padding: 18px; }
+      .nav .imp { display: none; }
+    }
+
+    /* Impresión / PDF */
+    @media print {
+      @page { size: letter; margin: 12mm; }
+      body { background: #fff; font-size: 12px; }
+      .nav, .no-print { display: none !important; }
+      .hero { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .flujo { box-shadow: none; border-radius: 12px; }
+      .otra, .mapa, .leer > div, .pasos li, .ejemplo, .dolor, .prueba li, table.dec tr, table.ver tr, .f-top { break-inside: avoid; }
+      .f-top, .colt, .f-bajo h5 { break-after: avoid; }
+      .area-band { break-before: page; break-after: avoid; margin-top: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .mapa { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .col:nth-child(3) { border-left: 1px dashed var(--line); }
+      .col:nth-child(3)::before { display: block; }
+      .f-hoy, .f-queda, .f-bajo > div { padding: 12px 16px; }
+      .pasos li { padding-bottom: 8px; }
+      .f-num, .pasos .n, table.ver th, .chip, .est, .ejemplo, .dolor { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      section.blk { padding-top: 20px; }
+      .f-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+      .f-hoy { border-right: 1px solid var(--line2); border-bottom: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
+</head>
+<body>
+
+  <!-- ─────────────────────────── Portada ─────────────────────────── -->
+  <header class="hero">
+    <div class="wrap">
+      <div class="marcas">
+        <img class="artik" src="/images/clientes/artik-logo.png" alt="ARTIK Snowpark" width="180" height="34" />
+        <span class="x">×</span>
+        <img class="sacs" src="/images/sacs-wordmark.png" alt="Sacscloud" width="74" height="22" />
+      </div>
+      <p class="tag">Levantamiento · Flujos de trabajo</p>
+      <h1>Cocina<br />y Compras</h1>
+      <p class="sub">Cómo se trabaja hoy, cómo queda cada proceso dentro de Sacs y qué falta decidir. Explicado paso a paso, con los ejemplos que salieron en las sesiones.</p>
+      <div class="meta">
+        <div><b>Cliente</b><span>ARTIK Snowpark</span></div>
+        <div><b>Áreas</b><span>Cocina · Compras y resurtidos</span></div>
+        <div><b>Con quién</b><span>Chef Mau · Estef · Administración</span></div>
+        <div><b>Basado en</b><span>3 sesiones y reportes del 26 y 27 de octubre</span></div>
+        <div><b>Versión</b><span>2 de noviembre de 2026</span></div>
+      </div>
+      <div class="cifras">
+        <span class="cifra"><strong>{FLUJOS.length}</strong> flujos de trabajo</span>
+        <span class="cifra"><strong>{VERIFICACION.length}</strong> puntos del reporte revisados</span>
+        <span class="cifra"><strong>{NUEVOS.length}</strong> puntos nuevos</span>
+      </div>
+    </div>
+  </header>
+
+  <nav class="nav" aria-label="Secciones">
+    <div class="wrap">
+      <a href="#leer">Cómo leer</a>
+      <a href="#mapa">Mapa</a>
+      <a href="#cocina">Cocina</a>
+      <a href="#compras">Compras</a>
+      <a href="#eventos">Eventos</a>
+      <a href="#otras">Otras áreas</a>
+      <a href="#verificacion">Verificación</a>
+      <a href="#siguientes">Próximos pasos</a>
+      <button class="imp" type="button" onclick="window.print()">Imprimir / PDF</button>
+    </div>
+  </nav>
+
+  <main class="wrap">
+
+    <!-- ─────────────────────────── Cómo leer ─────────────────────────── -->
+    <section class="blk" id="leer">
+      <p class="eyebrow">Antes de empezar</p>
+      <h2 class="h2">Cómo leer este documento</h2>
+      <p class="lead">Cada flujo es un proceso de trabajo de principio a fin. Todos se leen igual: primero cómo se hace hoy, luego cómo queda, y al final lo que hay que decidir y cómo sabremos que funciona.</p>
+      <div class="leer">
+        <div><h4><span class="sw hoy"></span>Hoy</h4><p>Cómo se trabaja hoy, tal como nos lo contaron, y lo que se rompe en el camino.</p></div>
+        <div><h4><span class="sw queda"></span>Cómo queda</h4><p>El proceso propuesto, paso a paso, con quién hace cada paso. Se valida con las personas responsables antes de configurarlo.</p></div>
+        <div><h4><span class="sw ej"></span>Ejemplo</h4><p>Un caso real de la sesión, con sus números. Si un número es ilustrativo, lo dice.</p></div>
+        <div><h4><span class="sw pr"></span>Para dar por buena la prueba</h4><p>Lo que tiene que pasar en el sistema para firmar el flujo. Se puede ir marcando en pantalla.</p></div>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────── Mapa ─────────────────────────── -->
+    <section class="blk" id="mapa">
+      <p class="eyebrow">La operación completa</p>
+      <h2 class="h2">Mapa de los flujos</h2>
+      <p class="lead">Lo que Eventos vende se convierte en producción de Cocina; lo que Cocina necesita lo compra Compras, y Administración lo paga. Si un eslabón no queda registrado, el inventario deja de cuadrar en el siguiente.</p>
+      <div class="mapa">
+        <div class="col a-eventos">
+          <h4>Eventos</h4>
+          <div class="quien">Ventas y coordinación</div>
+          {porArea('eventos').map(f => <a href={`#${f.id}`}><b>{f.num}</b>{f.titulo}</a>)}
+          <div class="entrega">Entrega a Cocina: asistentes confirmados, menú y extras.</div>
+        </div>
+        <div class="col a-cocina">
+          <h4>Cocina</h4>
+          <div class="quien">Chef Mau</div>
+          {porArea('cocina').map(f => <a href={`#${f.id}`}><b>{f.num}</b>{f.titulo}</a>)}
+          <div class="entrega">Entrega a Compras: consumo real y lo que hace falta.</div>
+        </div>
+        <div class="col a-compras">
+          <h4>Compras</h4>
+          <div class="quien">Estef</div>
+          {porArea('compras').map(f => <a href={`#${f.id}`}><b>{f.num}</b>{f.titulo}</a>)}
+          <div class="entrega">Entrega a Administración: órdenes, recepciones y saldos.</div>
+        </div>
+        <div class="col a-otras">
+          <h4>Administración</h4>
+          <div class="quien">Norma · cajas</div>
+          <a href="#compra-pago-recepcion"><b>F8</b>Pago anticipado y saldo a favor</a>
+          <a href="#pagos-parciales"><b>F9</b>Abonos programados</a>
+          {OTRAS.map(o => <a href={`#${o.num.toLowerCase()}`}><b>{o.num}</b>{o.titulo}</a>)}
+          <div class="entrega">Cierra el ciclo: lo pagado contra lo recibido.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────── Flujos por área ─────────────────────────── -->
+    {ORDEN.map(a => (
+      <section id={a} class={`a-${a}`}>
+        <div class="area-band">
+          <span class="k">{a === 'eventos' ? 'Cruza con Cocina y Compras' : `Área ${ORDEN.indexOf(a) + 1}`}</span>
+          <h2>{AREAS[a].nombre}</h2>
+          <p>{AREAS[a].quien} · {porArea(a).length} {porArea(a).length === 1 ? 'flujo' : 'flujos'}</p>
+        </div>
+
+        {porArea(a).map(f => (
+          <article class="flujo" id={f.id}>
+            <div class="f-top">
+              <div class="f-num">{f.num}</div>
+              <h3>{f.titulo}</h3>
+              <p class="f-para">{f.para}</p>
+              <div class="chips">
+                <span class="chip area">{AREAS[f.area].nombre}</span>
+                {f.puntos.map(p => <span class={esNuevo(p) ? 'chip nuevo' : 'chip'}>{esNuevo(p) ? `Nuevo · ${p}` : `Punto ${p}`}</span>)}
+              </div>
+            </div>
+
+            <div class="f-cols">
+              <div class="f-hoy">
+                <p class="colt"><span class="sw hoy"></span>Hoy</p>
+                <ol class="pasos">
+                  {f.hoy.map((p, i) => (
+                    <li>
+                      <span class="n">{i + 1}</span>
+                      <div class="pt">{p.t}<span class="q">{p.q}</span></div>
+                      {p.d && <div class="pd">{p.d}</div>}
+                    </li>
+                  ))}
+                </ol>
+                <div class="dolor">
+                  <p class="colt">Lo que se rompe</p>
+                  <ul>{f.dolor.map(d => <li>{d}</li>)}</ul>
+                </div>
+              </div>
+              <div class="f-queda">
+                <p class="colt"><span class="sw queda"></span>Cómo queda</p>
+                <ol class="pasos">
+                  {f.queda.map((p, i) => (
+                    <li>
+                      <span class="n">{i + 1}</span>
+                      <div class="pt">{p.t}<span class="q">{p.q}</span></div>
+                      {p.d && <div class="pd">{p.d}</div>}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </div>
+
+            <div class="f-bajo">
+              {f.ejemplo && (
+                <div class="ancho" style="border-top:0">
+                  <div class="ejemplo">
+                    <div class="et">{f.ejemplo.titulo}</div>
+                    {f.ejemplo.lineas.map(l => <p>{l}</p>)}
+                    {f.ejemplo.cuenta && (
+                      <dl class="cuenta">
+                        {f.ejemplo.cuenta.map(([k, v]) => (<><dt>{k}</dt><dd>{v}</dd></>))}
+                      </dl>
+                    )}
+                    {f.ejemplo.nota && <p class="nota">{f.ejemplo.nota}</p>}
+                  </div>
+                </div>
+              )}
+              <div>
+                <h5>Reglas a configurar</h5>
+                <ul>{f.reglas.map(r => <li>{r}</li>)}</ul>
+              </div>
+              <div>
+                <h5>Falta decidir</h5>
+                <table class="dec">
+                  <tbody>
+                    {f.decidir.map(d => <tr><td>{d.p}</td><td class="qn"><span>{d.quien}</span></td></tr>)}
+                  </tbody>
+                </table>
+              </div>
+              <div class="ancho">
+                <h5><span class="sw pr"></span>Para dar por buena la prueba</h5>
+                <ul class="prueba">
+                  {f.prueba.map((p, i) => <li><label><input type="checkbox" data-k={`${f.id}-${i}`} /><span>{p}</span></label></li>)}
+                </ul>
+              </div>
+            </div>
+          </article>
+        ))}
+      </section>
+    ))}
+
+    <!-- ─────────────────────────── Otras áreas ─────────────────────────── -->
+    <section id="otras" class="a-otras">
+      <div class="area-band">
+        <span class="k">Para su propia sesión</span>
+        <h2>Otras áreas detectadas</h2>
+        <p>Salieron en las conversaciones con Cocina y Compras. Se anotan aquí para no perderlas.</p>
+      </div>
+      <div class="otras">
+        {OTRAS.map(o => (
+          <div class="otra" id={o.num.toLowerCase()}>
+            <div class="chips"><span class="chip area">{o.num}</span>{o.puntos.map(p => <span class="chip nuevo">Nuevo · {p}</span>)}</div>
+            <h3>{o.titulo}</h3>
+            <p><strong>Hoy:</strong> {o.hoy}</p>
+            <ul>{o.propuesta.map(p => <li>{p}</li>)}</ul>
+            <div class="quien">{o.quien}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- ─────────────────────────── Verificación ─────────────────────────── -->
+    <section class="blk" id="verificacion">
+      <p class="eyebrow">Control de calidad del levantamiento</p>
+      <h2 class="h2">Verificación de los reportes</h2>
+      <p class="lead">Revisamos cada punto de los reportes del 26 y 27 de octubre contra lo que se dijo en las sesiones: si está completo, si le faltaba algo y en qué flujo quedó.</p>
+      <div class="resumen-ver">
+        <span><strong>{VERIFICACION.length}</strong>puntos revisados</span>
+        <span><strong>{completos}</strong>completos</span>
+        <span><strong>{complementados}</strong>complementados</span>
+        <span><strong>{NUEVOS.length}</strong>nuevos</span>
+      </div>
+      <div class="tw">
+        <table class="ver">
+          <thead><tr><th>Punto</th><th>Tema del reporte</th><th>Estado</th><th>Qué se agrega</th><th>Flujo</th></tr></thead>
+          <tbody>
+            {VERIFICACION.map(v => (
+              <tr>
+                <td class="n">{v.n}</td>
+                <td class="t">{v.t}</td>
+                <td><span class={`est ${v.e}`}>{v.e === 'completo' ? 'Completo' : 'Complementado'}</span></td>
+                <td>{v.c}</td>
+                <td class="f">{v.f.split(' · ').map((x, i) => (<>{i > 0 && ' · '}<a href={`#${(FLUJOS.find(f => f.num === x) || { id: x.toLowerCase() }).id}`}>{x}</a></>))}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="margin:34px 0 6px;font-weight:900;text-transform:uppercase;font-size:20px;color:var(--navy)">Puntos nuevos</h3>
+      <p class="lead" style="margin-bottom:14px">Salieron en las conversaciones y no estaban en los reportes.</p>
+      <div class="nuevos">
+        {NUEVOS.map(n => (
+          <a href={`#${(FLUJOS.find(f => f.num === n.f) || { id: n.f.toLowerCase() }).id}`}><b>{n.n}</b><span>{n.t}</span><i>{n.f}</i></a>
+        ))}
+      </div>
+    </section>
+
+    <!-- ─────────────────────────── Próximos pasos ─────────────────────────── -->
+    <section class="blk" id="siguientes">
+      <p class="eyebrow">Lo que sigue</p>
+      <h2 class="h2">Próximos pasos</h2>
+      <p class="lead">Solo lo que se acordó en las sesiones.</p>
+      <ol class="pasos-sig">
+        {PASOS.map(p => <li><b>{p.q}</b><span>{p.t}</span></li>)}
+      </ol>
+      <p class="aviso">Este es un documento de trabajo. Cada «cómo queda» es una propuesta que se valida con la persona responsable del área y se prueba en el sistema antes de darla por terminada.</p>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <img src="/images/clientes/artik-logo.png" alt="ARTIK" width="117" height="22" />
+      <span>ARTIK Snowpark × Sacscloud · Flujos de Cocina y Compras · 2 de noviembre de 2026</span>
+    </div>
+  </footer>
+
+  <script is:inline>
+    // Las casillas de «Para dar por buena la prueba» se recuerdan en este
+    // navegador. Si el almacenamiento no está disponible, solo no se guardan.
+    (function () {
+      var KEY = 'artik-flujos-prueba';
+      var est = {};
+      try { est = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { est = {}; }
+      var cajas = document.querySelectorAll('.prueba input[data-k]');
+      cajas.forEach(function (c) {
+        c.checked = !!est[c.getAttribute('data-k')];
+        c.addEventListener('change', function () {
+          est[c.getAttribute('data-k')] = c.checked;
+          try { localStorage.setItem(KEY, JSON.stringify(est)); } catch (e) {}
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
