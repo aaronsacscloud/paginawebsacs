@@ -1,5 +1,5 @@
 ---
-// Flujos de trabajo · ARTIK Snowpark · Cocina, Compras/resurtidos y Eventos (2-nov-2026).
+// Flujos de trabajo · ARTIK Snowpark · Cocina, Compras/resurtidos, Eventos y Operación (2-nov-2026).
 //
 // Documento didáctico para el cliente, con el branding de ARTIK
 // (go.artik.com.mx: Montserrat, azul marino, degradado azul → morado y
@@ -14,7 +14,7 @@
 import { FLUJOS, AREAS, OTRAS, VERIFICACION, NUEVOS, PASOS, type Area } from '../../lib/entrega/artik-flujos';
 export const prerender = true;
 
-const ORDEN: Area[] = ['cocina', 'compras', 'eventos'];
+const ORDEN: Area[] = ['cocina', 'compras', 'eventos', 'operacion'];
 const porArea = (a: Area) => FLUJOS.filter(f => f.area === a);
 const esNuevo = (p: string) => p.startsWith('N');
 const completos = VERIFICACION.filter(v => v.e === 'completo').length;
@@ -28,7 +28,7 @@ const unidos = VERIFICACION.filter(v => v.u).length;
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Flujos de ARTIK</title>
-  <meta name="description" content="Flujos de trabajo de ARTIK Snowpark para Cocina, Compras y resurtidos y Eventos: cómo se hace hoy, cómo queda, ejemplos y lo que falta decidir." />
+  <meta name="description" content="Flujos de trabajo de ARTIK Snowpark para Cocina, Compras y resurtidos, Eventos y Operación: cómo se hace hoy, cómo queda, ejemplos y lo que falta decidir." />
   <link rel="icon" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -52,6 +52,7 @@ const unidos = VERIFICACION.filter(v => v.u).length;
     .a-cocina { --ac: #0e9e99; --aca: #e3f8f7; }
     .a-compras { --ac: #188bf6; --aca: #e6f2fe; }
     .a-eventos { --ac: #7d16c4; --aca: #f2e8fa; }
+    .a-operacion { --ac: #c2620a; --aca: #fdf1e3; }
     .a-otras { --ac: #b02cb0; --aca: #fbe9fb; }
 
     * { box-sizing: border-box; }
@@ -113,7 +114,7 @@ const unidos = VERIFICACION.filter(v => v.u).length;
     .sw.hoy { background: #c9d2e0; } .sw.queda { background: var(--grad); } .sw.ej { background: var(--turq); } .sw.pr { background: var(--navy); }
 
     /* Mapa */
-    .mapa { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 18px; position: relative; }
+    .mapa { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 18px; position: relative; }
     .col { padding: 6px 12px 10px; position: relative; }
     .col + .col { border-left: 1px dashed var(--line); padding-left: 22px; }
     .col + .col::before { content: '›'; position: absolute; left: -11px; top: 8px; width: 22px; height: 22px; border-radius: 50%; background: var(--grad); color: #fff; font: 800 15px/21px Montserrat, sans-serif; text-align: center; }
@@ -264,10 +265,12 @@ const unidos = VERIFICACION.filter(v => v.u).length;
     .num-rev { font: 700 13px/1 var(--mono); color: var(--morado); }
 
     /* Tableta y teléfono */
+    @media (max-width: 1100px) {
+      .mapa { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 18px; }
+      .col + .col { border-left: 0; padding-left: 12px; }
+      .col + .col::before { display: none; }
+    }
     @media (max-width: 920px) {
-      .mapa { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 16px; }
-      .col:nth-child(3) { border-left: 0; }
-      .col:nth-child(3)::before { display: none; }
       .f-cols { grid-template-columns: minmax(0, 1fr); }
       .f-hoy { border-right: 0; border-bottom: 1px solid var(--line2); }
     }
@@ -296,9 +299,10 @@ const unidos = VERIFICACION.filter(v => v.u).length;
       .otra, .mapa, .leer > div, .pasos li, .ejemplo, .dolor, .prueba li, table.dec tr, table.ver tr, .f-top { break-inside: avoid; }
       .f-top, .colt, .f-bajo h5 { break-after: avoid; }
       .area-band { break-before: page; break-after: avoid; margin-top: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .mapa { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-      .col:nth-child(3) { border-left: 1px dashed var(--line); }
-      .col:nth-child(3)::before { display: block; }
+      .mapa { grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 10px; }
+      .col + .col { border-left: 1px dashed var(--line); padding-left: 14px; }
+      .col + .col::before { display: block; }
+      .col a { font-size: 11px; }
       .f-hoy, .f-queda, .f-bajo > div { padding: 12px 16px; }
       .pasos li { padding-bottom: 8px; }
       .f-num, .pasos .n, table.ver th, .chip, .est, .ejemplo, .dolor { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -320,12 +324,12 @@ const unidos = VERIFICACION.filter(v => v.u).length;
         <img class="sacs" src="/images/sacs-wordmark.png" alt="Sacscloud" width="74" height="22" />
       </div>
       <p class="tag">Levantamiento · Flujos de trabajo</p>
-      <h1>Cocina, Compras<br />y Eventos</h1>
+      <h1>Cocina, Compras,<br />Eventos y Operación</h1>
       <p class="sub">Cómo se trabaja hoy, cómo queda cada proceso dentro de Sacs y qué falta decidir. Explicado paso a paso, con los ejemplos que salieron en las sesiones.</p>
       <div class="meta">
         <div><b>Cliente</b><span>ARTIK Snowpark</span></div>
-        <div><b>Áreas</b><span>Cocina · Compras y resurtidos · Eventos</span></div>
-        <div><b>Con quién</b><span>Chef Mau · Estef · Ventas y coordinación de eventos · Administración</span></div>
+        <div><b>Áreas</b><span>Cocina · Compras · Eventos · Operación y punto de venta</span></div>
+        <div><b>Con quién</b><span>Chef Mau · Estef · Eventos · Taquilla y cajas · Administración</span></div>
         <div><b>Basado en</b><span>Sesiones de levantamiento y reportes del 26 y 27 de octubre</span></div>
         <div><b>Versión</b><span>2 de noviembre de 2026</span></div>
       </div>
@@ -339,12 +343,12 @@ const unidos = VERIFICACION.filter(v => v.u).length;
 
   <nav class="nav" aria-label="Secciones">
     <div class="wrap">
-      <a href="#leer">Cómo leer</a>
       <a href="#mapa">Mapa</a>
       <a href="#cocina">Cocina</a>
       <a href="#compras">Compras</a>
       <a href="#eventos">Eventos</a>
-      <a href="#otras">Otras áreas</a>
+      <a href="#operacion">Operación</a>
+      <a href="#otras">Otras</a>
       <a href="#verificacion">Verificación</a>
       <a href="#siguientes">Próximos pasos</a>
       <span class="avance" title="Puntos revisados con el equipo"><span class="av-bar"><i id="rev-bar"></i></span><b id="rev-n">0 / 0</b></span>
@@ -373,13 +377,19 @@ const unidos = VERIFICACION.filter(v => v.u).length;
     <section class="blk" id="mapa">
       <p class="eyebrow">La operación completa</p>
       <h2 class="h2">Mapa de los flujos</h2>
-      <p class="lead">Lo que Eventos vende se convierte en producción de Cocina; lo que Cocina necesita lo compra Compras, y Administración lo paga. Si un eslabón no queda registrado, el inventario deja de cuadrar en el siguiente.</p>
+      <p class="lead">Lo que Eventos y taquilla venden se convierte en entregas y en producción de Cocina; lo que Cocina necesita lo compra Compras, y Administración lo paga. Si un eslabón no queda registrado, el inventario deja de cuadrar en el siguiente.</p>
       <div class="mapa">
         <div class="col a-eventos">
           <h4>Eventos</h4>
           <div class="quien">Ventas y coordinación</div>
           {porArea('eventos').map(f => <a href={`#${f.id}`}><b>{f.num}</b>{f.titulo}</a>)}
           <div class="entrega">Entrega a Cocina: asistentes confirmados, menú y extras.</div>
+        </div>
+        <div class="col a-operacion">
+          <h4>Operación</h4>
+          <div class="quien">Taquilla y cajas</div>
+          {porArea('operacion').map(f => <a href={`#${f.id}`}><b>{f.num}</b>{f.titulo}</a>)}
+          <div class="entrega">Entrega a Cocina: lo que el cliente ya pagó y le falta recibir.</div>
         </div>
         <div class="col a-cocina">
           <h4>Cocina</h4>
@@ -395,7 +405,7 @@ const unidos = VERIFICACION.filter(v => v.u).length;
         </div>
         <div class="col a-otras">
           <h4>Administración</h4>
-          <div class="quien">Norma · cajas</div>
+          <div class="quien">Norma</div>
           <a href="#compra-pago-recepcion"><b>F8</b>Pago anticipado y saldo a favor</a>
           <a href="#pagos-parciales"><b>F9</b>Abonos programados</a>
           {OTRAS.map(o => <a href={`#${o.num.toLowerCase()}`}><b>{o.num}</b>{o.titulo}</a>)}
@@ -580,7 +590,7 @@ const unidos = VERIFICACION.filter(v => v.u).length;
   <footer>
     <div class="wrap">
       <img src="/images/clientes/artik-logo.png" alt="ARTIK" width="117" height="22" />
-      <span>ARTIK Snowpark × Sacscloud · Flujos de Cocina, Compras y Eventos · 2 de noviembre de 2026</span>
+      <span>ARTIK Snowpark × Sacscloud · Flujos de Cocina, Compras, Eventos y Operación · 2 de noviembre de 2026</span>
     </div>
   </footer>
 

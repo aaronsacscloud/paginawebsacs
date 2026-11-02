@@ -1,4 +1,4 @@
-// Flujos de trabajo de ARTIK Snowpark · Cocina, Compras/resurtidos y Eventos (2-nov-2026).
+// Flujos de trabajo de ARTIK Snowpark · Cocina, Compras/resurtidos, Eventos y Operación (2-nov-2026).
 //
 // Sale de tres conversaciones de levantamiento con el área de restaurantes
 // (Chef Mau), compras y resurtidos (Estef) y administración, y de los dos
@@ -12,7 +12,7 @@
 // son los que se dijeron en la sesión. Nada de aquí se presenta como hecho en
 // el sistema: son propuestas a validar con las personas responsables.
 
-export type Area = 'cocina' | 'compras' | 'eventos' | 'otras';
+export type Area = 'cocina' | 'compras' | 'eventos' | 'operacion' | 'otras';
 
 export interface Paso {
   t: string;   // qué pasa
@@ -40,7 +40,8 @@ export const AREAS: Record<Area, { nombre: string; quien: string; color: string 
   cocina: { nombre: 'Cocina', quien: 'Chef Mau · insumos de cocina', color: 'cocina' },
   compras: { nombre: 'Compras y resurtidos', quien: 'Estef · abastecimiento y recepción', color: 'compras' },
   eventos: { nombre: 'Eventos', quien: 'Ventas y coordinación de eventos', color: 'eventos' },
-  otras: { nombre: 'Otras áreas detectadas', quien: 'Cajas y administración', color: 'otras' },
+  operacion: { nombre: 'Operación y punto de venta', quien: 'Taquilla, cajas y responsable del parque', color: 'operacion' },
+  otras: { nombre: 'Otras áreas detectadas', quien: 'Administración', color: 'otras' },
 };
 
 export const FLUJOS: Flujo[] = [
@@ -642,25 +643,28 @@ export const FLUJOS: Flujo[] = [
     area: 'eventos',
     titulo: 'Paquetes por tipo de evento',
     para: 'Que cada tipo de evento tenga sus propios paquetes, con lo que incluyen por persona, para que el precio salga solo y el inventario se descuente bien.',
-    puntos: ['17', '34', '35', '37', '42', '46'],
+    puntos: ['17', '34', '35', '37', '46', 'N13'],
     hoy: [
       { t: 'Los paquetes escolares y corporativos se mezclan', q: 'Ventas', d: 'En taquilla no se sabe qué precio aplica a una escuela.' },
       { t: 'El paquete escolar se arma a mano', q: 'Taquilla', d: 'Se cobró el acceso y aparte «hamburguesa $110» y «calcetas $70».' },
       { t: 'El acceso y la comida se capturan igual', q: 'Ventas', d: 'Como si ambos fueran artículos.' },
-      { t: 'Las calcetas no llevan talla', q: 'Ventas' },
+      { t: 'Lo que no está en catálogo se cobra con un botón global', q: 'Ventas', d: 'Barra de hidratación, coffee break, toast de aguacate: el precio va en notas y no toca el inventario.' },
+      { t: 'Los regalos de la fiesta no están en el paquete', q: 'Operación', d: 'Peluche, chamarra, velita: se toma lo que haya y se le avisa a Compras por escrito.' },
       { t: 'Los adicionales van en notas o en «cobro extra»', q: 'Ventas', d: 'DJ, karaoke, decoración, globos, pastel, montajes.' },
     ],
     dolor: [
       'Taquilla cobra precios manuales y los cortes no cuadran con el evento.',
       'No se separa lo que es servicio (acceso, atracciones) de lo que es producto (comida, calcetas).',
-      'Se descuenta la talla equivocada de calcetas.',
+      'Una barra de hidratación de $15,000 con 10 Powerade no descuenta los Powerade.',
+      'Grupos de 10 personas se cobran como el mínimo de 50, pero eso solo queda en notas.',
     ],
     queda: [
       { t: 'Paquetes separados por tipo', q: 'Dirección', d: 'Taquilla solo ve los precios escolares en un evento escolar.' },
       { t: 'El acceso se registra como servicio', q: 'Sistema', d: 'Y la comida y las calcetas como productos, cada uno con su precio y su descuento.' },
       { t: 'Cada paquete dice qué incluye por persona', q: 'Dirección', d: 'Y se multiplica por los asistentes: 1 pizza completa para 4 niños.' },
       { t: 'Opciones de comida acotadas', q: 'Ventas', d: 'Máximo dos opciones por grupo, por cantidad: 40 hamburguesas y 40 de otra opción.' },
-      { t: 'Calcetas por talla', q: 'Coordinación', d: 'Se elige la talla al entregar y solo se descuenta esa.' },
+      { t: 'Calcetas sin talla en el paquete', q: 'Taquilla', d: 'La talla se elige al entregar (F23).' },
+      { t: 'El regalo del festejado es parte del paquete', q: 'Dirección', d: 'Peluche, chamarra o velita: se descuenta al entregar.' },
       { t: 'Adicionales de catálogo', q: 'Ventas', d: 'DJ, karaoke, decoración, globos, pastel: con precio, costo y responsable.' },
     ],
     ejemplo: {
@@ -685,10 +689,12 @@ export const FLUJOS: Flujo[] = [
       { p: 'Tabla de precios vigente y contenido de cada paquete por tipo.', quien: 'Dirección' },
       { p: 'Tabla de porciones por número de personas (pasteles de vainilla y chocolate, pizzas).', quien: 'Chef Mau y Eventos' },
       { p: '¿Qué adicionales son servicios externos y cuáles consumen inventario?', quien: 'Ventas' },
+      { p: 'Regla del mínimo de 50 personas: ¿se mantiene o se crea un paquete chico?', quien: 'Dirección' },
     ],
     prueba: [
       'Un evento escolar de 80 personas sale a $449 por persona sin capturar precios a mano.',
-      'Con alimentos, descuenta hamburguesas, papas, refrescos y calcetas por talla.',
+      'Con alimentos, descuenta hamburguesas, papas y refrescos; las calcetas, al entregarlas.',
+      'Una barra de hidratación se vende desde el catálogo y descuenta sus Powerade.',
     ],
   },
   {
@@ -800,21 +806,27 @@ export const FLUJOS: Flujo[] = [
     id: 'pagos-evento',
     num: 'F17',
     area: 'eventos',
-    titulo: 'Pagos y comprobantes del evento',
-    para: 'Que cada pago quede con su comprobante y su referencia, para que no haya discusión sobre cuánto se depositó.',
-    puntos: ['N7'],
+    titulo: 'Pagos, anticipos y comprobantes del evento',
+    para: 'Que cada pago quede con su comprobante, y que los anticipos de eventos futuros se vean separados de la venta del mes.',
+    puntos: ['N7', 'N10'],
     hoy: [
       { t: 'El cliente manda la foto del comprobante', q: 'Cliente', d: 'Por WhatsApp.' },
       { t: 'El comprobante no se guarda en el sistema', q: 'Ventas' },
       { t: 'Los pagos grandes esperan a Administración', q: 'Ventas', d: 'Se pide que confirmen el ingreso y luego se registra.' },
+      { t: 'Ventas reporta sus abonos del día por mensaje', q: 'Ventas', d: '«Mil pesos de tal fiesta». Operación lo cuadra a mano contra el sistema.' },
+      { t: 'El reporte de eventos solo da totales', q: 'Sistema', d: 'Sin decir si fue tarjeta, efectivo o transferencia.' },
     ],
     dolor: [
       'Un cliente dijo que depositó $2,000 y en realidad fueron $1,000; no había cómo demostrarlo a la mano.',
+      'Un anticipo de octubre para una fiesta de noviembre se suma a la venta de octubre; el Excel de Ventas solo cuenta las fiestas del mes, y las cifras nunca coinciden.',
+      '«Vendí $13,000 en transferencia, ¿dónde están?»: hay que entrar evento por evento.',
     ],
     queda: [
       { t: 'Se registra el pago en el evento', q: 'Ventas', d: 'Monto, banco, referencia y la imagen del comprobante.' },
       { t: 'Administración lo confirma', q: 'Administración', d: 'Cuando el dinero ya está en la cuenta.' },
       { t: 'El cliente lo ve en su liga', q: 'Sistema', d: 'Pagado, pendiente y cada comprobante.' },
+      { t: 'Reporte de anticipos', q: 'Sistema', d: 'Abonado, por cobrar y el mes del evento al que pertenece, separado de la venta del mes.' },
+      { t: 'Desglose por forma de pago', q: 'Sistema', d: 'En el corte y en el reporte de eventos: efectivo, tarjeta y transferencia.' },
     ],
     ejemplo: {
       titulo: 'Ejemplo de la sesión',
@@ -823,12 +835,15 @@ export const FLUJOS: Flujo[] = [
     reglas: [
       'Pago con monto, banco, referencia y archivo adjunto.',
       'Estado del pago: registrado o confirmado por Administración.',
+      'Anticipos agrupados por mes del evento.',
     ],
     decidir: [
       { p: '¿A partir de qué monto se espera la confirmación de Administración?', quien: 'Norma' },
     ],
     prueba: [
       'Registro un pago con su comprobante y el cliente lo ve en su liga.',
+      'El reporte del mes separa la venta de fiestas del mes de los anticipos de meses siguientes.',
+      'Los abonos del día salen por forma de pago sin entrar a cada evento.',
     ],
   },
   {
@@ -837,7 +852,7 @@ export const FLUJOS: Flujo[] = [
     area: 'eventos',
     titulo: 'Del evento a cocina: horarios, extras y entregas',
     para: 'Que cocina sepa qué preparar, para cuándo y para quién, sin notas ni grupos de WhatsApp, y que todo lo que sale se registre.',
-    puntos: ['14', '19', '20', '21', '48', '49', '30'],
+    puntos: ['19', '20', '21', '48', '49', '30'],
     hoy: [
       { t: 'El horario de comida va en las notas', q: 'Ventas', d: '«A las 3 de la tarde sus alimentos, 40 niños», y también en un grupo de WhatsApp.' },
       { t: 'Hay un Excel de horarios', q: 'Coordinación', d: 'Para no empalmar cinco fiestas a la 1 de la tarde.' },
@@ -852,26 +867,25 @@ export const FLUJOS: Flujo[] = [
     ],
     queda: [
       { t: 'La hora de comida se elige al reservar', q: 'Ventas', d: 'Y el calendario muestra las horas ya ocupadas para no empalmar.' },
-      { t: 'El inventario se aparta pocos días antes', q: 'Sistema', d: 'Con el reporte de eventos de la semana (F10), no desde que se vende.' },
+      { t: 'El inventario se aparta pocos días antes', q: 'Sistema', d: 'No desde que se vende (F23).' },
       { t: 'Antes de la hora, la comanda llega a cocina', q: 'Sistema', d: 'A la pantalla de cocina, arriba, en color de eventos, con nombre del evento, hora y responsable.' },
       { t: 'Los extras se capturan en la tableta', q: 'Coordinador', d: 'Como productos, nunca como nota; llegan a cocina y se suman a la cuenta.' },
       { t: 'Cocina marca lo entregado por artículo', q: 'Chef Mau', d: 'Pendiente, preparado, entregado (F4).' },
+      { t: 'El canje se confirma una sola vez', q: 'Coordinador', d: 'Hoy pide confirmar en dos pantallas.' },
       { t: 'Cada cambio deja rastro', q: 'Sistema', d: 'Quién, cuándo, por qué y quién lo autorizó: «Pedrito agregó 5 Coca-Cola».' },
     ],
     reglas: [
       'Hora de comida obligatoria en la reserva y visible en el calendario.',
-      'Apartado de inventario solo dentro de los días previos acordados.',
       'Extras siempre como productos en el evento.',
       'Permisos: ventas y coordinación agregan o cambian; los anfitriones solo con autorización; cocina entrega.',
     ],
     decidir: [
       { p: 'Matriz de permisos: quién agrega, cambia, entrega o cancela.', quien: 'Coordinación' },
       { p: 'Responsables de las tabletas de canje (con suplentes para días de descanso).', quien: 'Coordinación' },
-      { p: '¿Cuántos días antes se aparta el inventario y cuánto antes llega la comanda a cocina?', quien: 'Chef Mau y Coordinación' },
+      { p: '¿Cuánto antes de la hora llega la comanda a cocina?', quien: 'Chef Mau y Coordinación' },
     ],
     prueba: [
       'Al reservar, el calendario no deja empalmar otra comida a la misma hora sin aviso.',
-      'Un evento de diciembre no aparta inventario en noviembre.',
       'Dos extras capturados en la tableta llegan a cocina, se descuentan y suman a la cuenta.',
       'El historial muestra quién hizo cada cambio.',
     ],
@@ -943,6 +957,281 @@ export const FLUJOS: Flujo[] = [
       'El evento de prueba muestra vendido, entregado, costo y margen, y cuadra con taquilla.',
     ],
   },
+  // ──────────────────────── OPERACIÓN Y PUNTO DE VENTA ────────────────────────
+  // Sale de la sesión con taquilla y cajas (sesión 07) y del reporte de
+  // Operación/POS. Ese reporte numera sus puntos 01–13; aquí van como
+  // POS-01…POS-13 para no confundirlos con los puntos 01–13 del primer reporte.
+  {
+    id: 'combos-accesos',
+    num: 'F21',
+    area: 'operacion',
+    titulo: 'Accesos y combos en taquilla',
+    para: 'Que cada acceso y cada combo diga lo que de verdad incluye, para que se descuente lo entregado y los reportes digan cuánta gente entró y cuánto se vendió de cada cosa.',
+    puntos: ['POS-01', 'POS-02', '37', '38', 'N12'],
+    hoy: [
+      { t: 'Taquilla cobra el acceso por persona', q: 'Taquilla', d: '$599 con atracciones, $199 si solo acompaña; calcetas antiderrapantes $70 si no trae.' },
+      { t: 'El acceso de acompañante trae calcetas configuradas', q: 'Taquilla', d: 'Se le da «omitir paso» para no entregarlas.' },
+      { t: 'Los combos se venden como un solo artículo', q: 'Taquilla', d: 'Por ejemplo, el combo Artik: accesos para 4, 4 calcetas, palomitas y 4 aguas.' },
+      { t: 'Cocina entrega viendo el ticket', q: 'Cocina', d: 'Y lo marca a mano.' },
+      { t: 'Para saber el aforo se multiplica a mano', q: 'Operación', d: 'Combos vendidos × 4.' },
+    ],
+    dolor: [
+      'Los combos no descuentan la comida ni las calcetas que incluyen.',
+      'El reporte de ventas solo dice «combo»: no dice cuánto fue de accesos, de calcetas o de comida, que es lo que pide la Dirección.',
+      'El aforo no es confiable porque el combo no trae sus accesos.',
+      'El acceso con restaurante (refresco, hamburguesa, hot dog) tampoco descuenta nada; sus dos versiones solo se distinguen por el nombre.',
+      'Los accesos y varios productos no tienen costo capturado: no hay margen.',
+    ],
+    queda: [
+      { t: 'El acceso es un servicio', q: 'Dirección', d: 'Dos tipos: con atracciones y acompañante. Sin calcetas adentro.' },
+      { t: 'Las calcetas son un complemento', q: 'Taquilla', d: 'Se agregan solo si la persona no trae.' },
+      { t: 'El acompañante puede pasar a jugar', q: 'Taquilla', d: 'Paga solo la diferencia.' },
+      { t: 'Cada combo lleva sus componentes', q: 'Dirección', d: 'Accesos por persona, calcetas, palomitas, aguas: cada uno se descuenta.' },
+      { t: 'El reporte desglosa el combo', q: 'Sistema', d: 'Combos vendidos → accesos, calcetas, alimentos y personas que entraron.' },
+      { t: 'Cada acceso y producto tiene su costo', q: 'Administración', d: 'Para ver el margen.' },
+    ],
+    ejemplo: {
+      titulo: 'Ejemplo de la sesión: combo Artik y accesos',
+      lineas: ['Con los componentes bien armados, vender un combo descuenta y cuenta solo.'],
+      cuenta: [
+        ['Combo Artik ×1 · accesos con atracciones', '4 personas'],
+        ['Calcetas (talla al entregar)', '4'],
+        ['Palomitas · aguas', '1 · 4'],
+        ['Acceso con atracciones + calcetas', '$599 + $70 = $669'],
+        ['Acompañante que decide jugar', '$599 − $199 = $400'],
+      ],
+      nota: 'La Dirección pidió saber quién usa los juegos y quién no; por ahora no importa si es adulto o niño.',
+    },
+    reglas: [
+      'Acceso como servicio, sin componentes físicos.',
+      'Combos como paquetes con componentes que descuentan inventario.',
+      'Reporte de productos finales separado del reporte de insumos.',
+      'Costo capturado en cada acceso y producto.',
+    ],
+    decidir: [
+      { p: '¿Qué combos son paquetes con componentes y cuáles solo un precio comercial?', quien: 'Dirección' },
+      { p: 'Costo de cada acceso.', quien: 'Administración' },
+    ],
+    prueba: [
+      'Vendo un combo Artik: se descuentan 4 calcetas, palomitas y 4 aguas, y el aforo sube 4.',
+      'Vendo un acceso de acompañante: no pide calcetas.',
+      'El reporte del mes dice cuánto fue de accesos, de calcetas y de comida.',
+    ],
+  },
+  {
+    id: 'venta-en-linea',
+    num: 'F22',
+    area: 'operacion',
+    titulo: 'Venta en línea: del QR al cierre del pedido',
+    para: 'Que una compra en línea se use una sola vez, que cada área marque lo que entregó y que el pedido se cierre y descuente el inventario.',
+    puntos: ['POS-04', 'POS-05', 'POS-06', 'POS-07'],
+    hoy: [
+      { t: 'El cliente llega con su QR', q: 'Cliente' },
+      { t: 'Taquilla lo escanea y se abre el pedido', q: 'Taquilla', d: 'Antes había que buscarlo entre cientos.' },
+      { t: 'Se imprime el ticket y se entregan calcetas', q: 'Taquilla', d: 'El ticket de pedido en línea ya no sale solo: hay que imprimirlo a mano.' },
+      { t: 'No hay un paso de «usado»', q: '—', d: 'El pedido queda abierto y el QR sirve otra vez.' },
+      { t: 'Cocina entrega viendo el ticket', q: 'Cocina', d: 'El ticket se puede reimprimir las veces que sea.' },
+    ],
+    dolor: [
+      'Con el mismo QR alguien podría volver otro día con otra familia.',
+      'Los pedidos en línea nunca se cierran: el inventario no se descuenta y queda apartado.',
+      'La talla de calcetas no se conoce al comprar en línea, y el ticket no la trae.',
+      'El cliente ve sus pagos en su liga, pero no lo que ya usó.',
+    ],
+    queda: [
+      { t: 'Compra en línea', q: 'Cliente', d: 'El pedido y su QR traen el detalle del combo.' },
+      { t: 'En taquilla se escanea y se valida', q: 'Taquilla', d: 'Que esté vigente y que no se haya usado.' },
+      { t: 'La pantalla desglosa el pedido', q: 'Taquilla', d: 'Accesos, calcetas (aquí se elige la talla) y alimentos pendientes.' },
+      { t: 'Cada área marca lo que entrega', q: 'Taquilla y cocina', d: 'Con el mismo código; lo que falte queda pendiente.' },
+      { t: 'Al terminar se cierra el pedido', q: 'Sistema', d: 'Y se descuenta el inventario real.' },
+      { t: 'Queda en la caja y el cajero que lo atendió', q: 'Sistema', d: 'Listo para el corte y la auditoría.' },
+    ],
+    ejemplo: {
+      titulo: 'Ejemplo de la sesión',
+      lineas: ['Combo Artik comprado en línea: en taquilla se entregan las 4 calcetas (con su talla) y se usan los accesos; en cocina, con el mismo código, se piden 2 aguas ahora y 2 después.'],
+    },
+    reglas: [
+      'Estado del pedido: vigente, en uso, cerrado.',
+      'Bitácora de reimpresiones y aviso visual si el pedido ya se usó.',
+      'Entrega por componente con saldo pendiente visible para el cliente y para operación.',
+    ],
+    decidir: [
+      { p: '¿Quién puede reimprimir un ticket y cuándo procede reponerlo?', quien: 'Operación' },
+      { p: '¿El canje en cocina es con el QR del cliente, con un talón con código de barras o con ambos?', quien: 'Operación y Chef Mau' },
+    ],
+    prueba: [
+      'Escaneo un pedido en línea, entrego todo y se cierra; si lo escaneo otra vez dice «ya usado».',
+      'Entrego 2 de 4 aguas y el pedido muestra 2 pendientes.',
+      'El ticket del pedido en línea se imprime solo.',
+    ],
+  },
+  {
+    id: 'apartados-calcetas',
+    num: 'F23',
+    area: 'operacion',
+    titulo: 'Apartados de inventario y calcetas',
+    para: 'Que el inventario se aparte solo cuando de verdad se va a entregar, para que no aparezca «no hay» cuando sí hay en la bodega.',
+    puntos: ['POS-03', '14', '42'],
+    hoy: [
+      { t: 'Cada evento aparta su inventario desde que se crea', q: 'Sistema', d: 'Aunque la fiesta sea meses después.' },
+      { t: 'Las calcetas se apartan por talla y por evento', q: 'Sistema', d: 'Por ejemplo, 20 de cada talla aunque no se usen.' },
+      { t: 'Las ventas en línea abiertas también apartan', q: 'Sistema', d: 'Por ejemplo, 192 palomitas apartadas.' },
+      { t: 'El paquete lleva calcetas fijas por persona', q: 'Ventas', d: 'Si un niño trae las suyas, se capturan 13 en lugar de 14.' },
+      { t: 'Compras hace auditoría y ajusta', q: 'Estef', d: 'Un día se reportó un faltante de 9,000 calcetas.' },
+    ],
+    dolor: [
+      'Al vender un combo el sistema dice que no hay calcetas, cuando sí hay.',
+      'Hubo reservas que no se podían hacer por falta de calcetas, y se pidió quitar el candado.',
+      'El ajuste de inventario corrige el número, pero el error vuelve a aparecer.',
+    ],
+    queda: [
+      { t: 'Tres números por producto', q: 'Sistema', d: 'Total (lo que hay), apartado y disponible para vender.' },
+      { t: 'Los eventos apartan pocos días antes', q: 'Sistema', d: 'Con el reporte semanal de eventos (F10).' },
+      { t: 'El paquete pide «calcetas», sin talla', q: 'Ventas', d: 'No se aparta ninguna talla al reservar.' },
+      { t: 'La talla se elige al entregar', q: 'Taquilla', d: 'Y solo se descuentan las que se dieron, por talla.' },
+      { t: 'Los pedidos en línea se cierran al canjear', q: 'Sistema', d: 'Y liberan lo que tenían apartado (F22).' },
+      { t: 'Se limpian los apartados viejos', q: 'Estef', d: 'Una sola vez, al arrancar.' },
+    ],
+    ejemplo: {
+      titulo: 'Ejemplo de la sesión: calcetas',
+      lineas: [],
+      cuenta: [
+        ['Total en bodega', '12,000'],
+        ['Apartadas por eventos', '3,000'],
+        ['Disponibles para vender', '9,000'],
+      ],
+      nota: 'Las 3,000 apartadas no existen como compromiso real: son tallas reservadas por eventos que todavía no llegan.',
+    },
+    reglas: [
+      'Apartado de inventario solo dentro de los días previos acordados.',
+      'Calcetas por producto padre en el paquete; talla y cantidad al entregar.',
+      'Reporte de apartados con su origen (evento o pedido en línea).',
+    ],
+    decidir: [
+      { p: '¿Cuántos días antes del evento se aparta el inventario?', quien: 'Chef Mau y Ventas' },
+      { p: '¿Quién revisa y limpia los apartados que ya no aplican?', quien: 'Estef' },
+    ],
+    prueba: [
+      'Un evento de diciembre no aparta calcetas en noviembre.',
+      'Entrego 13 calcetas en un evento de 14 personas y se descuentan 13, por talla.',
+      'El disponible de calcetas coincide con lo que hay en bodega.',
+    ],
+  },
+  {
+    id: 'cajas-usuarios',
+    num: 'F24',
+    area: 'operacion',
+    titulo: 'Cajas: catálogo, usuario y cambio de cajero',
+    para: 'Que cada caja venda solo lo suyo, que cada venta quede a nombre de quien la cobró y que cambiar de cajero no obligue a cerrar la caja.',
+    puntos: ['POS-08', 'POS-09', 'POS-10'],
+    hoy: [
+      { t: 'Todas las cajas ven todos los productos', q: 'Cajas', d: 'Accesos, restaurante, souvenirs.' },
+      { t: 'Los usuarios abren cajas por área', q: 'Cajas', d: 'Pero un usuario abierto en otra caja puede cobrar ahí.' },
+      { t: 'Si el cajero sale a comer, otro cobra con su sesión', q: 'Cajas' },
+    ],
+    dolor: [
+      'Un cobro de paletas, helados y chocolates de otra área se registró en la caja de cocina: a una le faltaron $500 y a la otra le sobraron. La persona tuvo que pagarlo.',
+      'No queda claro quién cobró qué cuando dos personas usan la misma caja.',
+    ],
+    queda: [
+      { t: 'Catálogo por caja', q: 'Administración', d: 'Taquilla: accesos y souvenirs. Restaurante: alimentos. Cada caja ve solo lo suyo.' },
+      { t: 'Cada usuario asignado a su estación', q: 'Administración', d: 'Si abre otra caja, no puede cobrar.' },
+      { t: 'Una persona, una caja abierta', q: 'Sistema', d: 'Aviso de «tienes una sesión abierta».' },
+      { t: 'Cambio de cajero con PIN o tarjeta', q: 'Cajas', d: 'Sin cerrar la caja; cada venta queda a nombre de quien la cobró.' },
+      { t: 'Si un área necesita algo de otra', q: 'Cajas', d: 'Transferencia rápida de inventario.' },
+    ],
+    reglas: [
+      'Catálogos (carpetas) por caja.',
+      'Permisos por puesto: vender, consultar, cancelar y reimprimir.',
+      'PIN o tarjeta de vendedor.',
+    ],
+    decidir: [
+      { p: 'Perfiles reales de taquilla, kiosco, parque y restaurante.', quien: 'Operación' },
+      { p: 'PIN o tarjeta, y cómo se resguarda.', quien: 'Operación' },
+    ],
+    prueba: [
+      'En la caja de restaurante no aparecen accesos.',
+      'Cambio de cajero con PIN y el corte separa las ventas de cada uno.',
+      'Un usuario no puede tener dos cajas abiertas.',
+    ],
+  },
+  {
+    id: 'arqueos-retiros',
+    num: 'F25',
+    area: 'operacion',
+    titulo: 'Arqueos, cortes y retiros de efectivo',
+    para: 'Revisar la caja durante el día, sacar el efectivo que se acumula con registro y firma, y cerrar con un corte que cuadre.',
+    puntos: ['POS-11', 'POS-12', 'POS-13'],
+    hoy: [
+      { t: 'El efectivo se acumula en las cajas', q: 'Cajas', d: 'Sobre todo en fines de semana.' },
+      { t: 'Se retira cuando hay mucho', q: 'Supervisor', d: '$10,000 o $20,000; antes no se registraba como movimiento.' },
+      { t: 'Todo se cuenta al final del día', q: 'Cajas', d: 'Por eso el cierre se hace tarde.' },
+      { t: 'Los gastos de caja chica van por fuera', q: 'Cajas', d: 'Bolsas, jabón: no se registran en Sacs.' },
+    ],
+    dolor: [
+      'Si al final falta dinero, no se sabe en qué momento del día se perdió.',
+      'Un retiro que no se registró parece faltante en el corte.',
+      'Había miedo de hacer arqueos porque se pensaba que reiniciaban la caja: no lo hacen.',
+    ],
+    queda: [
+      { t: 'Arqueos durante el día', q: 'Supervisor', d: 'Por ejemplo, a las 2 y a las 6 de la tarde, o antes de que el cajero salga a comer. Son informativos: no cierran nada.' },
+      { t: 'Retiro de efectivo registrado', q: 'Supervisor', d: 'Parcial o total, monto, a dónde va (bóveda, caja chica, banco), quién lo pidió y quién lo recibió.' },
+      { t: 'Firma y comprobante físico', q: 'Supervisor', d: 'El papel firmado y el registro en el sistema.' },
+      { t: 'Corte final por denominaciones', q: 'Cajas', d: 'Se capturan billetes y monedas; puede ser corte ciego. Se define el fondo que se queda.' },
+      { t: 'Corte por cajero', q: 'Sistema', d: 'Si hubo varios en la misma caja.' },
+      { t: 'Gastos de caja chica en el sistema', q: 'Cajas', d: 'Con su concepto y comprobante.' },
+    ],
+    ejemplo: {
+      titulo: 'Ejemplo de la sesión',
+      lineas: ['Se propone que una caja no pase de $30,000 en efectivo; al llegar, se retira con registro y firma.', 'Arqueo a las 2 de la tarde: bien. A las 6: faltan $500. El error está entre las 2 y las 6.'],
+    },
+    reglas: [
+      'Tipos de movimiento de caja: retiro parcial, retiro total, depósito, gasto de caja chica.',
+      'Destinos: bóveda, caja chica, banco (se pueden agregar).',
+      'Corte por denominaciones, fondo fijo y, si se decide, corte ciego.',
+    ],
+    decidir: [
+      { p: 'Tope de efectivo por caja (se propuso $30,000).', quien: 'Dirección' },
+      { p: 'Fondo de caja, corte ciego o validado.', quien: 'Dirección y Norma' },
+      { p: 'Quién autoriza y quién recibe los retiros; formato de firma.', quien: 'Dirección' },
+    ],
+    prueba: [
+      'Hago un retiro de $20,000 con firma: el corte ya no los cuenta como faltante.',
+      'Un arqueo a media tarde no cierra la caja.',
+      'El corte por denominaciones cuadra con el sistema.',
+    ],
+  },
+  {
+    id: 'responsiva',
+    num: 'F26',
+    area: 'operacion',
+    titulo: 'Responsiva digital de acceso',
+    para: 'Que cada visitante firme su responsiva una vez, quede guardada con vigencia y se encuentre en segundos en taquilla.',
+    puntos: ['N11'],
+    hoy: [
+      { t: 'La responsiva se llena en un formulario con QR', q: 'Cliente' },
+      { t: 'Antes llegaba a una plataforma con nombre y firma', q: '—', d: 'Ahora va a un formulario externo.' },
+      { t: 'Se firma en cada visita', q: 'Cliente', d: 'Diez visitas, diez firmas.' },
+    ],
+    dolor: [
+      'Las responsivas no viven en Sacs ni se ligan a la venta.',
+      'No se puede buscar a un visitante frecuente.',
+    ],
+    queda: [
+      { t: 'Se firma una vez en el sistema', q: 'Cliente', d: 'Nombre, acompañantes, correo, teléfono y firma.' },
+      { t: 'Taquilla la busca', q: 'Taquilla', d: 'Por nombre y fecha de nacimiento.' },
+      { t: 'Tiene vigencia', q: 'Sistema', d: 'Aviso cuando está por vencer: «tu registro vence en 5 días, ¿lo renuevas?».' },
+    ],
+    reglas: [
+      'Responsiva ligada al cliente, con vigencia.',
+    ],
+    decidir: [
+      { p: 'Vigencia de la responsiva y su texto legal.', quien: 'Dirección' },
+    ],
+    prueba: [
+      'Un visitante que firmó hace un mes se encuentra por nombre y no vuelve a firmar.',
+    ],
+  },
 ];
 
 // Otras áreas: salieron en las conversaciones de cocina y compras, pero son
@@ -950,27 +1239,25 @@ export const FLUJOS: Flujo[] = [
 export const OTRAS = [
   {
     num: 'A1',
-    titulo: 'Cajas: una sesión por persona y cobros por área',
-    puntos: ['N9'],
-    hoy: 'Un cobro de paletas, helados y chocolates de otra área se registró en la caja de cocina: a una caja le faltaron $500 y a la otra le sobraron. Con la cámara se vio que fue un cobro cruzado y la persona tuvo que pagarlo.',
-    propuesta: [
-      'Que una persona no pueda abrir una segunda caja mientras tiene otra abierta: aviso de «tienes una sesión abierta».',
-      'Que cada caja venda solo los productos de su área.',
-      'Si un área necesita algo de otra, una transferencia rápida de inventario.',
-      'Revisar que cada usuario entre con su propio nombre.',
-    ],
-    quien: 'Cajas y Dirección',
-  },
-  {
-    num: 'A2',
     titulo: 'Cortes que no llegan completos a las cuentas',
-    puntos: ['N10'],
+    puntos: ['N9'],
     hoy: 'El efectivo y los cobros con tarjeta de los cortes no se reflejan completos en las cuentas. Un día de $191,000 tenía $21,000 sin reflejar. Por eso Administración no pudo registrar cuentas por pagar: el saldo decía que no había dinero y sí había. La revisión va desde el 6 de agosto; los cobros en línea (Stripe) se van a manejar aparte.',
     propuesta: [
       'Sesión con Administración para revisar el manejo del efectivo, la caja chica y los bancos.',
       'Que cada corte llegue completo a su cuenta y se pueda cerrar el día con el saldo real.',
     ],
     quien: 'Norma · Administración',
+  },
+  {
+    num: 'A2',
+    titulo: 'Facturación: el kiosco ya existe y no se usa',
+    puntos: ['N14'],
+    hoy: 'Las facturas se le piden a una sola persona y tardan alrededor de semana y media. El sistema ya tiene un kiosco de autofacturación, en caja o en línea para el cliente, pero no se ha configurado ni explicado.',
+    propuesta: [
+      'Capacitación de facturación con el equipo.',
+      'Activar el kiosco para que el cliente facture solo, o la caja en el momento.',
+    ],
+    quien: 'Administración y cajas',
   },
 ];
 
@@ -983,21 +1270,21 @@ export const VERIFICACION: { n: string; t: string; e: 'completo' | 'complementad
   { n: '04', t: 'Insumos de libre disposición en mesas', e: 'completo', c: 'Se agrega el método de dotación y conteo con ejemplo, y la lista completa (azúcar, mascabado, sustituto, jalapeños).', f: 'F3' },
   { n: '05', t: 'Control de mermas y pérdidas', e: 'complementado', c: 'Responsable por persona para medir, daño de proveedor detectado al acomodar, sobrantes por cambios o menos invitados y política de cobrar o absorber.', f: 'F5' },
   { n: '06', t: 'Fallos de visualización en KDS', e: 'completo', c: 'Frecuencia reportada (una o dos veces por semana); el pedido del cliente desde la mesa depende de resolver esto primero.', f: 'F4' },
-  { n: '07', t: 'Validación de entrega de pedidos', e: 'completo', c: 'Hoy se hace en papel con firma de caja; un ticket entregado no debe poder entregarse otra vez.', f: 'F4', u: '21' },
+  { n: '07', t: 'Validación de entrega de pedidos', e: 'completo', c: 'Hoy se hace en papel con firma de caja; un ticket entregado no debe poder entregarse otra vez.', f: 'F4 · F22', u: '21 · POS-07' },
   { n: '08', t: 'Compra y recepción como etapas independientes', e: 'complementado', c: 'Faltaba el pago anticipado: Artik siempre paga antes y Administración necesita liberar el pago sin esperar la recepción.', f: 'F8' },
   { n: '09', t: 'Entregas incompletas y diferencias por proveedor', e: 'complementado', c: 'Saldo a favor en la ficha del proveedor, aplicado en el siguiente pedido; acuerdos de pago en partes (calcetas).', f: 'F8 · F9' },
   { n: '10', t: 'Resurtido con base en ventas históricas', e: 'completo', c: 'Temporada alta en noviembre y diciembre; el Excel del chef se sustituye; las órdenes automáticas dependen de un inventario confiable.', f: 'F10' },
   { n: '11', t: 'Separar resurtido normal de eventos', e: 'completo', c: 'Revisión del lunes con dos columnas: eventos confirmados (Mau) y venta normal (Estef).', f: 'F10' },
   { n: '12', t: 'Compras imprevistas y eventos exprés', e: 'complementado', c: 'Magnitud real (hasta 800 hamburguesas, cajas de 72), Ventas autorizada a vender para el mismo día, validar con cocina y espacio antes de cerrar.', f: 'F11', u: '31 · 36' },
   { n: '13', t: 'Tablero de compras y recepción', e: 'completo', c: 'Se agregan las columnas de saldo a favor y abonos programados.', f: 'F8 · F9' },
-  { n: '14', t: 'Reservas que afectan existencias antes de tiempo', e: 'complementado', c: 'Ejemplo: 500 hamburguesas apartadas que no existen frenan las compras automáticas. Se aparta con el reporte semanal de eventos.', f: 'F18 · F10' },
+  { n: '14', t: 'Reservas que afectan existencias antes de tiempo', e: 'complementado', c: 'Ejemplos: 500 hamburguesas y 3,000 calcetas apartadas que no se van a usar todavía. Se aparta con el reporte semanal de eventos.', f: 'F23 · F10', u: 'POS-03' },
   { n: '15', t: 'Confirmación previa de alimentos', e: 'complementado', c: 'Plazo de 3 días antes para horario y alimentos; el cliente lo acepta por escrito en la liga del evento; escuelas y empresas ya lo firman.', f: 'F15', u: '16 · 44 · 45' },
   { n: '16', t: 'Registro y responsabilidad por cambios tardíos', e: 'completo', c: 'Penalización mencionada: cambio de fecha 10 %. La política sigue por decidir con la Dirección.', f: 'F15', u: '15' },
-  { n: '17', t: 'Paquetes y productos compuestos', e: 'complementado', c: 'Porciones por asistentes (1 pizza completa = 4 niños) y pasteles de vainilla y chocolate.', f: 'F14', u: '34 · 37 · 42 · 46' },
+  { n: '17', t: 'Paquetes y productos compuestos', e: 'complementado', c: 'Porciones por asistentes (1 pizza completa = 4 niños) y pasteles de vainilla y chocolate.', f: 'F14', u: '34 · 37 · 46' },
   { n: '18', t: 'Menús especiales de evento', e: 'completo', c: 'Dice lo mismo que el 29.', f: 'F12', u: '29' },
   { n: '19', t: 'Extras y productos adicionales', e: 'complementado', c: 'El coordinador los captura en tableta y llegan a cocina; caso de 30 cubetas de cerveza sin descontar.', f: 'F18' },
   { n: '20', t: 'Pedidos de eventos en KDS', e: 'completo', c: 'Dice lo mismo que el 30.', f: 'F4 · F18', u: '30' },
-  { n: '21', t: 'Entregas parciales y evitar dobles surtidos', e: 'completo', c: 'Dice lo mismo que el 07.', f: 'F4 · F18', u: '07' },
+  { n: '21', t: 'Entregas parciales y evitar dobles surtidos', e: 'completo', c: 'Dice lo mismo que el 07.', f: 'F4 · F18', u: '07 · POS-07' },
   { n: '22', t: 'Conciliación de consumo y rentabilidad', e: 'completo', c: 'Dice lo mismo que el 47.', f: 'F20', u: '47' },
   { n: '29', t: 'Menús corporativos y especiales con costo por evento', e: 'complementado', c: 'Ejemplo real de margen ($1,600 cobrados contra ≈ $300 de costo por persona) y medir cuáles se repiten.', f: 'F12', u: '18' },
   { n: '30', t: 'KDS vinculado a evento y permisos por función', e: 'complementado', c: 'Color propio con estrella, nombre del evento y del responsable, hora de entrega y extras sumados a la cuenta.', f: 'F4 · F18', u: '20 · 49' },
@@ -1007,12 +1294,12 @@ export const VERIFICACION: { n: string; t: string; e: 'completo' | 'complementad
   { n: '34', t: 'Catálogo de paquetes corporativos parametrizados', e: 'complementado', c: 'Contenido real: taquiza (alambre de arrachera y de pollo), refresco, agua y agua mineral, rally y coffee break premium.', f: 'F14' },
   { n: '35', t: 'Adicionales comerciales como conceptos estructurados', e: 'complementado', c: 'Se suman los permisos con cobro (meter adornos o regalos propios).', f: 'F14 · F15' },
   { n: '36', t: 'Trazabilidad de eventos exprés', e: 'completo', c: 'Dice lo mismo que el 12.', f: 'F11', u: '12' },
-  { n: '37', t: 'Separar accesos y atracciones de alimentos', e: 'complementado', c: 'Caso real: taquilla cobró el paquete escolar como «hamburguesa $110» y «calcetas $70» por separado.', f: 'F14' },
-  { n: '38', t: 'Asistentes por edad y uso real de atracciones', e: 'completo', c: 'Hoy se cuenta a un adulto como niño si va a usar atracciones.', f: 'F16' },
+  { n: '37', t: 'Separar accesos y atracciones de alimentos', e: 'complementado', c: 'Caso real: taquilla cobró el paquete escolar como «hamburguesa $110» y «calcetas $70» por separado.', f: 'F14 · F21', u: 'POS-02' },
+  { n: '38', t: 'Asistentes por edad y uso real de atracciones', e: 'complementado', c: 'Hoy se cuenta a un adulto como niño si va a usar atracciones. La Dirección pidió saber quién juega y quién acompaña; la edad no importa por ahora.', f: 'F16 · F21' },
   { n: '39', t: 'Lista digital de invitados y check-in', e: 'complementado', c: 'La lista se llena en la liga del evento hasta 3 días antes; los «+3» de la hoja se cobran dentro del evento en taquilla.', f: 'F16', u: '38 · 40 · 43' },
   { n: '40', t: 'Carga masiva de grupos escolares', e: 'completo', c: 'Listas de 150 a 200 personas en PDF o foto.', f: 'F16' },
   { n: '41', t: 'Cortesías, acompañantes e influencers', e: 'complementado', c: 'Caso real: un evento de marketing aparecía con $19,900 sin cobrar; pastel de cortesía sin registro.', f: 'F19' },
-  { n: '42', t: 'Calcetas por talla dentro de paquetes', e: 'completo', c: 'Se elige la talla al entregar.', f: 'F14' },
+  { n: '42', t: 'Calcetas por talla dentro de paquetes', e: 'complementado', c: 'El paquete pide «calcetas» sin talla; la talla se elige al entregar. Si un niño trae las suyas, solo se descuentan las que se dieron.', f: 'F23' },
   { n: '43', t: 'Capacidad, espacios VIP y límite de asistentes', e: 'completo', c: 'Aviso cuando el grupo rebasa el espacio contratado.', f: 'F16' },
   { n: '44', t: 'Reglamento, permisos y penalizaciones', e: 'complementado', c: 'Caso real: permiso para meter adornos de Halloween con cobro adicional; reporte de penalizaciones cobradas.', f: 'F15' },
   { n: '45', t: 'Confirmación digital y control de versiones', e: 'complementado', c: 'La misma liga muestra pagos, comprobantes y lista de invitados.', f: 'F15' },
@@ -1021,6 +1308,20 @@ export const VERIFICACION: { n: string; t: string; e: 'completo' | 'complementad
   { n: '48', t: 'Autorización y auditoría de cambios operativos', e: 'complementado', c: 'Solo ventas y coordinación editan; anfitriones con autorización; responsables de tabletas con suplentes.', f: 'F18' },
   { n: '49', t: 'Programación de entregas y avisos a cocina', e: 'complementado', c: 'Hora de comida obligatoria en la reserva y calendario de horas ocupadas para no empalmar fiestas.', f: 'F18', u: '30' },
   { n: '50', t: 'Atribución comercial y conversión', e: 'completo', c: 'Canal, campaña o influencer y vendedor desde el primer contacto.', f: 'F13', u: '32' },
+  // Reporte de Operación y punto de venta (sesión 07): numera 01–13; aquí POS-01…POS-13.
+  { n: 'POS-01', t: 'Combos de acceso mal configurados', e: 'complementado', c: 'El combo Artik (accesos para 4, 4 calcetas, palomitas y 4 aguas) no descuenta comida ni calcetas; el reporte solo dice «combo» y el aforo se multiplica a mano. Tampoco descuenta el acceso con restaurante.', f: 'F21', u: 'POS-02' },
+  { n: 'POS-02', t: 'Acceso general separado de calcetas y complementos', e: 'complementado', c: 'Precios dichos: $599 con atracciones, $199 acompañante y $70 las calcetas; hoy se usa «omitir paso» porque el acceso trae calcetas configuradas.', f: 'F21', u: 'POS-01 · 37' },
+  { n: 'POS-03', t: 'Reservas bloqueadas por inventario asociado al combo', e: 'complementado', c: 'Cada evento aparta tallas de calcetas desde que se crea: 3,000 apartadas y solo 9,000 disponibles de 12,000.', f: 'F23', u: '14' },
+  { n: 'POS-04', t: 'Ventas online sin cierre ni consumo efectivo', e: 'complementado', c: 'El QR solo abre el pedido; nada lo marca como usado y el pedido queda abierto. El ticket de pedido en línea ya no se imprime solo.', f: 'F22', u: 'POS-05 · POS-06 · POS-07' },
+  { n: 'POS-05', t: 'Reimpresión y reutilización de tickets', e: 'completo', c: 'El ticket se reimprime sin límite y el QR se puede volver a usar.', f: 'F22', u: 'POS-04' },
+  { n: 'POS-06', t: 'Ticket poco detallado para el canje', e: 'complementado', c: 'La talla de las calcetas no viene en el ticket; en línea no se conoce y se elige en taquilla.', f: 'F22', u: 'POS-04' },
+  { n: 'POS-07', t: 'Entrega parcial y confirmación por componente', e: 'completo', c: 'Dice lo mismo que el 07 y el 21: se unen.', f: 'F22 · F4', u: '07 · 21' },
+  { n: 'POS-08', t: 'Carpetas y catálogos por caja', e: 'complementado', c: 'Caso real: un cobro de otra área en la caja de cocina dejó $500 de faltante en una caja y sobrante en otra.', f: 'F24', u: 'POS-09' },
+  { n: 'POS-09', t: 'Permisos por usuario y por área', e: 'completo', c: 'Un usuario abierto en otra caja no debe poder cobrar ahí.', f: 'F24', u: 'POS-08' },
+  { n: 'POS-10', t: 'Cambio rápido de cajero con PIN o tarjeta', e: 'completo', c: 'Para cuando el cajero sale a comer y otro lo cubre.', f: 'F24' },
+  { n: 'POS-11', t: 'Arqueos parciales y corte final por cajero', e: 'complementado', c: 'Arqueos a las 2 y a las 6 de la tarde para ubicar en qué momento se generó un faltante; el arqueo no reinicia la caja.', f: 'F25', u: 'POS-12 · POS-13' },
+  { n: 'POS-12', t: 'Cortes por denominaciones y fondo fijo', e: 'completo', c: 'Corte ciego como opción.', f: 'F25' },
+  { n: 'POS-13', t: 'Retiros y movimientos de caja', e: 'complementado', c: 'Retiros de $10,000 a $20,000 cuando se acumula; tope propuesto de $30,000 por caja; destino bóveda, caja chica o banco; los gastos de caja chica hoy van fuera de Sacs.', f: 'F25' },
 ];
 
 // Puntos que salieron en las conversaciones y no estaban en ningún reporte.
@@ -1033,8 +1334,12 @@ export const NUEVOS = [
   { n: 'N6', t: 'Coordinación ve la conversación con el cliente', f: 'F15' },
   { n: 'N7', t: 'Pagos del evento con comprobante y referencia', f: 'F17' },
   { n: 'N8', t: 'Cuadre de inventario de cocina por canal', f: 'F7' },
-  { n: 'N9', t: 'Cajas: una sesión por persona y cobros por área', f: 'A1' },
-  { n: 'N10', t: 'Cortes que no llegan completos a las cuentas', f: 'A2' },
+  { n: 'N9', t: 'Cortes que no llegan completos a las cuentas', f: 'A1' },
+  { n: 'N10', t: 'Anticipos separados de la venta del mes y desglose por forma de pago', f: 'F17' },
+  { n: 'N11', t: 'Responsiva digital con vigencia', f: 'F26' },
+  { n: 'N12', t: 'Costo capturado en accesos y productos', f: 'F21' },
+  { n: 'N13', t: 'Regalo del festejado y adicionales de eventos en el catálogo', f: 'F14' },
+  { n: 'N14', t: 'Kiosco de autofacturación', f: 'A2' },
 ];
 
 // Próximos pasos: solo lo que se dijo en las sesiones.
@@ -1045,4 +1350,6 @@ export const PASOS = [
   { q: 'Compras', t: 'Reunir varias facturas reales de distintos proveedores para probar las reglas de conversión y de cuadre.' },
   { q: 'Cocina', t: 'Anotar dispositivo, hora y folio de la próxima comanda que no aparezca en la pantalla.' },
   { q: 'Administración', t: 'Sesión para revisar efectivo, caja chica y bancos, para que todo caiga en su cuenta.' },
+  { q: 'Sacs', t: 'Capacitación de facturación y del kiosco de autofacturación con el equipo.' },
+  { q: 'Sacs', t: 'Revisar con seguridad abrir el soporte directo para que cada área reporte sus fallas en el momento, sin pasar por una sola persona.' },
 ];
