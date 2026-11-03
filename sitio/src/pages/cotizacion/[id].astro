@@ -127,7 +127,14 @@ const hasAntesDesp = showAntesDesp && Array.isArray(antesDesp) && antesDesp.leng
 // ni en el renglón del pago): se usa cuando la fecha real no está confirmada
 // y solo consta que se pagó. Se prende por cotización
 // con meta.aceptacion_por_pago = true.
-const aceptadaPorPago = quoteMeta.aceptacion_por_pago === true;
+// Las que ya se marcaron así a pedido de administración, cuando no había
+// cómo prender la bandera en la base (se pueden quitar de aquí en cuanto la
+// bandera quede guardada en su meta con el botón de modo ?admin).
+const ACEPTADAS_POR_PAGO = new Set<string>([
+  '63ee0168-eec8-4ad8-8bb9-051487b1633f', // COT-78881 · Jacket Piel — se aceptó con el pago; fecha real sin confirmar
+]);
+const aceptadaPorPago = quoteMeta.aceptacion_por_pago === true
+  || (quoteMeta.aceptacion_por_pago !== false && ACEPTADAS_POR_PAGO.has(String(quote.id)));
 const showFirma = quoteMeta.mostrar_firma !== undefined ? quoteMeta.mostrar_firma : true;
 const showQr = quoteMeta.mostrar_qr !== undefined ? quoteMeta.mostrar_qr : true;
 const showAnimaciones = quoteMeta.mostrar_animaciones !== undefined ? quoteMeta.mostrar_animaciones : true;
@@ -292,8 +299,12 @@ const sucTotal = planItems.reduce((s: number, i: any) => s + (parseInt(i.sucursa
 const extraNames = [...uniqueItems, ...recurringItems].map((i: any) => i.nombre).filter(Boolean);
 const summary = planNames ? `${planNames} para ${sucTotal} sucursal${sucTotal > 1 ? 'es' : ''}${extraNames.length ? ' con ' + extraNames.join(' y ') : ''}` : quote.empresa;
 
-// Next annual renewal date
-const nextAnnualDate = new Date();
+// Próxima renovación anual: un año después de que se cerró la venta (pago o
+// aceptación). Antes se contaba desde HOY, así que la fecha se recorría cada
+// vez que alguien abría la cotización. Si la fecha de cierre no está
+// confirmada (aceptada con recepción de pago), no se muestra fecha.
+const _baseRenov = quote.pagado_fecha || quote.aceptado_fecha;
+const nextAnnualDate = _baseRenov ? new Date(_baseRenov) : new Date();
 nextAnnualDate.setFullYear(nextAnnualDate.getFullYear() + 1);
 const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
 
@@ -1216,7 +1227,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
           const showRenewalCompare = isExpired && !isClosed && anyLineHasDiscount;
           return (
             <div class="quote-payment-block">
-              <div class="quote-payment-label">Próxima renovación anual: {nextAnnualStr}</div>
+              <div class="quote-payment-label">{aceptadaPorPago ? 'Renovación anual' : `Próxima renovación anual: ${nextAnnualStr}`}</div>
               {planRenewalLines.map(({ i, suc, promoRenewal, fullPrice, hasAnyDiscount }) => (
                 showRenewalCompare && hasAnyDiscount ? (
                   <div class="quote-payment-line"><span>Renovación {planDisplayName(i)} · {suc} suc.</span><span class="qt-compare"><span class="qt-price-strike">{fmt(promoRenewal)}</span><span class="qt-price-normal">{fmt(fullPrice)}</span></span></div>
