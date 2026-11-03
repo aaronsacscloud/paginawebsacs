@@ -121,6 +121,11 @@ const hasRoi = showRoi && roi && roi.ahorro_mensual > 0;
 const showAntesDesp = quoteMeta.mostrar_antes_despues || false;
 const antesDesp = quoteMeta.antes_despues || [];
 const hasAntesDesp = showAntesDesp && Array.isArray(antesDesp) && antesDesp.length > 0;
+// Hay ventas que se cerraron con el pago, sin que el cliente firmara nada.
+// Para esas, el cierre dice «Aceptada con recepción de pago»: sin la firma
+// que el CRM genera sola con el nombre y sin fecha. Se prende por cotización
+// con meta.aceptacion_por_pago = true.
+const aceptadaPorPago = quoteMeta.aceptacion_por_pago === true;
 const showFirma = quoteMeta.mostrar_firma !== undefined ? quoteMeta.mostrar_firma : true;
 const showQr = quoteMeta.mostrar_qr !== undefined ? quoteMeta.mostrar_qr : true;
 const showAnimaciones = quoteMeta.mostrar_animaciones !== undefined ? quoteMeta.mostrar_animaciones : true;
@@ -1604,7 +1609,9 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
     )}
 
     {/* Version history — show on INVERSION tab */}
-    {(quoteMeta.versions || []).length > 1 && (
+    {/* El historial de versiones es INTERNO: le dice al cliente cuántas veces
+         se rehízo su precio y cuánto subió. Solo se ve en modo ?admin. */}
+    {isAdminMode && (quoteMeta.versions || []).length > 1 && (
     <section class="quote-tab-panel" data-tab="inversion">
       <div class="quote-versions">
         <div class="quote-versions-header">
@@ -1676,7 +1683,10 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
             ? 'Tu pago fue procesado correctamente. El equipo SACS comenzará con tu implementación.'
             : 'Nuestro equipo se pondrá en contacto contigo para iniciar la implementación.'}
         </div>
-        {quoteMeta.firma_base64 && (
+        {aceptadaPorPago && (
+          <div class="quote-signed-label">Aceptada con recepción de pago</div>
+        )}
+        {!aceptadaPorPago && quoteMeta.firma_base64 && (
           <img
             src={quoteMeta.firma_base64}
             alt=""
@@ -1684,15 +1694,15 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
             onerror="this.style.display='none';const f=this.nextElementSibling;if(f&&f.classList.contains('quote-signed-fallback'))f.style.display='block'"
           />
         )}
-        {quote.aceptado_por && (
+        {!aceptadaPorPago && quote.aceptado_por && (
           <div class="quote-signed-fallback" style="display:none">
             <span>{quote.aceptado_por}</span>
           </div>
         )}
-        {quote.aceptado_por && (
+        {!aceptadaPorPago && quote.aceptado_por && (
           <div class="quote-signed-label">Aceptada por {quote.aceptado_por}</div>
         )}
-        {quote.aceptado_fecha && (
+        {!aceptadaPorPago && quote.aceptado_fecha && (
           <div class="quote-signed-date">{fmtDate(quote.aceptado_fecha)}</div>
         )}
         {isAccepted && !isPaid && quote.link_pago && (
