@@ -123,7 +123,9 @@ const antesDesp = quoteMeta.antes_despues || [];
 const hasAntesDesp = showAntesDesp && Array.isArray(antesDesp) && antesDesp.length > 0;
 // Hay ventas que se cerraron con el pago, sin que el cliente firmara nada.
 // Para esas, el cierre dice «Aceptada con recepción de pago»: sin la firma
-// que el CRM genera sola con el nombre y sin fecha. Se prende por cotización
+// que el CRM genera sola con el nombre y SIN FECHA en ningún lado (ni arriba
+// ni en el renglón del pago): se usa cuando la fecha real no está confirmada
+// y solo consta que se pagó. Se prende por cotización
 // con meta.aceptacion_por_pago = true.
 const aceptadaPorPago = quoteMeta.aceptacion_por_pago === true;
 const showFirma = quoteMeta.mostrar_firma !== undefined ? quoteMeta.mostrar_firma : true;
@@ -447,7 +449,8 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
         )}
         {isExpired && !isClosed && <div class="quote-date">Venció el {vigenciaFecha}{wasExtended ? ` · Extendida +${totalExtensionDays}d` : ''}</div>}
         {isAccepted && !isPaid && quote.aceptado_fecha && <div class="quote-date" style="color:#1e8471;font-weight:600">Aceptada el {fmtDate(quote.aceptado_fecha)}</div>}
-        {isPaid && quote.aceptado_fecha && <div class="quote-date" style="color:#3764c4;font-weight:600">Pagada · Aceptada el {fmtDate(quote.aceptado_fecha)}</div>}
+        {isPaid && aceptadaPorPago && <div class="quote-date" style="color:#3764c4;font-weight:600">Pagada · Aceptada con recepción de pago</div>}
+        {isPaid && !aceptadaPorPago && quote.aceptado_fecha && <div class="quote-date" style="color:#3764c4;font-weight:600">Pagada · Aceptada el {fmtDate(quote.aceptado_fecha)}</div>}
       </div>
     </div>
 
@@ -1316,7 +1319,9 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
                       <span class="qph-row-method">{metodoDisplay[p.metodo] || p.metodo}</span>
                     </div>
                     <div class="qph-row-meta">
-                      {fmtDate(p.fecha)}{p.referencia ? ` · ref. ${p.referencia}` : ''}
+                      {aceptadaPorPago && !isAdminMode
+                        ? (p.referencia ? `Pago recibido · ref. ${p.referencia}` : 'Pago recibido')
+                        : <>{fmtDate(p.fecha)}{p.referencia ? ` · ref. ${p.referencia}` : ''}</>}
                     </div>
                   </div>
                   <div class="qph-row-amount">{fmt(p.monto)}</div>
