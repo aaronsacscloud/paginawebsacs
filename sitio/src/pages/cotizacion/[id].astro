@@ -1713,6 +1713,15 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
         {isAccepted && !isPaid && quote.link_pago && (
           <a href={quote.link_pago} target="_blank" rel="noopener" class="quote-signed-cta">Pagar ahora</a>
         )}
+        {isAdminMode && (
+          <div class="no-print" style="margin-top:18px">
+            <button type="button" id="btn-aceptacion-pago" data-qid={quote.id} data-activo={aceptadaPorPago ? '1' : '0'}
+              style="border:1px solid #d6d6e0;background:#fff;border-radius:9px;padding:8px 14px;font-size:0.8125rem;font-weight:600;cursor:pointer;color:#1a1a1a">
+              {aceptadaPorPago ? 'Volver a mostrar firma y fecha' : 'Marcar como «Aceptada con recepción de pago» (sin firma ni fechas)'}
+            </button>
+            <div id="btn-aceptacion-pago-msg" style="font-size:0.75rem;color:#888;margin-top:6px">Solo lo ves tú (modo admin).</div>
+          </div>
+        )}
       </div>
     ) : null}
     </section>
@@ -3981,6 +3990,26 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 </script>
 
 <!-- Tab switcher: show only one panel at a time, URL-hash-synced -->
+<script is:inline>
+(function () {
+  var btn = document.getElementById('btn-aceptacion-pago');
+  if (!btn) return;
+  var msg = document.getElementById('btn-aceptacion-pago-msg');
+  btn.addEventListener('click', function () {
+    var activo = btn.getAttribute('data-activo') !== '1';
+    btn.disabled = true; msg.textContent = 'Guardando…';
+    fetch('/api/revenue/aceptacion-pago', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+      body: JSON.stringify({ quoteId: btn.getAttribute('data-qid'), activo: activo }) })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (x) {
+        if (!x.ok || !x.j || !x.j.ok) { btn.disabled = false; msg.textContent = 'No se guardó: ' + ((x.j && x.j.error) || 'error'); return; }
+        msg.textContent = 'Listo. Recargando…'; location.reload();
+      })
+      .catch(function () { btn.disabled = false; msg.textContent = 'No se guardó: sin conexión.'; });
+  });
+})();
+</script>
+
 <script is:inline>
   (() => {
     const doc = document.getElementById('quote-doc');
