@@ -26,7 +26,7 @@ if (payment.quote_id) {
 // sub + empresa + contacto.
 let sub: any = null; let company: any = null; let contact: any = null;
 if (!payment.quote_id && payment.subscription_id) {
-  const { data: s } = await supabase.from('subscriptions').select('id, nombre_plan, ciclo, proxima_factura, company_id, contact_id').eq('id', payment.subscription_id).single();
+  const { data: s } = await supabase.from('subscriptions').select('id, nombre_plan, ciclo, proxima_factura, monto_proximo, company_id, contact_id').eq('id', payment.subscription_id).single();
   sub = s || null;
   if (sub?.company_id) { const { data: c } = await supabase.from('companies').select('nombre, sacs_account').eq('id', sub.company_id).single(); company = c || null; }
   const cid = payment.contact_id || sub?.contact_id;
